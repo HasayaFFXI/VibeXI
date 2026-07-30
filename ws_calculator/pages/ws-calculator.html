@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weaponskill Damage Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared-ui/css/ffxi-theme.css">
+<link rel="stylesheet" href="../shared/css/theme.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <div>
+      <h1>Weaponskill <span>Damage</span> Calculator</h1>
+      <div class="subtitle">Monte Carlo simulation of the fSTR / WSC / fTP / pDIF engine. Defaults pre-filled for Tachi: Jinpu.</div>
+    </div>
+  </header>
+
+  <div class="card presets-card">
+    <h2>Presets <span class="opt" id="storageWarning" style="display:none; color:var(--blade);">— browser storage unavailable, session-only</span></h2>
+    <div class="preset-slots" id="presetSlots"></div>
+    <div class="preset-status" id="presetStatus"></div>
+    <div class="preset-save-row">
+      <input type="text" id="presetName" placeholder="Preset name" maxlength="24">
+      <select id="presetSlotPick"></select>
+      <button id="presetSaveBtn" class="secondary">Save</button>
+      <span class="preset-io">
+        <button id="presetExport" class="link-btn">Export all</button>
+        <button id="presetImport" class="link-btn">Import</button>
+        <input type="file" id="presetImportFile" accept="application/json" style="display:none;">
+      </span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card wide">
+      <h2>Derive Mob VIT / DEF</h2>
+      <div class="mob-grid">
+        <div class="field field-zone"><label>Zone</label>
+          <select id="zoneSelect" style="width:100%;"><option value="">— select zone —</option></select>
+        </div>
+        <div class="field field-mob"><label>Mob</label>
+          <select id="mobSelect" style="width:100%;" disabled><option value="">— select zone first —</option></select>
+        </div>
+        <div class="field field-meta" id="mobMeta" style="display:none;"></div>
+        <div class="field"><label>Mob level</label><input type="number" id="mLvl" value="99"></div>
+        <div class="field"><label>Sub level</label><input type="number" id="sLvl" value="99"></div>
+        <div class="field"><label>Family VIT rank</label>
+          <select id="famVitRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Main job VIT rank</label>
+          <select id="mainVitRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Sub job VIT rank</label>
+          <select id="subVitRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Family DEF rank</label>
+          <select id="defRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option>
+          </select>
+        </div>
+        <div class="field"><label>Stat multiplier<span class="hint">MOB/NM_STAT_MULTIPLIER setting</span></label><input type="number" id="statMult" value="1.0" step="0.05"></div>
+        <div class="checkbox-field" style="padding-top:16px;">
+          <input type="checkbox" id="subCurveZone">
+          <label for="subCurveZone">Pre-50 subjob curve zone<span class="hint" style="display:block;">unchecked = standard halved subjob stat</span></label>
+        </div>
+        <div class="checkbox-field" style="padding-top:16px;">
+          <input type="checkbox" id="lvlCorrection" checked>
+          <label for="lvlCorrection">Apply level correction (T-rank+ zones)</label>
+        </div>
+        <div class="field"><label>Resist / elemental multiplier<span class="hint">avg magic-side multiplier, 1.0 = no resist</span></label><input type="number" id="resistMult" value="1.0" step="0.05"></div>
+      </div>
+      <div id="mobOut" class="mob-out" style="margin:16px 0 4px;"></div>
+      <div class="chart-cap" style="margin-top:8px;">E-rank DEF curve below level 51 wasn't visible in the traced source and is linearly interpolated from the A&ndash;D pattern — flagged in the result if used.</div>
+      <input type="hidden" id="tLvl" value="99">
+      <input type="hidden" id="vit" value="80">
+      <input type="hidden" id="def" value="850">
+    </div>
+
+    <div class="card">
+      <h2>Actor</h2>
+      <div class="field"><label>Main level</label><input type="number" id="aLvl" value="75"></div>
+      <div class="field"><label>STR (base, no food)</label><input type="number" id="str" value="100"></div>
+      <div class="field"><label>Current TP</label><input type="number" id="tp" value="1000" step="100"></div>
+      <div class="field"><label>Base weapon damage (D)</label><input type="number" id="wDmg" value="83"></div>
+      <div class="field"><label>Weapon rank<span class="hint">used for fSTR clamp; 0&ndash;E ≈ 0&ndash;7</span></label><input type="number" id="wRank" value="8"></div>
+      <div class="field"><label>ATT (base, no food)</label><input type="number" id="att" value="450"></div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="gearFTP" checked>
+        <label for="gearFTP">Gorget Equipped<span class="hint" style="display:block;">unchecked = +0.0 fTP, checked = +0.1 fTP</span></label>
+      </div>
+
+      <h2 style="margin-top:20px;">Food <span class="opt">applied before all derived calculations</span></h2>
+      <div class="field"><label>ATT bonus (%)</label><input type="number" id="foodAttPct" value="18" step="1"></div>
+      <div class="field"><label>ATT bonus cap (flat)<span class="hint">e.g. "Attack +25%, up to 60"</span></label><input type="number" id="foodAttCap" value="90" step="1"></div>
+      <div class="field"><label>STR bonus (flat)</label><input type="number" id="foodStr" value="0" step="1"></div>
+      <div class="chart-cap" id="foodSummary" style="margin-top:10px;"></div>
+
+      <h2 style="margin-top:20px;">Buffs <span class="opt">job abilities, modeled by uptime</span></h2>
+      <div class="field" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <label style="flex:none;">Job setup <span class="opt" style="font-size:10.5px;">main / sub / sub level</span>
+          <span class="hint">The main job's level is <b>Main level</b> above. Sub level is normally floor(main&nbsp;/&nbsp;2). Drives every potency default below.</span>
+        </label>
+        <div class="buff-jobs">
+          <select id="mainJob" aria-label="Main job"></select>
+          <select id="subJob" aria-label="Sub job"></select>
+          <input type="number" id="subLvl" value="37" min="0" max="99" step="1" aria-label="Sub job level">
+        </div>
+      </div>
+      <div class="buff-grid">
+        <div class="buff-head"><span>Ability</span><span>Uptime %</span><span>Potency</span></div>
+        <div class="buff-row" id="buffRowHasso">
+          <label for="hassoUptime">Hasso<span class="hint" id="hassoHint"></span></label>
+          <input type="number" id="hassoUptime" value="100" min="0" max="100" step="5">
+          <input type="number" id="hassoPotency" min="0" step="1" placeholder="auto">
+        </div>
+        <div class="buff-row" id="buffRowBerserk">
+          <label for="berserkUptime">Berserk<span class="hint" id="berserkHint"></span></label>
+          <input type="number" id="berserkUptime" value="60" min="0" max="100" step="5">
+          <input type="number" id="berserkPotency" min="0" step="1" placeholder="auto">
+        </div>
+        <div class="buff-row" id="buffRowWarcry">
+          <label for="warcryUptime">Warcry<span class="hint" id="warcryHint"></span></label>
+          <input type="number" id="warcryUptime" value="10" min="0" max="100" step="5">
+          <input type="number" id="warcryPotency" min="0" step="1" placeholder="auto">
+        </div>
+      </div>
+      <div class="chart-cap" style="margin-top:10px;">Uptime defaults are duration &divide; recast from the server tables, capped at 100%. Leave a potency blank to keep it derived from the job setup; type a number to override it for job points, merits or potency gear. Uptime&nbsp;0 turns the ability off.</div>
+      <div class="chart-cap" id="buffSummary" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Weaponskill</h2>
+      <div class="field">
+        <label>Weapon skill type<span class="hint">sets the pDIF cap and the hit-rate cap</span></label>
+        <select id="wsType"></select>
+      </div>
+      <div class="field"><label>Number of hits</label><input type="number" id="numHits" value="2"></div>
+      <div class="field"><label>fTP @ 1000 / 2000 / 3000 TP<span class="hint">params.ftpMod. On a hybrid WS the server ignores this for the physical hits (forced to 1.0) and uses it for the magic component instead.</span></label>
+        <div class="row2">
+          <input type="number" id="ftp1" value="1.0" step="0.05">
+          <input type="number" id="ftp2" value="1.0" step="0.05">
+          <input type="number" id="ftp3" value="1.0" step="0.05">
+        </div>
+      </div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="multiHitFTP">
+        <label for="multiHitFTP">fTP scaling applies to every hit (not just hit 1)<span class="hint" style="display:block;">params.multiHitfTP — no effect on a hybrid WS</span></label>
+      </div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="adoulinWS">
+        <label for="adoulinWS">USE_ADOULIN_WEAPON_SKILL_CHANGES<span class="hint" style="display:block;">unchecked = alpha applies to WSC (server default is <code>true</code>; leave off to match a non-Adoulin server)</span></label>
+      </div>
+      <div class="field"><label>WSC stat weight (%)<span class="hint">params.str_wsc &times; 100. Jinpu: 40 (non-Adoulin) / 30 (Adoulin)</span></label><input type="number" id="wscWeight" value="40" step="1"></div>
+      <div class="field"><label>WSC stat</label>
+        <select id="wscStat">
+          <option value="str" selected>STR</option>
+          <option value="vit">VIT</option>
+        </select>
+      </div>
+      <div class="field"><label>Gear WS-stat bonus (%)</label><input type="number" id="wscGear" value="0" step="1"></div>
+      <div class="field"><label>Crit rate (%)<span class="hint">0 unless the WS defines params.critVaries. Tachi: Jinpu does not, so WS hits never crit outside Sneak Attack / Mighty Strikes.</span></label><input type="number" id="critRate" value="0" step="1"></div>
+      <div class="field"><label>Crit damage bonus (%)</label><input type="number" id="critDmg" value="25" step="1"></div>
+      <div class="field"><label>Hit rate (%)<span class="hint">rolled per hit; hit 1 gets +100 ACC (= +50 pts), both clamped to the weapon's cap</span></label><input type="number" id="hitRate" value="95" step="1"></div>
+      <div class="field"><label>Weaponskill damage bonus (%)<span class="hint">ALL_WSDMG_ALL_HITS — applied to the physical total, then again to the magic component</span></label><input type="number" id="wsdPercent" value="0" step="1"></div>
+      <div class="field"><label>Damage Limit (flat / %)</label>
+        <div class="row2" style="grid-template-columns:1fr 1fr;">
+          <input type="number" id="dlPlus" value="0">
+          <input type="number" id="dlPercent" value="0">
+        </div>
+      </div>
+
+      <h2 style="margin-top:20px;">Hybrid Magic Component</h2>
+      <div class="checkbox-field">
+        <input type="checkbox" id="hybridOn" checked>
+        <label for="hybridOn">Weaponskill has a hybrid magic "additional effect"<span class="hint" style="display:block;">params.hybridWS — also forces the physical fTP to 1.0</span></label>
+      </div>
+      <div class="chart-cap" style="margin:2px 0 12px;">The magic component uses the same <b>params.ftpMod</b> table as above &mdash; there is only one table in the server code. Set it in the Weaponskill section.</div>
+      <div class="field"><label>Magic Damage (flat)<span class="hint">xi.mod.MAGIC_DAMAGE gear stat, added before any multiplier</span></label><input type="number" id="magicDmg" value="0"></div>
+      <div class="field"><label>Magic Attack Bonus (MATT)<span class="hint">multiplier is (100 + MATT) / (100 + target MDEF)</span></label><input type="number" id="matt" value="0"></div>
+      <div class="field"><label>Target MDEF</label><input type="number" id="mdef" value="0"></div>
+    </div>
+
+    <div class="card span2">
+      <h2>fSTR Tiers <span class="opt">for the selected target</span></h2>
+      <div class="subtitle" id="fstrSummary" style="margin-bottom:14px;">Uses Actor STR, Weapon rank, and Target VIT from the fields above.</div>
+      <div class="fstr-layout">
+        <div class="table-wrap">
+          <table class="data" id="fstrTable">
+            <thead><tr><th>fSTR</th><th>STR range</th><th>&Delta; from current</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="chart-wrap mid">
+          <canvas id="fstrChart"></canvas>
+          <div class="chart-tip anchor-above" id="fstrTooltip"></div>
+          <div class="chart-cap">fSTR vs STR (VIT fixed at target's current value) &mdash; marker shows current STR &middot; hover for details</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:20px;">Attack Curve <span class="opt">pDIF vs ATT, for the selected target</span></h2>
+      <div class="subtitle" id="attackSummary" style="margin-bottom:14px;">Uses Actor ATT, Weapon skill type / Damage Limit, and Target DEF from the fields above.</div>
+      <div class="fstr-layout">
+        <div class="table-wrap">
+          <table class="data" id="attackTable">
+            <thead><tr><th>ATT range</th><th>pDIF (mid)</th><th>&Delta; / 100 ATT</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="chart-wrap mid">
+          <canvas id="attackChart"></canvas>
+          <div class="chart-tip anchor-above" id="attackTooltip"></div>
+          <div class="chart-cap">Shaded band = pDIF lower/upper bounds &middot; dashed line = weapon's pDIF cap &middot; marker = current ATT &middot; hover for details</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="run-bar">
+    <div class="trials-field">
+      <label for="trials">Trials</label>
+      <input type="number" id="trials" value="20000" step="1000">
+    </div>
+    <div class="chart-cap" style="margin:0;">Live — editing any field above reruns the tables, the charts and this simulation.</div>
+  </div>
+
+  <div id="results" class="results-panel">
+    <div class="stat-row">
+      <div class="stat primary"><div class="num" id="outAvg">—</div><div class="lbl">Avg damage (all attempts)</div></div>
+      <div class="stat"><div class="num" id="outAvgHit">—</div><div class="lbl">Avg damage (on hit)</div></div>
+      <div class="stat"><div class="num" id="outMin">—</div><div class="lbl">Min (on hit)</div></div>
+      <div class="stat"><div class="num" id="outMax">—</div><div class="lbl">Max</div></div>
+    </div>
+    <div class="breakdown">
+      <div>Avg physical: <b id="outPhys">—</b></div>
+      <div>Avg magic: <b id="outMagic">—</b></div>
+      <div>Std dev: <b id="outStd">—</b></div>
+      <div>Whiff rate: <b id="outMiss">—</b></div>
+      <div>Avg hits landed: <b id="outHits">—</b></div>
+      <div>mainBase: <b id="outBase">—</b></div>
+    </div>
+    <div class="buff-states" id="outStates"></div>
+    <div class="chart-wrap short">
+      <canvas id="hist"></canvas>
+      <div class="chart-tip anchor-above" id="histTooltip"></div>
+    </div>
+    <div class="chart-cap">Distribution of landed-hit damage across all trials · hover a bar for details</div>
+  </div>
+
+  <footer>
+    Simulates fSTR (PC formula), WSC, fTP interpolation, and melee pDIF (with wRatio caps, spike chance, and melee-random roll) per hit, matching the traced core engine. Weaponskill-damage% gear bonuses are approximated as a flat multiplier on total damage rather than modeled per-mechanism. Block/guard/parry/shadow-absorption and per-hit SDT modifiers are not simulated — this estimates raw landed-hit damage.
+  </footer>
+
+</div>
+
+<!-- Shared layer. Classic scripts, load order matters: core -> data -> lib -> components. -->
+<script src="../../shared-ui/js/theme.js"></script>
+<script src="../shared/lib/core.js"></script>
+<script src="../shared/data/mob-data.js"></script>
+<script src="../shared/data/job-data.js"></script>
+<script src="../shared/data/weapon-data.js"></script>
+<script src="../shared/lib/buffs.js"></script>
+<script src="../shared/lib/damage.js"></script>
+<script src="../shared/lib/mob-stats.js"></script>
+<script src="../shared/lib/chart.js"></script>
+<script src="../shared/lib/presets.js"></script>
+<script src="../shared/components/mob-selector.js"></script>
+<script src="../shared/components/fstr-panel.js"></script>
+<script src="../shared/components/attack-panel.js"></script>
+<script src="../shared/components/histogram.js"></script>
+
+<script>
+// Page-specific wiring only. All formulas live in shared/lib/damage.js.
+const $ = id => document.getElementById(id);
+const { num, checked, clamp } = FFXI.core;
+
+FFXI.data.populateWeaponSelect($('wsType'), 'greatkatana');
+FFXI.data.populateJobSelect($('mainJob'), 'SAM');
+FFXI.data.populateJobSelect($('subJob'), 'WAR');
+
+let presets = null;
+
+// --- buffs ---
+//
+// The three uptime fields feed FFXI.buffs.resolveStates, which returns the exact
+// distribution over buff states (see the rotation comment in shared/lib/buffs.js).
+// Everything downstream -- the panels, the mainBase readout, the sim -- reads that
+// one distribution, so they can never disagree about what is buffed.
+
+const B = FFXI.buffs;
+
+// A blank potency field means "derived from the job setup". Storing the override
+// as an empty string rather than a dirty flag keeps it stateless, so presets and
+// the browser's form-state restore round-trip it for free.
+function potencyOverride(id){
+  const el = $(id);
+  if (!el || el.value.trim() === '') return null;
+  const v = +el.value;
+  return Number.isFinite(v) ? v : null;
+}
+
+function jobSetup(){
+  return {
+    mainJob: $('mainJob').value,
+    mainLvl: num('aLvl'),
+    subJob: $('subJob').value,
+    subLvl: num('subLvl'),
+  };
+}
+
+// Derived potency with the UI overrides layered on top.
+function buffPotency(){
+  const setup = jobSetup();
+  const p = B.derivePotency(setup);
+  const hasso = potencyOverride('hassoPotency');
+  const berserk = potencyOverride('berserkPotency');
+  const warcry = potencyOverride('warcryPotency');
+  if (hasso !== null) { p.hasso.str = hasso; p.hasso.acc = 10; }
+  if (berserk !== null) p.berserk.attPct = berserk;
+  if (warcry !== null) p.warcry.attPct = warcry;
+  return { setup, potency: p, derived: B.derivePotency(setup) };
+}
+
+function buffStates(){
+  const { setup, potency } = buffPotency();
+  return B.resolveStates({
+    uptimes: {
+      hasso: num('hassoUptime'),
+      berserk: num('berserkUptime'),
+      warcry: num('warcryUptime'),
+    },
+    potency,
+    enabled: {
+      hasso: B.isAvailable('hasso', setup),
+      berserk: B.isAvailable('berserk', setup),
+      warcry: B.isAvailable('warcry', setup),
+    },
+    base: {
+      str: num('str'),
+      att: num('att'),
+      hitRate: num('hitRate'),
+      foodStr: num('foodStr'),
+      foodAttPct: num('foodAttPct'),
+      foodAttCap: num('foodAttCap'),
+    },
+  });
+}
+
+// --- food / effective stats ---
+//
+// The panels and the fSTR/ATT markers show the *modal* buff state -- the one you
+// are most likely to be in when the weaponskill lands. resolveStates returns the
+// states most-probable-first, so that is states[0]. The state is named in each
+// panel's summary so the marker is never ambiguous.
+function modalState(){ return buffStates()[0]; }
+
+function getEffectiveSTR(){ return modalState().str; }
+function getEffectiveATT(){ return modalState().att; }
+function modalNote(){
+  const s = modalState();
+  return s.active.length ? `incl. food + ${s.label}` : 'incl. food, no buffs up';
+}
+
+function renderFoodSummary(){
+  const e = FFXI.buffs.effective({
+    str: num('str'),
+    att: num('att'),
+    foodStr: num('foodStr'),
+    foodAttPct: num('foodAttPct'),
+    foodAttCap: num('foodAttCap'),
+  });
+  $('foodSummary').innerHTML =
+    `With food only &mdash; STR: <b style="color:var(--bone);">${e.str}</b> (${e.baseStr} + ${e.foodStrBonus})` +
+    `, ATT: <b style="color:var(--bone);">${e.att}</b> (${e.baseAtt} + ${e.foodAttBonus}, capped)`;
+}
+
+function renderBuffSummary(){
+  const { setup, potency, derived } = buffPotency();
+
+  // Per-row hints: the server's duration/recast, what the ability does, and the
+  // potency actually in force (flagged when it is a manual override).
+  B.ABILITY_IDS.forEach(id => {
+    const a = B.ABILITIES[id];
+    const row = $('buffRow' + a.name);
+    const hint = $(id + 'Hint');
+    const available = B.isAvailable(id, setup);
+    const overridden = potencyOverride(id + 'Potency') !== null;
+    const val = id === 'hasso' ? potency.hasso.str : potency[id].attPct;
+    const derivedVal = id === 'hasso' ? derived.hasso.str : derived[id].attPct;
+    const unit = id === 'hasso' ? ' STR' : '% ATT';
+
+    row.classList.toggle('unavailable', !available);
+    $(id + 'Uptime').disabled = !available;
+    $(id + 'Potency').disabled = !available;
+    $(id + 'Potency').placeholder = available ? String(derivedVal) : '—';
+
+    if (!available) {
+      hint.textContent = `Requires ${a.job} ${a.reqLevel} — not in this job setup, so it contributes nothing.`;
+      return;
+    }
+    hint.innerHTML =
+      `${B.fmtTime(a.duration)} duration / ${B.fmtTime(a.recast)} recast &middot; ${a.potencyHint} &middot; ` +
+      `<b style="color:var(--mist);">${val}${unit}</b>${overridden ? ' (override)' : ' (derived)'}`;
+  });
+
+  // The state distribution, and what each state is worth in stat terms. Damage per
+  // state lands in the results panel, which is the only place that has run a sim.
+  const states = buffStates();
+  const marginal = {};
+  B.ABILITY_IDS.forEach(id => {
+    marginal[id] = states.reduce((t, s) => t + (s.active.indexOf(id) !== -1 ? s.prob : 0), 0);
+  });
+
+  // Hit rate is shown after the weapon's cap, so a Hasso accuracy bonus that the
+  // cap eats doesn't read as a gain it isn't.
+  const hrCap = selectedWeapon().hitRateCap;
+  const rows = states.map((s, i) => {
+    const pct = (s.prob * 100).toFixed(s.prob * 100 < 10 ? 1 : 0);
+    return `<div class="buff-state${i === 0 ? ' modal' : ''}">` +
+      `<span>${i === 0 ? '&#9656; ' : '&nbsp;&nbsp;'}${s.label}</span>` +
+      `<span><b>${pct}%</b> of WSs &middot; STR ${s.str} &middot; ATT ${s.att} ` +
+      `&middot; hit ${clamp(s.hitRate, 20, hrCap)}%</span>` +
+      `</div>`;
+  }).join('');
+
+  const marginalLine = B.ABILITY_IDS
+    .filter(id => marginal[id] > 0)
+    .map(id => `${B.ABILITIES[id].name} ${(marginal[id] * 100).toFixed(0)}%`)
+    .join(' &middot; ') || 'none';
+
+  $('buffSummary').innerHTML =
+    `Rotation states (&#9656; = modal, used for the tables and chart markers below):` +
+    `<div class="buff-states">${rows}</div>` +
+    `<div style="margin-top:6px;">Realised uptime: ${marginalLine}</div>`;
+}
+
+function selectedWeapon(){
+  const opt = $('wsType').selectedOptions[0];
+  return { cap: +opt.dataset.cap, hitRateCap: +opt.dataset.hrcap };
+}
+
+// --- parameter object handed to the shared engine ---
+
+function readParams(){
+  const w = selectedWeapon();
+  const states = buffStates();
+  return {
+    aLvl: num('aLvl'),
+    // str/att/hitRate are the modal state's values. The engine ignores them when
+    // buffStates is present -- it reads each state's own copy -- but they keep the
+    // param object self-describing for a console call that drops buffStates.
+    str: states[0].str,
+    tp: num('tp'),
+    wDmg: num('wDmg'),
+    wRank: num('wRank'),
+    att: states[0].att,
+    gearFTP: checked('gearFTP') ? 0.1 : 0,
+    buffStates: states,
+
+    tLvl: num('tLvl'),
+    vit: num('vit'),
+    def: num('def'),
+    lvlCorrection: checked('lvlCorrection'),
+    resistMult: num('resistMult'),
+
+    weaponCap: w.cap,
+    hitRateCap: w.hitRateCap,
+    numHits: Math.max(1, num('numHits')),
+    ftpMod: [num('ftp1'), num('ftp2'), num('ftp3')],
+    multiHitFTP: checked('multiHitFTP'),
+    adoulin: checked('adoulinWS'),
+    wscWeight: num('wscWeight'),
+    wscStat: $('wscStat').value,
+    wscGear: num('wscGear'),
+    critRate: num('critRate'),
+    critDmg: num('critDmg'),
+    hitRate: num('hitRate'),
+    wsdPercent: num('wsdPercent'),
+    dlPlus: num('dlPlus') / 100,
+    dlPercent: 1 + (num('dlPercent') / 100),
+
+    hybridOn: checked('hybridOn'),
+    magicDmg: num('magicDmg'),
+    matt: num('matt'),
+    mdef: num('mdef'),
+  };
+}
+
+// --- shared components ---
+
+const histogram = FFXI.components.histogram.create({
+  mount: { canvas: 'hist', tooltip: 'histTooltip' },
+  xLabel: 'Damage', yLabel: 'Hits', unit: 'hit',
+});
+
+const fstrPanel = FFXI.components.fstrPanel.create({
+  mount: { table: 'fstrTable', canvas: 'fstrChart', tooltip: 'fstrTooltip', summary: 'fstrSummary' },
+  getInputs: () => ({
+    str: getEffectiveSTR(), vit: num('vit'), weaponRank: num('wRank'), note: modalNote(),
+  }),
+});
+
+const attackPanel = FFXI.components.attackPanel.create({
+  mount: { table: 'attackTable', canvas: 'attackChart', tooltip: 'attackTooltip', summary: 'attackSummary' },
+  getInputs: () => ({
+    att: getEffectiveATT(),
+    def: num('def'),
+    weaponCap: selectedWeapon().cap,
+    dlPlus: num('dlPlus') / 100,
+    dlPercent: 1 + (num('dlPercent') / 100),
+    note: modalNote(),
+  }),
+});
+
+const mobSelector = FFXI.components.mobSelector.create({
+  mount: {
+    zoneSelect: 'zoneSelect', mobSelect: 'mobSelect', mobMeta: 'mobMeta',
+    output: 'mobOut',
+    mLvl: 'mLvl', sLvl: 'sLvl',
+    famVitRank: 'famVitRank', mainVitRank: 'mainVitRank', subVitRank: 'subVitRank',
+    defRank: 'defRank', statMult: 'statMult', subCurveZone: 'subCurveZone',
+  },
+  defaultZone: '42',
+  // Called from recalcAll(), which re-renders everything downstream itself.
+  onDerive: (r) => {
+    $('vit').value = r.VIT;
+    $('def').value = r.DEF;
+    $('tLvl').value = r.level;
+    // These writes bypass the input/change events the dirty tracker listens for.
+    if (presets) presets.refreshStates();
+  },
+});
+
+// --- simulation ---
+
+let lastSim = null;
+
+// Damage per buff state. Only worth showing when the buffs actually vary -- with a
+// single state it would just restate the headline number.
+function renderStateBreakdown(s){
+  const out = $('outStates');
+  if (!s.states || s.states.length < 2) { out.innerHTML = ''; return; }
+  out.innerHTML = s.states.map((st, i) => {
+    const pct = (st.prob * 100).toFixed(st.prob * 100 < 10 ? 1 : 0);
+    return `<div class="buff-state${i === 0 ? ' modal' : ''}">` +
+      `<span>${st.label}</span>` +
+      `<span>${pct}% of WSs &middot; avg <b>${Math.round(st.avgAll).toLocaleString()}</b>` +
+      ` &middot; on hit ${Math.round(st.avgHit).toLocaleString()}</span>` +
+      `</div>`;
+  }).join('');
+}
+
+function runSimulation(){
+  const p = readParams();
+  const trials = clamp(num('trials') || 20000, 100, 200000);
+  const s = FFXI.damage.simulate(p, trials);
+  lastSim = s;
+
+  $('outAvg').textContent = Math.round(s.avgAll).toLocaleString();
+  $('outAvgHit').textContent = Math.round(s.avgHit).toLocaleString();
+  $('outMin').textContent = s.min.toLocaleString();
+  $('outMax').textContent = s.max.toLocaleString();
+  $('outPhys').textContent = Math.round(s.avgPhys).toLocaleString();
+  $('outMagic').textContent = Math.round(s.avgMagic).toLocaleString();
+  $('outStd').textContent = Math.round(s.std).toLocaleString();
+  $('outMiss').textContent = (s.missRate * 100).toFixed(1) + '%';
+  $('outHits').textContent = s.avgHitsLanded.toFixed(2) + ' / ' + p.numHits;
+  // Only Hasso moves mainBase (via STR), so this shows a range exactly when Hasso
+  // is modeled at less than full uptime.
+  const baseLabel = s.mainBaseMin === s.mainBaseMax
+    ? s.mainBase.toLocaleString()
+    : `${s.mainBase.toLocaleString()} (${s.mainBaseMin}–${s.mainBaseMax})`;
+  $('outBase').textContent = baseLabel + ' (fSTR ' + s.fSTR + ', WSC ' + s.wsc + ', alpha ' + s.alpha.toFixed(2) + ')';
+
+  renderStateBreakdown(s);
+  $('results').classList.add('show');
+  histogram.draw(s.landedVals);
+  if (presets) presets.recordMetric(s.avgAll);
+  return s;
+}
+
+// --- auto recalculation ---
+//
+// Every field drives the whole page: change anything and the target stats, the
+// food summary, both panels and the simulation are rebuilt. There are no
+// "recalculate" buttons.
+
+// Fields belonging to the mob-derivation panel. Touching one of these makes the
+// next recalc re-derive VIT/DEF into the hidden target fields; leaving them alone
+// keeps whatever is in those fields (page defaults, or a loaded preset).
+const MOB_FIELD_IDS = new Set([
+  'zoneSelect', 'mobSelect', 'mLvl', 'sLvl',
+  'famVitRank', 'mainVitRank', 'subVitRank', 'defRank', 'statMult', 'subCurveZone',
+]);
+
+// The presets widget's own controls are chrome, not calculator inputs.
+const NON_FIELD_IDS = new Set(['presetName', 'presetSlotPick', 'presetImportFile']);
+
+let pendingDerive = false;
+let recalcTimer = null;
+
+function recalcAll(){
+  if (pendingDerive) {
+    pendingDerive = false;
+    mobSelector.derive();   // writes #vit / #def / #tLvl through onDerive
+  }
+  renderFoodSummary();
+  renderBuffSummary();
+  fstrPanel.render();
+  attackPanel.render();
+  runSimulation();
+}
+
+// Typing in a number field fires `input` per keystroke, so those are debounced;
+// discrete `change` events (selects, checkboxes, blur, stepper) run right away.
+function scheduleRecalc(delay){
+  clearTimeout(recalcTimer);
+  recalcTimer = setTimeout(recalcAll, delay === undefined ? 180 : delay);
+}
+
+['input', 'change'].forEach(evt => {
+  document.addEventListener(evt, (e) => {
+    const el = e.target;
+    if (!el || !el.id || NON_FIELD_IDS.has(el.id)) return;
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) return;
+    if (MOB_FIELD_IDS.has(el.id)) pendingDerive = true;
+    scheduleRecalc(evt === 'change' ? 0 : 180);
+  });
+});
+
+// Redraw only — re-simulating here would reshuffle every number on a window drag.
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (fstrPanel.hasRendered()) fstrPanel.render();
+    if (attackPanel.hasRendered()) attackPanel.render();
+    if (lastSim) histogram.draw(lastSim.landedVals);
+  }, 120);
+});
+
+// --- init ---
+
+recalcAll();
+
+presets = FFXI.presets.create({
+  storageKey: 'ws_damage_calc_presets_v1',
+  slotCount: 10,
+  metricLabel: 'Avg dmg',
+  exportName: 'ws_calc_presets.json',
+  // Zone rebuilds the mob list, and mob writes into mLvl/sLvl and the rank
+  // selects, so both must be restored (with their change events) before the rest.
+  applyFirst: ['zoneSelect', 'mobSelect'],
+  mount: {
+    slots: 'presetSlots', status: 'presetStatus', name: 'presetName',
+    slotPick: 'presetSlotPick', saveBtn: 'presetSaveBtn',
+    exportBtn: 'presetExport', importBtn: 'presetImport',
+    importFile: 'presetImportFile', warning: 'storageWarning',
+  },
+  onApply: () => {
+    // A preset carries its own saved #vit/#def/#tLvl, so the zone/mob change
+    // events it fires while restoring must not trigger a re-derivation on top.
+    pendingDerive = false;
+    scheduleRecalc(0);
+  },
+});
+
+// Kept as page globals so the existing console-validation workflow keeps working.
+window.calcFSTR_PC = FFXI.damage.calcFSTR_PC;
+window.fTPInterp = FFXI.damage.fTPInterp;
+window.calculateMeleePDIF = FFXI.damage.calculateMeleePDIF;
+// Buff plumbing, same reason. buffStates() is the exact rotation distribution, so
+// its probabilities can be checked against duration/recast by hand, and dropping
+// p.buffStates from readParams() gives the unbuffed baseline to diff against.
+window.buffStates = buffStates;
+window.buffPotency = buffPotency;
+window.jobSetup = jobSetup;
+</script>
+</body>
+</html>

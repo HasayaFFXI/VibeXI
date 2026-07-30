@@ -1,0 +1,227 @@
+/* ws_calculator page styling.
+   Loads AFTER ../../../shared-ui/css/ffxi-theme.css, which supplies the palette
+   and every primitive the app draws with: .wrap, .card, .field, inputs, buttons,
+   .stat, table.data, .chart-wrap, .chart-tip, footer.
+
+   What lives here is only what no other app would want -- the mob-derivation
+   grid, the buff/uptime table, the preset slots, the run bar and the results
+   panel. If a rule below starts looking generally useful, move it up to the
+   shared sheet rather than copying it into the next app. */
+
+/* --------------------------------------------------- mob derivation panel */
+
+.mob-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px 20px;
+}
+@media (max-width: 1500px) { .mob-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width:  720px) { .mob-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Label above field rather than beside it -- six columns is too narrow for the
+   shared .field's side-by-side layout. */
+.mob-grid .field {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border-bottom: none;
+}
+.mob-grid .field label { font-size: 12px; }
+.mob-grid input[type=number], .mob-grid select { width: 100%; }
+
+.mob-grid .field-zone, .mob-grid .field-mob { grid-column: span 3; }
+.mob-grid .field-meta { grid-column: 1 / -1; }
+@media (max-width: 1500px) {
+  .mob-grid .field-zone, .mob-grid .field-mob { grid-column: span 2; }
+}
+@media (max-width: 720px) {
+  .mob-grid .field-zone, .mob-grid .field-mob { grid-column: 1 / -1; }
+}
+
+.mob-out {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.mob-out b { color: var(--good); }
+.mob-out .warn { color: var(--brass); }
+
+/* Three numbers on one row (fTP tables). */
+.row2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.row2 input { width: 100%; }
+
+/* ------------------------------------------------------------------ buffs */
+
+/* Job-ability rows: name on the left, uptime and potency in matched columns so
+   the three abilities read as one table. */
+.buff-jobs { display: grid; grid-template-columns: 1fr 1fr 68px; gap: 8px; }
+.buff-jobs select, .buff-jobs input[type=number] { width: 100%; }
+
+.buff-grid { display: grid; gap: 0; }
+.buff-grid .buff-head,
+.buff-grid .buff-row {
+  display: grid;
+  grid-template-columns: 1fr 88px 88px;
+  gap: 8px;
+  align-items: center;
+}
+.buff-grid .buff-head {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  padding: 6px 0 4px;
+}
+.buff-grid .buff-head span:not(:first-child) { text-align: right; }
+.buff-grid .buff-row {
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--hair);
+}
+.buff-grid .buff-row:last-child { border-bottom: none; }
+.buff-grid .buff-row label { font-size: 12.5px; color: var(--mist); }
+.buff-grid .buff-row input[type=number] { width: 100%; }
+/* Job requirement not met -- the ability contributes nothing, so say so rather
+   than silently ignoring whatever is typed in the fields. */
+.buff-grid .buff-row.unavailable label { color: var(--dim); }
+.buff-grid .buff-row.unavailable .hint { color: var(--blade-dim); }
+
+.buff-states { display: grid; gap: 3px; margin-top: 8px; }
+/* Flex rather than two grid columns so the state name and its stats sit on one
+   line in the wide results panel but fall onto separate lines inside a narrow
+   card, instead of the name itself wrapping mid-label. */
+.buff-states .buff-state {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mist);
+}
+.buff-states .buff-state > span { white-space: nowrap; }
+.buff-states .buff-state.modal { color: var(--bone); }
+.buff-states .buff-state b { color: var(--brass); font-weight: 500; }
+
+/* ---------------------------------------------------------------- presets */
+
+.presets-card { margin-bottom: 28px; }
+
+.preset-slots {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (max-width: 640px) { .preset-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.preset-slot {
+  position: relative;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 9px 10px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.preset-slot:hover { border-color: var(--brass); }
+.preset-slot.occupied { border-color: var(--blade-dim); }
+.preset-slot.active {
+  border-color: var(--good);
+  box-shadow: inset 0 0 0 1px var(--good);
+  background: color-mix(in srgb, var(--good) 12%, var(--surface2));
+}
+.preset-slot.active.dirty {
+  border-color: var(--brass);
+  box-shadow: inset 0 0 0 1px var(--brass);
+  background: color-mix(in srgb, var(--brass) 12%, var(--surface2));
+}
+.preset-slot .slot-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--mist);
+}
+.preset-slot .slot-state {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+.preset-slot.active .slot-state { color: var(--good); }
+.preset-slot.active.dirty .slot-state { color: var(--brass); }
+.preset-slot .slot-name {
+  font-size: 12.5px;
+  color: var(--bone);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  padding-right: 44px;
+}
+.preset-slot.empty .slot-name { color: var(--dim); font-style: italic; }
+.preset-slot .slot-avg { font-size: 10.5px; color: var(--blade); margin-top: 2px; }
+
+.preset-slot .slot-del,
+.preset-slot .slot-clone,
+.preset-slot .slot-rename {
+  position: absolute;
+  top: 4px;
+  color: var(--mist);
+  font-size: 12px;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+}
+.preset-slot .slot-del    { right: 6px; }
+.preset-slot .slot-clone  { right: 22px; }
+.preset-slot .slot-rename { right: 38px; }
+.preset-slot .slot-del:hover    { color: var(--blade); }
+.preset-slot .slot-clone:hover  { color: var(--brass); }
+.preset-slot .slot-rename:hover { color: var(--brass); }
+
+.preset-status {
+  font-size: 12px;
+  color: var(--mist);
+  margin-bottom: 12px;
+  min-height: 16px;
+}
+.preset-status b { color: var(--bone); }
+.preset-status .clean { color: var(--good); }
+.preset-status .dirty { color: var(--brass); }
+.preset-status button.link-btn { margin-left: 10px; }
+
+.preset-save-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.preset-save-row input[type=text] { flex: 1; min-width: 160px; }
+.preset-io { margin-left: auto; display: flex; gap: 14px; }
+
+/* --------------------------------------------------- fSTR / attack panels */
+
+.fstr-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .fstr-layout { grid-template-columns: 1fr; } }
+
+/* --------------------------------------------------- run bar and results */
+
+.run-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+
+.trials-field { display: flex; align-items: center; gap: 8px; }
+.trials-field label { font-size: 12px; color: var(--mist); }
+.trials-field input { width: 88px; }
+
+.results-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  display: none;
+}
+.results-panel.show { display: block; }
+.results-panel .breakdown { margin-bottom: 20px; }

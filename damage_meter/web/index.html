@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FFXI Damage Meter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared/css/ffxi-theme.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar sticky">
+  <div class="brand">
+    <h1>Damage <span>Meter</span></h1>
+    <div class="src" id="srcLine">
+      <span class="dot" id="liveDot"></span>
+      <span id="srcFile">connecting&hellip;</span>
+      <span class="sep">&middot;</span>
+      <span id="srcCount">0 events</span>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button type="button" class="ghost" id="themeBtn" title="Toggle light / dark">Light</button>
+  </div>
+</header>
+
+<!-- One filter row above everything it scopes; every card re-renders off it. -->
+<div class="filterbar" role="group" aria-label="Filters">
+  <div class="filter">
+    <span class="filter-label">Range</span>
+    <div class="segmented" id="rangeSeg" role="radiogroup" aria-label="Time range">
+      <button type="button" role="radio" data-range="all" aria-checked="true" class="on">All</button>
+      <button type="button" role="radio" data-range="fight" aria-checked="false">Latest fight</button>
+      <button type="button" role="radio" data-range="300" aria-checked="false">5m</button>
+      <button type="button" role="radio" data-range="900" aria-checked="false">15m</button>
+      <button type="button" role="radio" data-range="3600" aria-checked="false">60m</button>
+    </div>
+  </div>
+
+  <div class="filter">
+    <span class="filter-label">Show</span>
+    <div class="segmented" id="sideSeg" role="radiogroup" aria-label="Which side">
+      <button type="button" role="radio" data-side="ally" aria-checked="true" class="on">Party</button>
+      <button type="button" role="radio" data-side="mob" aria-checked="false">Monsters</button>
+      <button type="button" role="radio" data-side="all" aria-checked="false">Both</button>
+    </div>
+  </div>
+
+  <div class="filter grow">
+    <span class="filter-label" id="charLabel">Characters</span>
+    <div class="segmented tight">
+      <button type="button" id="pickAll">All</button>
+      <button type="button" id="pickNone">None</button>
+    </div>
+    <div class="chips" id="actorChips" role="group" aria-labelledby="charLabel">
+      <span class="muted small">&mdash;</span>
+    </div>
+  </div>
+
+  <div class="filter">
+    <button type="button" class="ghost" id="pauseBtn" aria-pressed="false">Pause</button>
+    <button type="button" class="ghost" id="resetBtn"
+            title="Drop every event collected so far and start counting from here">Reset</button>
+  </div>
+</div>
+
+<main class="wrap stack">
+
+  <!-- Hero row: exactly one hero figure per view -->
+  <section class="tiles">
+    <div class="tile hero">
+      <div class="tile-label">Total damage</div>
+      <div class="tile-value hero-value" id="tTotal">0</div>
+      <div class="tile-sub" id="tTotalSub">no events in range</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Party DPS</div>
+      <div class="tile-value" id="tDps">0</div>
+      <div class="tile-sub" id="tDpsSub">&mdash;</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Top DPS</div>
+      <div class="tile-value who">
+        <i class="who-dot" id="tTopDot"></i><span class="who-name" id="tTopName">&mdash;</span>
+      </div>
+      <div class="tile-sub" id="tTopSub">&mdash;</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Biggest hit</div>
+      <div class="tile-value" id="tBig">0</div>
+      <div class="tile-sub" id="tBigSub">&mdash;</div>
+    </div>
+  </section>
+
+  <!-- Cumulative damage over time -->
+  <section class="card" data-popout="line" data-popout-title="Cumulative damage">
+    <div class="card-head">
+      <div>
+        <h2>Cumulative damage</h2>
+        <p class="card-sub">Running total per character. Hover for every character at one instant.</p>
+      </div>
+    </div>
+    <div class="legend" id="lineLegend"></div>
+    <div class="chart-wrap tall"><canvas id="lineChart"></canvas></div>
+    <details class="tableview">
+      <summary>Show data table</summary>
+      <div class="scroll-x"><table class="data" id="lineTable"></table></div>
+    </details>
+  </section>
+
+  <div class="two-col">
+    <!-- Damage by character -->
+    <section class="card" data-popout="bars" data-popout-title="Damage by character">
+      <div class="card-head">
+        <div>
+          <h2>Damage by character</h2>
+          <p class="card-sub">Total dealt in the selected range.</p>
+        </div>
+      </div>
+      <div class="chart-wrap" id="barsWrap"><canvas id="barsChart"></canvas></div>
+      <div class="scroll-x">
+        <table class="data" id="actorTable"></table>
+      </div>
+    </section>
+
+    <!-- Per-skill breakdown -->
+    <section class="card" data-popout="actions" data-popout-title="Actions">
+      <div class="card-head">
+        <div>
+          <h2>Actions</h2>
+          <p class="card-sub">Every attack and weaponskill. Select a row to drill down.</p>
+        </div>
+      </div>
+      <div class="scroll-y scroll-x">
+        <table class="data selectable" id="actionTable"></table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Drill-down -->
+  <section class="card" id="drillCard" data-popout="drill" data-popout-title="Drill-down" hidden>
+    <div class="card-head">
+      <div>
+        <h2 id="drillTitle">Drill-down</h2>
+        <p class="card-sub" id="drillSub">&mdash;</p>
+      </div>
+      <button type="button" class="ghost" id="drillClose">Close</button>
+    </div>
+
+    <div class="tiles compact" id="drillTiles"></div>
+
+    <div class="chart-wrap"><canvas id="histChart"></canvas></div>
+    <p class="chart-cap" id="histCap"></p>
+
+    <details class="tableview">
+      <summary>Show every hit</summary>
+      <div class="scroll-y max">
+        <table class="data" id="drillTable"></table>
+      </div>
+    </details>
+  </section>
+
+  <!-- Diagnostics -->
+  <section class="card" data-popout="diag" data-popout-title="Diagnostics">
+    <details>
+      <summary><h2 class="inline">Diagnostics</h2></summary>
+      <div class="diag">
+        <div>
+          <h3>Name classification</h3>
+          <p class="card-sub">
+            Monsters are detected from the article &mdash; &ldquo;the Goblin Pathfinder&rdquo;.
+            Named NMs have no article, so if one is misfiled, flip it here.
+          </p>
+          <div class="scroll-y"><table class="data" id="rosterTable"></table></div>
+        </div>
+        <div>
+          <h3>Unrecognised damage lines</h3>
+          <p class="card-sub">Lines containing a damage number that no parse rule matched.</p>
+          <div class="scroll-y"><pre class="raw" id="unparsed">none</pre></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+</main>
+
+<script src="/shared/js/theme.js"></script>
+<script src="lib/parser.js"></script>
+<script src="lib/stats.js"></script>
+<script src="lib/chart.js"></script>
+<script src="lib/popout.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

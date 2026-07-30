@@ -1,0 +1,193 @@
+/* damage_meter page styling.
+   Loads AFTER /shared/css/ffxi-theme.css (served out of projects/shared-ui by
+   damage-meter.ps1), which supplies the palette and every primitive this page draws
+   with: .topbar, .card, .tile, table.data, .chart-wrap, .chart-tip, .segmented,
+   .chip, button.ghost.
+
+   What lives here is only what no other app would want -- the filter bar, the
+   log-source indicator and the diagnostics panel. If a rule below starts looking
+   generally useful, move it up to the shared sheet rather than copying it into
+   the next app. */
+
+:root {
+  /* Height of .topbar, so .filterbar can pin directly under it. Recompute if
+     the topbar's padding or title size changes. */
+  --topbar-h: 57px;
+}
+
+/* This page is denser than the calculator, so it runs a narrower column. */
+main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
+
+/* -------------------------------------------------------- source indicator */
+
+.src {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--mist);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.src .sep { opacity: 0.5; }
+
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--dim);
+  flex: none;
+}
+.dot.live  { background: var(--good); }
+.dot.stale { background: var(--brass); }
+.dot.err   { background: var(--critical); }
+
+/* ---------------------------------------------------------------- filterbar */
+
+/* One filter row above everything it scopes; every card re-renders off it. */
+.filterbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 10px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 19;
+}
+.filter { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.filter.grow { flex: 1 1 240px; }
+.filter-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mist);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- name tiles */
+
+/* A tile whose value is a character name instead of a number. Names are longer
+   and far less predictable than digits, so this one runs a step smaller and
+   truncates rather than widening the tile; the dot carries the character's
+   chart hue, which is why the name itself stays in ink (series colours are
+   graded for marks, not for body text). */
+.tile-value.who { display: flex; align-items: center; gap: 8px; font-size: 22px; }
+.tile-value.who .who-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.tile-value.who .who-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* -------------------------------------------------------------- diagnostics */
+
+.diag {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: 12px;
+}
+@media (max-width: 900px) { .diag { grid-template-columns: minmax(0, 1fr); } }
+
+.roster-toggle {
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1px 8px;
+  background: transparent;
+  color: var(--mist);
+}
+.roster-toggle:hover { background: var(--wash); color: var(--brass); border-color: var(--brass); }
+
+/* Refetch holds the previous render rather than flashing a skeleton. */
+.refreshing main { opacity: 0.82; transition: opacity 0.12s linear; }
+
+/* ---------------------------------------------------------------- pop-outs */
+
+/* Everything below dresses lib/popout.js. It stays here rather than in the
+   shared sheet because only this app pops panels out; the one piece that is
+   genuinely general -- .card-tools -- did move up. The same stylesheet is
+   re-linked into each child window, which is why the .pop-doc rules live in a
+   sheet the main page also loads and simply never match there. */
+
+/* A card with no head of its own (Diagnostics is a bare <details>) gets its
+   controls pinned to the corner instead. */
+.card[data-popout] { position: relative; }
+.card-tools.free { position: absolute; top: 16px; right: 18px; z-index: 1; }
+
+.pop-note {
+  font-size: 11px;
+  color: var(--critical);
+  max-width: 260px;
+  line-height: 1.35;
+}
+
+/* The stand-in left in the page while a panel is away. Deliberately quiet and
+   short -- it is a signpost, not a card. */
+.popout-ph {
+  border-style: dashed;
+  border-color: var(--axis);
+  background: transparent;
+  align-self: start;
+}
+.ph-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.popout-ph h2 { margin-bottom: 4px; }
+
+/* -------------------------------------------------- inside a popped-out window */
+
+.pop-doc { min-height: 100vh; }
+
+.pop-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.pop-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brass);
+}
+.pop-actions { display: flex; align-items: center; gap: 10px; }
+.pop-flag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--brass);
+  border-radius: var(--radius);
+  padding: 2px 7px;
+}
+
+main.pop-body { padding: 14px 16px 26px; gap: 14px; }
+/* The card is the whole window here, so its own frame is redundant chrome. */
+.pop-body > .card { border: 0; padding: 0; background: transparent; }
+.pop-body > .card > .card-head { margin-bottom: 2px; }
+/* The window bar is showing this card's heading, so the card's own copy would
+   be the same words twice. The sub-heading under it still earns its place. */
+.pop-body > .card > .card-head h2 { display: none; }
+.pop-body > .card > .card-head .card-sub { margin-top: 0; }
+.pop-empty { color: var(--faint); font-size: 12.5px; margin: 4px 0 0; }
+
+/* Charts follow the window instead of the fixed .chart-wrap heights: a panel
+   given its own window was given it to be looked at larger. The bars chart is
+   exempt because app.js sets its height inline from the row count. */
+.pop-body .chart-wrap      { height: min(52vh, 560px); }
+.pop-body .chart-wrap.tall { height: min(64vh, 680px); }
+.pop-body .scroll-y        { max-height: min(52vh, 560px); }
+.pop-body .scroll-y.max    { max-height: min(60vh, 640px); }

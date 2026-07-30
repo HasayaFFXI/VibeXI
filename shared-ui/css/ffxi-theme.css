@@ -1,0 +1,738 @@
+/* =============================================================================
+   FFXI shared design system
+   -----------------------------------------------------------------------------
+   One stylesheet, shared by every app under projects/. The look is ws_calculator's:
+   a dark ink field, bone text, blade-red and brass accents, Shippori Mincho for
+   headings and JetBrains Mono for anything numeric.
+
+   Consumed by:
+     ws_calculator   pages/*.html   <link href="../../shared-ui/css/ffxi-theme.css">
+     damage_meter   web/index.html <link href="/shared/css/ffxi-theme.css">
+                (damage-meter.ps1 maps the /shared/ URL prefix onto this directory)
+
+   Each app then links its OWN stylesheet after this one for rules nothing else
+   needs. Anything a second app could plausibly want belongs here instead.
+
+   Deliberately a single file with no @import: @import of a relative URL from a
+   file:// stylesheet is unreliable, and ws_calculator has to keep working when a page
+   is double-clicked off disk.
+
+   Dark is the default -- ws_calculator never sets data-theme at all. Light is an
+   opt-in override for apps with a toggle (damage_meter), and is the same identity
+   re-stepped for a pale surface, not an inversion.
+   ============================================================================= */
+
+/* ------------------------------------------------------------------ tokens */
+
+:root {
+  /* Type. The webfonts are optional: every stack degrades to something sane if
+     fonts.googleapis.com is unreachable or the page is offline. */
+  --font-display: 'Shippori Mincho', Georgia, 'Times New Roman', serif;
+  --font-sans:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  /* Chrome -- dark (default) */
+  --ink:        #14161c;   /* page field                            */
+  --surface:    #1b1e27;   /* card                                  */
+  --surface2:   #21242f;   /* inset: inputs, table heads, tooltips  */
+  --border:     #2d3140;
+  --hair:       rgba(255,255,255,0.06);   /* dashed row separator   */
+  --rule:       rgba(255,255,255,0.05);   /* solid hairline in tables */
+  --wash:       rgba(255,255,255,0.05);   /* hover fill             */
+
+  --bone:       #e8e6df;   /* primary text     */
+  --mist:       #8d92a3;   /* secondary text   */
+  --faint:      #5c6070;   /* hints, captions  */
+  --dim:        #4a4e5c;   /* disabled, footer */
+
+  --blade:      #b8433a;   /* primary accent   */
+  --blade-hot:  #c94f45;   /* :hover on blade  */
+  --blade-dim:  #7a352f;
+  --blade-fill: rgba(184,67,58,0.12);
+  --blade-wash: rgba(184,67,58,0.18);
+  --brass:      #c9a227;   /* secondary accent */
+  --brass-dim:  rgba(201,162,39,0.4);
+  --good:       #6ea67a;
+  --critical:   #b8433a;
+
+  --on-blade:   #fff2ee;   /* text on a blade fill */
+
+  /* Chart furniture. Kept as their own tokens because canvas reads them by
+     name -- see shared-ui/js/theme.js. */
+  --grid: rgba(255,255,255,0.05);
+  --axis: #2d3140;
+  --axis-alt: #3a3f52;
+
+  /* Categorical series slots, in the validated order: blue, orange, aqua,
+     yellow, magenta, green, violet, red. These encode DATA, not chrome, so they
+     keep their own accessibility-checked steps rather than being folded into the
+     blade/brass identity -- past eight, callers go muted rather than inventing a
+     ninth hue. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #4f9e2f;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  --radius:    4px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --shadow:    0 4px 12px rgba(0,0,0,0.4);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --ink:        #eae6dc;
+  --surface:    #f7f4ec;
+  --surface2:   #efeade;
+  --border:     #d6cfbd;
+  --hair:       rgba(20,22,28,0.10);
+  --rule:       rgba(20,22,28,0.08);
+  --wash:       rgba(20,22,28,0.05);
+
+  --bone:       #1c1a16;
+  --mist:       #5f5a4e;
+  --faint:      #857e6e;
+  --dim:        #9a9382;
+
+  --blade:      #9d332b;
+  --blade-hot:  #b33e35;
+  --blade-dim:  #c58b85;
+  --blade-fill: rgba(157,51,43,0.10);
+  --blade-wash: rgba(157,51,43,0.14);
+  --brass:      #8a6a11;
+  --brass-dim:  rgba(138,106,17,0.4);
+  --good:       #3d7a4d;
+  --critical:   #9d332b;
+
+  --on-blade:   #fdf3f0;
+
+  --grid: rgba(20,22,28,0.07);
+  --axis: #c3bba6;
+  --axis-alt: #b3aa94;
+
+  --series-1: #2a78d6;
+  --series-2: #c94f18;
+  --series-3: #12855c;
+  --series-4: #9a6800;
+  --series-5: #c23a6d;
+  --series-6: #3d7f21;
+  --series-7: #5a4bc4;
+  --series-8: #cf3b3a;
+
+  --shadow: 0 4px 12px rgba(20,22,28,0.16);
+
+  color-scheme: light;
+}
+
+/* ----------------------------------------------------------- reset & layout */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 20% -10%, var(--surface2) 0%, transparent 55%),
+    var(--ink);
+  color: var(--bone);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The one content column. Apps narrow it by overriding max-width. */
+.wrap {
+  width: 100%;
+  max-width: 1720px;
+  margin: 0 auto;
+  padding: 28px 28px 48px;
+}
+.wrap.stack { display: grid; gap: 18px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+@media (max-width: 1500px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width:  720px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.two-col {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+@media (max-width: 1000px) { .two-col { grid-template-columns: minmax(0, 1fr); } }
+
+.span2 { grid-column: span 2; }
+.span-all { grid-column: 1 / -1; }
+
+.scroll-x { overflow-x: auto; }
+.scroll-y { overflow-y: auto; max-height: 340px; }
+.scroll-y.max { max-height: 420px; }
+
+/* ------------------------------------------------------------- typography */
+
+h1, h2, h3 { margin: 0; }
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  color: var(--bone);
+}
+/* The blade-red word in a title. */
+h1 span { color: var(--blade); }
+
+h3 {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mist);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: var(--mist);
+  font-size: 13px;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.muted { color: var(--mist); }
+.small { font-size: 12px; }
+.mono  { font-family: var(--font-mono); }
+.num   { font-variant-numeric: tabular-nums; }
+
+code {
+  font-family: var(--font-mono);
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  color: var(--brass);
+}
+
+pre.raw {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--mist);
+  font-family: var(--font-mono);
+}
+
+/* --------------------------------------------------------------- page head */
+
+/* In-flow title block with a hairline under it. */
+.page-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+/* Full-bleed application bar. `.sticky` pins it. */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.topbar.sticky { position: sticky; top: 0; z-index: 20; }
+.topbar h1 { font-size: 21px; }
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ------------------------------------------------------------------- cards */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px 20px;
+  min-width: 0;
+}
+/* A card that owns its whole row, called out with a blade edge. */
+.card.wide { grid-column: 1 / -1; border-color: var(--blade-dim); }
+
+.card h2,
+.card-head h2 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brass);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* The brass tick before a card title -- the signature mark of this system. */
+.card h2::before,
+.card-head h2::before {
+  content: "";
+  width: 10px;
+  height: 1px;
+  background: var(--brass);
+  display: inline-block;
+  flex: none;
+}
+h2.inline { display: inline-flex; }
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-head h2 { margin-bottom: 4px; }
+
+/* The controls that belong to one card, grouped on the far side of its head so
+   the head's space-between keeps them together instead of spreading them. */
+.card-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* A note under a card title, or under anything else. */
+.card-sub,
+.chart-cap {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--faint);
+}
+.chart-cap { margin-top: 8px; }
+
+/* An unemphasised qualifier riding along in a card title. */
+.card h2 .opt {
+  font-family: var(--font-sans);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  color: var(--mist);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ fields */
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--hair);
+}
+.field:last-child { border-bottom: none; }
+.field label { font-size: 12.5px; color: var(--mist); flex: 1; }
+.field .hint,
+.hint {
+  display: block;
+  font-size: 10.5px;
+  color: var(--faint);
+  margin-top: 1px;
+}
+
+input[type=number],
+input[type=text],
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+}
+input[type=number] { width: 104px; text-align: right; }
+input[type=text]   { width: auto; font-family: var(--font-sans); padding: 8px 10px; }
+select             { width: 150px; text-align: left; }
+
+input[type=number]:focus,
+input[type=text]:focus,
+select:focus { outline: none; border-color: var(--blade); }
+input:disabled, select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.checkbox-field { display: flex; align-items: center; gap: 8px; padding: 7px 0; }
+.checkbox-field input { accent-color: var(--blade); width: 15px; height: 15px; }
+.checkbox-field label { font-size: 12.5px; color: var(--bone); }
+
+/* ----------------------------------------------------------------- buttons */
+
+button.primary {
+  background: var(--blade);
+  color: var(--on-blade);
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  padding: 13px 28px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+button.primary:hover  { background: var(--blade-hot); }
+button.primary:active { transform: translateY(1px); }
+
+button.secondary {
+  background: transparent;
+  color: var(--bone);
+  border: 1px solid var(--border);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 11px 22px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+button.secondary:hover { border-color: var(--brass); color: var(--brass); }
+
+button.link-btn {
+  background: none;
+  border: none;
+  color: var(--mist);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+button.link-btn:hover { color: var(--brass); }
+
+/* Small bordered control for toolbars. Pressed state fills brass. */
+button.ghost {
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--mist);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 12px;
+}
+button.ghost:hover:not(:disabled) { background: var(--wash); color: var(--bone); border-color: var(--brass); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.ghost[aria-pressed="true"] {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.segmented button {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--mist);
+  padding: 5px 12px;
+}
+.segmented button:last-child { border-right: 0; }
+.segmented button:hover { background: var(--wash); color: var(--bone); }
+.segmented button.on {
+  background: var(--blade);
+  color: var(--on-blade);
+  font-weight: 600;
+}
+.segmented.tight button { padding: 4px 9px; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px 3px 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--bone);
+}
+.chip:hover { background: var(--wash); border-color: var(--brass); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+/* Excluded: hollow dot plus muted ink, so "off" reads without relying on hue. */
+.chip[aria-pressed="false"] { color: var(--faint); border-style: dashed; }
+.chip[aria-pressed="false"] i {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1.5px var(--faint);
+}
+
+/* ---------------------------------------------------------- tiles & stats */
+
+/* Left-aligned metric block. */
+.tiles {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px 15px;
+  min-width: 0;
+}
+.tile.hero { border-color: var(--blade-dim); }
+.tile-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mist);
+}
+.tile-value {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 3px;
+  color: var(--bone);
+}
+.hero-value { font-size: 44px; line-height: 1.05; color: var(--blade); }
+.tile-sub { font-size: 11.5px; color: var(--faint); margin-top: 3px; }
+
+.tiles.compact { grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 14px 0 4px; gap: 10px; }
+.tiles.compact .tile { padding: 10px 12px; }
+.tiles.compact .tile-value { font-size: 19px; }
+@media (max-width: 900px) { .tiles.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Centred metric block, for a results panel rather than a dashboard row. */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+@media (max-width: 640px) { .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.stat {
+  text-align: center;
+  padding: 14px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.stat .num {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--bone);
+}
+.stat .lbl {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mist);
+  margin-top: 4px;
+}
+.stat.primary { border-color: var(--blade-dim); }
+.stat.primary .num { color: var(--blade); font-size: 26px; }
+
+/* A run of label/value pairs on one line. */
+.breakdown {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--mist);
+}
+.breakdown b { color: var(--bone); font-family: var(--font-mono); }
+
+/* ------------------------------------------------------------------ tables */
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  margin-top: 10px;
+}
+table.data th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface2);
+  text-align: right;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mist);
+  padding: 8px 10px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+table.data td {
+  text-align: right;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--bone);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+table.data th:first-child,
+table.data td:first-child { text-align: left; font-variant-numeric: normal; }
+
+table.data tr.group td {
+  font-weight: 700;
+  color: var(--bone);
+  background: var(--wash);
+}
+table.data tr.sub td:first-child { padding-left: 24px; color: var(--mist); }
+table.data tr.on td { background: var(--wash); box-shadow: inset 2px 0 0 var(--brass); }
+/* The row matching the caller's current input. */
+table.data tr.current-tier td { background: var(--blade-wash); font-weight: 700; }
+table.data tr.current-tier td:first-child { color: var(--blade); }
+
+table.selectable tbody tr.pick { cursor: pointer; }
+table.selectable tbody tr.pick:hover td { background: var(--wash); }
+
+table.data .swatch {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 7px;
+  flex: none;
+  vertical-align: -1px;
+}
+.bar-cell { position: relative; min-width: 66px; }
+
+/* A scroll box that frames its table. */
+.table-wrap {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.table-wrap table.data { margin-top: 0; }
+
+/* ------------------------------------------------------------------ charts */
+
+/* Height lives here, not in JS -- setupCanvas reads clientHeight. The band for
+   the axis labels is inside the box, so they are never clipped. */
+.chart-wrap { position: relative; height: 210px; margin-top: 10px; }
+.chart-wrap.short { height: 170px; }
+.chart-wrap.mid   { height: 220px; }
+.chart-wrap.tall  { height: 320px; }
+.chart-wrap canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+.chart-tip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  display: none;
+  background: var(--surface2);
+  color: var(--bone);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 9px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+.chart-tip b { color: var(--blade); }
+/* Manually positioned tips (ws_calculator) anchor above the cursor. */
+.chart-tip.anchor-above { transform: translate(-50%, -100%); }
+/* Tips toggled by opacity (damage_meter) stay laid out so their size can be read. */
+.chart-tip.fade {
+  display: block;
+  min-width: 118px;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.08s linear;
+}
+.chart-tip.fade.on { opacity: 1; visibility: visible; }
+.chart-tip-head {
+  font-weight: 700;
+  color: var(--brass);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.chart-tip table { border-collapse: collapse; width: 100%; }
+.chart-tip td { padding: 1px 0; white-space: nowrap; }
+.chart-tip td:first-child { color: var(--mist); padding-right: 14px; }
+.chart-tip td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.chart-tip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; margin-right: 5px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; }
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--mist);
+}
+.legend-item i { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+
+/* -------------------------------------------------------------- disclosure */
+
+details.tableview { margin-top: 12px; }
+details.tableview > summary,
+.card > details > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--mist);
+  list-style: none;
+  user-select: none;
+}
+details.tableview > summary::-webkit-details-marker,
+.card > details > summary::-webkit-details-marker { display: none; }
+details.tableview > summary::before,
+.card > details > summary::before { content: "\25B8\00a0"; color: var(--brass); }
+details[open].tableview > summary::before,
+.card > details[open] > summary::before { content: "\25BE\00a0"; }
+details.tableview > summary:hover,
+.card > details > summary:hover { color: var(--brass); }
+
+/* ------------------------------------------------------------------ footer */
+
+footer {
+  margin-top: 36px;
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}

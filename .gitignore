@@ -1,0 +1,7 @@
+# Generated test logs (damage_meter/tools/gen-test-log.ps1 writes here)
+damage_meter/tools/logs/
+
+# OS / OneDrive noise
+desktop.ini
+Thumbs.db
+.DS_Store
