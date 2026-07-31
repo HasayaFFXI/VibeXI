@@ -6,7 +6,13 @@ Browser-based FFXI tooling. Two apps and the design system they share.
 ws_calculator/   weaponskill damage Monte-Carlo sim — open pages/ws-calculator.html from disk
 damage_meter/    live chat-log damage meter — run Damage-Meter.cmd, then open the served page
 shared-ui/       THE design system both apps load: css/ffxi-theme.css + js/theme.js
+addon/           PLANNED: Ashita addon feeding damage_meter from packets instead of chat text
 ```
+
+`addon/` is design-only so far — see `addon/PLAN.md`. It is a read-only Lua
+addon that must never send anything to the game server; that constraint is
+enforced by an API allowlist rather than by convention, and the plan explains
+how.
 
 No build step, no bundler, no Node and no Python. `ws_calculator` pages are
 opened directly over `file://`; `damage_meter` serves itself from a PowerShell
