@@ -42,12 +42,15 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
 
 /* ---------------------------------------------------------------- filterbar */
 
-/* One filter row above everything it scopes; every card re-renders off it. */
+/* The filter bar above everything it scopes; every card re-renders off it.
+   Two stacked rows, not one wrapping row: the fixed controls know their own
+   width, the character list does not -- a full alliance is 18 chips, and any
+   layout that lets them share a line with the segmented controls squeezes them
+   into a narrow column that grows taller the more characters you have. */
 .filterbar {
   display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 9px;
   padding: 10px 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -55,8 +58,9 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
   top: var(--topbar-h);
   z-index: 19;
 }
+.filter-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
 .filter { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.filter.grow { flex: 1 1 240px; }
+.filter.push { margin-left: auto; }   /* Pause / Reset ride the right edge */
 .filter-label {
   font-size: 10.5px;
   text-transform: uppercase;
@@ -64,6 +68,38 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
   color: var(--mist);
   white-space: nowrap;
 }
+
+/* ------------------------------------------------------- character row */
+
+/* The chips take the whole row less the label and the two bulk buttons, and
+   wrap from there -- 18 names come out as two lines at desktop width. The cap
+   is what keeps a narrow window honest: past three lines the list scrolls
+   inside the bar rather than pushing the page down, because this bar is sticky
+   and every pixel it grows is a pixel of chart nobody sees. */
+.filter-row.chars { gap: 10px; }
+.filter-row.chars .chips {
+  flex: 1 1 320px;
+  max-height: 92px;
+  overflow-y: auto;
+  padding-right: 2px;   /* room for the scrollbar when it appears */
+}
+
+/* Collapsed: the label keeps the count, so "12/18" still says the filter is
+   doing something even with the list put away. */
+.filter-row.chars.collapsed .chips,
+.filter-row.chars.collapsed .segmented { display: none; }
+
+/* Only worth saying while the chips are away: expanded, they say it themselves. */
+.filter-row.chars:not(.collapsed) .char-hint { display: none; }
+.char-hint {
+  font-size: 11.5px;
+  color: var(--faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.ghost.tiny { font-size: 11px; padding: 3px 9px; }
 
 /* ------------------------------------------------------------- name tiles */
 
@@ -140,54 +176,133 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
 
 /* -------------------------------------------------- inside a popped-out window */
 
+/* These windows are meant to sit on top of the game, so every pixel of chrome is
+   a pixel of the fight nobody can see. The bar is one line of 20px, the body has
+   almost no padding, and the card inside gives up its frame, heading and
+   sub-heading entirely -- the window's own title bar already names the panel. */
+
 .pop-doc { min-height: 100vh; }
 
 .pop-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 1px 6px;
+  min-height: 20px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 20;
+  /* Out of the way until wanted: the bar is chrome, the panel is the point. */
+  opacity: 0.45;
+  transition: opacity 0.12s linear;
 }
+.pop-doc:hover .pop-bar,
+.pop-bar:focus-within { opacity: 1; }
+
 .pop-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--brass);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.pop-actions { display: flex; align-items: center; gap: 10px; }
+.pop-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .pop-flag {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 9.5px;
   letter-spacing: 0.04em;
   color: var(--ink);
   background: var(--brass);
   border-radius: var(--radius);
-  padding: 2px 7px;
+  padding: 0 5px;
+}
+.pop-bar button.ghost.tiny { font-size: 10px; padding: 1px 7px; }
+
+/* ------------------------------------------------------------ opacity slider */
+
+/* Drives lib/popout.js's two-step fade: the server makes the OS window itself
+   translucent where it can, and this only fades the document where it cannot --
+   see the "opacity" block in popout.js for why one is not the other. */
+.pop-alpha { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.pop-alpha input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 76px;
+  height: 12px;
+  margin: 0;
+  background: transparent;
+  accent-color: var(--brass);
+  cursor: pointer;
+}
+.pop-alpha input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--axis);
+}
+.pop-alpha input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  margin-top: -3.5px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--brass);
+}
+.pop-alpha input[type="range"]:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+.pop-alpha-val {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--mist);
+  min-width: 27px;      /* "100%" must not shove the buttons around mid-drag */
+  text-align: right;
 }
 
-main.pop-body { padding: 14px 16px 26px; gap: 14px; }
+.pop-alpha button.ghost.tiny { font-size: 9px; padding: 0 5px; letter-spacing: 0.06em; }
+.pop-alpha button.ghost.tiny[aria-pressed="true"] { color: var(--brass); border-color: var(--brass); }
+.pop-alpha-warn { font-size: 9.5px; color: var(--critical); cursor: help; white-space: nowrap; }
+
+/* The punch-out. The background is painted exactly the colour the server hands
+   to LWA_COLORKEY, so those pixels are dropped by the window manager and the
+   game shows through them -- the charts already draw on a cleared canvas, so
+   what is left over the game is lines, numbers and the bar. `background`
+   shorthand, not `background-color`: the shared sheet's body gradient has to go
+   with it, or the punched colour is only the corners. */
+.key-bg .pop-doc { background: var(--pop-key, #010203); }
+
+/* The fallback path: no OS-level transparency available, so fade the document.
+   The class is set by popout.js and only ever lands on a child window's <html>.
+   The background has to be dropped, not faded: a body background propagates to
+   the window canvas, which is painted *outside* the faded layer -- leave it in
+   and the panel fades away over a background that never moves, which reads as
+   "the slider is broken" and is the whole reason this path now says so. */
+.css-alpha .pop-doc { opacity: var(--pop-alpha, 1); background: none; }
+
+main.pop-body { padding: 4px 6px 8px; gap: 8px; }
 /* The card is the whole window here, so its own frame is redundant chrome. */
 .pop-body > .card { border: 0; padding: 0; background: transparent; }
 .pop-body > .card > .card-head { margin-bottom: 2px; }
-/* The window bar is showing this card's heading, so the card's own copy would
-   be the same words twice. The sub-heading under it still earns its place. */
-.pop-body > .card > .card-head h2 { display: none; }
-.pop-body > .card > .card-head .card-sub { margin-top: 0; }
+/* The window bar is showing this card's heading, and there is no room over a
+   game for a paragraph explaining a panel the user chose to float. */
+.pop-body > .card > .card-head h2,
+.pop-body > .card > .card-head .card-sub { display: none; }
 .pop-empty { color: var(--faint); font-size: 12.5px; margin: 4px 0 0; }
+
+/* Scrollbars are chrome too. */
+.pop-doc ::-webkit-scrollbar { width: 6px; height: 6px; }
+.pop-doc ::-webkit-scrollbar-thumb { background: var(--axis); border-radius: 3px; }
+.pop-doc ::-webkit-scrollbar-track { background: transparent; }
 
 /* Charts follow the window instead of the fixed .chart-wrap heights: a panel
    given its own window was given it to be looked at larger. The bars chart is
    exempt because app.js sets its height inline from the row count. */
-.pop-body .chart-wrap      { height: min(52vh, 560px); }
-.pop-body .chart-wrap.tall { height: min(64vh, 680px); }
+.pop-body .chart-wrap      { height: min(62vh, 560px); }
+.pop-body .chart-wrap.tall { height: min(72vh, 680px); }
 .pop-body .scroll-y        { max-height: min(52vh, 560px); }
 .pop-body .scroll-y.max    { max-height: min(60vh, 640px); }

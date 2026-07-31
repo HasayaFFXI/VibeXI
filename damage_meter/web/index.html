@@ -26,8 +26,12 @@
   </div>
 </header>
 
-<!-- One filter row above everything it scopes; every card re-renders off it. -->
+<!-- The filter bar above everything it scopes; every card re-renders off it.
+     Two rows: the fixed controls, then the character list on a line of its own
+     because a full alliance is 18 names and they will not share a line with
+     anything else. -->
 <div class="filterbar" role="group" aria-label="Filters">
+ <div class="filter-row">
   <div class="filter">
     <span class="filter-label">Range</span>
     <div class="segmented" id="rangeSeg" role="radiogroup" aria-label="Time range">
@@ -40,16 +44,28 @@
   </div>
 
   <div class="filter">
-    <span class="filter-label">Show</span>
-    <div class="segmented" id="sideSeg" role="radiogroup" aria-label="Which side">
-      <button type="button" role="radio" data-side="ally" aria-checked="true" class="on">Party</button>
-      <button type="button" role="radio" data-side="mob" aria-checked="false">Monsters</button>
-      <button type="button" role="radio" data-side="all" aria-checked="false">Both</button>
+    <span class="filter-label">Skillchains</span>
+    <div class="segmented" id="chainSeg" role="radiogroup" aria-label="Skillchain damage">
+      <button type="button" role="radio" data-chains="on" aria-checked="true" class="on"
+              title="Credit skillchain damage to the character whose weaponskill closed it">On</button>
+      <button type="button" role="radio" data-chains="off" aria-checked="false"
+              title="Leave skillchain damage out of every total">Off</button>
     </div>
   </div>
 
-  <div class="filter grow">
+  <div class="filter push">
+    <button type="button" class="ghost" id="pauseBtn" aria-pressed="false">Pause</button>
+    <button type="button" class="ghost" id="resetBtn"
+            title="Drop every event collected so far and start counting from here">Reset</button>
+  </div>
+ </div>
+
+ <div class="filter-row chars" id="charRow">
     <span class="filter-label" id="charLabel">Characters</span>
+    <button type="button" class="ghost tiny" id="charToggle"
+            aria-expanded="true" aria-controls="actorChips"
+            title="Collapse the character list">Hide</button>
+    <span class="char-hint" id="charHint"></span>
     <div class="segmented tight">
       <button type="button" id="pickAll">All</button>
       <button type="button" id="pickNone">None</button>
@@ -57,13 +73,7 @@
     <div class="chips" id="actorChips" role="group" aria-labelledby="charLabel">
       <span class="muted small">&mdash;</span>
     </div>
-  </div>
-
-  <div class="filter">
-    <button type="button" class="ghost" id="pauseBtn" aria-pressed="false">Pause</button>
-    <button type="button" class="ghost" id="resetBtn"
-            title="Drop every event collected so far and start counting from here">Reset</button>
-  </div>
+ </div>
 </div>
 
 <main class="wrap stack">
@@ -172,6 +182,8 @@
           <p class="card-sub">
             Monsters are detected from the article &mdash; &ldquo;the Goblin Pathfinder&rdquo;.
             Named NMs have no article, so if one is misfiled, flip it here.
+            Only characters are counted; anything filed as a monster is left out
+            of every total.
           </p>
           <div class="scroll-y"><table class="data" id="rosterTable"></table></div>
         </div>

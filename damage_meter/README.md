@@ -1,7 +1,8 @@
 # Damage Meter
 
 Live damage meter for HorizonXI. It tails the most recently modified chat log,
-parses out every damaging action, and draws:
+parses out every damaging action **the party dealt** — damage monsters deal is
+not counted or shown anywhere — and draws:
 
 - **Cumulative damage over time**, one line per character, with a crosshair that
   reads every character at the same instant.
@@ -52,42 +53,78 @@ resets and replays the new file from the top.
 - **Range** — `All`, `Latest fight` (everything since the last gap of 90 s or
   more with no combat), or a rolling 5 / 15 / 60 minutes measured back from the
   newest event.
-- **Show** — `Party` (damage your side dealt), `Monsters` (damage taken), or
-  `Both`.
-- **Characters** — click a name to include or exclude it; `All` / `None` do the
-  whole list at once. The header shows how many of how many are included.
-  Excluded characters are dropped from every total, chart and table, not just
-  hidden. The selection is remembered across reloads and across log files, so a
-  character you never want counted stays excluded.
+- **Skillchains** — `On` credits skillchain damage to whoever closed the chain;
+  `Off` leaves it out of every total, chart and table. Off is the setting to use
+  when you want to compare raw weaponskill and melee output, since a chain's
+  damage depends as much on who opened it. Remembered across reloads.
+- **Characters** — on its own line under the other filters, so a full 18-person
+  alliance gets the width it needs. Click a name to include or exclude it;
+  `All` / `None` do the whole list at once. The header shows how many of how
+  many are included. Excluded characters are dropped from every total, chart and
+  table, not just hidden. The selection is remembered across reloads and across
+  log files, so a character you never want counted stays excluded. `Hide`
+  collapses the list to a single line — the count and a summary of who is
+  excluded stay visible — and that too is remembered.
 - **Pause** — freezes ingestion so you can read a table mid-fight.
 - **Reset** — drops every event collected so far and starts counting from here.
 
 Select any row in **Actions** to open its drill-down; select it again, or use
 Close, to dismiss it.
 
-### Pop-out windows
+### Keep in focus
 
-Every chart and table panel has a **Pop out** button in its top-right corner.
-It moves that panel into its own window you can drag anywhere and size however
-you like — onto a second monitor, or into a corner beside the game. The panel is
-still live: it keeps updating with the log, it stays in step with the filter row
-back on the main page, and clicking a row in a popped-out **Actions** window
-still drives the drill-down. Charts get more room in their own window and grow
-with it.
+Every chart and table panel has a **Keep in focus** button in its top-right
+corner. It moves that panel into a window that floats above other applications,
+so it stays visible while you play full-screen-windowed — drag it into a corner
+beside the game, or onto a second monitor.
 
-A dashed placeholder holds the panel's place on the main page. **Bring back**
-there, or **Dock back** in the window itself, returns it; so does simply closing
-the window.
+The panel is still live out there: it keeps updating with the log, it stays in
+step with the filter row back on the main page, and clicking a row in a floating
+**Actions** window still drives the drill-down. Charts get more room and grow
+with the window.
 
-**Keep in focus** is the same thing in a window that floats above other
-applications, so it stays visible while you play full-screen-windowed. It uses
-the browser's document picture-in-picture, which means:
+It uses the browser's document picture-in-picture, which means:
 
 - **Chrome or Edge only.** The button is disabled in other browsers and says why.
 - **One panel at a time.** Turning it on for a second panel returns the first one
   to the page — the browser only allows one floating window.
 
-Pop-outs are not remembered across a page reload.
+A dashed placeholder holds the panel's place on the main page. **Bring back**
+there, **Dock** in the window itself, or pressing **Keep in focus** again all
+return it; so does simply closing the window.
+
+Floating panels are not remembered across a page reload.
+
+### Seeing the game through a floating panel
+
+Each floating window's bar carries two controls:
+
+- **The opacity slider.** Drags the whole window — chrome, panel and background
+  alike — down to 15%. Everything gets ghosted evenly.
+- **BG**, on by default. Drops the panel's background out *completely*, so what
+  is left over the game is the lines, the numbers and the 20px bar. This is the
+  one that makes the game readable rather than merely dimmer. Its side effect is
+  that clicks land on whatever is underneath, so drag the window by its own title
+  bar, not by the empty space inside it.
+
+Both are per-panel and remembered.
+
+A web page cannot make its own window see-through — CSS opacity fades the
+contents against the *browser*, not onto your desktop. So the meter's own server
+does it (`/api/alpha`), which means:
+
+- **Windows only.** Elsewhere the slider falls back to fading just the panel's
+  contents, which cannot show the game. When that happens the bar says **"fade
+  only"** and its tooltip explains why.
+- **The server has to be the one this page was loaded from.** An older instance
+  still running from before this feature has no `/api/alpha`, and the fallback is
+  all you will get — stop it and start it again.
+- If a floating window ever renders **black** instead of transparent, that is the
+  graphics driver refusing to composite it. Turn **BG** off; the slider at 100%
+  undoes the rest.
+
+The window's chrome is otherwise as small as a browser allows — a 20px bar that
+fades until you point at it, no card frame, no headings, no sub-headings.
 
 ### What Reset does
 
@@ -112,11 +149,24 @@ the top, reload the page — that is what a fresh page load already does.
   (`The Goblin Pathfinder takes 723 points of damage.`), so the parser holds the
   announced action until its damage arrives. A weaponskill that gets evaded is
   recorded as a miss for that weaponskill.
-- **Skillchains and magic bursts** are separate rows, credited to the character
-  who closed them. **Additional Effect** is credited to the attack it rode on.
+- **Skillchains** are their own row (`Skillchain: Fusion`), credited to the last
+  character to land a *weaponskill* — the one who closed the chain. The rest of
+  the party keeps swinging in between, so "the last character to deal damage" is
+  usually the wrong answer. Magic bursts are likewise their own row.
+  **Additional Effect** is credited to the attack it rode on.
+- **Area-of-effect** damage is split across lines: only the first victim rides
+  on the announcement, and the rest arrive seconds later on their own lines with
+  other people's swings in between. The announced action stays open for five
+  seconds so every victim lands under it — `Meteor` on four people is four rows
+  under `Meteor`, not one plus three guesses.
+- **Counters** (`Promathia's attack is countered by Hasaya.`) are their own row,
+  credited to the character who countered.
 - **`Unattributed`** means damage appeared with no announcement in front of it —
-  a damage-over-time tick, spikes, an enspell. It is credited to the last
-  character who dealt damage, which is a guess; the row is named so you know.
+  a damage-over-time tick, spikes, an enspell, or an area attack whose
+  announcement never made it into the log. It is credited to the last character
+  who dealt damage, which is a guess; the row is named so you know. Because it
+  is a guess it is kept out of the party-vs-monster classification, so a wrong
+  one can misplace damage but can never move a name to the wrong side.
 
 ## When something looks wrong
 
@@ -125,7 +175,9 @@ Open **Diagnostics** at the bottom.
 - **Name classification.** Monsters are detected from the article: the log says
   "the Goblin Pathfinder" but never "the Hasaya". Named notorious monsters have
   no article, so they're caught by a second pass over who-fights-whom. If one is
-  still misfiled, flip it here and every chart re-sorts.
+  still misfiled, flip it here and every chart re-sorts. This is the table to
+  check when a character is missing from the meter entirely: only characters are
+  counted, so a name filed as a monster contributes nothing.
 - **Unrecognised damage lines.** Any line containing a damage number that no
   parse rule matched is listed here. If this list isn't empty, the meter is
   under-counting and the pattern needs adding to

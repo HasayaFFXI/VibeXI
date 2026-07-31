@@ -17,27 +17,35 @@
   // --------------------------------------------------------------- filtering
 
   /*
-   * opts: { from, to, side: 'ally'|'mob'|'all', roster, actors: {name:bool} }
+   * opts: { from, to, roster, actors: {name:bool}, skillchains: bool }
    * `actors` is the UI's per-actor checkbox map; absent means "all on".
+   *
+   * Pass a `roster` and every event whose *actor* is a monster is dropped: this
+   * is a party damage meter, and damage the monsters dealt is neither shown nor
+   * counted anywhere. It is dropped here rather than in the parser because
+   * `roster.rebuild` derives who is a monster from who fights whom, so the
+   * monsters' own events are what classify the article-less names -- see the
+   * fixed point in parser.js. They are parsed, then filtered out of the view.
+   *
+   * `skillchains: false` drops skillchain damage entirely. It is a filter and
+   * not a parse rule on purpose: the events are already parsed and the log
+   * lines are long gone, so toggling it has to be a re-render, not a re-read.
    */
   function filter(events, opts) {
     opts = opts || {};
     var roster = opts.roster;
     var from = opts.from == null ? -Infinity : opts.from;
     var to = opts.to == null ? Infinity : opts.to;
-    var side = opts.side || 'ally';
     var actors = opts.actors;
+    var skillchains = opts.skillchains !== false;
     var out = [];
 
     for (var i = 0; i < events.length; i++) {
       var e = events[i];
       if (!isCombat(e)) continue;
+      if (!skillchains && e.kind === 'skillchain') continue;
       if (e.t < from || e.t > to) continue;
-      if (roster && side !== 'all') {
-        var mob = roster.isMob(e.actor);
-        if (side === 'ally' && mob) continue;
-        if (side === 'mob' && !mob) continue;
-      }
+      if (roster && roster.isMob(e.actor)) continue;
       if (actors && actors[e.actor] === false) continue;
       out.push(e);
     }

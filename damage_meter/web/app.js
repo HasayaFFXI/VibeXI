@@ -23,7 +23,7 @@
     parser: P.create(null, null),
     lines: 0,
     range: 'all',
-    side: 'ally',
+    chains: 'on',           // 'on' credits skillchain damage, 'off' drops it
     actorsOff: {},          // name -> true when excluded; persisted
     resetAt: null,          // wall-clock of the last meter reset, for the status line
     paused: false,
@@ -34,6 +34,7 @@
     seenSet: {},
     scanned: 0,             // how far into the event list `seen` is built
     visibleActors: [],      // names with a chip right now; scopes All / None
+    chipsOpen: true,        // character list expanded; persisted
     lastOk: 0,
     error: null
   };
@@ -45,11 +46,13 @@
    * once and never reassigned, so a character keeps its hue when a filter or a
    * lead change reorders the table.
    *
-   * One shared pool, not one per side -- separate pools would hand a monster
-   * the same hue as a party member in "Both" mode. Allies get first refusal on
-   * the eight slots so the party always holds the leading colours and monsters
-   * take what is left. Past eight no ninth hue is invented: the tail renders in
-   * muted ink and folds into a single "Other" line on the chart.
+   * Only characters are slotted. Monsters never appear as an actor anywhere in
+   * this app, so spending one of the eight slots on one would push a real party
+   * member into the muted tail for nothing. `seen` still records every name --
+   * classification arrives late (a name's first article can be three kills in),
+   * and a name reclassified into the party then picks up the next free slot.
+   * Past eight no ninth hue is invented: the tail renders in muted ink and
+   * folds into a single "Other" line on the chart.
    */
   function scanActors() {
     var ev = app.parser.events;
@@ -63,13 +66,11 @@
   function assignSlots() {
     scanActors();
     var roster = app.parser.roster;
-    for (var pass = 0; pass < 2; pass++) {         // 0 = allies, 1 = monsters
-      for (var i = 0; i < app.seen.length; i++) {
-        var n = app.seen[i];
-        if (n in app.slots) continue;
-        if ((pass === 1) !== roster.isMob(n)) continue;
-        app.slots[n] = app.nextSlot < 8 ? app.nextSlot++ : -1;
-      }
+    for (var i = 0; i < app.seen.length; i++) {
+      var n = app.seen[i];
+      if (n in app.slots) continue;
+      if (roster.isMob(n)) continue;
+      app.slots[n] = app.nextSlot < 8 ? app.nextSlot++ : -1;
     }
   }
 
@@ -90,6 +91,8 @@
   // ------------------------------------------------------------- persistence
 
   var EXCLUDE_KEY = 'ffxi_dps_excluded';
+  var CHAIN_KEY = 'ffxi_dps_chains';
+  var CHARROW_KEY = 'ffxi_dps_charrow';
 
   function loadExcluded() {
     try {
@@ -100,6 +103,30 @@
 
   function saveExcluded() {
     try { localStorage.setItem(EXCLUDE_KEY, JSON.stringify(app.actorsOff)); } catch (e) { }
+  }
+
+  /* The markup's default is "on", so only the off state has to be restored. */
+  function loadChains() {
+    try {
+      if (localStorage.getItem(CHAIN_KEY) === 'off') app.chains = 'off';
+    } catch (e) { }
+    syncSeg('chainSeg', 'chains', app.chains);
+  }
+
+  /* Same shape: the markup ships expanded, so only "closed" is restored. */
+  function loadCharRow() {
+    try {
+      if (localStorage.getItem(CHARROW_KEY) === 'closed') app.chipsOpen = false;
+    } catch (e) { }
+    applyCharRow();
+  }
+
+  function applyCharRow() {
+    $('charRow').classList.toggle('collapsed', !app.chipsOpen);
+    var b = $('charToggle');
+    b.setAttribute('aria-expanded', String(app.chipsOpen));
+    b.textContent = app.chipsOpen ? 'Hide' : 'Show';
+    b.title = (app.chipsOpen ? 'Collapse' : 'Expand') + ' the character list';
   }
 
   // ------------------------------------------------------------------- reset
@@ -221,8 +248,11 @@
     assignSlots();
 
     var win = windowOf(all);
+    // Passing the roster is what drops the monsters' own damage: this meter
+    // counts what the party dealt and nothing else.
     var scoped = S.filter(all, {
-      from: win.from, to: win.to, side: app.side, roster: roster
+      from: win.from, to: win.to, roster: roster,
+      skillchains: app.chains === 'on'
     });
 
     var enabled = {};
@@ -245,17 +275,25 @@
   function renderChips(actors) {
     var host = $('actorChips');
     var names = actors.map(function (a) { return a.name; });
-    var same = names.join(' ') === app.visibleActors.join(' ');
+    var same = names.join('\0') === app.visibleActors.join('\0');
     app.visibleActors = names;
 
     if (!actors.length) {
       if (!same) host.innerHTML = '<span class="muted small">&mdash;</span>';
       $('charLabel').textContent = 'Characters';
+      $('charHint').textContent = '';
       return;
     }
 
-    var on = actors.filter(function (a) { return !app.actorsOff[a.name]; }).length;
-    $('charLabel').textContent = 'Characters ' + on + '/' + actors.length;
+    var off = actors.filter(function (a) { return app.actorsOff[a.name]; })
+                    .map(function (a) { return a.name; });
+    $('charLabel').textContent =
+      'Characters ' + (actors.length - off.length) + '/' + actors.length;
+    // Read while the list is collapsed, so an exclusion can never hide silently.
+    // Long lists stop naming names; the count is the part that matters.
+    $('charHint').textContent = !off.length ? 'all included'
+      : off.length > 4 ? off.length + ' excluded'
+      : off.length + ' excluded: ' + off.join(', ');
 
     function state(chip, name) {
       var inc = !app.actorsOff[name];
@@ -544,27 +582,34 @@
 
   // ------------------------------------------------------------------ events
 
+  /* Paints a segmented control from `app[key]`; the data attribute is the key. */
+  function syncSeg(id, key, value) {
+    [].forEach.call($(id).querySelectorAll('button[role="radio"]'), function (x) {
+      var on = x.dataset[key] === value;
+      x.classList.toggle('on', on);
+      x.setAttribute('aria-checked', String(on));
+    });
+  }
+
   function segHandler(id, key, after) {
     $(id).addEventListener('click', function (ev) {
       var b = ev.target.closest('button[role="radio"]');
       if (!b) return;
-      [].forEach.call(this.querySelectorAll('button'), function (x) {
-        var on = x === b;
-        x.classList.toggle('on', on);
-        x.setAttribute('aria-checked', String(on));
-      });
-      app[key] = b.dataset[key === 'range' ? 'range' : 'side'];
+      app[key] = b.dataset[key];
+      syncSeg(id, key, app[key]);
       if (after) after();
       render();
     });
   }
 
   segHandler('rangeSeg', 'range');
-  segHandler('sideSeg', 'side', function () {
-    // The exclusion map is keyed by name and the two sides do not share names,
-    // so it carries across untouched -- only the drill-down, which names one
-    // actor, has to go.
-    app.drill = null;
+  segHandler('chainSeg', 'chains', function () {
+    try { localStorage.setItem(CHAIN_KEY, app.chains); } catch (e) { }
+    // A drill-down into a skillchain row has no events left to show once the
+    // rows are gone, so it closes rather than sitting there empty.
+    if (app.chains === 'off' && app.drill && /^Skillchain:/.test(app.drill.action)) {
+      app.drill = null;
+    }
   });
 
   $('actorChips').addEventListener('click', function (ev) {
@@ -574,6 +619,14 @@
     if (app.actorsOff[name]) delete app.actorsOff[name]; else app.actorsOff[name] = true;
     saveExcluded();
     render();
+  });
+
+  /* Collapsing is pure chrome -- the filter itself is untouched, so no render.
+     The label and the hint next to it are written by every render already. */
+  $('charToggle').addEventListener('click', function () {
+    app.chipsOpen = !app.chipsOpen;
+    try { localStorage.setItem(CHARROW_KEY, app.chipsOpen ? 'open' : 'closed'); } catch (e) { }
+    applyCharRow();
   });
 
   /* Bulk include / exclude, scoped to the characters currently on screen. */
@@ -637,6 +690,8 @@
   // ------------------------------------------------------------------- start
 
   loadExcluded();
+  loadChains();
+  loadCharRow();
 
   // After the handlers above, not before: wiring a card for pop-out moves the
   // buttons already in its head into the new controls group, and a listener

@@ -1,0 +1,39 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "damage-meter",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", "damage_meter/damage-meter.ps1",
+        "-Port", "8731",
+        "-NoBrowser"
+      ],
+      "port": 8731
+    },
+    {
+      "name": "damage-meter-test",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", "damage_meter/damage-meter.ps1",
+        "-Port", "8732",
+        "-NoBrowser",
+        "-LogDir", "damage_meter/tools/logs"
+      ],
+      "port": 8732
+    },
+    {
+      "name": "damage-meter-live",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", "damage_meter/damage-meter.ps1",
+        "-Port", "8831",
+        "-NoBrowser"
+      ],
+      "port": 8831
+    }
+  ]
+}

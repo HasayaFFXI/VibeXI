@@ -8,15 +8,20 @@
  * only searches its own document -- so `byId()` consults an index of the ids
  * that are currently out of the page, and app.js uses it as its `$`.
  *
- * Two window kinds, because the web only offers one always-on-top surface:
+ * Two window kinds, only one of which the UI offers:
  *
- *   'window'  window.open(). Dragged and resized anywhere, but a normal
- *             browser window: it cannot be raised above other applications.
  *   'focus'   documentPictureInPicture.requestWindow(). Always-on-top, which
- *             is what "Keep in focus" means. Chromium only, and the browser
- *             allows exactly ONE at a time -- asking for a second closes the
+ *             is what "Keep in focus" means -- the only button on a card, and
+ *             the only mode a user can reach. Chromium only, and the browser
+ *             allows exactly ONE at a time: asking for a second closes the
  *             first, which lands here as an ordinary close and docks that panel
  *             back into the page.
+ *   'window'  window.open(). A plain browser window that cannot be raised above
+ *             other applications, which is why it is no longer offered. It stays
+ *             reachable through DPS.popout.place(key, 'window') because it is
+ *             what the always-on-top request degrades to where PiP is missing,
+ *             and because it is the only way to exercise the move machinery in
+ *             an embedded webview -- see the iframe recipe in CLAUDE.md.
  *
  * Classic script on DPS.popout, same as the rest of web/lib.
  */
@@ -39,6 +44,24 @@
   var index = {};         // element id -> element, while it lives outside `doc`
   var onRender = function () { };
   var watchdog = null;
+
+  // Per-panel opacity (15..100) and background punch-out, remembered across
+  // sessions. See "opacity" below for what each one actually does.
+  var ALPHA_KEY = 'ffxi_dps_alpha';
+  var KEYBG_KEY = 'ffxi_dps_keybg';
+  var alphas = readMap(ALPHA_KEY);
+  var keys = readMap(KEYBG_KEY);
+
+  function readMap(k) {
+    try { return JSON.parse(global.localStorage.getItem(k) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function saveAlphas() {
+    try { global.localStorage.setItem(ALPHA_KEY, JSON.stringify(alphas)); } catch (e) { }
+  }
+  function saveKeys() {
+    try { global.localStorage.setItem(KEYBG_KEY, JSON.stringify(keys)); } catch (e) { }
+  }
 
   // ------------------------------------------------------------------ lookup
 
@@ -111,8 +134,8 @@
     if (head) head.appendChild(tools);
     else card.insertBefore(tools, card.firstChild);
 
-    // Appended after the pop-out buttons are added, so ordering is
-    // Pop out / Keep in focus / Close rather than the reverse.
+    // Appended after the pop-out button is added, so ordering is
+    // Keep in focus / Close rather than the reverse.
     tools.retake = function () {
       existing.forEach(function (b) { tools.appendChild(b); });
     };
@@ -127,6 +150,10 @@
       mode: 'docked',     // docked | window | focus
       win: null,
       obs: null,
+      alpha: clampAlpha(alphas[key]),
+      // On by default: a window laid over a game is wanted see-through, and a
+      // dimmed background is a poor second to no background.
+      keyBg: keys[key] !== false,
       // The card's own heading, which the child window's title bar takes over --
       // the drill-down rewrites its h2 with the action name, so the window has
       // to follow rather than keep the static label it was opened with.
@@ -134,21 +161,19 @@
     };
 
     p.tools = toolsFor(card);
-    p.popBtn = mkBtn(doc, 'Pop out', 'Open this panel in its own window');
     p.focusBtn = mkBtn(doc, 'Keep in focus', FOCUS_HINT);
     p.focusBtn.setAttribute('aria-pressed', 'false');
     p.focusBtn.disabled = !PIP;
-    p.tools.appendChild(p.popBtn);
     p.tools.appendChild(p.focusBtn);
     if (p.tools.retake) { p.tools.retake(); delete p.tools.retake; }
 
     p.notes = [addNote(p.tools)];
 
-    p.popBtn.addEventListener('click', function () {
-      place(p, p.mode === 'docked' ? 'window' : 'docked');
-    });
+    // Turning it off docks the panel. There is no plain-window mode to fall back
+    // to any more, so the toggle is straight between "on the page" and "floating
+    // above everything" -- the same two states "Bring back" moves between.
     p.focusBtn.addEventListener('click', function () {
-      place(p, p.mode === 'focus' ? 'window' : 'focus');
+      place(p, p.mode === 'focus' ? 'docked' : 'focus');
     });
 
     buildPlaceholder(p);
@@ -156,9 +181,10 @@
   }
 
   /*
-   * What stands in for the card while it is away. It holds the "Keep in focus"
-   * toggle because requestWindow() needs a user gesture *in this document* --
-   * a click inside the child window cannot grant it.
+   * What stands in for the card while it is away. It carries "Bring back" and
+   * nothing else: a panel can only be away by being kept in focus, so a second
+   * "Keep in focus" toggle here would be a differently-worded button doing
+   * exactly what "Bring back" already does.
    */
   function buildPlaceholder(p) {
     var ph = doc.createElement('section');
@@ -172,18 +198,11 @@
 
     var tools = doc.createElement('div');
     tools.className = 'card-tools';
-    p.phFocus = mkBtn(doc, 'Keep in focus', FOCUS_HINT);
-    p.phFocus.setAttribute('aria-pressed', 'false');
-    p.phFocus.disabled = !PIP;
     p.phBack = mkBtn(doc, 'Bring back', 'Return this panel to the page');
-    tools.appendChild(p.phFocus);
     tools.appendChild(p.phBack);
     ph.querySelector('.ph-head').appendChild(tools);
     p.notes.push(addNote(tools));
 
-    p.phFocus.addEventListener('click', function () {
-      place(p, p.mode === 'focus' ? 'window' : 'focus');
-    });
     p.phBack.addEventListener('click', function () { place(p, 'docked'); });
 
     p.ph = ph;
@@ -227,12 +246,177 @@
     return doc.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
   }
 
+  // ----------------------------------------------------------------- opacity
+
+  /*
+   * A floating panel is laid over the game, so it has to be seen through -- and
+   * that is not something the page can do to itself. A browser window is opaque:
+   * CSS `opacity` fades the document against the *browser's* backdrop, never onto
+   * the desktop, and it does not even fade the page background, which propagates
+   * to the window canvas and is painted outside the faded layer. Fading is a look,
+   * not transparency.
+   *
+   * Only the OS can do it, so the local server does, over `GET /api/alpha`:
+   *
+   *   alpha     WS_EX_LAYERED + LWA_ALPHA on the window, from the slider. The
+   *             whole window goes translucent, chrome, panel and background alike.
+   *   punch-out LWA_COLORKEY on top of it, with the document background painted
+   *             exactly KEY. Those pixels are dropped entirely, so the background
+   *             is *gone* rather than dim and the numbers stay crisp over the
+   *             game. It also makes the background click-through, which is what
+   *             an overlay wants; the window's own title bar still drags it.
+   *
+   * `css-alpha` remains as the fallback for when none of that is available (no
+   * server, wrong OS), and it is honest about what it is: the bar says "fade
+   * only", because what shows through is the browser, not the game.
+   *
+   * The window is found by WHERE IT IS, not by its title -- a Document PiP
+   * window's caption belongs to Chrome, not to the page. Hence the geometry in
+   * the query string.
+   */
+  var KEY = '010203';     // punch-out colour: near-black, so text fringes on a
+                          // dark panel stay dark. Matches no palette token.
+
+  function clampAlpha(v) {
+    v = Math.round(+v);
+    if (!isFinite(v) || !v) return 100;
+    return Math.max(15, Math.min(100, v));
+  }
+
+  function alphaControl(p, d) {
+    var wrap = d.createElement('span');
+    wrap.className = 'pop-alpha';
+
+    var sl = d.createElement('input');
+    sl.type = 'range';
+    sl.min = '15';
+    sl.max = '100';
+    sl.step = '1';
+    sl.value = String(p.alpha);
+    sl.setAttribute('aria-label', 'Window opacity');
+    sl.title = 'Window opacity — drag left to see the game through this window.';
+
+    var out = d.createElement('span');
+    out.className = 'pop-alpha-val';
+    out.textContent = p.alpha + '%';
+
+    sl.addEventListener('input', function () {
+      p.alpha = clampAlpha(sl.value);
+      out.textContent = p.alpha + '%';
+      alphas[p.key] = p.alpha;
+      saveAlphas();
+      applyAlpha(p);
+    });
+
+    // Drops the background out of the window completely, leaving the readouts
+    // over the game. Separate from the slider because it is a different thing --
+    // one dims the window, the other removes part of it -- and because it is the
+    // one that depends on how the driver composites a layered window.
+    var bg = mkBtn(d, 'BG', 'Drop the panel background out entirely, so only the ' +
+                            'numbers sit over the game');
+    bg.className = 'ghost tiny';
+    bg.setAttribute('aria-pressed', String(!!p.keyBg));
+    bg.addEventListener('click', function () {
+      p.keyBg = !p.keyBg;
+      bg.setAttribute('aria-pressed', String(p.keyBg));
+      keys[p.key] = p.keyBg;
+      saveKeys();
+      applyAlpha(p);
+    });
+
+    var warn = d.createElement('span');
+    warn.className = 'pop-alpha-warn';
+    warn.textContent = 'fade only';
+    warn.hidden = true;
+
+    wrap.appendChild(sl);
+    wrap.appendChild(out);
+    wrap.appendChild(bg);
+    wrap.appendChild(warn);
+    p.alphaWrap = wrap;
+    p.alphaSlider = sl;
+    p.alphaOut = out;
+    p.alphaBg = bg;
+    p.alphaWarn = warn;
+    return wrap;
+  }
+
+  /* Everything the server needs to find this window: the centre of it in screen
+     coordinates, its size to check the hit against, and the pixel ratio, since
+     these numbers are CSS pixels and the desktop may not be at 100%. */
+  function geometry(win) {
+    var w = win.outerWidth || win.innerWidth || 0;
+    var h = win.outerHeight || win.innerHeight || 0;
+    return '&x=' + Math.round((win.screenX || 0) + w / 2) +
+           '&y=' + Math.round((win.screenY || 0) + h / 2) +
+           '&w=' + Math.round(w) + '&h=' + Math.round(h) +
+           '&dpr=' + (win.devicePixelRatio || 1);
+  }
+
+  /* Debounced, because dragging a range fires per pixel and each call is a
+     round trip that ends in a window-manager call. */
+  function applyAlpha(p, retry) {
+    var win = p.win;
+    if (!win || win.closed) return;
+    var root = win.document.documentElement;
+    root.style.setProperty('--pop-alpha', (p.alpha / 100).toFixed(3));
+    root.style.setProperty('--pop-key', '#' + KEY);
+    // Only once the OS path is known to have failed: fading first and undoing it
+    // a beat later is a visible flash on every window that works properly.
+    if (p.osAlpha === false) root.classList.add('css-alpha');
+
+    clearTimeout(p.alphaTimer);
+    p.alphaTimer = setTimeout(function () {
+      if (!p.win || p.win.closed || !global.fetch) { osAlpha(p, false); return; }
+      global.fetch('/api/alpha?title=' + encodeURIComponent(p.win.document.title) +
+                   '&value=' + p.alpha + geometry(p.win) +
+                   (p.keyBg ? '&key=' + KEY : ''), { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          var hit = !!(j && j.ok && j.applied > 0);
+          p.osWindow = j && j.window;
+          p.osMethod = j && j.method;
+          // A miss on the first go is usually the window not being where it says
+          // it is yet, so give it one more before conceding to the fade.
+          if (!hit && !retry) { setTimeout(function () { applyAlpha(p, true); }, 700); return; }
+          osAlpha(p, hit);
+        })
+        .catch(function () { osAlpha(p, false); });
+    }, 60);
+  }
+
+  function osAlpha(p, on) {
+    p.osAlpha = on;
+    if (!p.win || p.win.closed) return;
+    var root = p.win.document.documentElement;
+    // The window is genuinely translucent now, so fading the document as well
+    // would darken it twice over.
+    root.classList.toggle('css-alpha', !on);
+    // Never paint the punch-out colour unless it is actually being punched out:
+    // unkeyed, it is just a near-black window.
+    root.classList.toggle('key-bg', on && !!p.keyBg);
+
+    if (p.alphaWarn) {
+      p.alphaWarn.hidden = on;
+      p.alphaWarn.title =
+        'The window itself could not be made transparent, so the slider is only ' +
+        'fading the panel — what shows through is the browser, not the game. ' +
+        'Most often the meter\'s server is an older copy still running: restart it.';
+    }
+    if (p.alphaBg) p.alphaBg.disabled = !on;
+  }
+
   function dress(p, win) {
     var d = win.document;
     var body = d.querySelector('.pop-body');
     if (body) {                                     // already dressed
       p.flag = d.querySelector('.pop-flag');
       p.barTitle = d.querySelector('.pop-title');
+      p.alphaWrap = d.querySelector('.pop-alpha');
+      p.alphaSlider = p.alphaWrap ? p.alphaWrap.querySelector('input') : null;
+      p.alphaOut = d.querySelector('.pop-alpha-val');
+      p.alphaBg = p.alphaWrap ? p.alphaWrap.querySelector('button') : null;
+      p.alphaWarn = d.querySelector('.pop-alpha-warn');
       return { body: body, links: [] };
     }
 
@@ -254,8 +438,11 @@
     p.flag.className = 'pop-flag';
     p.flag.textContent = 'kept in focus';
     p.flag.hidden = true;
-    var back = mkBtn(d, 'Dock back', 'Return this panel to the main window');
+    // 'Dock', not 'Dock back': this bar is one line over a game screen.
+    var back = mkBtn(d, 'Dock', 'Return this panel to the main window');
+    back.className = 'ghost tiny';
     back.addEventListener('click', function () { place(p, 'docked'); });
+    acts.appendChild(alphaControl(p, d));
     acts.appendChild(p.flag);
     acts.appendChild(back);
     bar.appendChild(h);
@@ -339,6 +526,8 @@
       clearNote(p);
       syncTitle(p);
       sync(p);
+      p.osAlpha = undefined;      // a new window is opaque until the server says otherwise
+      applyAlpha(p);
       onRender();
       return sheetsReady(out.links).then(function () { onRender(); });
     }).catch(function (e) {
@@ -360,6 +549,9 @@
     p.win = null;
     p.mode = 'docked';
     p.flag = null;
+    clearTimeout(p.alphaTimer);
+    p.alphaWrap = p.alphaSlider = p.alphaOut = p.alphaBg = p.alphaWarn = null;
+    p.osAlpha = undefined;
 
     if (p.ph.parentNode) {
       if (p.card.ownerDocument !== doc) doc.adoptNode(p.card);
@@ -376,22 +568,17 @@
   }
 
   /*
-   * Only this module's own two buttons are hidden while the panel is away --
-   * the placeholder is driving now. Whatever else the card head already held
-   * (the drill-down's Close) travels with the card and stays usable there, so
-   * the group as a whole must not be hidden.
+   * Only this module's own button is hidden while the panel is away -- the
+   * placeholder is driving now. Whatever else the card head already held (the
+   * drill-down's Close) travels with the card and stays usable there, so the
+   * group as a whole must not be hidden.
    */
   function showOwnTools(p, on) {
-    p.popBtn.hidden = !on;
     p.focusBtn.hidden = !on;
   }
 
   function sync(p) {
-    var out = p.mode !== 'docked';
-    p.popBtn.textContent = out ? 'Bring back' : 'Pop out';
-    p.popBtn.setAttribute('aria-pressed', String(out));
     p.focusBtn.setAttribute('aria-pressed', String(p.mode === 'focus'));
-    p.phFocus.setAttribute('aria-pressed', String(p.mode === 'focus'));
     if (p.flag) p.flag.hidden = p.mode !== 'focus';
   }
 
@@ -499,6 +686,20 @@
     theme: theme,
     place: function (key, mode) { return panels[key] ? place(panels[key], mode) : null; },
     dock: function (key) { if (panels[key]) dock(panels[key]); },
+    /* Read or set a panel's opacity (15..100) without the slider -- the console
+       handle for checking that /api/alpha is reaching the window. */
+    alpha: function (key, v) {
+      var p = panels[key];
+      if (!p) return null;
+      if (v == null) return p.alpha;
+      p.alpha = clampAlpha(v);
+      alphas[key] = p.alpha;
+      saveAlphas();
+      if (p.alphaSlider) { p.alphaSlider.value = String(p.alpha); }
+      if (p.alphaOut) { p.alphaOut.textContent = p.alpha + '%'; }
+      applyAlpha(p);
+      return p.alpha;
+    },
     closeAll: closeAll,
     supportsFocus: PIP,
     panels: panels

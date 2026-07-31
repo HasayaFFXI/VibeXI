@@ -77,6 +77,15 @@ foreach ($fight in 0..3) {
                 if ($rand.NextDouble() -lt 0.94) {
                     Emit ('{0} takes {1} points of damage.' -f $mob, (Roll $p.wsD $p.wsSd)) -Cont
                     if ($rand.NextDouble() -lt 0.30) {
+                        # Most of the time another character's swing lands
+                        # between the weaponskill and the skillchain message.
+                        # The chain still belongs to the weaponskill user, so
+                        # this is the case that catches an attribution that
+                        # follows "last thing that dealt damage" instead.
+                        if ($rand.NextDouble() -lt 0.7) {
+                            $other = @($melee | Where-Object { $_.n -ne $p.n })[$rand.Next(0, $melee.Count - 1)]
+                            Emit ('{0} hits {1} for {2} points of damage.' -f $other.n, $mob, (Roll $other.dmg $other.sd))
+                        }
                         Emit 'Skillchain: Fusion.'
                         Emit ('{0} takes {1} points of damage.' -f $mob, (Roll 310 70)) -Cont
                         if ($rand.NextDouble() -lt 0.6) {

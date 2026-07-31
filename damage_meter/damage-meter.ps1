@@ -56,6 +56,233 @@ if (-not (Test-Path -LiteralPath $LogDir)) {
     Write-Warning "The UI will start anyway and pick logs up as soon as they appear."
 }
 
+# ------------------------------------------------------------ window opacity
+
+<#
+    A browser window is opaque no matter what CSS the page carries, so the pop-out
+    windows' opacity slider cannot on its own let the game show through -- only the
+    OS can do that, by making the window layered (WS_EX_LAYERED) and giving it an
+    alpha. That is what /api/alpha does.
+
+    FINDING THE WINDOW is the whole difficulty, because a Document
+    Picture-in-Picture window's caption is Chrome's to write, not the page's --
+    it is not reliably the document title. So the client sends where its window
+    *is* (the centre of it, in screen coordinates) and the match is by position:
+    WindowFromPoint, then GetAncestor to the top-level window. Nothing but the
+    window the slider lives in can be at that point, and it is always-on-top so
+    nothing can be over it. The title is kept as a second try, and "the topmost
+    browser window" as a third, so a client that cannot report its position (or
+    a screen coordinate lost to DPI scaling) still lands somewhere sensible.
+
+    Refuses to touch the shell (desktop, taskbar) and returns which strategy hit,
+    so a wrong window is diagnosable rather than mysterious. If the compiler is
+    unavailable the endpoint still answers, with applied:0, and the client falls
+    back to fading the document -- which cannot show the game, only quieten the
+    panel, and which says so in the window bar.
+#>
+$WinAlphaSrc = @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public static class DpsWindowAlpha
+{
+    private delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT { public int X; public int Y; }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT { public int Left, Top, Right, Bottom; }
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumProc cb, IntPtr lParam);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder buf, int max);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(IntPtr hWnd, StringBuilder buf, int max);
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int index);
+    [DllImport("user32.dll")]
+    private static extern IntPtr WindowFromPoint(POINT pt);
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetAncestor(IntPtr hWnd, uint flags);
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT r);
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int GetWindowLong(IntPtr hWnd, int index);
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int SetWindowLong(IntPtr hWnd, int index, int val);
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetLayeredWindowAttributes(IntPtr hWnd, uint crKey, byte alpha, uint flags);
+
+    private const int GWL_EXSTYLE = -20;
+    private const int WS_EX_LAYERED  = 0x00080000;
+    private const int WS_EX_TOPMOST  = 0x00000008;
+    private const uint LWA_COLORKEY  = 0x00000001;
+    private const uint LWA_ALPHA     = 0x00000002;
+    private const uint GA_ROOT       = 2;
+
+    public static string Caption(IntPtr h)
+    {
+        StringBuilder sb = new StringBuilder(600);
+        GetWindowText(h, sb, sb.Capacity);
+        return sb.ToString();
+    }
+
+    private static string Cls(IntPtr h)
+    {
+        StringBuilder sb = new StringBuilder(256);
+        GetClassName(h, sb, sb.Capacity);
+        return sb.ToString();
+    }
+
+    /* The desktop and the taskbar are always under the mouse somewhere; dimming
+       either would be spectacular and is never what was meant. */
+    private static bool IsShell(IntPtr h)
+    {
+        string c = Cls(h);
+        return c == "Progman" || c == "WorkerW" || c == "Shell_TrayWnd" ||
+               c == "Shell_SecondaryTrayWnd" || c == "#32769";
+    }
+
+    /* The point has to be somewhere a window can actually be seen. A stale or
+       mis-scaled coordinate otherwise wanders into the parking lot at -32000,
+       where the minimised windows live. */
+    private static bool OnDesktop(int x, int y)
+    {
+        const int SM_XVIRTUALSCREEN = 76, SM_YVIRTUALSCREEN = 77,
+                  SM_CXVIRTUALSCREEN = 78, SM_CYVIRTUALSCREEN = 79;
+        int vx = GetSystemMetrics(SM_XVIRTUALSCREEN), vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
+        int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN), vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+        if (vw <= 0 || vh <= 0) { return true; }
+        return x >= vx && y >= vy && x < vx + vw && y < vy + vh;
+    }
+
+    private static IntPtr Root(IntPtr h)
+    {
+        if (h == IntPtr.Zero) { return IntPtr.Zero; }
+        IntPtr r = GetAncestor(h, GA_ROOT);
+        return r == IntPtr.Zero ? h : r;
+    }
+
+    /* One candidate point. Rejected unless the window it lands on is visible, is
+       not the shell, and is about the size the caller said it was. The size check
+       is not optional: this server may be DPI-unaware while the caller measures in
+       CSS pixels, so one of the two candidate points below is usually wrong, and
+       on a scaled desktop a wrong point still lands on *something* -- quite
+       possibly the game. Size is what tells the two apart. */
+    private static IntPtr FromPoint(int x, int y, int w, int h)
+    {
+        if (w <= 0 || h <= 0) { return IntPtr.Zero; }
+        if (!OnDesktop(x, y)) { return IntPtr.Zero; }
+        POINT pt; pt.X = x; pt.Y = y;
+        IntPtr hit = Root(WindowFromPoint(pt));
+        if (hit == IntPtr.Zero || !IsWindowVisible(hit) || IsShell(hit)) { return IntPtr.Zero; }
+        // Minimised windows park themselves off at -32000 with a stub rect, where
+        // any two of them look alike and an off-screen point "finds" one of them.
+        if (IsIconic(hit)) { return IntPtr.Zero; }
+        RECT r;
+        if (!GetWindowRect(hit, out r)) { return IntPtr.Zero; }
+        int rw = r.Right - r.Left, rh = r.Bottom - r.Top;
+        // Generous: the caller measures its viewport, the OS measures the frame.
+        if (Math.Abs(rw - w) > 160 || Math.Abs(rh - h) > 220) { return IntPtr.Zero; }
+        return hit;
+    }
+
+    private static IntPtr ByTitle(string title)
+    {
+        if (title == null || title.Length < 8) { return IntPtr.Zero; }
+        IntPtr found = IntPtr.Zero;
+        EnumWindows(delegate(IntPtr h, IntPtr unused)
+        {
+            if (!IsWindowVisible(h)) { return true; }
+            if (Caption(h).IndexOf(title, StringComparison.Ordinal) < 0) { return true; }
+            found = h;
+            return false;
+        }, IntPtr.Zero);
+        return found;
+    }
+
+    /* Last resort: a Document PiP window is always-on-top, and almost nothing
+       else on a desktop is both topmost and a browser widget. */
+    private static IntPtr TopmostBrowser()
+    {
+        IntPtr found = IntPtr.Zero;
+        EnumWindows(delegate(IntPtr h, IntPtr unused)
+        {
+            if (!IsWindowVisible(h)) { return true; }
+            if ((GetWindowLong(h, GWL_EXSTYLE) & WS_EX_TOPMOST) == 0) { return true; }
+            string c = Cls(h);
+            if (c.IndexOf("Chrome_WidgetWin", StringComparison.Ordinal) < 0 &&
+                c.IndexOf("MozillaWindowClass", StringComparison.Ordinal) < 0) { return true; }
+            RECT r;
+            if (!GetWindowRect(h, out r)) { return true; }
+            if (r.Right - r.Left < 120 || r.Bottom - r.Top < 80) { return true; }  // skip tooltips
+            found = h;
+            return false;
+        }, IntPtr.Zero);
+        return found;
+    }
+
+    /*
+     * cx,cy      centre of the caller's window in CSS screen pixels
+     * w,h        its size, for the sanity check (0 to skip)
+     * dpr        device pixel ratio, since a DPI-aware desktop scales those
+     * alpha      0..255
+     * key        colour to punch out entirely, or -1 for none. Painting the page
+     *            background this exact colour is what makes the *background*
+     *            vanish while the text over it stays fully crisp; plain alpha
+     *            fades everything evenly instead.
+     *
+     * Returns "method|hwnd|caption", or "" if nothing matched.
+     */
+    public static string Apply(string title, int cx, int cy, int w, int h,
+                               double dpr, byte alpha, int key)
+    {
+        IntPtr hit = IntPtr.Zero;
+        string how = "";
+
+        if (cx != 0 || cy != 0)
+        {
+            // Both readings, each with its own size to check against: this
+            // process may or may not be DPI-aware, and the two agree only when
+            // the desktop is at 100%. The size check rejects the wrong one.
+            hit = FromPoint((int)Math.Round(cx * dpr), (int)Math.Round(cy * dpr),
+                            (int)Math.Round(w * dpr), (int)Math.Round(h * dpr));
+            if (hit == IntPtr.Zero) { hit = FromPoint(cx, cy, w, h); }
+            if (hit != IntPtr.Zero) { how = "point"; }
+        }
+        if (hit == IntPtr.Zero) { hit = ByTitle(title); if (hit != IntPtr.Zero) { how = "title"; } }
+        if (hit == IntPtr.Zero) { hit = TopmostBrowser(); if (hit != IntPtr.Zero) { how = "topmost"; } }
+        if (hit == IntPtr.Zero) { return ""; }
+
+        int ex = GetWindowLong(hit, GWL_EXSTYLE);
+        if ((ex & WS_EX_LAYERED) == 0) { SetWindowLong(hit, GWL_EXSTYLE, ex | WS_EX_LAYERED); }
+
+        uint flags = LWA_ALPHA;
+        uint crKey = 0;
+        if (key >= 0) { crKey = (uint)key; flags |= LWA_COLORKEY; }
+        if (!SetLayeredWindowAttributes(hit, crKey, alpha, flags)) { return ""; }
+
+        return how + "|" + hit.ToInt64().ToString() + "|" + Caption(hit);
+    }
+}
+'@
+
+$WinAlpha = $false
+try {
+    if (-not ('DpsWindowAlpha' -as [type])) { Add-Type -TypeDefinition $WinAlphaSrc }
+    $WinAlpha = $true
+}
+catch {
+    Write-Warning "Window transparency unavailable: $($_.Exception.Message)"
+    Write-Warning "The pop-out opacity slider will fade the panel instead of the window."
+}
+
 # ---------------------------------------------------------------- JSON helpers
 
 function ConvertTo-JsonString {
@@ -280,6 +507,43 @@ try {
                 $qOff = 0L
                 [void][long]::TryParse($req.QueryString['offset'], [ref]$qOff)
                 $json = Get-LogPayload -ClientFile $qFile -ClientOffset $qOff
+                Write-Response $res 200 'application/json; charset=utf-8' $Utf8.GetBytes($json)
+            }
+            elseif ($req.Url.AbsolutePath -eq '/api/alpha') {
+                # Parsed explicitly as UTF-8: the titles carry an em dash, and
+                # HttpListener's own QueryString does not always decode it.
+                $q = [System.Web.HttpUtility]::ParseQueryString($req.Url.Query, $Utf8)
+                $title = $q['title']
+                $pct = 100
+                [void][int]::TryParse($q['value'], [ref]$pct)
+                if ($pct -lt 10) { $pct = 10 }
+                if ($pct -gt 100) { $pct = 100 }
+
+                $cx = 0; $cy = 0; $cw = 0; $ch = 0; $dpr = 1.0
+                [void][int]::TryParse($q['x'], [ref]$cx)
+                [void][int]::TryParse($q['y'], [ref]$cy)
+                [void][int]::TryParse($q['w'], [ref]$cw)
+                [void][int]::TryParse($q['h'], [ref]$ch)
+                [void][double]::TryParse($q['dpr'], [ref]$dpr)
+                if ($dpr -le 0) { $dpr = 1.0 }
+
+                # The punch-out colour arrives as RRGGBB; a COLORREF is 0x00BBGGRR.
+                $key = -1
+                if ($q['key'] -match '^[0-9a-fA-F]{6}$') {
+                    $rgb = [Convert]::ToInt32($q['key'], 16)
+                    $key = (($rgb -band 0xFF) -shl 16) -bor ($rgb -band 0xFF00) -bor (($rgb -shr 16) -band 0xFF)
+                }
+
+                $hit = ''
+                if ($WinAlpha) {
+                    $hit = [DpsWindowAlpha]::Apply($title, $cx, $cy, $cw, $ch, $dpr,
+                                                  [byte][math]::Round(255 * $pct / 100), $key)
+                }
+                $parts = $hit -split '\|', 3
+                $json = '{"ok":true,"applied":' + $(if ($hit) { '1' } else { '0' }) +
+                        ',"supported":' + $(if ($WinAlpha) { 'true' } else { 'false' }) +
+                        ',"method":' + (ConvertTo-JsonString $(if ($hit) { $parts[0] } else { '' })) +
+                        ',"window":' + (ConvertTo-JsonString $(if ($hit) { $parts[2] } else { '' })) + '}'
                 Write-Response $res 200 'application/json; charset=utf-8' $Utf8.GetBytes($json)
             }
             else {

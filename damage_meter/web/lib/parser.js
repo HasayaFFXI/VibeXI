@@ -49,6 +49,18 @@
     return String(s).replace(/'s$/, '');
   }
 
+  /*
+   * "Dags's ranged attack" -> { name: 'Dags', ranged: true }.
+   * The crit announcement names the *attack*, not the attacker
+   * ("Dags's ranged attack scores a critical hit!"), so without this the
+   * damage that follows lands under an actor called "Dags's ranged attack".
+   */
+  function unranged(s) {
+    var m = /^(.+?)'s ranged attack$/.exec(String(s));
+    if (m) return { name: m[1], ranged: true };
+    return { name: unpossess(s), ranged: false };
+  }
+
   // ------------------------------------------------------------------ filters
 
   /*
@@ -88,10 +100,20 @@
     // Prefix modifiers that ride in front of the real sentence.
     burst:   /^Magic Burst!\s*/,
     critical:/^(.+?) scores a critical hit!\s*/,
+    // A counter is the one message the client sometimes writes with both
+    // sentences on a single line, so this has to peel like a prefix rather than
+    // match to end-of-line. The damage belongs to the defender who countered.
+    counter: /^(.+?)'s attack is countered by (.+?)\.\s*/,
 
     // Direct damage, actor and amount on one line.
     ranged:  /^(.+?)'s ranged attack hits (.+?) for ([\d,]+) points? of damage\.?$/,
+    // The two ranged critical phrasings. They end in "!" rather than ".", and
+    // "strikes true, pummeling" drops the word "hits" entirely, so neither is
+    // reachable from `ranged` or `melee`.
+    rngCrit: /^(.+?)'s ranged attack (?:hits (.+?) squarely|strikes true, pummeling (.+?)) for ([\d,]+) points? of damage!$/,
     melee:   /^(.+?) hits (.+?) for ([\d,]+) points? of damage\.?$/,
+    // Spike / reprisal damage the target deals back to its attacker.
+    spikes:  /^(.+?)'s spikes deal ([\d,]+) points? of damage to (.+?)\.?$/,
 
     // Announcement lines -- damage (if any) lands on a following line.
     uses:    /^(.+?) uses (.+?)\.$/,
@@ -102,6 +124,8 @@
     // Resolution lines for a pending announcement.
     takes:   /^(.+?) takes ([\d,]+) points? of damage\.?$/,
     addl:    /^Additional effect: ([\d,]+) points? of damage\.?$/,
+    // Same message, target named. "additional points" keeps it out of `takes`.
+    addlTo:  /^Additional effect: (.+?) takes ([\d,]+) additional points? of damage\.?$/,
     noeff:   /^(.+?) takes no damage\.?$/,
     resist:  /^(.+?) resists the (?:spell|effect)\.?$/,
 
@@ -118,6 +142,23 @@
 
   var MELEE_ACTION = 'Attack';
   var RANGED_ACTION = 'Ranged Attack';
+  var COUNTER_ACTION = 'Counter';
+
+  /*
+   * How long an announcement stays eligible to own *further* damage lines after
+   * its first one landed. An AoE writes only its first victim as a continuation
+   * of the announcement; the rest arrive seconds later as their own stamped
+   * lines, by which time an unrelated melee swing has already cleared `pending`.
+   */
+  var AOE_MS = 5000;
+
+  /*
+   * How long a weaponskill stays eligible to have opened a skillchain. The
+   * "Skillchain: X." line follows its closing weaponskill within a second or
+   * two; beyond this the remembered actor is stale and the older lastDamager
+   * guess is the better of two bad options.
+   */
+  var CHAIN_MS = 10000;
 
   // ------------------------------------------------------------------- roster
   /*
@@ -174,10 +215,16 @@
 
         // Fixed point over "who fights whom". Converges in a couple of sweeps;
         // 4 is slack. Hard signals always win over derived ones.
+        //
+        // `e.guess` events are skipped: their actor was inferred, not read, so
+        // one bad guess propagates. A mis-credited "ally hits ally" line marks
+        // the victim a monster, everyone the victim fights becomes an ally, and
+        // the boss lands in the party list.
         for (var pass = 0; pass < 4; pass++) {
           var changed = false;
           for (i = 0; i < events.length; i++) {
             e = events[i];
+            if (e.guess) continue;
             if (!e.actor || !e.target || e.actor === e.target) continue;
 
             if (mobs[e.actor] && !allies[e.target] && !hardMob[e.target]) {
@@ -224,7 +271,10 @@
       lastSec: -1,
       lastStamp: null,      // ms of the most recent [HH:MM:SS]
       pending: null,        // announced action awaiting its damage line
-      lastDamager: null,    // for Skillchain / Additional effect attribution
+      aoe: null,            // announcement that already landed, still splashing
+      lastDamager: null,    // for Additional effect / unannounced damage
+      lastWS: null,         // last weaponskill that landed, for Skillchain
+      foes: {},             // name -> { name: true }, from observed attributions
       lineNo: 0
     };
 
@@ -241,11 +291,55 @@
       return state.day.getTime() + sec * 1000;
     }
 
+    /*
+     * A parse-time sketch of who is fighting whom. `roster` answers the same
+     * question far better, but only after `rebuild` has run over a completed
+     * poll -- on the first load every line is fed before the first rebuild, so
+     * the roster is empty exactly when the AoE echo needs it. Only attributions
+     * that were actually read off a line feed this; guesses would make it
+     * self-confirming.
+     */
+    function noteFoe(a, b) {
+      if (!a || !b || a === b) return;
+      (state.foes[a] || (state.foes[a] = {}))[b] = true;
+      (state.foes[b] || (state.foes[b] = {}))[a] = true;
+    }
+
+    /* Two names that have ever fought the same third party are on one side. */
+    function aligned(a, b) {
+      if (a === b) return true;
+      var fa = state.foes[a], fb = state.foes[b];
+      if (!fa || !fb) return false;
+      for (var k in fa) if (fb[k]) return true;
+      return false;
+    }
+
+    /*
+     * Guards the AoE echo. Without it the echo is worse than the lastDamager
+     * guess it replaces: a nuke that just resolved would adopt the *monster's*
+     * AoE damage on the caster's own party and credit it to the caster.
+     */
+    function couldStrike(actor, target) {
+      if (!actor || !target || actor === target) return false;
+      var fa = state.foes[actor];
+      if (fa && fa[target]) return true;
+      return !aligned(actor, target);
+    }
+
     function push(ev) {
       ev.line = state.lineNo;
       events.push(ev);
+      if (!ev.guess) noteFoe(ev.actor, ev.target);
       if (ev.hit && ev.dmg > 0) {
         state.lastDamager = { actor: ev.actor, article: ev.actorArticle, target: ev.target };
+        // Remembered separately from lastDamager because everyone else's melee
+        // swings land between a weaponskill and the "Skillchain:" line it
+        // opened, and the chain belongs to the weaponskill.
+        if (ev.kind === 'ws') {
+          state.lastWS = {
+            actor: ev.actor, article: ev.actorArticle, target: ev.target, t: ev.t
+          };
+        }
       }
       return ev;
     }
@@ -262,7 +356,8 @@
         dmg: o.dmg || 0,
         hit: o.hit !== false,
         crit: !!o.crit,
-        burst: !!o.burst
+        burst: !!o.burst,
+        guess: !!o.guess
       });
     }
 
@@ -319,9 +414,26 @@
       if (m) {
         crit = true;
         a = ent(m[1]);
+        var cr = unranged(a.name);
         state.pending = {
-          t: t, actor: a.name, actorArticle: a.article,
-          action: MELEE_ACTION, kind: 'melee', crit: true
+          t: t, actor: cr.name, actorArticle: a.article,
+          action: cr.ranged ? RANGED_ACTION : MELEE_ACTION,
+          kind: cr.ranged ? 'ranged' : 'melee', crit: true
+        };
+        body = body.slice(m[0].length).trim();
+        if (!body) return null;
+      }
+
+      // The counterer is named second: "Promathia's attack is countered by
+      // Hasaya." The damage sentence that follows says "Promathia takes N",
+      // and on this client it often shares the line -- so peel and fall
+      // through, and let RE.takes resolve the pending Counter either way.
+      m = RE.counter.exec(body);
+      if (m) {
+        a = ent(m[2]);
+        state.pending = {
+          t: t, actor: unpossess(a.name), actorArticle: a.article,
+          action: COUNTER_ACTION, kind: 'counter'
         };
         body = body.slice(m[0].length).trim();
         if (!body) return null;
@@ -340,6 +452,21 @@
         });
       }
 
+      // Deliberately not flagged as a crit: the "squarely"/"strikes true"
+      // wording is the only tell, and it is not the same signal as an explicit
+      // "scores a critical hit!" line. Counted as plain ranged damage.
+      m = RE.rngCrit.exec(body);
+      if (m) {
+        a = ent(m[1]); tg = ent(m[2] || m[3]);
+        state.pending = null;
+        return emit({
+          t: t, kind: 'ranged', action: RANGED_ACTION,
+          actor: unpossess(a.name), actorArticle: a.article,
+          target: tg.name, targetArticle: tg.article,
+          dmg: toInt(m[4]), crit: crit, burst: burst
+        });
+      }
+
       m = RE.melee.exec(body);
       if (m) {
         a = ent(m[1]); tg = ent(m[2]);
@@ -352,7 +479,35 @@
         });
       }
 
+      // Spikes fire in reaction to someone else's swing, so unlike the forms
+      // above this must not consume a pending announcement -- the weaponskill
+      // it interrupts is still waiting for its own damage line.
+      m = RE.spikes.exec(body);
+      if (m) {
+        a = ent(m[1]); tg = ent(m[3]);
+        return emit({
+          t: t, kind: 'spikes', action: 'Spikes',
+          actor: a.name, actorArticle: a.article,
+          target: tg.name, targetArticle: tg.article,
+          dmg: toInt(m[2])
+        });
+      }
+
       // ---- resolution of a pending announcement ---------------------------
+      // Both Additional effect forms credit the last thing that dealt damage
+      // and land in their own "Additional Effect" action row. The named-target
+      // form is tested first; it is the one that carries a target.
+      m = RE.addlTo.exec(body);
+      if (m && state.lastDamager) {
+        tg = ent(m[1]);
+        return emit({
+          t: t, kind: 'addl', action: 'Additional Effect',
+          actor: state.lastDamager.actor, actorArticle: state.lastDamager.article,
+          target: tg.name, targetArticle: tg.article,
+          dmg: toInt(m[2])
+        });
+      }
+
       m = RE.takes.exec(body);
       if (m) {
         tg = ent(m[1]);
@@ -360,6 +515,14 @@
         var p = state.pending;
         state.pending = null;
         if (p) {
+          // The announcement keeps splashing: hold it aside so the rest of an
+          // AoE's victims, who arrive on their own stamped lines after other
+          // combat has gone by, still land under the action that hit them.
+          state.aoe = {
+            t: t, actor: p.actor, actorArticle: p.actorArticle,
+            action: p.action, kind: p.kind, burst: p.burst, hit: {}
+          };
+          state.aoe.hit[tg.name] = true;
           return emit({
             t: t, kind: p.kind, action: p.action,
             actor: p.actor, actorArticle: p.actorArticle,
@@ -367,11 +530,29 @@
             dmg: dmg, crit: crit || p.crit, burst: burst || p.burst
           });
         }
+
+        // A second victim of the announcement above. One cast never hits the
+        // same target twice, so `hit` keeps a repeated line (a DoT tick on the
+        // one target) from being read as splash and double-counted.
+        var ae = state.aoe;
+        if (ae && t - ae.t <= AOE_MS && !ae.hit[tg.name] &&
+            couldStrike(ae.actor, tg.name)) {
+          ae.hit[tg.name] = true;
+          return emit({
+            t: t, kind: ae.kind, action: ae.action,
+            actor: ae.actor, actorArticle: ae.actorArticle,
+            target: tg.name, targetArticle: tg.article,
+            dmg: dmg, crit: crit, burst: burst || ae.burst
+          });
+        }
+
         // Damage with no announcement in front of it: damage-over-time, a
-        // spike, an enspell. Credit the last thing that dealt damage.
+        // spike, an enspell. Credit the last thing that dealt damage. Flagged
+        // `guess` -- the actor here was never read off a line, so it must not
+        // reach roster.rebuild.
         if (state.lastDamager) {
           return emit({
-            t: t, kind: 'other', action: 'Unattributed',
+            t: t, kind: 'other', action: 'Unattributed', guess: true,
             actor: state.lastDamager.actor, actorArticle: state.lastDamager.article,
             target: tg.name, targetArticle: tg.article,
             dmg: dmg, crit: crit, burst: burst
@@ -427,10 +608,17 @@
         return null;
       }
 
+      // A skillchain is credited to whoever closed it -- the last actor to land
+      // a WEAPONSKILL, not the last actor to deal damage. Ordinary "X hits Y
+      // for N" lines from the rest of the party land between the weaponskill
+      // and this line and would otherwise steal the credit.
       m = RE.skchain.exec(body);
-      if (m && state.lastDamager) {
+      if (m) {
+        var sc = (state.lastWS && t - state.lastWS.t <= CHAIN_MS)
+          ? state.lastWS : state.lastDamager;
+        if (!sc) return null;
         state.pending = {
-          t: t, actor: state.lastDamager.actor, actorArticle: state.lastDamager.article,
+          t: t, actor: sc.actor, actorArticle: sc.article,
           action: 'Skillchain: ' + m[1].trim(), kind: 'skillchain'
         };
         return null;
@@ -506,7 +694,11 @@
         events.length = 0;
         unparsed.length = 0;
         state.pending = null;
+        state.aoe = null;
         state.lastDamager = null;
+        state.lastWS = null;
+        // `foes` is deliberately kept, same reasoning as roster.articled: who
+        // fights whom stays true across a "clear the meter between pulls".
         state.lastStamp = null;
         state.lastSec = -1;
         state.lineNo = 0;
@@ -546,6 +738,9 @@
     createRoster: createRoster,
     MELEE_ACTION: MELEE_ACTION,
     RANGED_ACTION: RANGED_ACTION,
+    COUNTER_ACTION: COUNTER_ACTION,
+    CHAIN_MS: CHAIN_MS,
+    AOE_MS: AOE_MS,
     RE: RE
   };
 })(window);
