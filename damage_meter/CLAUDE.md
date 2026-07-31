@@ -492,9 +492,6 @@ const cs = ['lineChart','barsChart','histChart'].map(i=>document.getElementById(
 `tools/gen-test-log.ps1` writes a synthetic CP932 log (seeded, so it is
 reproducible) — five characters, weaponskills, crits, skillchains, magic bursts,
 ranged attacks, additional effects, an article-less NM, chat noise, and gaps
-between fights so `Latest fight` has something to find. Most of its skillchains
-have another character's melee hit deliberately spliced in between the
-weaponskill and the `Skillchain:` line — that is the case that catches
 between fights so `Latest fight` has something to find. Two of its cases exist
 to catch specific regressions and are worth keeping when the generator changes:
 
