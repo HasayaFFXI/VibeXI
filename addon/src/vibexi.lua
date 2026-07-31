@@ -46,6 +46,7 @@ local S = {
     owner    = nil,     -- our character name, for the filename
     dropped  = 0,       -- packets that failed to decode
     dupes    = 0,
+    unknown  = 0,       -- distinct message ids in neither allowlist
     probed   = false,   -- environment probe written; see probe()
 }
 
@@ -210,6 +211,27 @@ local function probe(p)
     Emit.write_raw(table.concat(parts))
 end
 
+--- Record a message id that is in neither allowlist, once per id per session.
+---
+--- The allowlists drop what they do not recognise, which is the right default
+--- -- but silently, and a silent drop is indistinguishable from a bug. One meta
+--- line per NEW id makes the omission visible and turns "should I add 431?"
+--- into a question with evidence attached: the id, the category it arrived on,
+--- and the action that produced it. Consumers already skip kind:"meta".
+---
+--- Once per id, so a buff-heavy party cannot flood the file.
+local seen_unknown = {}
+
+local function note_unknown(message, act)
+    if seen_unknown[message] then return end
+    seen_unknown[message] = true
+    S.unknown = S.unknown + 1
+    Emit.write_raw(
+        '{"kind":"meta","unknownMsg":' .. string.format('%d', message) ..
+        ',"category":' .. string.format('%d', act.category) ..
+        ',"actionId":' .. string.format('%d', act.param) .. '}')
+end
+
 local function next_seq(now)
     if now ~= S.seq_at then
         S.seq_at = now
@@ -252,33 +274,47 @@ local function record(act, actor, now)
         end
 
         for _, res in ipairs(target.results) do
-            if not name_resolved then
-                name_resolved = action_name(act.category, act.param, res)
+            -- Three outcomes, and the default is DROP. A message in neither
+            -- table is not a damage event -- a cure, a buff, an enfeeble, a
+            -- status tick -- and its `value` field means something other than
+            -- hit points, so emitting it would put a non-damage number into a
+            -- field the browser sums as damage. See vx_enums.E.Damage.
+            local is_damage  = E.Damage[res.message] == true
+            local is_attempt = E.Attempt[res.message] == true
+
+            if is_damage or is_attempt then
+                -- Resolved on the first row we actually emit, not the first row
+                -- we see, so an action whose every result was dropped costs no
+                -- resource lookup.
+                if not name_resolved then
+                    name_resolved = action_name(act.category, act.param, res)
+                end
+
+                local dmg = 0
+                if is_damage then dmg = res.value or 0 end
+
+                Emit.write({
+                    t          = now,
+                    seq        = next_seq(now),
+                    use        = use,
+                    kind       = kind,
+                    actor      = actor.name,
+                    actorKind  = actor_kind,
+                    action     = name_resolved,
+                    actionId   = act.param,
+                    target     = tgt_name,
+                    targetKind = tgt_kind,
+                    dmg        = dmg,
+                    hit        = is_damage,
+                    crit       = E.Crit[res.message] == true,
+                    burst      = res.message == E.Message.BURST,
+                    msg        = res.message,
+                    owner      = owner,
+                    pet        = pet_name,
+                })
+            else
+                note_unknown(res.message, act)
             end
-
-            local no_damage = E.NoDamage[res.message] == true
-            local dmg = res.value or 0
-            if no_damage then dmg = 0 end
-
-            Emit.write({
-                t          = now,
-                seq        = next_seq(now),
-                use        = use,
-                kind       = kind,
-                actor      = actor.name,
-                actorKind  = actor_kind,
-                action     = name_resolved,
-                actionId   = act.param,
-                target     = tgt_name,
-                targetKind = tgt_kind,
-                dmg        = dmg,
-                hit        = not no_damage,
-                crit       = E.Crit[res.message] == true,
-                burst      = res.message == E.Message.BURST,
-                msg        = res.message,
-                owner      = owner,
-                pet        = pet_name,
-            })
         end
     end
 end

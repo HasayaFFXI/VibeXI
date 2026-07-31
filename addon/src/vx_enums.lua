@@ -88,57 +88,145 @@ E.Animation = {
     DAKEN         = 4,
 }
 
--- result.message. The outcome of a single hit.
-E.Message = {
-    HIT         = 1,
-    MOBHEAL3    = 3,
-    MOB_KILL    = 6,
-    MISS        = 15,
-    DEATH_FALL  = 20,
-    SHADOWS     = 31,
-    DODGE       = 32,
-    COUNTER     = 33,
-    SPIKE_DMG   = 44,
-    CRIT        = 67,
-    PARRY       = 70,
-    NO_EFFECT   = 75,
-    RESIST      = 85,
-    DEATH       = 97,
-    ENDRAIN     = 161,
-    ENASPIR     = 162,
-    MOBHEAL373  = 373,
-    MISS_TP     = 188,
-    ENSPELL     = 229,
-    BURST       = 252,
-    RESIST_2    = 284,
-    RANGEHIT    = 352,
-    RANGECRIT   = 353,
-    RANGEMISS   = 354,
-    COMP_RESIST = 655,
+-- result.message -- what the server says happened, and the ONLY thing that
+-- decides whether result.value is damage.
+--
+-- ============================================================================
+-- THESE ARE ALLOWLISTS. An id in neither table is not emitted at all.
+--
+-- The first cut of this was a denylist (`NoDamage`) built from the handful of
+-- melee outcomes Metrics enumerates, which meant an unrecognised message
+-- defaulted to "this is damage". It is not. `value` is a different quantity per
+-- message, and on the very first live run a Protect and a Shell landed 40 and
+-- 41 "damage" on the meter -- message 230 is "<target> gains the effect of
+-- <status>" and its value field is the status, not a number of hit points.
+--
+-- Same argument Phase 0 made for the API manifest, applied to the wire: a
+-- denylist only catches what someone thought of, and here the failure mode of a
+-- miss is silently wrong totals. Unknown ids now drop, so the failure mode is
+-- missing data instead -- and record() writes one meta line naming each unknown
+-- id it saw, so growing these tables is a deliberate edit informed by evidence.
+--
+-- Ids and their English text come from the server's own enum -- `MsgBasic` in
+-- src/map/enums/msg_basic.h of the LandSandBoat-derivative checkout named in
+-- the repo README. That is authoritative and it names every id, where Metrics'
+-- Ashita.Enum.Message lists only the ~40 it needed. Two of the names we had
+-- inherited from it are wrong against that enum: 3 is StartsCastingSelf, not a
+-- heal, and 373 is SpikesEffectRecover.
+-- ============================================================================
+
+-- Tier 1 -- result.value IS hit points of damage dealt BY this packet's actor.
+E.Damage = {
+    [1]   = true,   -- AttackHits
+    [2]   = true,   -- MagicDamage
+    [67]  = true,   -- AttackCrit
+    [77]  = true,   -- UsesSangeTakesDamage
+    [110] = true,   -- UsesAbilityTakesDamage
+    [157] = true,   -- UsesBarrageTakesDamage
+    [161] = true,   -- AddEffectHPDrained          (*)
+    [163] = true,   -- AddEffectDamage             (*)
+    [185] = true,   -- UsesSkillTakesDamage        (weaponskills)
+    [187] = true,   -- UsesSkillHPDrained
+    [197] = true,   -- UsesAbilityResistsDamage    (partial resist still deals it)
+    [227] = true,   -- MagicDrainsHP
+    [229] = true,   -- AddEffectAdditionalDamage   (*)
+    [252] = true,   -- MagicBurstDamage
+    [264] = true,   -- TargetTakesDamage
+    [274] = true,   -- MagicBurstDrainsHP
+    [281] = true,   -- TargetHPDrained
+    [317] = true,   -- UsesJobAbilityTakeDamage
+    [352] = true,   -- RangedAttackHit
+    [353] = true,   -- RangedAttackCrit
+    [576] = true,   -- RangedAttackSquarely
+    [577] = true,   -- RangedAttackPummels
 }
 
--- Messages that mean "this swing landed nothing", so they count toward the
--- attempt but never toward damage. From Metrics handlers/melee.lua:170-178 --
--- some of these arrive WITH a non-zero value field, which is why the message
--- has to win over the value.
-E.NoDamage = {
-    [E.Message.MISS]       = true,
-    [E.Message.DODGE]      = true,
-    [E.Message.SHADOWS]    = true,
-    [E.Message.PARRY]      = true,
-    [E.Message.NO_EFFECT]  = true,
-    [E.Message.RESIST]     = true,
-    [E.Message.RESIST_2]   = true,
-    [E.Message.COMP_RESIST]= true,
-    [E.Message.MISS_TP]    = true,
-    [E.Message.RANGEMISS]  = true,
-    [E.Message.MOBHEAL3]   = true,   -- damage that HEALS the target
-    [E.Message.MOBHEAL373] = true,
+-- (*) NOT REACHED YET, and correct anyway -- keep them.
+--
+-- A result block has THREE message slots, not one. The main `message`, and two
+-- optional trailers: `has_proc` -> proc_message, which is the ADDITIONAL EFFECT,
+-- and `has_react` -> react_message, which is the SPIKE effect. Metrics'
+-- Build_Action renames them exactly that way (add_effect_message = proc_message,
+-- spike_effect_message = react_message, ashita/packets.lua:52-66), and its melee
+-- handler tests add_effect_message separately from message.
+--
+-- The AddEffect* ids only ever appear in proc_message. vx_action decodes that
+-- trailer, but record() reads `res.message` alone, so an add-effect never emits
+-- today -- and the chat parser DOES count it, as kind 'addl' (parser.js RE.addl).
+-- So the packet source currently undercounts a Sneak Attack proc or an enspell
+-- against the log for the same fight, which is precisely the Phase 1 "done when".
+--
+-- Wiring the trailer is a change to record(), not to this table: these ids are
+-- already the right answer for the field they belong to. Left listed so the work
+-- is one edit in one place rather than a second round of research.
+
+-- Tier 2 -- the actor acted and dealt nothing. Emitted with dmg 0 and
+-- hit=false, because these are the DENOMINATOR of accuracy: drop them and
+-- everybody reads as never missing. Several arrive with a non-zero `value`,
+-- which is exactly why the message has to win over the value.
+E.Attempt = {
+    [14]  = true,   -- CounterAbsByShadow
+    [15]  = true,   -- AttackMisses
+    [30]  = true,   -- TargetAnticipates
+    [31]  = true,   -- ShadowAbsorb
+    [32]  = true,   -- TargetDodges
+    [33]  = true,   -- AttackCounteredDamage   (see note below)
+    [70]  = true,   -- TargetParries
+    [75]  = true,   -- MagicNoEffect
+    [85]  = true,   -- MagicResisted
+    [158] = true,   -- AbilityMisses
+    [188] = true,   -- UsesSkillMisses
+    [189] = true,   -- UsesSkillNoEffect
+    [282] = true,   -- TargetEvades
+    [283] = true,   -- TargetNoEffect
+    [284] = true,   -- MagicResistedTarget
+    [323] = true,   -- UsesAbilityNoEffect
+    [324] = true,   -- UsesButMisses
+    [354] = true,   -- RangedAttackMiss
+    [355] = true,   -- RangedAttackNoEffect
+    [373] = true,   -- SpikesEffectRecover -- the hit HEALED the target
+    [655] = true,   -- MagicCompleteResist
 }
+-- 373 is the one id where this file and Metrics could have diverged, so it is
+-- worth the note. Metrics' No_Damage_Messages tests it against the MAIN message
+-- (handlers/melee.lua:170-177) while LSB names it SpikesEffectRecover, which
+-- says spike trailer. Whichever is right, an absorbed hit is a swing that dealt
+-- nothing, so Tier 2 is the answer both ways: if it never arrives here the entry
+-- is inert, and if it does the swing lands in the accuracy denominator exactly
+-- as Metrics counts it. damage_meter/CLAUDE.md already says absorbs read as
+-- misses, so this also keeps the two sources telling the same story.
+
+-- Deliberately in NEITHER table, so they drop. Recorded here so the next person
+-- to see one in the unknown-message meta lines does not "fix" it by accident.
+--
+--   REACTION DAMAGE -- the damage is real but it belongs to the OTHER entity.
+--     33  AttackCounteredDamage   the counter is the target's; for the actor
+--                                 this swing landed nothing, so 33 is a Tier 2
+--                                 attempt and the counter damage is not
+--                                 recorded at all yet
+--     44  SpikesEffectDmg         the target's spikes hit the actor
+--     536 RetaliateDamage         the target retaliated
+--     535 RetaliateShadowAbsorbs / 592 PerfectCounterMiss
+--   Emitting any of these as-is credits the victim with their attacker's
+--   damage. Attribution has to be inverted first, which is a Phase 4 change --
+--   see PLAN.md, "metrics that were previously impossible".
+--
+--   MP, NOT HP -- 162 AddEffectMPDrained, 225 UsesSkillMPDrained,
+--   366 TargetMPDrained. Metrics keeps MP drain out of the damage total too.
+--
+--   HEALS, BUFFS, ENFEEBLES, STATUS -- 7, 24, 102, 103 (recovers HP), 230/266
+--   (gains the effect of), 236/237/267 (receives the effect of), 373
+--   (SpikesEffectRecover). This is a damage meter; damage_meter/CLAUDE.md says
+--   so under "Known gaps". Every event carries its raw `msg`, so a later phase
+--   can add healing without changing the wire format.
 
 E.Crit = {
-    [E.Message.CRIT]      = true,
-    [E.Message.RANGECRIT] = true,
+    [67]  = true,   -- AttackCrit
+    [353] = true,   -- RangedAttackCrit
+}
+
+E.Message = {
+    BURST = 252,    -- MagicBurstDamage
 }
 
 -- Ability ids in the action packet are offset by 512 from the resource table.
