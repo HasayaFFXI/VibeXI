@@ -32,6 +32,14 @@ $melee = @(
 )
 $mobs = @('the Goblin Pathfinder', 'the Steelshell Crab', 'Leaping Lizzy')
 
+# Two extra mobs per fight so an AoE has somewhere to splash. They only ever
+# appear as targets; the article on the name is what classifies them.
+$addSets = @(
+    @('the Goblin Ambusher', 'the Goblin Smithy'),
+    @('the Rock Crab', 'the Land Crab'),
+    @('the Bigclaw', 'the Snipper')
+)
+
 $chatter = @(
     'Lollipops[LowJeuno]: {Garlaige Citadel} Coffer hunt @1 LFM ',
     'Woke[PortJeuno]: ISP {Alliance} {Do you need it?} {Looking for members.}',
@@ -50,6 +58,7 @@ Adv 3
 foreach ($fight in 0..3) {
     $mob = $mobs[$fight % $mobs.Count]
     $mobBare = $mob -replace '^the ', ''
+    $adds = $addSets[$fight % $addSets.Count]
     $swings = 26 + $rand.Next(0, 14)
     $wsCount = @{}
 
@@ -120,6 +129,20 @@ foreach ($fight in 0..3) {
         if ($rand.NextDouble() -lt 0.14) {
             Emit 'Gillette casts Thunder III.'
             Emit ('{0} takes {1} points of damage.' -f $mob, (Roll 520 110)) -Cont
+        }
+
+        # AoE nuke: ONE cast, three victims. Only the first damage line is a
+        # continuation of the cast; the rest arrive as their own stamped lines
+        # and reach the parser through the `state.aoe` echo. This is the case
+        # that must collapse back to a single use -- uncollapsed it reads as
+        # three casts of Firaga III and drags the histogram down to the splash.
+        if ($rand.NextDouble() -lt 0.11) {
+            Emit 'Gillette casts Firaga III.'
+            Emit ('{0} takes {1} points of damage.' -f $mob, (Roll 700 120)) -Cont
+            foreach ($add in $adds) {
+                Adv 1
+                Emit ('{0} takes {1} points of damage.' -f $add, (Roll 660 120))
+            }
         }
 
         # Incoming damage, so the Monsters side has something to show

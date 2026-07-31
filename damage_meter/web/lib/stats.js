@@ -52,6 +52,65 @@
     return out;
   }
 
+  // --------------------------------------------------------------- collapsing
+
+  /*
+   * Events -> uses. One announced action is ONE use of it however many targets
+   * it reached, and the log writes a damage line per victim: uncollapsed, an
+   * AoE weaponskill into three mobs counts as three hits, inflates the swing
+   * count that accuracy divides by, and files the *splash* spread in the
+   * histogram where the weaponskill's own spread belongs.
+   *
+   * The grouping is read off the log rather than guessed here -- `parser` mints
+   * a `use` id when an announcement resolves and hands the same one to the AoE
+   * echo. A single-target event is its own use, so this is a no-op for melee
+   * and the input array is never mutated.
+   *
+   * Damage sums, and the flags are "any": a use that hit two targets and was
+   * evaded by a third is one landed hit, not two hits and a miss.
+   */
+  function collapse(events) {
+    var out = [], byUse = {}, i, e, u;
+
+    for (i = 0; i < events.length; i++) {
+      e = events[i];
+      // Hand-built test data and anything parsed before `use` existed.
+      if (e.use == null) { out.push(e); continue; }
+
+      u = byUse[e.use];
+      if (!u) {
+        byUse[e.use] = u = {
+          t: e.t, kind: e.kind, action: e.action,
+          actor: e.actor, actorArticle: e.actorArticle,
+          target: e.target, targetArticle: e.targetArticle,
+          dmg: e.dmg, hit: e.hit, crit: e.crit, burst: e.burst,
+          guess: e.guess, use: e.use, line: e.line,
+          targets: [e.target], parts: 1
+        };
+        out.push(u);
+        continue;
+      }
+
+      u.dmg += e.dmg;
+      if (e.hit) u.hit = true;
+      if (e.crit) u.crit = true;
+      if (e.burst) u.burst = true;
+      if (e.t < u.t) u.t = e.t;      // the use happened when it was announced
+      if (u.targets.indexOf(e.target) < 0) u.targets.push(e.target);
+      u.parts++;
+    }
+
+    // A use that reached several targets has no one target name to show.
+    for (i = 0; i < out.length; i++) {
+      u = out[i];
+      if (u.targets && u.targets.length > 1) {
+        u.target = u.targets.length + ' targets';
+        u.targetArticle = false;
+      }
+    }
+    return out;
+  }
+
   // -------------------------------------------------------------- aggregation
 
   function blankBucket(name) {
@@ -102,11 +161,16 @@
    * DPS uses the actor's own active window (first to last action), not the
    * encounter wall clock -- a character who joined halfway through should not
    * be divided by time they were not there.
+   *
+   * Counts are per *use*, not per damage line -- see `collapse`.
    */
   function aggregate(events) {
     var byActor = {};
     var order = [];
     var i, e, a;
+
+    var lines = events.length;
+    events = collapse(events);
 
     for (i = 0; i < events.length; i++) {
       e = events[i];
@@ -156,7 +220,8 @@
       start: tMin === Infinity ? null : tMin,
       end: tMax === -Infinity ? null : tMax,
       duration: tMin === Infinity ? 0 : (tMax - tMin) / 1000,
-      events: events.length
+      events: lines,          // damage lines in
+      uses: events.length     // actions they collapsed to
     };
   }
 
@@ -168,6 +233,10 @@
    * A shared grid (rather than each series carrying its own points) is what
    * makes one crosshair able to read every series at the same instant.
    * `maxPoints` caps the grid so a 6-hour log still draws at interactive speed.
+   *
+   * Deliberately NOT collapsed: this only ever sums damage into time bins, and
+   * the sum is the same either way. Collapsing would move an AoE's later
+   * victims back onto the announcement's timestamp for no gain.
    */
   function cumulative(events, names, opts) {
     opts = opts || {};
@@ -228,11 +297,17 @@
    * Every hit of one actor's one action, with the summary stats and a
    * histogram. Bin count follows Freedman-Diaconis, clamped -- fixed bin counts
    * either flatten a tight weaponskill distribution or shatter a wide one.
+   *
+   * Collapsed first, so an AoE contributes one figure -- what the action hit
+   * for -- rather than one point per victim, which is a distribution of splash
+   * and not of the action.
    */
   function distribution(events, actor, action, opts) {
     opts = opts || {};
     var picked = [];
     var misses = 0, crits = 0, bursts = 0;
+
+    events = collapse(events);
 
     for (var i = 0; i < events.length; i++) {
       var e = events[i];
@@ -343,6 +418,7 @@
 
   DPS.stats = {
     filter: filter,
+    collapse: collapse,
     aggregate: aggregate,
     cumulative: cumulative,
     distribution: distribution,

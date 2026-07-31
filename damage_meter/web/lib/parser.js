@@ -22,6 +22,11 @@
  *     does: mobs are addressed as "the Goblin Pathfinder", players never are.
  *     Named NMs ("Leaping Lizzy") get no article, so `DPS.roster` also
  *     propagates through combat relationships -- see roster.rebuild.
+ *
+ * Every event carries a `use` id. One announced action is one use of it however
+ * many targets it reached, so an AoE's victims -- which arrive as separate
+ * damage lines -- share an id and `stats.collapse` folds them back into a
+ * single swing. See the `takes` branch.
  */
 (function (global) {
   'use strict';
@@ -275,7 +280,10 @@
       lastDamager: null,    // for Additional effect / unannounced damage
       lastWS: null,         // last weaponskill that landed, for Skillchain
       foes: {},             // name -> { name: true }, from observed attributions
-      lineNo: 0
+      lineNo: 0,
+      // Monotonic across resets, unlike lineNo: that one indexes into the line
+      // stream being re-fed, this one only has to be unique among live events.
+      useSeq: 0
     };
 
     var events = [];
@@ -328,6 +336,9 @@
 
     function push(ev) {
       ev.line = state.lineNo;
+      // Anything that did not inherit an id is a use of its own: a melee swing,
+      // a miss, a spike. Only the AoE echo passes one in.
+      if (ev.use == null) ev.use = ++state.useSeq;
       events.push(ev);
       if (!ev.guess) noteFoe(ev.actor, ev.target);
       if (ev.hit && ev.dmg > 0) {
@@ -357,7 +368,8 @@
         hit: o.hit !== false,
         crit: !!o.crit,
         burst: !!o.burst,
-        guess: !!o.guess
+        guess: !!o.guess,
+        use: o.use
       });
     }
 
@@ -518,16 +530,20 @@
           // The announcement keeps splashing: hold it aside so the rest of an
           // AoE's victims, who arrive on their own stamped lines after other
           // combat has gone by, still land under the action that hit them.
+          // The id minted here is what they inherit -- one Meteor is one use
+          // of Meteor whether it lands on one target or six.
+          var useId = ++state.useSeq;
           state.aoe = {
             t: t, actor: p.actor, actorArticle: p.actorArticle,
-            action: p.action, kind: p.kind, burst: p.burst, hit: {}
+            action: p.action, kind: p.kind, burst: p.burst, use: useId, hit: {}
           };
           state.aoe.hit[tg.name] = true;
           return emit({
             t: t, kind: p.kind, action: p.action,
             actor: p.actor, actorArticle: p.actorArticle,
             target: tg.name, targetArticle: tg.article,
-            dmg: dmg, crit: crit || p.crit, burst: burst || p.burst
+            dmg: dmg, crit: crit || p.crit, burst: burst || p.burst,
+            use: useId
           });
         }
 
@@ -542,7 +558,8 @@
             t: t, kind: ae.kind, action: ae.action,
             actor: ae.actor, actorArticle: ae.actorArticle,
             target: tg.name, targetArticle: tg.article,
-            dmg: dmg, crit: crit, burst: burst || ae.burst
+            dmg: dmg, crit: crit, burst: burst || ae.burst,
+            use: ae.use
           });
         }
 

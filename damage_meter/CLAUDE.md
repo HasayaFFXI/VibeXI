@@ -155,6 +155,27 @@ Consequences worth knowing:
   further `takes` lines for `AOE_MS` (5 s). `aoe.hit` records who it already
   covered, because one cast never hits the same target twice and a repeated line
   is a DoT tick, not splash.
+- **One action is one *use* of it however many targets it reached, and counting
+  the damage lines instead inflates everything that is not a sum.** Every event
+  carries a `use` id; `state.aoe` mints one when the announcement resolves and
+  the echo hands the same one to each later victim, so the grouping is read off
+  the log rather than guessed downstream. `stats.collapse` folds them back —
+  damage sums, `hit`/`crit`/`burst` are "any", and a multi-target use reports
+  its target as `"3 targets"`. `aggregate` and `distribution` both collapse
+  first; `cumulative` deliberately does not, because it only ever sums into time
+  bins and the sum is identical either way.
+
+  Skipping this does not change anyone's damage or DPS — it changes the counts.
+  Measured on the test log, Gillette's Firaga III went from **42 hits at 667
+  average** to **14 at 2,001**, max from 886 (the biggest splash) to 2,305 (the
+  biggest cast), and the histogram from 42 points with a median of 655 to 14
+  with a median of 2,026. Accuracy is the one that bites hardest: the swing
+  count is the denominator, so a party fighting adds silently reads as missing
+  far more than it does.
+
+  This mirrors what Metrics does natively — it gets the target list inside one
+  0x028 packet and counts attempts outside the target loop
+  (`handlers/tp_action.lua`, with a comment saying exactly why).
 - **The AoE echo needs `couldStrike`, or it is worse than the guess it replaces.**
   Unguarded, a party nuke that just resolved adopts the *monster's* AoE damage on
   the party and credits it to the nuker. `state.foes` is a parse-time sketch of
@@ -409,6 +430,18 @@ DPS.stats.aggregate(DPS.stats.filter(DPS.app.parser.events, {roster:DPS.app.pars
 // every name the first call is missing must be in roster.mobs, and nothing else.
 DPS.stats.aggregate(DPS.stats.filter(DPS.app.parser.events, {})).actors.map(a=>a.name)
 DPS.parser.parseAll(['[10:00:00] A uses Tachi: Jinpu.', 'The B takes 700 points of damage.'])
+
+// AoE collapse: three damage lines, ONE use, damage summed, target "3 targets".
+DPS.stats.collapse(DPS.parser.parseAll([
+  '[10:00:00] Gillette casts Firaga III.',
+  'the Goblin Pathfinder takes 600 points of damage.',
+  '[10:00:01] the Goblin Ambusher takes 500 points of damage.',
+  '[10:00:02] the Goblin Smithy takes 400 points of damage.'
+]).events)
+// The invariant to re-check after any parser change: collapsing must never move
+// damage, only counts. Strip `use` to reproduce the old (wrong) numbers.
+var s = DPS.stats.filter(DPS.app.parser.events, {roster: DPS.app.parser.roster});
+DPS.stats.collapse(s).reduce((n,e)=>n+(e.hit?e.dmg:0),0) === s.reduce((n,e)=>n+(e.hit?e.dmg:0),0)
 ```
 
 ```js
@@ -462,7 +495,16 @@ ranged attacks, additional effects, an article-less NM, chat noise, and gaps
 between fights so `Latest fight` has something to find. Most of its skillchains
 have another character's melee hit deliberately spliced in between the
 weaponskill and the `Skillchain:` line — that is the case that catches
-`lastDamager` attribution, and it is worth keeping when the generator changes.
+between fights so `Latest fight` has something to find. Two of its cases exist
+to catch specific regressions and are worth keeping when the generator changes:
+
+- Most skillchains have another character's melee hit deliberately spliced in
+  between the weaponskill and the `Skillchain:` line — the case that catches
+  `lastDamager` attribution.
+- Each fight carries two extra articled mobs and an occasional `Gillette casts
+  Firaga III` that lands on all three, the first victim as a continuation and
+  the rest as their own stamped lines — the case that catches AoE use collapsing.
+  There are 14 of them in the current seed.
 Point a second instance at it (this is the `damage-meter-test` entry in
 `../.claude/launch.json`, port 8732):
 
