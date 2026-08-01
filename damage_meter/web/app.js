@@ -14,7 +14,19 @@
   var $ = DPS.popout.byId;
   var esc = C.esc;
 
-  var POLL_MS = 1000;
+  var POLL_MS = 250;
+  /*
+   * `roster.rebuild` is deliberately NOT run at poll rate. It is O(events) with
+   * a 4-pass fixed point over the whole history, and it is the single most
+   * expensive thing in the poll path -- measured at 32ms on a 200k-event
+   * session, against 22ms for an aggregate and 10ms for a filter.
+   *
+   * Nothing needs it faster. It answers "is this name a monster", which changes
+   * only when a name is seen for the first time or gets reclassified, and a
+   * second of latency on that is exactly what shipped at POLL_MS = 1000. So the
+   * render keeps up with the poll and the classification pass does not.
+   */
+  var REBUILD_MS = 1000;
   var FIGHT_GAP_MS = 90000;   // silence longer than this starts a new fight
 
   var app = {
@@ -36,6 +48,7 @@
     visibleActors: [],      // names with a chip right now; scopes All / None
     chipsOpen: true,        // character list expanded; persisted
     lastOk: 0,
+    lastRebuild: 0,         // throttles roster.rebuild; see REBUILD_MS
     error: null
   };
 
@@ -186,6 +199,7 @@
           app.seen = []; app.seenSet = {}; app.scanned = 0;
           app.drill = null;
           app.resetAt = null;   // a new file is its own fresh start
+          app.lastRebuild = 0;  // classify the new file's names immediately
           $('drillCard').hidden = true;
         }
         app.offset = d.nextOffset;
@@ -194,7 +208,16 @@
         for (var i = 0; i < lines.length; i++) app.parser.feed(lines[i]);
         app.lines += lines.length;
 
-        if (lines.length) app.parser.roster.rebuild(app.parser.events);
+        // Throttled, not skipped -- see REBUILD_MS. `lastRebuild` starts at 0 so
+        // the first batch of a session (or of a new file) always classifies
+        // before anything is drawn.
+        if (lines.length) {
+          var nowMs = Date.now();
+          if (nowMs - app.lastRebuild >= REBUILD_MS) {
+            app.parser.roster.rebuild(app.parser.events);
+            app.lastRebuild = nowMs;
+          }
+        }
 
         setStatus(app.file, 'live');
         // Idle polls must not rebuild the tables -- that would reset scroll

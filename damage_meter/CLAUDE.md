@@ -229,6 +229,32 @@ Consequences worth knowing:
   on the following render, and a manual flip runs `resetColors()` anyway.
 - **Idle polls skip `render()`.** Rebuilding the tables once a second with no
   new data resets scroll position and kills text selection.
+- **`POLL_MS` is 250, but the browser clamps it to 1000 whenever the tab is
+  hidden.** That is a Chrome timer policy, not a bug here, and it cannot be
+  worked around from the page. Consequences: a minimised or background-tab meter
+  silently reverts to the old 1 s cadence, and any attempt to measure the poll
+  rate from a non-visible tab reads ~1000 ms no matter what `POLL_MS` says
+  (`document.visibilityState` is the thing to check before believing a
+  measurement). A "Keep in focus" Document PiP panel is always visible, so it
+  runs unclamped — which is the mode that actually wants the low latency.
+- **`roster.rebuild` is throttled to `REBUILD_MS` (1 s), deliberately not run at
+  poll rate.** It is the most expensive thing in the poll path — measured 1.5 ms
+  at 10k events, 7.6 ms at 50k, 32 ms at 200k, against 22 ms for an `aggregate`
+  and 10 ms for a `filter` at that size. Nothing needs it faster: it answers "is
+  this name a monster", which changes only on first sighting or reclassification,
+  and 1 s of latency there is exactly what shipped when `POLL_MS` was 1000.
+  `app.lastRebuild` starts at 0 and is reset to 0 on a file switch, so the first
+  batch of any session always classifies before anything is drawn.
+
+  The rest of the poll path is still O(events) and *does* run at poll rate —
+  `filter` and `aggregate` twice each, plus `cumulative`. Total measured poll
+  work is ~5.6 ms at 10k events, ~25 ms at 50k, ~101 ms at 200k, i.e. roughly
+  2%, 10% and 40% of a core at 250 ms. Polls cannot pile up (`schedule()` is
+  called from the final `.then()`, so the next one is queued only after the
+  current finishes), but a very long grinding session will get warm. If that
+  bites, the fix is incremental aggregation rather than a slower poll — and the
+  cheapest single win is that `render()` currently computes `S.aggregate` twice,
+  once only to get the chip names.
 - **The filter bar is two stacked rows, and the character list owns the second
   one.** An 18-name alliance cannot share a line with the segmented controls —
   given a shared row the chips get a narrow column and grow downwards with every

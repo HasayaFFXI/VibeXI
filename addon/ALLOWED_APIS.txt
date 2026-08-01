@@ -1,0 +1,136 @@
+# VibeXI addon — the complete set of external APIs addon/src/ is allowed to call.
+#
+# This is an ALLOWLIST, not a denylist. check-apis.ps1 extracts every external
+# call from addon/src/**/*.lua and fails on anything not listed here. A denylist
+# would only catch the routes we thought of; this catches APIs nobody on this
+# project has heard of yet.
+#
+# Adding a line to this file is a deliberate act. Before you do, ask: can this
+# API send anything to the game server? If you are not certain, the answer is no.
+#
+# Format: one token per line. '#' comments and blank lines ignored.
+# Tokens are emitted by the checker in these shapes:
+#
+#     require('name')     a module import
+#     ashita.ns.fn        the ashita.* namespace
+#     AshitaCore:Method   a root SDK accessor
+#     :Method             ANY colon-call (see the convention below)
+#     Global()            a bare global function
+#     lib.fn              Lua stdlib (io, os, package, debug)
+#     event:name          an ashita.events.register subscription
+#
+# CONVENTION THAT MAKES THIS WORK: our own Lua uses dot-calls only
+# (`emit.write(x)`), never colon-calls. So every ':Method' the checker finds is
+# an SDK call, and this list is the exact SDK method surface. Do not define
+# methods on our own tables with ':' — it blunts the check.
+
+
+# --- modules -----------------------------------------------------------------
+# 'common' is Ashita's stdlib extensions: T{}, switch(), string helpers.
+# NOT socket (network capability we do not need — PLAN.md Decision 1).
+# NOT ffi (foreign-function escape hatch — PLAN.md Decision 2).
+require('common')
+
+# Our own modules. Listed individually on purpose: a new module is then a
+# deliberate line in this file, and require('socket') would arrive through the
+# exact same door as require('vx_emit') rather than slipping past a wildcard.
+require('vx_enums')
+require('vx_bitreader')
+require('vx_action')
+require('vx_entity')
+require('vx_emit')
+require('vx_ws_names')
+
+
+# --- events ------------------------------------------------------------------
+ashita.events.register
+
+# Subscriptions, checked by name. packet_in is the data feed; load/unload are
+# lifecycle only (open and flush/close the output file) and carry no capability.
+# packet_out is absent and must stay absent — it is the injection route.
+event:packet_in
+event:load
+event:unload
+
+
+# --- filesystem --------------------------------------------------------------
+# Creating the output directory under the Ashita config path.
+ashita.fs.exists
+ashita.fs.create_dir
+
+# The one-way bridge. Append mode, local path only. See PLAN.md.
+io.open
+:write
+:close
+:flush
+
+
+# --- Ashita SDK roots --------------------------------------------------------
+# Note the absence of GetChatManager. That is the only route to QueueCommand,
+# which is the only way an addon can speak to the server. It must never appear.
+AshitaCore:GetInstallPath
+AshitaCore:GetMemoryManager
+AshitaCore:GetResourceManager
+
+:GetMemoryManager
+:GetResourceManager
+:GetInstallPath
+
+
+# --- memory manager: entity table -------------------------------------------
+:GetEntity
+:GetName
+:GetServerId
+:GetType
+:GetStatus
+:GetSpawnFlags
+:GetHPPercent
+:GetClaimStatus
+:GetTargetIndex
+:GetPetTargetIndex
+:GetLocalPositionX
+:GetLocalPositionY
+:GetLocalPositionZ
+
+
+# --- memory manager: party table --------------------------------------------
+:GetParty
+:GetMemberIsActive
+:GetMemberName
+:GetMemberServerId
+:GetMemberTargetIndex
+:GetMemberMainJob
+:GetMemberMainJobLevel
+:GetMemberSubJob
+:GetMemberSubJobLevel
+:GetMemberZone
+
+
+# --- memory manager: player --------------------------------------------------
+:GetPlayer
+:GetMainJob
+:GetSubJob
+:GetIsZoning
+:GetPetTP
+
+
+# --- resource manager: id -> name -------------------------------------------
+:GetAbilityById
+:GetSpellById
+
+
+# --- bare globals ------------------------------------------------------------
+GetEntity()
+GetPlayerEntity()
+
+
+# --- Lua stdlib --------------------------------------------------------------
+# Timestamps. os.time is 1-second resolution and that is deliberate: nothing in
+# the UI resolves finer, and it lets us skip LuaSocket entirely (Decision 1).
+os.time
+os.date
+
+# Reads %LOCALAPPDATA% to locate the output directory. Reads an environment
+# variable and nothing else — it cannot execute, open or connect to anything.
+# (os.execute and io.popen, which CAN, are denylisted.)
+os.getenv
