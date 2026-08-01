@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# VibeXI pre-commit hook.
+#
+# The addon must never gain an API that can reach the game server. This runs the
+# allowlist check on every commit so that guarantee cannot rot silently.
+#
+# Install (once, from the repo root):
+#     git config core.hooksPath addon/hooks
+#
+# Git runs hooks from the repo root, so the relative path below is correct.
+
+powershell -NoProfile -ExecutionPolicy Bypass -File "addon/check-apis.ps1"
+status=$?
+
+if [ $status -ne 0 ]; then
+    echo ""
+    echo "pre-commit: addon API check FAILED -- commit aborted."
+    echo "  Fix the call, or add it to addon/ALLOWED_APIS.txt deliberately."
+    echo "  To bypass in an emergency: git commit --no-verify  (think hard first)"
+    echo ""
+fi
+
+exit $status
