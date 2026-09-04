@@ -38,8 +38,8 @@ local Emit     = require('vx_emit')
 local WS_NAMES = require('vx_ws_names')
 
 addon.name    = 'VibeXI'
-addon.author  = 'VibeXI'
-addon.version = '0.1.0'
+addon.author  = 'HasayaFFXI'
+addon.version = '0.2.0'
 
 -- ---------------------------------------------------------------- state
 
