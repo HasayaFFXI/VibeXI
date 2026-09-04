@@ -1,5 +1,9 @@
-# Generated test logs (damage_meter/tools/gen-test-log.ps1 writes here)
-damage_meter/tools/logs/
+# Generated test fixture (damage_meter/tools/gen-test-events.py writes here)
+damage_meter/tools/events/
+
+# Python bytecode
+__pycache__/
+*.pyc
 
 # OS / OneDrive noise
 desktop.ini

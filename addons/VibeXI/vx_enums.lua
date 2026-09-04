@@ -141,24 +141,25 @@ E.Damage = {
     [577] = true,   -- RangedAttackPummels
 }
 
--- (*) NOT REACHED YET, and correct anyway -- keep them.
+-- (*) THESE ARRIVE IN THE PROC TRAILER, not in the main message.
 --
 -- A result block has THREE message slots, not one. The main `message`, and two
--- optional trailers: `has_proc` -> proc_message, which is the ADDITIONAL EFFECT,
--- and `has_react` -> react_message, which is the SPIKE effect. Metrics'
--- Build_Action renames them exactly that way (add_effect_message = proc_message,
--- spike_effect_message = react_message, ashita/packets.lua:52-66), and its melee
--- handler tests add_effect_message separately from message.
+-- optional trailers: `has_proc` -> proc_message, which is the ADDITIONAL EFFECT
+-- (or a SKILLCHAIN -- see E.skillchain below), and `has_react` -> react_message,
+-- which is the SPIKE effect. Metrics' Build_Action renames them exactly that way
+-- (add_effect_message = proc_message, spike_effect_message = react_message,
+-- ashita/packets.lua:52-66), and its melee handler tests add_effect_message
+-- separately from message.
 --
--- The AddEffect* ids only ever appear in proc_message. vx_action decodes that
--- trailer, but record() reads `res.message` alone, so an add-effect never emits
--- today -- and the chat parser DOES count it, as kind 'addl' (parser.js RE.addl).
--- So the packet source currently undercounts a Sneak Attack proc or an enspell
--- against the log for the same fight, which is precisely the Phase 1 "done when".
+-- record() reads the trailer separately from the main message and emits an
+-- additional effect as its own `kind:'addl'` row with its own `use`, so an
+-- enspell or a Sneak Attack proc is counted without being folded into the swing
+-- it rode on. The ids are listed here because Tier 1 is the right answer for
+-- that field too: proc_value is hit points, same as res.value.
 --
--- Wiring the trailer is a change to record(), not to this table: these ids are
--- already the right answer for the field they belong to. Left listed so the work
--- is one edit in one place rather than a second round of research.
+-- STILL NOT WIRED: the react (spike) trailer. That damage belongs to the entity
+-- being attacked, not to the actor on the packet, so emitting it needs the
+-- attribution inverted first -- see the "REACTION DAMAGE" note further down.
 
 -- Tier 2 -- the actor acted and dealt nothing. Emitted with dmg 0 and
 -- hit=false, because these are the DENOMINATOR of accuracy: drop them and
@@ -228,6 +229,59 @@ E.Crit = {
 E.Message = {
     BURST = 252,    -- MagicBurstDamage
 }
+
+-- ============================================================================
+-- SKILLCHAINS
+--
+-- A skillchain is not a packet of its own and not a message of its own. It
+-- rides on the closing weaponskill's result, in the PROC trailer:
+--
+--     res.proc_message   the skillchain id
+--     res.proc_value     the skillchain's own damage, separate from the
+--                        weaponskill's own res.value
+--
+-- METRICS IS THE SOURCE OF TRUTH FOR THIS TABLE. What follows is
+-- `Res.WS.Skillchains` from resources/weapon_skills_curated.lua, copied
+-- verbatim, and E.skillchain() is its `Res.WS.Get_Skillchain` -- a plain
+-- lookup, nothing more.
+--
+-- DO NOT DERIVE THESE IDS ARITHMETICALLY. An earlier cut of this file computed
+-- them as `287 + effect` / `384 + effect` from the LandSandBoat server's
+-- `action_result_t::recordSkillchain`. That formula disagrees with Metrics in
+-- two places -- it puts Radiance and Umbra at 302/303 rather than 767/768, and
+-- it reads the 385/386 pair as "absorbed" rather than as Light/Darkness -- and
+-- Metrics is the parser with a track record against this server. If the two
+-- ever have to be reconciled, that is a measurement against a live client, not
+-- a reading of either source.
+--
+-- THE TABLE IS ONLY CONSULTED ON A WEAPONSKILL (category 3). That is the single
+-- context Metrics consults it in: `H.TP.Skillchain_Parse` is called from
+-- `H.TP.Action` and from nowhere else (handlers/tp_action.lua:41). Monster TP
+-- moves and pet abilities never reach it, and there is a comment at
+-- tp_action.lua:151 saying BST pet abilities cannot skillchain here anyway.
+--
+-- That context is also what resolves 229, which is in two tables at once. On a
+-- weaponskill Metrics calls it 'DRG Jump Effect'; everywhere else it reads the
+-- same trailer as `Message.ENSPELL` (ashita/_enums.lua) and files it as an
+-- additional effect. So the id means one thing on a weaponskill and another on
+-- a melee swing, and record() reproduces both -- see the proc-trailer branch
+-- there. This is why the lookup is gated on `kind` rather than being global.
+E.Skillchains = {
+    [229] = 'DRG Jump Effect',
+    [288] = 'Light',       [289] = 'Darkness',
+    [290] = 'Gravitation', [291] = 'Fragmentation', [292] = 'Distortion', [293] = 'Fusion',
+    [294] = 'Compression', [295] = 'Liquefaction',  [296] = 'Induration', [297] = 'Reverberation',
+    [298] = 'Transfixion', [299] = 'Scission',      [300] = 'Detonation', [301] = 'Impaction',
+    [385] = 'Light',       [386] = 'Darkness',
+    [767] = 'Radiance',    [768] = 'Umbra',
+}
+
+--- The skillchain's English name, or nil when this message is not one.
+--- Metrics' Res.WS.Get_Skillchain, and deliberately nothing more than a lookup.
+function E.skillchain(message)
+    if not message then return nil end
+    return E.Skillchains[message]
+end
 
 -- Ability ids in the action packet are offset by 512 from the resource table.
 --

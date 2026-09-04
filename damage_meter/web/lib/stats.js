@@ -1,7 +1,7 @@
 /*
  * stats.js -- damage events -> the numbers the UI draws.
  *
- * DOM-free, same contract as parser.js: every function takes plain data and
+ * DOM-free, same contract as source.js: every function takes plain data and
  * returns plain data, so it can be exercised from the console.
  */
 (function (global) {
@@ -22,14 +22,14 @@
    *
    * Pass a `roster` and every event whose *actor* is a monster is dropped: this
    * is a party damage meter, and damage the monsters dealt is neither shown nor
-   * counted anywhere. It is dropped here rather than in the parser because
-   * `roster.rebuild` derives who is a monster from who fights whom, so the
-   * monsters' own events are what classify the article-less names -- see the
-   * fixed point in parser.js. They are parsed, then filtered out of the view.
+   * counted anywhere. It is dropped here in the view rather than on the way in,
+   * so the monsters' own events stay in the event list -- they are what the
+   * Diagnostics roster is built from, and what a manual override has to be able
+   * to bring back without a re-read.
    *
-   * `skillchains: false` drops skillchain damage entirely. It is a filter and
-   * not a parse rule on purpose: the events are already parsed and the log
-   * lines are long gone, so toggling it has to be a re-render, not a re-read.
+   * `skillchains: false` drops skillchain damage entirely. The addon emits a
+   * chain as its own event (kind 'skillchain', credited to whoever closed it),
+   * so this is a re-render and never a re-read.
    */
   function filter(events, opts) {
     opts = opts || {};
@@ -61,10 +61,10 @@
    * count that accuracy divides by, and files the *splash* spread in the
    * histogram where the weaponskill's own spread belongs.
    *
-   * The grouping is read off the log rather than guessed here -- `parser` mints
-   * a `use` id when an announcement resolves and hands the same one to the AoE
-   * echo. A single-target event is its own use, so this is a no-op for melee
-   * and the input array is never mutated.
+   * The grouping is ground truth, not a guess: the action packet carries the
+   * whole target list, so the addon mints one `use` per action in Lua and hands
+   * it to every row that action produced. A single-target event is its own use,
+   * so this is a no-op for melee and the input array is never mutated.
    *
    * Damage sums, and the flags are "any": a use that hit two targets and was
    * evaded by a third is one landed hit, not two hits and a miss.
@@ -80,11 +80,12 @@
       u = byUse[e.use];
       if (!u) {
         byUse[e.use] = u = {
-          t: e.t, kind: e.kind, action: e.action,
-          actor: e.actor, actorArticle: e.actorArticle,
-          target: e.target, targetArticle: e.targetArticle,
+          t: e.t, seq: e.seq, kind: e.kind, action: e.action, actionId: e.actionId,
+          actor: e.actor, actorKind: e.actorKind,
+          target: e.target, targetKind: e.targetKind,
           dmg: e.dmg, hit: e.hit, crit: e.crit, burst: e.burst,
-          guess: e.guess, use: e.use, line: e.line,
+          msg: e.msg, owner: e.owner, pet: e.pet,
+          use: e.use, line: e.line,
           targets: [e.target], parts: 1
         };
         out.push(u);
@@ -105,7 +106,7 @@
       u = out[i];
       if (u.targets && u.targets.length > 1) {
         u.target = u.targets.length + ' targets';
-        u.targetArticle = false;
+        u.targetKind = '';
       }
     }
     return out;

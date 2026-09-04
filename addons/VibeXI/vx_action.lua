@@ -35,7 +35,7 @@
 -- header, same 3/2/12/5/5/17/10/31 result block, same two optional trailers.
 -- That is an independent confirmation of the layout, not a source for it -- the
 -- code below is still written from the XiPackets description, since Ashita's is
--- GPL-3.0 and this tree is not (see addon/PLAN.md, Licensing).
+-- GPL-3.0 and this tree is not (see addon-dev/PLAN.md, Licensing).
 
 local BR = require('vx_bitreader')
 
