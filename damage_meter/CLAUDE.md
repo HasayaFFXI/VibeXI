@@ -1,43 +1,75 @@
 # damage_meter — working notes
 
-Live HorizonXI damage meter. **No Node, no Python, no build step** on this
-machine — the server is PowerShell 5.1 and the front end is classic scripts.
-`README.md` is the human-facing overview; this file is the operational detail.
+Live HorizonXI damage meter. **No Node, no build step, nothing to pip install**
+— the server is a stdlib-only Python script and the front end is classic
+scripts. `README.md` is the human-facing overview; this file is the operational
+detail. `PACKAGING.md` covers turning the server into an `.exe`.
+
+## The one source is the addon
+
+`../addons/VibeXI/` reads the game's own action packets and appends one JSON
+object per line to `%LOCALAPPDATA%\VibeXI\events\<Character>_<date>.jsonl`.
+That file is the only input this app has.
+
+**There is no chat-log reader and there must not be a second one.** The log
+parser was deleted on 2026-09-04, once the addon was approved; `web/lib/parser.js`
+and the CP932 tailer went with it, along with the article heuristic, the
+who-fights-whom fixed point, the five-second AoE echo, the `lastDamager` guess
+and every `guess: true` event. All of those existed to recover facts the packet
+states outright, and keeping a second source that disagrees with the first is
+worse than having one that is right. If historical chat logs ever need reading
+again, that is a separate tool, not a fallback branch in here.
+
+What the packet gives that the text could not:
+
+| | The log said | The packet says |
+|---|---|---|
+| who is a player | nothing — inferred from "the" plus a fixed point | `spawn_flags`, per entity |
+| AoE grouping | one line per victim, grouped by a 5 s window | the target list, in the packet |
+| multi-attack | one line per swing, indistinguishable from separate rounds | results nested under a target |
+| crits | a turn of phrase, three of them for ranged | a message id |
+| miss vs parry vs shadow | mostly indistinguishable | distinct message ids |
+| pets | an ordinary name | `pet_index`, so the owner is named |
+| WS vs job ability | undecidable at the announcement | the packet category |
+| skillchains | credited by guessing who swung last | attached to the closing weaponskill |
 
 ## Shape
 
 ```
-damage-meter.ps1    HttpListener on localhost + newest-log tailer
-Damage-Meter.cmd    double-click launcher (powershell -ExecutionPolicy Bypass)
+damage-meter.py     http.server on 127.0.0.1 + newest-event-file tailer
+winalpha.py         ctypes user32: the layered-window alpha behind /api/alpha
+Damage-Meter.cmd    double-click launcher (python damage-meter.py)
+../addons/VibeXI/   the addon that produces every event this app draws
 ../shared-ui/       THE design system, shared with ../ws_calculator; mounted at /shared/
-web/index.html      page shell; theme -> parser -> stats -> chart -> popout -> app
+web/index.html      page shell; theme -> source -> stats -> chart -> popout -> app
 web/style.css       app-only rules: filter bar, source indicator, diagnostics, pop-outs
 web/app.js          polling, filter state, all DOM writing
-web/lib/parser.js   lines -> events        (DOM-free)
-web/lib/stats.js    events -> aggregates   (DOM-free)
+web/lib/source.js   JSONL lines -> events   (DOM-free)
+web/lib/stats.js    events -> aggregates    (DOM-free)
 web/lib/chart.js    canvas line / bars / histogram
 web/lib/popout.js   moves a card into its own OS window
+tools/gen-test-events.py   synthetic event file, for working with no game running
 ```
 
 ## Hard rules
 
-- **The server is dumb on purpose.** `/api/log?file=&offset=` returns raw log
-  lines and nothing else. All parsing and aggregation happen in the browser, so
-  a parse-rule change is an F5, not a restart. Do not move parsing into
-  PowerShell.
-- **`lib/parser.js` and `lib/stats.js` stay DOM-free**, same contract as
+- **The server is dumb on purpose.** `/api/events?file=&offset=` returns raw
+  lines and nothing else. All interpretation and aggregation happen in the
+  browser, so a change there is an F5, not a restart. Do not move any of it into
+  the server.
+- **`lib/source.js` and `lib/stats.js` stay DOM-free**, same contract as
   `../ws_calculator`. They're what gets validated from the console; if a function
   needs a value it takes it as an argument.
 - **Classic scripts on `window.DPS`, never ES modules.** Load order is
-  `/shared/js/theme.js -> parser -> stats -> chart -> popout -> app`; `chart.js`
+  `/shared/js/theme.js -> source -> stats -> chart -> popout -> app`; `chart.js`
   reads `DPS.stats` at load time for the formatters, `app.js` takes its `$` from
   `DPS.popout`, and `app.js` needs `FFXITheme` for the light/dark toggle.
 - **`$` is `DPS.popout.byId`, not `document.getElementById`.** A popped-out
   card's nodes live in another document, where `getElementById` cannot see them.
   Anything that reaches for an element by id must go through `$`.
-- **The design system lives in `../shared-ui/`, not in `web/`.** `damage-meter.ps1`
+- **The design system lives in `../shared-ui/`, not in `web/`.** `damage-meter.py`
   mounts that directory at the `/shared/` URL prefix so nothing is copied in —
-  `Resolve-StaticPath` picks a root from the prefix and applies the same
+  `resolve_static_path` picks a root from the prefix and applies the same
   containment check to each. `web/style.css` loads *after* the shared sheet and
   holds only what `../ws_calculator` would never want. Before adding a rule, check
   whether the shared sheet already has the primitive (`.card`, `.tile`,
@@ -51,169 +83,160 @@ web/lib/popout.js   moves a card into its own OS window
   toggle, its label and its persistence are `FFXITheme.bind()`; the only
   app-specific part is that `onChange` must call `render()`, because canvas
   cannot restyle itself the way the DOM does.
-- **Chat logs are Shift-JIS (CP932)**, not UTF-8. The auto-translate brackets
-  are two-byte `0x81xx` sequences. Decoding as UTF-8 mangles every one of them.
-- **Byte offsets, not line counts.** `Read-LogTail` trims back to the last
-  newline and reports `nextOffset`, so a half-written line the game is still
-  flushing is held for the next poll instead of being parsed as truncated. The
-  client must carry `nextOffset` forward; never seek to EOF.
-- **`FileShare` must include `Write` and `Delete`** or the running game gets
-  blocked from writing its own log.
+- **The event file is ASCII, and that is the addon's job.** `vx_emit.lua` escapes
+  every byte >= 0x7F as `\uXXXX`, so the bytes decode identically as ASCII,
+  UTF-8 or CP932. The server decodes UTF-8. Do not add encoding negotiation to
+  this path; fix the emitter if a name ever arrives mangled.
+- **Byte offsets, not line counts.** `read_tail` trims back to the last newline
+  and reports `nextOffset`, so a half-written line is held for the next poll
+  instead of being parsed as truncated. This is what makes the addon's
+  flush-per-event safe — half a JSON object is not parseable. The client must
+  carry `nextOffset` forward; never seek to EOF.
+- **The file must be opened sharing `Write` and `Delete`.** The addon writes it
+  from inside the game process, on the game's thread, and must never be blocked
+  by this tool. Python's `open()` shares read and write but *not* delete, so
+  `_open_shared` goes through `CreateFileW` with all three and falls back to
+  `open()` only off Windows.
 
-## The two facts that drive the parser
+## The event contract
 
-1. **A multi-sentence game message is written across multiple lines, and only
-   the first carries a `[HH:MM:SS]` stamp.** So a weaponskill is
-   `Hasaya uses Tachi: Jinpu.` on one line and
-   `The Goblin Pathfinder takes 723 points of damage.` on the next, with the
-   skill name never repeated. `state.pending` holds the announced action until
-   its damage line lands; it survives ignored lines, is consumed or dropped by
-   the next combat line, and expires after 8 s so a Meditate can never adopt an
-   unrelated number.
+One line, one `(action, target, result)` row:
 
-   Consequence: `X uses Y.` alone is not enough to tell a weaponskill from a job
-   ability — only what follows is. That is why nothing is emitted at the
-   announcement, and why job abilities never appear at all.
+```json
+{"t":1785000000,"seq":3,"use":41207,"kind":"ws","actor":"Hasaya","actorKind":"player",
+ "action":"Tachi: Jinpu","actionId":32,"target":"Goblin Pathfinder","targetKind":"mob",
+ "dmg":723,"hit":true,"crit":false,"burst":false,"msg":185}
+```
 
-2. **Nothing in the log states who is a player.** The article does: monsters are
-   "the Goblin Pathfinder", characters never are. `roster.rebuild` seeds from
-   that hard signal plus the log-filename owner, then runs a fixed point over
-   who-fights-whom (attacking a monster makes you an ally, and vice versa) so
-   article-less NMs like "Leaping Lizzy" still land correctly. It reruns over
-   the *whole* event list after every poll, so a name classified late
-   retroactively fixes earlier events. Manual overrides from the Diagnostics
-   panel beat everything.
+`kind` is one of `melee ranged ws magic ability mobtp pet skillchain addl`.
+`msg` is the raw game message id, carried on every event so a later phase can
+add outcomes without changing the wire format. `owner` and `pet` appear only on
+a pet's own rows.
 
-   This is now the *only* thing that decides whether damage is counted at all —
-   see "Party damage only" below — so a misclassification is no longer a
-   cosmetic sorting problem.
+**`t` is SECONDS, and `source.js` scales it to milliseconds exactly once.** The
+addon does not link LuaSocket purely to get a finer clock (`addon-dev/PLAN.md`,
+Decision 1), so the wire clock is `os.time()` with `seq` ordering events inside
+one second. Nothing in the UI resolves finer than a second. Everything
+downstream of `feed()` is in milliseconds; do not scale it twice.
+
+**A `kind:"meta"` line is not an event.** Two kinds arrive: the addon's startup
+environment probe, once per session, and one notice per game message id it saw
+and did not recognise. `source.js` routes both into `meta`, which is what the
+Diagnostics panel prints. An unrecognised id is damage nobody is being credited
+with, so that panel is the first place to look when a total seems low; the fix
+is a new entry in `../addons/VibeXI/vx_enums.lua`, not here.
+
+## `use` is per swing, not per action
+
+This is the one thing about the contract that is easy to get wrong, and it was
+wrong once. The packet has two dimensions and they do not mean the same thing:
+
+- **Several targets, one result each** — an AoE. One use of the action. The
+  packet carries the target list, so this is stated rather than inferred.
+- **One target, several results** — a multi-attack round. Two or three genuine
+  swings, each with its own hit-or-miss outcome.
+
+`record()` in `vibexi.lua` keys the id on the result's *position*
+(`use_for(slot)`), so result 1 across every target shares one id and result 2
+takes the next. Minting a single id for the whole action folds the second case
+into the first, and since `stats.collapse` treats `hit` as "any", a round that
+landed once and whiffed once then reports **one hit and no miss**. Measured on
+the test fixture that read as 93.7% accuracy against a true 89.7% — the swing
+count is the denominator, so this shows up as a party that never misses.
+
+`stats.collapse` folds the rows sharing a use back together: damage sums,
+`hit`/`crit`/`burst` are "any", and a multi-target use reports its target as
+`"3 targets"`. `aggregate` and `distribution` both collapse first; `cumulative`
+deliberately does not, because it only sums into time bins and the total is
+identical either way.
+
+**The invariant to re-check after any change either side of the bridge:
+collapsing must never move damage, only counts.**
+
+## Skillchains and additional effects ride on the proc trailer
+
+Neither is a packet or a message of its own. Both arrive in a result's optional
+proc trailer — `proc_message` plus `proc_value` — on the weaponskill or swing
+that caused them, and `vibexi.lua` reads that trailer **outside** the branch that
+handles the main message, so a chain is never lost because its weaponskill's own
+message happened to be unrecognised.
+
+- **Metrics is the source of truth for the skillchain ids.** `E.Skillchains` in
+  `vx_enums.lua` is `Res.WS.Skillchains` from Metrics'
+  `resources/weapon_skills_curated.lua`, copied verbatim, and `E.skillchain()`
+  is its `Res.WS.Get_Skillchain` — a lookup, nothing more.
+
+  **Do not derive the ids arithmetically.** An earlier cut computed them as
+  `287 + effect` / `384 + effect` from the LandSandBoat server's
+  `action_result_t::recordSkillchain`. That formula disagrees with Metrics twice
+  — Radiance and Umbra at 302/303 rather than 767/768, and the 385/386 pair read
+  as "absorbed" rather than as Light and Darkness — and Metrics is the parser
+  with a track record against this server. Reconciling them is a measurement
+  against a live client, not a re-reading of either source.
+- **The table is consulted only when `kind == 'ws'`.** That is the one context
+  Metrics consults it in: `H.TP.Skillchain_Parse` is called from `H.TP.Action`
+  and nowhere else (`handlers/tp_action.lua:41`).
+
+  This is load-bearing, not tidiness. **229 is in two tables at once**: on a
+  weaponskill Metrics calls it 'DRG Jump Effect', and everywhere else it reads
+  the same trailer as `Message.ENSPELL` and files it as an additional effect.
+  Look the table up globally and every enspell proc in the game becomes a
+  skillchain row.
+- **Do not read `proc_kind` on its own to identify a chain.** It is a variant
+  (add-effect OR skillchain), so only the message says which.
+- **The chain's damage is `proc_value`, never `res.value`** — it is its own
+  damage and is not part of the weaponskill's. Metrics'
+  `H.TP.Skillchain_Damage` reads `add_effect_param` for the same reason.
+- **Both get their own `use`, minted once per action.** One weaponskill closes
+  one chain however many targets or swings it involved. Sharing the
+  weaponskill's id would let `collapse` fold the chain's damage into the
+  weaponskill and lose it as a row.
+- The action name is `'Skillchain: Fusion'` — the same string the chat parser
+  produced, and what `app.js`'s `/^Skillchain:/` drill-down test matches.
 
 ## Party damage only
 
-This meter counts what the party dealt. Damage a monster dealt is never shown,
+This meter counts what your side dealt. Damage a monster dealt is never shown,
 never totalled, and never charted. There is no Party/Monsters/Both switch.
 
-**The monsters' events are still parsed, and must stay that way.** They are
-dropped in `stats.filter`, on the actor side, and only when a `roster` is passed
-(the second `filter` call in `render()` deliberately passes none — it is
-re-filtering an already-scoped list by the character chips). Moving the drop into
-`parser.js` looks tempting and breaks the roster: `rebuild`'s fixed point derives
-"is a monster" from who fights whom, so an article-less NM is only identified
-*because* its attacks on the party were parsed. Kill those events and Leaping
-Lizzy joins the party.
+**The monsters' events are still parsed and kept.** They are dropped in
+`stats.filter`, on the actor side, and only when a `roster` is passed (the second
+`filter` call in `render()` deliberately passes none — it is re-filtering an
+already-scoped list by the character chips). They stay in the event list because
+the Diagnostics roster is built from it, and because a manual override has to be
+able to bring a name back without a re-read.
+
+`roster.isMob` is now a lookup: `actorKind`/`targetKind` in
+(`player`, `pet`) is ours, anything else is not. **Anything not positively ours
+is treated as a monster**, so an entity the addon could not resolve — it arrives
+as `Unknown`/`other` — is left out of the totals rather than silently added to
+them. Under-counting a stranger beats crediting one.
 
 Consequences worth knowing:
 
-- **A character misfiled as a monster vanishes from the meter completely**,
-  rather than showing up under a different tab. The Diagnostics roster table is
-  the fix and its `card-sub` says so.
-- **Monsters still appear as `target`s** — in the drill-down's per-hit table, and
+- **A name misfiled vanishes from the meter completely** rather than showing up
+  under a different tab. The Diagnostics roster table is the fix and its
+  `card-sub` says so. With spawn flags this should never happen; the override
+  survives because a classification the user disagrees with should still be
+  theirs to fix.
+- **Monsters still appear as `target`s** — in the drill-down's per-hit table and
   in the Diagnostics roster list. That is party damage *to* them, which is the
   whole point; only the actor side is filtered.
+- **Pets count as ours** and get their own row under their own name. `owner`
+  names the master but nothing folds a pet into it yet.
 - **`windowOf` still resolves `Latest fight` over the unfiltered event list.** A
   fight's boundaries are a property of the combat, not of the display filter, and
   a pull where the monsters got the last word still ended when they did.
 
 ## Gotchas
 
-- **`Skillchain: Fusion.` is eaten by the `Name: text` chat filter** unless it
-  is exempted. `COMBAT_HINT` exists for exactly this; add to it before adding to
-  `IGNORE`.
-- **A skillchain is credited from `state.lastWS`, not `state.lastDamager`.**
-  Those are the same name only in a solo log: in a party the other members' `X
-  hits Y for N` lines land between the weaponskill and the `Skillchain:` line,
-  so `lastDamager` hands the chain to whoever swung last. `push()` maintains
-  `lastWS` alongside `lastDamager` and only `kind === 'ws'` events that actually
-  landed damage update it — a weaponskill the mob evaded opened nothing.
-  `lastDamager` is still the fallback past `CHAIN_MS` (10 s), because a
-  weaponskill that old did not open this chain either.
-- **The skillchain toggle is a `stats.filter` option, not a parse rule.** By the
-  time the user flips it the lines are long gone and only the events remain, so
-  turning it off has to be a re-render (drop `kind === 'skillchain'`), never a
-  re-parse. Same reason the parser always emits the events regardless.
-- **Chat is filtered before any damage rule runs.** A player typing "hit the
-  crab for 9999 points of damage" must not become an event — there is a line
-  like this in the synthetic test log specifically to catch a regression.
-- **Test ranged before melee.** `(.+?) hits (.+?) for` happily matches
-  `Hasaya's ranged attack hits …` with actor `Hasaya's ranged attack`.
-- **Ranged crits have three separate phrasings and none reach `RE.ranged`.**
-  `hits X squarely for N` and `strikes true, pummeling X for N` both end in `!`
-  rather than `.`, and the second has no "hits" at all — hence `RE.rngCrit`.
-  They are counted as plain ranged damage, *not* flagged `crit`, because the
-  wording is the only tell. The third, `Dags's ranged attack scores a critical
-  hit!`, does flag the crit but names the *attack*; `unranged()` pulls the
-  attacker back out of it, or the damage on the next line lands under an actor
-  literally called "Dags's ranged attack".
-- **`Additional effect:` has a named-target form too** — `Additional effect: X
-  takes N additional points of damage.` The word "additional" in front of
-  "points" is what keeps it out of `RE.takes`. Both forms credit
-  `state.lastDamager` and share the one `Additional Effect` action row.
-- **An AoE outlives its own `pending` slot.** Only the first victim is written as
-  a continuation of `X casts Meteor.`; the other victims arrive seconds later as
-  their own stamped lines, and any melee swing in between clears `pending`. So a
-  resolved announcement is copied into `state.aoe` and stays eligible for
-  further `takes` lines for `AOE_MS` (5 s). `aoe.hit` records who it already
-  covered, because one cast never hits the same target twice and a repeated line
-  is a DoT tick, not splash.
-- **One action is one *use* of it however many targets it reached, and counting
-  the damage lines instead inflates everything that is not a sum.** Every event
-  carries a `use` id; `state.aoe` mints one when the announcement resolves and
-  the echo hands the same one to each later victim, so the grouping is read off
-  the log rather than guessed downstream. `stats.collapse` folds them back —
-  damage sums, `hit`/`crit`/`burst` are "any", and a multi-target use reports
-  its target as `"3 targets"`. `aggregate` and `distribution` both collapse
-  first; `cumulative` deliberately does not, because it only ever sums into time
-  bins and the sum is identical either way.
-
-  Skipping this does not change anyone's damage or DPS — it changes the counts.
-  Measured on the test log, Gillette's Firaga III went from **42 hits at 667
-  average** to **14 at 2,001**, max from 886 (the biggest splash) to 2,305 (the
-  biggest cast), and the histogram from 42 points with a median of 655 to 14
-  with a median of 2,026. Accuracy is the one that bites hardest: the swing
-  count is the denominator, so a party fighting adds silently reads as missing
-  far more than it does.
-
-  This mirrors what Metrics does natively — it gets the target list inside one
-  0x028 packet and counts attempts outside the target loop
-  (`handlers/tp_action.lua`, with a comment saying exactly why).
-- **The AoE echo needs `couldStrike`, or it is worse than the guess it replaces.**
-  Unguarded, a party nuke that just resolved adopts the *monster's* AoE damage on
-  the party and credits it to the nuker. `state.foes` is a parse-time sketch of
-  who fights whom, fed only by attributions actually read off a line; two names
-  that ever fought the same third party are on one side and cannot damage each
-  other. It exists because `roster` answers this far better but only after
-  `rebuild` runs at the end of a poll — on first load every line is fed before
-  the first rebuild, which is exactly when the echo needs an answer. `foes`
-  survives a meter reset for the same reason `roster.articled` does.
-- **The lastDamager fallback sets `guess: true`, and `roster.rebuild` skips those
-  events.** The actor on an `Unattributed` row was never read off a line, and the
-  propagation pass cannot tell that. One mis-credited "ally hits ally" marks the
-  victim a monster, everyone the victim fights becomes an ally, and the boss ends
-  up in the party list — this is not hypothetical, it is what a stray Meteor
-  splash line did to a Promathia log. Articles are still honoured on guessed
-  events: those come from the text, not the guess.
-- **`X's attack is countered by Y.` is the one message this client sometimes puts
-  on a single line with its damage sentence.** So `RE.counter` peels like a
-  prefix rather than matching to end-of-line, and both the combined and the split
-  form fall through to `RE.takes`. Without it the whole line matches `RE.takes`
-  and the target becomes the literal string `"Promathia's attack is countered by
-  Hasaya. Promathia"` — a fake entity that then enters the roster. Note the
-  counterer is named *second*; the damage is theirs.
-- **Spikes must not consume `state.pending`.** `X's spikes deal N points of
-  damage to Y` fires in reaction to someone else's swing, so unlike every other
-  direct-damage form it leaves the pending announcement alone — the weaponskill
-  it interrupts is still waiting for its own damage line.
-- **A ranged miss is indistinguishable from a melee miss** — the log only says
-  "Xatsh misses the Goblin". Those land in the `Attack` bucket, which is why a
-  pure ranged attacker can show an `Attack` row with 0 hits and some misses.
-  That is honest, not a bug.
 - **Do not write literal control characters anywhere in the source** — not in a
   regex character class, not in a string literal. Use `\xNN` / `\0` escapes. A
   raw byte makes the file read as *binary*: `grep` answers "Binary file matches"
-  instead of showing the line, and the Edit tool cannot match around it. Two
-  places invite it: the strip-control-bytes regex in `parser.js`'s `feed()`, and
-  `renderChips`'s `names.join('\0')` in `app.js`, which wants NUL as a separator
-  no character name can contain. Both are escapes now; keep them that way.
+  instead of showing the line, and the Edit tool cannot match around it. The
+  place that invites it is `renderChips`'s `names.join('\0')` in `app.js`, which
+  wants NUL as a separator no character name can contain. It is an escape now;
+  keep it that way.
 - **`setup()` detaches both hover handlers, and every draw must go through it.**
   A handler installed by `line()` closes over that draw's data — `onmouseleave`
   repaints a saved `ImageData` snapshot of it. Leaving one attached across a
@@ -221,40 +244,37 @@ Consequences worth knowing:
   canvas correctly, then the first mouse-out repainted the pre-reset series over
   the empty state. Clearing only `onmousemove` in the empty branches is not
   enough; it is the *leave* handler that redraws.
-- **Colour slots are assigned once and only to characters** (`assignSlots`).
-  Monsters are skipped: they can never be an actor, so slotting one would push a
-  real party member into the muted tail for nothing. `app.seen` still records
-  every name, because classification arrives late — a name reclassified into the
-  party (manually, or once its relationships resolve) picks up the next free slot
-  on the following render, and a manual flip runs `resetColors()` anyway.
-- **Idle polls skip `render()`.** Rebuilding the tables once a second with no
-  new data resets scroll position and kills text selection.
+- **Colour slots are assigned once and only to names the meter counts**
+  (`assignSlots`). Monsters are skipped: they can never be an actor, so slotting
+  one would push a real party member further down the palette for nothing.
+  `app.seen` still records every name, so a name flipped into the party by hand
+  picks up the next free slot on the following render — and a manual flip runs
+  `resetColors()` anyway.
+- **The file's owner is pinned to slot 0, before the first-seen loop runs.**
+  Otherwise their hue is decided by whether they or the tank swung first, which
+  is luck — and the owner is the one character on every chart of every session,
+  so theirs is the hue that must not drift. `roster.owner` comes from the
+  filename, so it is known before any line is read.
+- **Idle polls skip `render()`.** Rebuilding the tables with no new data resets
+  scroll position and kills text selection.
 - **`POLL_MS` is 250, but the browser clamps it to 1000 whenever the tab is
   hidden.** That is a Chrome timer policy, not a bug here, and it cannot be
   worked around from the page. Consequences: a minimised or background-tab meter
-  silently reverts to the old 1 s cadence, and any attempt to measure the poll
-  rate from a non-visible tab reads ~1000 ms no matter what `POLL_MS` says
+  silently reverts to a 1 s cadence, and any attempt to measure the poll rate
+  from a non-visible tab reads ~1000 ms no matter what `POLL_MS` says
   (`document.visibilityState` is the thing to check before believing a
   measurement). A "Keep in focus" Document PiP panel is always visible, so it
   runs unclamped — which is the mode that actually wants the low latency.
-- **`roster.rebuild` is throttled to `REBUILD_MS` (1 s), deliberately not run at
-  poll rate.** It is the most expensive thing in the poll path — measured 1.5 ms
-  at 10k events, 7.6 ms at 50k, 32 ms at 200k, against 22 ms for an `aggregate`
-  and 10 ms for a `filter` at that size. Nothing needs it faster: it answers "is
-  this name a monster", which changes only on first sighting or reclassification,
-  and 1 s of latency there is exactly what shipped when `POLL_MS` was 1000.
-  `app.lastRebuild` starts at 0 and is reset to 0 on a file switch, so the first
-  batch of any session always classifies before anything is drawn.
-
-  The rest of the poll path is still O(events) and *does* run at poll rate —
-  `filter` and `aggregate` twice each, plus `cumulative`. Total measured poll
-  work is ~5.6 ms at 10k events, ~25 ms at 50k, ~101 ms at 200k, i.e. roughly
-  2%, 10% and 40% of a core at 250 ms. Polls cannot pile up (`schedule()` is
-  called from the final `.then()`, so the next one is queued only after the
-  current finishes), but a very long grinding session will get warm. If that
-  bites, the fix is incremental aggregation rather than a slower poll — and the
-  cheapest single win is that `render()` currently computes `S.aggregate` twice,
-  once only to get the chip names.
+- **The poll path is O(events) and runs at poll rate** — `filter` and `aggregate`
+  twice each, plus `cumulative`. `roster.rebuild` is gone, which was the most
+  expensive thing in it (32 ms on a 200k-event session) and the reason
+  `REBUILD_MS` existed; classification is now a per-line lookup done during
+  `feed()`. Polls cannot pile up (`schedule()` is called from the final
+  `.then()`, so the next one is queued only after the current finishes), but a
+  very long grinding session will still get warm. If that bites, the fix is
+  incremental aggregation rather than a slower poll — and the cheapest single win
+  is that `render()` computes `S.aggregate` twice, once only to get the chip
+  names.
 - **The filter bar is two stacked rows, and the character list owns the second
   one.** An 18-name alliance cannot share a line with the segmented controls —
   given a shared row the chips get a narrow column and grow downwards with every
@@ -268,10 +288,11 @@ Consequences worth knowing:
   after a rebuild a captured chip node is detached, so a second `.click()` on it
   goes nowhere and its computed style reports stale values — re-query between
   clicks.
-- **`roster.articled` is sticky and never cleared.** `rebuild` re-derives
-  everything else from the current event list, so without it a meter reset would
-  briefly file every monster as a party member until each one was seen with its
-  article again.
+- **A regenerated fixture does not reset a page that is already polling.** The
+  server only signals `reset` when the file got *shorter* than the client's
+  offset; rewrite it to a similar length and the client happily reads the few
+  trailing bytes as new events on top of the old ones. Reload the page after
+  running the generator, and do not trust a number measured without doing so.
 
 ## Pop-out windows
 
@@ -410,10 +431,10 @@ What survives a reset, and why:
 | Kept | Reason |
 |---|---|
 | `app.slots` / `app.seen` | a character changing hue mid-session is worse than a stale entry |
-| the whole roster (`articled`, `manual`, derived sets) | monsters must stay monsters across the reset |
+| the whole roster (`kinds`, `manual`) | monsters must stay monsters across the reset |
 | every filter (`range`, `chains`, `actorsOff`) | user intent, not collected data |
 
-`app.scanned` **must** be rewound to 0 alongside `parser.reset()`. It is a cursor
+`app.scanned` **must** be rewound to 0 alongside `source.reset()`. It is a cursor
 into the event list; leaving it past the now-empty list makes `scanActors` skip
 every name until the list grows back past the old length.
 
@@ -422,7 +443,7 @@ every name until the list grows back past the old length.
 House style from the `dataviz` skill; the palette is its documented reference
 instance (blue, orange, aqua, yellow, magenta, green, violet, red) with each
 mode's own steps, already validated — **don't re-step it**. It now lives in
-`../shared-ui/css/ffxi-theme.css` as `--series-1..8`, deliberately kept apart
+`../shared-ui/css/ffxi-theme.css` as `--series-1..18`, deliberately kept apart
 from the blade/brass chrome tokens: series colours encode *data*, so they are not
 folded into the app's identity even though everything around them was. Fixed
 specs, not options: 2px lines, ≥8px markers with a 2px surface ring, hairline
@@ -438,40 +459,101 @@ histogram column's width is the bin interval — it is data, not a mark style �
 it fills its slot less the 2px gap. Capping it makes a distribution read as a
 sparse categorical chart.
 
-Past eight entities no ninth hue is generated: the tail goes muted and folds
-into a single "Other" line.
+### Eighteen slots, one per character
+
+**Every character gets their own colour — there is no muted tail and no "Other"
+line.** An alliance is 18 characters, so the palette is 18 slots
+(`FFXITheme.SLOTS`), and `colorOf` is a straight `FFXITheme.series(slotOf(name))`.
+
+This is knowingly past where colour alone works, and the `dataviz` skill's own
+rule is that a 9th series folds into "Other" rather than getting a hue. What
+makes it defensible here is that **the meter never identifies a character by
+colour alone**: the legend names all of them, the line table gives each a
+column, the bars chart and the actions table are labelled rows, and hover names
+the series. Colour is the cross-panel *link* between those, not the label.
+
+Slots 9–18 were solved, not picked — a max-min search over OKLCH maximising the
+worst OKLab ΔE across normal, protan and deutan vision, per mode, against its
+surface. The bar they had to clear, and do: **no pair involving a new slot is
+weaker than the weakest pair that was already inside slots 1–8** (dark 7.4 vs
+5.8 for the shipped blue/violet; light 6.4 vs 3.9 for the shipped orange/red).
+Slot *order* is solved too, so consecutive slots — the order characters are
+handed colours in — stay far apart: worst adjacent pair 14.1 dark, 12.0 light,
+both of which are shipped pairs, not new ones. All 18 sit inside each mode's
+lightness band, above the chroma floor, at ≥3:1 against the card.
+
+Two consequences:
+
+- **`--text-muted` never existed.** `colorOf` used to return it for the tail, so
+  every unslotted name got the empty string — invisible only because the tail
+  collapsed into one line that had its colour overwritten anyway. If a slot
+  lookup ever goes wrong again, an empty `background` is the symptom to look for.
+- **Past 18 the palette wraps** and two characters share a hue. That needs an
+  alliance plus pets, and the legend still tells them apart.
+
+The validator ships with the `dataviz` skill. There is no Node on this machine
+but there is Python, so it can be run directly; the maths is also portable enough
+to paste the conversions (`lin`/`oklab`/Machado simulate/ΔE) into a
+`javascript_tool` call against a page in the Browser pane and score the palette
+there. Note that a `javascript_tool` call reloads the page first, so globals do
+not survive between calls — each call has to be self-contained.
 
 ## Validating a change
 
-Browser-pane screenshots work against `http://localhost` (an earlier note here
-said they didn't); it is `file://` pages that come back as static top-of-page
-snapshots. Two more things that work:
+`tools/gen-test-events.py` writes a synthetic event file — seeded, so it is
+reproducible — carrying every case worth regression-testing: multi-attack rounds,
+AoE nukes sharing one `use`, skillchains across both of Metrics' id ranges, additional
+effects, a pet with an owner, an NPC, an article-less NM, an unresolved
+`Unknown` target, monster damage on the party, both kinds of meta line, and gaps
+between fights so `Latest fight` has something to find. Its docstring says what
+each case catches; read that before changing it.
+
+**It must stay field-for-field identical to `vx_emit.encode`.** If the fixture
+and the emitter disagree the fixture is worthless, so that function is the thing
+to diff against when either changes.
+
+```bash
+python damage_meter/tools/gen-test-events.py
+python damage_meter/damage-meter.py --port 8732 --no-browser --events-dir damage_meter/tools/events
+```
+
+That is the `damage-meter-fixture` entry in `../.claude/launch.json`, port 8732.
+**Reload the page after regenerating** — see the last gotcha above.
+
+Browser-pane screenshots work against `http://localhost`; it is `file://` pages
+that come back as static top-of-page snapshots. From the page console:
 
 ```js
-// 1. parse correctness, from the page console
-DPS.app.parser.unparsed                       // must stay empty
-Object.keys(DPS.app.parser.roster.mobs)
-DPS.stats.aggregate(DPS.stats.filter(DPS.app.parser.events, {roster:DPS.app.parser.roster}))
-// no roster == no monster filtering, so this is the check that the drop works:
-// every name the first call is missing must be in roster.mobs, and nothing else.
-DPS.stats.aggregate(DPS.stats.filter(DPS.app.parser.events, {})).actors.map(a=>a.name)
-DPS.parser.parseAll(['[10:00:00] A uses Tachi: Jinpu.', 'The B takes 700 points of damage.'])
+// 1. the source contract
+DPS.app.source.meta                       // probe + unrecognised message ids
+DPS.app.source.state.bad                  // lines that were not JSON at all
+DPS.app.source.roster.kinds               // name -> player | pet | mob | npc | other
+DPS.source.parseAll(['{"t":1,"use":1,"kind":"ws","actor":"A","actorKind":"player",' +
+  '"action":"Tachi: Jinpu","target":"B","targetKind":"mob","dmg":700,"hit":true}']).events
 
-// AoE collapse: three damage lines, ONE use, damage summed, target "3 targets".
-DPS.stats.collapse(DPS.parser.parseAll([
-  '[10:00:00] Gillette casts Firaga III.',
-  'the Goblin Pathfinder takes 600 points of damage.',
-  '[10:00:01] the Goblin Ambusher takes 500 points of damage.',
-  '[10:00:02] the Goblin Smithy takes 400 points of damage.'
-]).events)
-// The invariant to re-check after any parser change: collapsing must never move
-// damage, only counts. Strip `use` to reproduce the old (wrong) numbers.
-var s = DPS.stats.filter(DPS.app.parser.events, {roster: DPS.app.parser.roster});
-DPS.stats.collapse(s).reduce((n,e)=>n+(e.hit?e.dmg:0),0) === s.reduce((n,e)=>n+(e.hit?e.dmg:0),0)
+// 2. monster filtering. No roster == no filtering, so this is the check that the
+//    drop works: every name the first call is missing must be a non-player kind.
+var R = DPS.app.source.roster, E = DPS.app.source.events;
+DPS.stats.aggregate(DPS.stats.filter(E, {roster: R})).actors.map(a => a.name)
+DPS.stats.aggregate(DPS.stats.filter(E, {})).actors.map(a => a.name)
+
+// 3. THE invariant: collapsing moves counts, never damage.
+var s = DPS.stats.filter(E, {roster: R}), sum = a => a.reduce((n,e) => n+(e.hit?e.dmg:0), 0);
+sum(DPS.stats.collapse(s)) === sum(s)
+
+// 4. the two dimensions stay apart: AoE folds, multi-attack does not.
+var col = DPS.stats.collapse(s);
+col.filter(e => e.action === 'Firaga III' && e.parts > 1).length   // > 0
+col.filter(e => e.action === 'Attack' && e.parts > 1).length       // must be 0
+
+// 5. a skillchain never shares a use with the weaponskill that closed it
+var sc = col.filter(e => e.kind === 'skillchain');
+sc.some(e => col.some(o => o !== e && o.use === e.use))            // must be false
+[...new Set(sc.map(e => e.actionId))].sort((a,b) => a-b)           // all in E.Skillchains
 ```
 
 ```js
-// 2. the pop-out path, without a real window. An iframe's contentWindow is a
+// 6. the pop-out path, without a real window. An iframe's contentWindow is a
 //    genuine second Window/Document, so standing it in for the two window
 //    constructors exercises adoptNode, the id index, the copied stylesheets and
 //    the canvas redraw -- everything except the OS window itself.
@@ -508,53 +590,62 @@ setTimeout(function () {
 ```
 
 ```js
-// 3. eyeball the charts -- composite the canvases and export
+// 7. eyeball the charts -- composite the canvases and export
 const cs = ['lineChart','barsChart','histChart'].map(i=>document.getElementById(i));
 // draw them onto one canvas, toDataURL('image/png'), then decode the base64 to
-// a .png with PowerShell and open it. This is the only way to actually look at
-// the output here.
+// a .png with Python and open it.
 ```
 
-`tools/gen-test-log.ps1` writes a synthetic CP932 log (seeded, so it is
-reproducible) — five characters, weaponskills, crits, skillchains, magic bursts,
-ranged attacks, additional effects, an article-less NM, chat noise, and gaps
-between fights so `Latest fight` has something to find. Two of its cases exist
-to catch specific regressions and are worth keeping when the generator changes:
-
-- Most skillchains have another character's melee hit deliberately spliced in
-  between the weaponskill and the `Skillchain:` line — the case that catches
-  `lastDamager` attribution.
-- Each fight carries two extra articled mobs and an occasional `Gillette casts
-  Firaga III` that lands on all three, the first victim as a continuation and
-  the rest as their own stamped lines — the case that catches AoE use collapsing.
-  There are 14 of them in the current seed.
-Point a second instance at it (this is the `damage-meter-test` entry in
-`../.claude/launch.json`, port 8732):
+On the addon side, with no Lua runtime on this machine:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File damage-meter.ps1 -Port 8732 -NoBrowser -LogDir <dir>
+python addon-dev/check-apis.py                # allowlist / denylist / event names
+python addon-dev/check-lua.py addons/VibeXI/*.lua   # structural balance only
 ```
 
-Checks that have caught real problems: append to a running log mid-line and
-confirm the partial line is held back; drop a newer `.log` into the directory
+Both must be green before a commit; the first is wired to the pre-commit hook.
+Neither can catch a misspelled identifier or a bad expression — that surfaces on
+`/addon load VibeXI` and nowhere earlier.
+
+Checks that have caught real problems: append to a running file mid-line and
+confirm the partial line is held back; drop a newer `.jsonl` into the directory
 and confirm the client resets to it; confirm no monster name reaches the
-character chips, the bars chart or the actions table (its NM, `Leaping Lizzy`,
-is the one that tests the relationship pass rather than the article); flip a
-character to `Monster` in Diagnostics and confirm they leave every total, then
-flip back and confirm no surviving character's colour changed.
+character chips, the bars chart or the actions table; flip a name to
+"leave out" in Diagnostics and confirm it leaves every total, then flip back and
+confirm no surviving character's colour changed.
 
 ## Known gaps
 
-- Only the newest log file is followed. Parsed events are not persisted —
+Most of what used to be listed here was a property of the chat log and went with
+it. What is left:
+
+- Only the newest event file is followed. Events are not persisted by this app —
   closing the page loses them, and reopening replays the current file from the
-  top. Only the theme, the character exclusion list, the skillchain toggle and
-  whether the character row is collapsed are stored (`ffxi_dps_theme`,
-  `ffxi_dps_excluded`, `ffxi_dps_chains`, `ffxi_dps_charrow` in localStorage).
-- The exclusion list is keyed by bare name, so it is shared across log files.
+  top. That replay is the persistence: the addon's file survives an FFXI crash,
+  which is why it is written under `%LOCALAPPDATA%` rather than `%TEMP%`. Only
+  the theme, the character exclusion list, the skillchain toggle and whether the
+  character row is collapsed are stored (`ffxi_dps_theme`, `ffxi_dps_excluded`,
+  `ffxi_dps_chains`, `ffxi_dps_charrow` in localStorage).
+- The exclusion list is keyed by bare name, so it is shared across event files.
   That is intentional: a character you never want counted stays excluded.
-- Pets are treated as ordinary allies with their own row, not folded into their
-  master.
-- Cure/heal, enfeeble and TP lines are not parsed; this is a damage meter only.
+- Pets are ordinary allies with their own row, not folded into their master —
+  even though `owner` now says who that is. Folding them is a UI decision nobody
+  has made yet, not a missing fact.
+- Monster TP moves and pet abilities emit `#<id>` rather than a name. The name
+  tables are ~300 KB and every event carries `actionId`, so naming can be added
+  without touching the event contract.
+- Reaction damage is not recorded at all: counters, spikes and retaliation are
+  real damage belonging to the *other* entity, and emitting them as-is would
+  credit a victim with their attacker's damage. Attribution has to be inverted
+  first. See the "deliberately in NEITHER table" note in `vx_enums.lua`.
+- MP drain, cures, enfeebles and TP are not parsed; this is a damage meter. Every
+  event carries its raw `msg`, so adding them is an enums change, not a format
+  change.
 - A character with a single event has a zero-length active window, so their DPS
   shows as 0.
-- Absorbed and "takes no damage" outcomes are treated as misses.
+- Absorbed and "no effect" outcomes are treated as misses. Skillchains are the
+  exception and deliberately so: Metrics has no absorbed-chain concept — it maps
+  385/386 to Light and Darkness like any other id — so every chain that fires is
+  recorded as damage.
+- Multi-attack swings are visible individually, but nothing reports the round
+  shape (double/triple/quad rates). That is Phase 4 in `addon-dev/PLAN.md`.

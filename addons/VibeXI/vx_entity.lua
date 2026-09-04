@@ -10,7 +10,7 @@
 -- and every `guess: true` event become unnecessary.
 --
 -- Every call in here is a getter. Nothing in this file can write to game memory
--- or to the network -- see addon/ALLOWED_APIS.txt.
+-- or to the network -- see addon-dev/ALLOWED_APIS.txt.
 
 local E = require('vx_enums')
 

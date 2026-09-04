@@ -2,7 +2,7 @@
 --
 -- Written from the XiPackets description of server packet 0x0028, NOT copied
 -- from Ashita's reader -- that file is GPL-3.0 and this project is not (see
--- addon/PLAN.md, Licensing). The algorithm is the obvious one and is not the
+-- addon-dev/PLAN.md, Licensing). The algorithm is the obvious one and is not the
 -- part anyone owns; the point is that no GPL text is vendored here.
 --
 -- Two deliberate differences from the reference implementation:

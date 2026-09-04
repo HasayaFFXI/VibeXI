@@ -8,7 +8,7 @@
    Consumed by:
      ws_calculator   pages/*.html   <link href="../../shared-ui/css/ffxi-theme.css">
      damage_meter   web/index.html <link href="/shared/css/ffxi-theme.css">
-                (damage-meter.ps1 maps the /shared/ URL prefix onto this directory)
+                (damage-meter.py maps the /shared/ URL prefix onto this directory)
 
    Each app then links its OWN stylesheet after this one for rules nothing else
    needs. Anything a second app could plausibly want belongs here instead.
@@ -66,8 +66,25 @@
   /* Categorical series slots, in the validated order: blue, orange, aqua,
      yellow, magenta, green, violet, red. These encode DATA, not chrome, so they
      keep their own accessibility-checked steps rather than being folded into the
-     blade/brass identity -- past eight, callers go muted rather than inventing a
-     ninth hue. */
+     blade/brass identity.
+
+     1-8 are the reference eight and are NOT to be re-stepped. 9-18 are the
+     extension tier: an FFXI alliance is 18 characters, and the damage meter
+     gives every one of them their own line rather than folding the tail into a
+     single muted "Other". They were solved for, not picked -- a max-min search
+     over OKLCH (dark band L 0.50-0.67, C 0.10-0.175, contrast >= 3:1 vs the
+     card) maximising the worst OKLab dE across normal, protan and deutan
+     vision. The bar they clear: NO pair involving slots 9-18 is weaker than the
+     weakest pair already inside 1-8, so the extension is never the limiting
+     factor (dark, all pairs: 7.4 for a new pair vs 5.8 for the shipped
+     blue/violet; light: 6.4 vs 3.9 for the shipped orange/red). Slot order is
+     itself solved, so consecutive slots -- the order characters are handed
+     colours in -- stay far apart: worst adjacent pair 14.1 dark, 12.0 light,
+     both of them shipped pairs.
+
+     Eighteen categorical hues is past what colour alone can carry, which is why
+     the meter never relies on colour alone: legend, table columns and hover all
+     name the character. */
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -76,6 +93,16 @@
   --series-6: #4f9e2f;
   --series-7: #9085e9;
   --series-8: #e66767;
+  --series-9:  #9968a4;
+  --series-10: #55712d;
+  --series-11: #9546b2;
+  --series-12: #30a2bb;
+  --series-13: #a35450;
+  --series-14: #4261cd;
+  --series-15: #ce64c1;
+  --series-16: #067396;
+  --series-17: #b13a80;
+  --series-18: #028f95;
 
   --radius:    4px;
   --radius-md: 5px;
@@ -115,6 +142,10 @@
   --axis: #c3bba6;
   --axis-alt: #b3aa94;
 
+  /* Same hues as the dark tier (within 6 deg, so a slot is recognisably the
+     same colour in both themes), re-solved for the light band and surface --
+     not an automatic flip: a straight lightness shift collided slot 14 with the
+     shipped violet and dropped two steps under the chroma floor. */
   --series-1: #2a78d6;
   --series-2: #c94f18;
   --series-3: #12855c;
@@ -123,6 +154,16 @@
   --series-6: #3d7f21;
   --series-7: #5a4bc4;
   --series-8: #cf3b3a;
+  --series-9:  #b056b8;
+  --series-10: #3b5b0b;
+  --series-11: #6d3c78;
+  --series-12: #098aa7;
+  --series-13: #9e0822;
+  --series-14: #284a99;
+  --series-15: #bb76aa;
+  --series-16: #00749b;
+  --series-17: #98005f;
+  --series-18: #129d9c;
 
   --shadow: 0 4px 12px rgba(20,22,28,0.16);
 

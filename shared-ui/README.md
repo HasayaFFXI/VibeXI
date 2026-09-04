@@ -23,7 +23,7 @@ and brass accents, Shippori Mincho headings, JetBrains Mono for anything numeric
 <script src="../../shared-ui/js/theme.js"></script>
 ```
 
-**damage_meter** — `damage-meter.ps1` mounts this directory at the `/shared/` URL prefix,
+**damage_meter** — `damage-meter.py` mounts this directory at the `/shared/` URL prefix,
 so nothing has to be copied into `web/`:
 
 ```html
@@ -56,11 +56,15 @@ Two families of color, kept apart on purpose:
 - **Chrome** — `--ink`, `--surface`, `--surface2`, `--border`, `--bone`, `--mist`,
   `--faint`, `--dim`, `--blade`, `--brass`, `--good`, `--critical`. This is the
   identity.
-- **Series** — `--series-1` … `--series-8`, eight categorical slots in a fixed,
-  accessibility-checked order (blue, orange, aqua, yellow, magenta, green, violet,
-  red). These encode *data*, so they are deliberately not folded into the
-  blade/brass identity. Assign a slot per entity and never cycle past eight — fold
-  the tail into one muted "Other" instead.
+- **Series** — `--series-1` … `--series-18`, categorical slots in a fixed,
+  accessibility-checked order. 1–8 are the reference eight (blue, orange, aqua,
+  yellow, magenta, green, violet, red) and are not to be re-stepped; 9–18 are the
+  extension tier, solved against them so no pair involving a new slot is weaker
+  than the weakest pair already inside 1–8. These encode *data*, so they are
+  deliberately not folded into the blade/brass identity. Assign a slot per entity,
+  in order. Eighteen is past what colour alone can carry: a chart using the upper
+  tier owes the reader a legend, labels or a table, and past eighteen the wrap
+  repeats a hue.
 
 ## Primitives
 
