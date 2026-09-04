@@ -180,17 +180,21 @@
         <div>
           <h3>Name classification</h3>
           <p class="card-sub">
-            Monsters are detected from the article &mdash; &ldquo;the Goblin Pathfinder&rdquo;.
-            Named NMs have no article, so if one is misfiled, flip it here.
-            Only characters are counted; anything filed as a monster is left out
-            of every total.
+            Every name is classified by the addon from the game&rsquo;s own spawn
+            flags, so this should always be right. Only your side is counted;
+            anything left out shows &ldquo;No&rdquo;. Override one here if you
+            ever need to.
           </p>
           <div class="scroll-y"><table class="data" id="rosterTable"></table></div>
         </div>
         <div>
-          <h3>Unrecognised damage lines</h3>
-          <p class="card-sub">Lines containing a damage number that no parse rule matched.</p>
-          <div class="scroll-y"><pre class="raw" id="unparsed">none</pre></div>
+          <h3>Addon notices</h3>
+          <p class="card-sub">
+            The addon&rsquo;s startup probe, plus one line per game message it saw
+            and did not recognise &mdash; each of those is damage nobody is being
+            credited with.
+          </p>
+          <div class="scroll-y"><pre class="raw" id="addonMeta">none</pre></div>
         </div>
       </div>
     </details>
@@ -199,7 +203,7 @@
 </main>
 
 <script src="/shared/js/theme.js"></script>
-<script src="lib/parser.js"></script>
+<script src="lib/source.js"></script>
 <script src="lib/stats.js"></script>
 <script src="lib/chart.js"></script>
 <script src="lib/popout.js"></script>

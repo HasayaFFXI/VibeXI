@@ -12,7 +12,7 @@
  *
  *   FFXITheme.v('--blade')      one token, resolved
  *   FFXITheme.chart()           the furniture set chart code needs
- *   FFXITheme.series(slot)      categorical slot 0..7, wrapping
+ *   FFXITheme.series(slot)      categorical slot 0..17, wrapping
  *   FFXITheme.bind({...})       wire a light/dark toggle button
  *
  * Reads are cached per theme; call FFXITheme.flush() if a stylesheet is swapped
@@ -21,7 +21,7 @@
 (function (global) {
   'use strict';
 
-  var SLOTS = 8;
+  var SLOTS = 18;
 
   var cache = null;
   var cacheKey = null;
@@ -77,9 +77,10 @@
     };
   }
 
-  /* Eight fixed categorical slots, in the documented order. Callers that can
-     exceed eight entities should fold the tail into one muted "Other" rather
-     than relying on the wrap. */
+  /* Eighteen fixed categorical slots, in the documented order -- 1-8 are the
+     reference eight, 9-18 the extension tier solved against them (an FFXI
+     alliance is 18). Past eighteen the wrap repeats a hue, so a caller that can
+     exceed it must name the entity somewhere other than its colour. */
   function series(slot) {
     return v('--series-' + ((slot % SLOTS + SLOTS) % SLOTS + 1), '#3987e5');
   }

@@ -1,8 +1,9 @@
 # Damage Meter
 
-Live damage meter for HorizonXI. It tails the most recently modified chat log,
-parses out every damaging action **the party dealt** — damage monsters deal is
-not counted or shown anywhere — and draws:
+Live damage meter for HorizonXI. The **VibeXI Ashita addon** reads the game's own
+action packets and writes them to a file; this reads that file and draws every
+damaging action **your side dealt** — damage monsters deal is not counted or
+shown anywhere:
 
 - **Cumulative damage over time**, one line per character, with a crosshair that
   reads every character at the same instant.
@@ -15,36 +16,51 @@ not counted or shown anywhere — and draws:
   min, average, max, median, standard deviation, IQR, 90th percentile, crit
   rate, and the full list of individual hits.
 
-Nothing is installed and nothing is sent anywhere. A small PowerShell process
-reads the log and serves the page on `localhost`.
+Nothing is sent anywhere. The addon only ever writes a local file — it has no
+network capability at all, by construction — and a small Python process reads
+that file and serves the page on `localhost`.
 
-## Running it
+## Setting it up
 
-Double-click **`Damage-Meter.cmd`**, or:
+**1. Install the addon.** Copy the `addons/VibeXI/` folder from this repo into
+your Ashita addons directory, so it lands at
+`…\HorizonXI\Game\addons\VibeXI\` with `vibexi.lua` inside it. Then, in game:
 
-```bash
-powershell -ExecutionPolicy Bypass -File damage-meter.ps1
+```
+/addon load VibeXI
 ```
 
-It opens <http://localhost:8731/> and starts following the newest `*.log` in
-`%APPDATA%\HorizonXI-Launcher\HorizonXI\Game\chatlogs`. Leave it running while
-you play; the page updates once a second. Ctrl-C in the console window stops it.
+It starts writing to `%LOCALAPPDATA%\VibeXI\events\<Character>_<date>.jsonl`.
+Add the load line to your startup script if you want it every session.
+
+**2. Start the meter.** Double-click **`Damage-Meter.cmd`**, or:
+
+```bash
+python damage-meter.py
+```
+
+It opens <http://localhost:8731/> and follows the newest `*.jsonl` in
+`%LOCALAPPDATA%\VibeXI\events`. Leave it running while you play; the page
+updates four times a second. Ctrl-C in the console window stops it.
 
 Options:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File damage-meter.ps1 -Port 9000 -NoBrowser -LogDir "D:\some\other\chatlogs"
+python damage-meter.py --port 9000 --no-browser --events-dir "D:\some\other\events"
 ```
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `-LogDir` | the HorizonXI launcher path | directory to watch |
-| `-Port` | `8731` | local port |
-| `-NoBrowser` | off | don't open a browser on start |
+| `--events-dir` | `%LOCALAPPDATA%\VibeXI\events` | directory to watch |
+| `--port` | `8731` | local port |
+| `--no-browser` | off | don't open a browser on start |
 
-It always follows whichever `.log` in that directory was modified most recently,
-so a day rollover or a character switch is picked up automatically — the page
-resets and replays the new file from the top.
+It always follows whichever `.jsonl` in that directory was modified most
+recently, so a day rollover or a character switch is picked up automatically —
+the page resets and replays the new file from the top.
+
+If the status line says **waiting for the addon**, nothing has been written yet:
+either the addon is not loaded, or nothing has happened in game since it was.
 
 ## Using it
 
@@ -62,7 +78,7 @@ resets and replays the new file from the top.
   `All` / `None` do the whole list at once. The header shows how many of how
   many are included. Excluded characters are dropped from every total, chart and
   table, not just hidden. The selection is remembered across reloads and across
-  log files, so a character you never want counted stays excluded. `Hide`
+  event files, so a character you never want counted stays excluded. `Hide`
   collapses the list to a single line — the count and a summary of who is
   excluded stay visible — and that too is remembered.
 - **Pause** — freezes ingestion so you can read a table mid-fight.
@@ -78,7 +94,7 @@ corner. It moves that panel into a window that floats above other applications,
 so it stays visible while you play full-screen-windowed — drag it into a corner
 beside the game, or onto a second monitor.
 
-The panel is still live out there: it keeps updating with the log, it stays in
+The panel is still live out there: it keeps updating, it stays in
 step with the filter row back on the main page, and clicking a row in a floating
 **Actions** window still drives the drill-down. Charts get more room and grow
 with the window.
@@ -129,73 +145,71 @@ fades until you point at it, no card frame, no headings, no sub-headings.
 ### What Reset does
 
 Reset is the "clear the meter between pulls" button: it throws away the
-collected events and keeps following the log from the point it had reached. It
+collected events and keeps following the file from the point it had reached. It
 deliberately **keeps** your filters, each character's colour, and which names
 are known to be monsters — so the next pull looks the same as the last one, just
 counted from zero. The status line then reads *since reset at hh:mm:ss*.
 
-It does **not** re-read the file. If you want the whole log parsed again from
-the top, reload the page — that is what a fresh page load already does.
+It does **not** re-read the file. If you want the whole session counted again
+from the top, reload the page — that is what a fresh page load already does.
 
 ## Reading the numbers
+
+Everything here comes from the game's own action packets, so there is no
+guesswork left in any of it.
 
 - **Average** is damage per *connecting* hit. Misses are counted in their own
   column and in the accuracy figure, never folded into the average.
 - **DPS** for a character uses that character's own active window — first to
   last action — not the whole encounter, so someone who joined halfway through
   is not divided by time they weren't there.
-- **Weaponskills** are read from two lines. The log announces
-  `Hasaya uses Tachi: Jinpu.` and puts the damage on the *next* line
-  (`The Goblin Pathfinder takes 723 points of damage.`), so the parser holds the
-  announced action until its damage arrives. A weaponskill that gets evaded is
-  recorded as a miss for that weaponskill.
-- **Skillchains** are their own row (`Skillchain: Fusion`), credited to the last
-  character to land a *weaponskill* — the one who closed the chain. The rest of
-  the party keeps swinging in between, so "the last character to deal damage" is
-  usually the wrong answer. Magic bursts are likewise their own row.
-  **Additional Effect** is credited to the attack it rode on.
-- **Area-of-effect** damage is split across lines: only the first victim rides
-  on the announcement, and the rest arrive seconds later on their own lines with
-  other people's swings in between. The announced action stays open for five
-  seconds so every victim lands under it — `Meteor` on four people is four rows
-  under `Meteor`, not one plus three guesses.
-- **Counters** (`Promathia's attack is countered by Hasaya.`) are their own row,
-  credited to the character who countered.
-- **`Unattributed`** means damage appeared with no announcement in front of it —
-  a damage-over-time tick, spikes, an enspell, or an area attack whose
-  announcement never made it into the log. It is credited to the last character
-  who dealt damage, which is a guess; the row is named so you know. Because it
-  is a guess it is kept out of the party-vs-monster classification, so a wrong
-  one can misplace damage but can never move a name to the wrong side.
+- **Accuracy** counts swings, not attack rounds. A double-attack round that
+  landed once and missed once is one hit and one miss.
+- **Weaponskills** are one row each. A weaponskill that gets evaded is recorded
+  as a miss for that weaponskill, because the packet says which of the two it
+  was rather than leaving it to be inferred.
+- **Skillchains** are their own row (`Skillchain: Fusion`), credited to whoever
+  closed the chain. The chain arrives attached to the closing weaponskill, so
+  this is stated by the game and not worked out from who swung last, and its
+  damage is counted separately from the weaponskill's own. Magic bursts are
+  flagged on the row that burst. **Additional Effect** — an enspell, a Sneak
+  Attack proc, an HP drain — is its own row, credited to the attack it rode
+  on.
+- **Area-of-effect** damage is one action however many targets it reached. The
+  packet carries the whole target list, so `Firaga III` on three mobs is a
+  single cast of the summed damage, with the target column reading `3 targets`.
+- **Pets** get their own row under their own name. The packet names each pet's
+  owner, so a pet is never confused for a party member or for a monster.
 
 ## When something looks wrong
 
 Open **Diagnostics** at the bottom.
 
-- **Name classification.** Monsters are detected from the article: the log says
-  "the Goblin Pathfinder" but never "the Hasaya". Named notorious monsters have
-  no article, so they're caught by a second pass over who-fights-whom. If one is
-  still misfiled, flip it here and every chart re-sorts. This is the table to
-  check when a character is missing from the meter entirely: only characters are
-  counted, so a name filed as a monster contributes nothing.
-- **Unrecognised damage lines.** Any line containing a damage number that no
-  parse rule matched is listed here. If this list isn't empty, the meter is
-  under-counting and the pattern needs adding to
-  [`web/lib/parser.js`](web/lib/parser.js).
+- **Name classification.** Every name is classified from the game's own spawn
+  flags — player, pet, mob, npc — so this should always be right; there is no
+  heuristic left to get it wrong. It is still the table to check when someone is
+  missing from the meter entirely, and you can override any row by hand.
+- **Addon notices.** The addon's startup probe, plus one line for each kind of
+  game message it saw and did not recognise. Anything listed there is damage
+  nobody is being credited with, and the fix is a new message id in
+  [`../addons/VibeXI/vx_enums.lua`](../addons/VibeXI/vx_enums.lua).
 
 ## Layout
 
 ```
-damage-meter.ps1    tails the newest log, serves web/ on localhost
+damage-meter.py     tails the newest addon event file, serves web/ on localhost
+winalpha.py         ctypes Win32 call that makes a pop-out window see-through
 Damage-Meter.cmd    double-click launcher
+../addons/VibeXI/   the Ashita addon that produces the data
 ../shared-ui/       design system shared with ../ws_calculator, served at /shared/
 web/index.html      the page
 web/style.css       app-only styling: filter bar, source indicator, diagnostics
 web/app.js          polling, state, rendering
-web/lib/parser.js   log lines -> damage events
+web/lib/source.js   addon JSONL lines -> damage events
 web/lib/stats.js    events -> totals, time series, distributions
 web/lib/chart.js    canvas line / bar / histogram
 web/lib/popout.js   panels in their own windows
+tools/gen-test-events.py   writes a synthetic event file, for working without the game
 ```
 
 The palette and the shared widgets come from

@@ -2,7 +2,11 @@
 --
 -- Watches incoming action packets, resolves the ids in them against the
 -- client's own entity table, and appends one JSON line per (action, target) to
--- a local file. That file is the only output. See addon/PLAN.md.
+-- a local file. That file is the only output. See addon-dev/PLAN.md.
+--
+-- Horizon Approved Addon -- ticket addon-0032, approved by Aerec 2026-09-04.
+-- Approval covers this addon as described below: read-only, no outgoing
+-- anything. Widening that surface needs a new ticket, not a local edit.
 --
 -- ============================================================================
 -- THIS ADDON NEVER SENDS ANYTHING TO THE GAME SERVER.
@@ -14,8 +18,8 @@
 --     the packet from reaching the client, which is interference with the game
 --     even though it is inbound. We observe; we never intervene.
 --
--- This is enforced mechanically, not by discipline: addon/check-apis.ps1 diffs
--- every external call in this directory against addon/ALLOWED_APIS.txt and
+-- This is enforced mechanically, not by discipline: addon-dev/check-apis.py diffs
+-- every external call in this directory against addon-dev/ALLOWED_APIS.txt and
 -- fails on anything unlisted. Run it before you commit.
 -- ============================================================================
 --
@@ -256,11 +260,42 @@ local function record(act, actor, now)
         end
     end
 
-    -- One use id for the whole action, however many targets it reached. This is
-    -- the grouping the chat parser had to infer with a 5-second heuristic; here
-    -- the packet states it outright, and stats.collapse() consumes it unchanged.
-    S.use = S.use + 1
-    local use = S.use
+    -- ONE USE ID PER SWING, SHARED ACROSS THE TARGETS THAT SWING REACHED.
+    --
+    -- The two dimensions of an action packet mean different things and must not
+    -- be collapsed together:
+    --
+    --   several TARGETS, one result each   an AoE. One use of the action; the
+    --                                      packet states the target list, which
+    --                                      is the grouping the chat parser had
+    --                                      to infer with a 5-second window.
+    --   one target, several RESULTS        a multi-attack round. Genuinely two
+    --                                      or three separate swings, each with
+    --                                      its own hit-or-miss outcome.
+    --
+    -- So the id is keyed on the result's position, not on the action: result 1
+    -- across every target is one use, result 2 across every target is the next.
+    -- Sharing a single id for the whole action instead would fold a multi-attack
+    -- round into one swing -- and since stats.collapse() treats `hit` as "any",
+    -- a round where the first swing landed and the second whiffed would report
+    -- one hit and NO miss. The swing count is the denominator accuracy divides
+    -- by, so that reads as a party that never misses.
+    local use_by_slot = {}
+
+    local function use_for(slot)
+        local u = use_by_slot[slot]
+        if not u then
+            S.use = S.use + 1
+            u = S.use
+            use_by_slot[slot] = u
+        end
+        return u
+    end
+
+    -- The proc trailers are per ACTION, not per swing: one weaponskill closes
+    -- one skillchain however many targets or swings it involved. Minted lazily,
+    -- so an action with no trailer costs no id.
+    local sc_use, addl_use
 
     local name_resolved = nil
 
@@ -273,7 +308,9 @@ local function record(act, actor, now)
             tgt_kind = Entity.kind(tgt)
         end
 
-        for _, res in ipairs(target.results) do
+        for slot, res in ipairs(target.results) do
+            local use = use_for(slot)
+
             -- Three outcomes, and the default is DROP. A message in neither
             -- table is not a damage event -- a cure, a buff, an enfeeble, a
             -- status tick -- and its `value` field means something other than
@@ -314,6 +351,94 @@ local function record(act, actor, now)
                 })
             else
                 note_unknown(res.message, act)
+            end
+
+            -- The PROC trailer, which is a second event riding on this result.
+            --
+            -- Read INDEPENDENTLY of the branch above, never inside it: a
+            -- skillchain must not be lost because its closing weaponskill's own
+            -- message happened to be one we do not recognise. The trailer names
+            -- its own outcome and carries its own damage in proc_value.
+            if res.has_proc and res.proc_message and res.proc_message > 0 then
+                -- The skillchain table is consulted ONLY on a weaponskill,
+                -- because that is the only context Metrics consults it in. The
+                -- same proc message means different things by category: 229 is
+                -- 'DRG Jump Effect' on a weaponskill and an ENSPELL on a melee
+                -- swing, so reading the table globally would file every enspell
+                -- proc in the game as a skillchain. See E.Skillchains.
+                local sc_name = nil
+                if kind == 'ws' then sc_name = E.skillchain(res.proc_message) end
+
+                if sc_name then
+                    -- A skillchain is its own row, so it needs its own `use`:
+                    -- sharing the weaponskill's would let stats.collapse() fold
+                    -- the chain's damage into the weaponskill and lose it as a
+                    -- separate action. Minted once per action, not once per
+                    -- target, so an AoE weaponskill closing on three mobs is one
+                    -- chain of summed damage -- the same rule the weaponskill
+                    -- itself is under.
+                    if not sc_use then
+                        S.use = S.use + 1
+                        sc_use = S.use
+                    end
+                    Emit.write({
+                        t          = now,
+                        seq        = next_seq(now),
+                        use        = sc_use,
+                        kind       = 'skillchain',
+                        actor      = actor.name,
+                        actorKind  = actor_kind,
+                        -- The same string the UI has always used, and what its
+                        -- drill-down test matches on.
+                        action     = 'Skillchain: ' .. sc_name,
+                        actionId   = res.proc_message,
+                        target     = tgt_name,
+                        targetKind = tgt_kind,
+                        -- proc_value, never res.value: the chain's damage is
+                        -- its own and is not part of the weaponskill's. This is
+                        -- Metrics' H.TP.Skillchain_Damage, which reads
+                        -- add_effect_param for exactly the same reason.
+                        dmg        = res.proc_value or 0,
+                        hit        = true,
+                        crit       = false,
+                        burst      = false,
+                        msg        = res.proc_message,
+                        owner      = owner,
+                        pet        = pet_name,
+                    })
+
+                elseif E.Damage[res.proc_message] == true then
+                    -- An additional effect: an enspell, a Sneak Attack proc, an
+                    -- HP drain. Real damage the actor dealt, in a row of its own
+                    -- rather than folded into the swing, exactly as the chat
+                    -- parser filed it. Its own `use` for the same reason.
+                    if not addl_use then
+                        S.use = S.use + 1
+                        addl_use = S.use
+                    end
+                    Emit.write({
+                        t          = now,
+                        seq        = next_seq(now),
+                        use        = addl_use,
+                        kind       = 'addl',
+                        actor      = actor.name,
+                        actorKind  = actor_kind,
+                        action     = 'Additional Effect',
+                        actionId   = res.proc_message,
+                        target     = tgt_name,
+                        targetKind = tgt_kind,
+                        dmg        = res.proc_value or 0,
+                        hit        = true,
+                        crit       = false,
+                        burst      = false,
+                        msg        = res.proc_message,
+                        owner      = owner,
+                        pet        = pet_name,
+                    })
+
+                else
+                    note_unknown(res.proc_message, act)
+                end
             end
         end
     end
