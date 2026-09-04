@@ -4,16 +4,21 @@ Branch: `DamageMeter-Addon`. Nothing is built yet; this file is the whole plan.
 
 ## Why
 
-`damage_meter/` reads the FFXI chat log as text. That works, but the ceiling is
-documented in `damage_meter/CLAUDE.md` under "Known gaps" and it is a hard one:
-the log does not say who is a player, does not say who owns a pet, does not flag
-crits reliably, cannot distinguish a weaponskill from a job ability at the
-announcement, and writes one damage line per AoE victim with no grouping.
+`damage_meter/` used to read the FFXI chat log as text. That worked, but the
+ceiling was a hard one: the log did not say who was a player, did not say who
+owned a pet, did not flag crits reliably, could not distinguish a weaponskill
+from a job ability at the announcement, and wrote one damage line per AoE victim
+with no grouping.
 
 An Ashita addon reading incoming packets and the client's own memory has all of
-that as ground truth. The plan is to build that addon as a **thin event
-emitter** and feed the existing browser UI, which already knows how to
-aggregate.
+that as ground truth. This addon is a **thin event emitter** feeding the existing
+browser UI, which already knew how to aggregate.
+
+**The chat-log reader is gone.** It was removed on 2026-09-04 once the addon was
+approved (see Resolved, below) rather than being kept as a fallback: two sources
+that disagree is worse than one that is right, and every "known gap" in the old
+`damage_meter/CLAUDE.md` was a property of the log rather than of the meter.
+`web/lib/parser.js` and the CP932 tailer went with it.
 
 ---
 
@@ -44,23 +49,23 @@ A denylist only catches routes we thought of. Instead, assert the *complete* set
 of external calls against a checked-in manifest:
 
 ```bash
-grep -rhoE "AshitaCore:[A-Za-z]+|ashita\.[a-z_]+\.[a-z_]+|require\(['\"][a-z]+" addon/src/ | sort -u
+grep -rhoE "AshitaCore:[A-Za-z]+|ashita\.[a-z_]+\.[a-z_]+|require\(['\"][a-z]+" addons/VibeXI/ | sort -u
 ```
 
-Diff against `addon/ALLOWED_APIS.txt`; fail on anything not listed. Adding an
+Diff against `addon-dev/ALLOWED_APIS.txt`; fail on anything not listed. Adding an
 API becomes a deliberate edit to that file, never an accident. Seed list is in
 the appendix.
 
 ### The bridge is one-way by construction
 
-The addon **appends to a local file**. The PowerShell server tails it, exactly
+The addon **appends to a local file**. The Python server tails it, exactly
 as it already tails chat logs. Never open a socket from the addon, not even to
 localhost — that would put network capability back in the process for a
 convenience we do not need.
 
 ```
 FFXI process             disk                     existing stack
-[addon] ──write──▶ events.jsonl ──read──▶ [damage-meter.ps1] ──▶ [browser]
+[addon] ──write──▶ events.jsonl ──read──▶ [damage-meter.py] ──▶ [browser]
 ```
 
 Nothing downstream can send anything back into the game regardless of what
@@ -113,10 +118,20 @@ because it aggregates into Metrics' own `DB` tree — Metrics does that because
 its UI is ImGui. Ours is a browser and `stats.js` already aggregates. Take the
 message-ID *logic* from the handlers, not the code.
 
-**5. One JSON line per (action, target), all sharing a `use` id minted in Lua.**
-The packet hands over the target list directly, so `use` stops being the
-5-second `AOE_MS` heuristic and becomes ground truth — and `stats.collapse()`,
-already written and tested, works unchanged.
+**5. One JSON line per (action, target, result), with the `use` id minted in Lua
+per RESULT SLOT.** The packet hands over the target list directly, so `use` stops
+being the 5-second `AOE_MS` heuristic and becomes ground truth — and
+`stats.collapse()`, already written and tested, works unchanged.
+
+The slot part is load-bearing and was got wrong first time round. A packet has
+two dimensions and they mean different things: several *targets* with one result
+each is an AoE (one use), while one target with several *results* is a
+multi-attack round (two or three genuine swings). Minting one id for the whole
+action folds the second case into the first, and because `collapse()` treats
+`hit` as "any", a round that landed once and whiffed once then reports one hit
+and no miss. On the test fixture that read as 93.7% accuracy against a true
+89.7%. `use_for(slot)` in `record()` keys the id on the result's position, so
+result 1 across every target is one use and result 2 is the next.
 
 **6. ASCII-only JSON** (escape non-ASCII as `\uXXXX`). FFXI names are ASCII and
 ASCII bytes survive the server's CP932 decode untouched, so the encoding path
@@ -130,7 +145,7 @@ This is what makes the allowlist sharp: the checker treats *every* `:method(`
 call as an SDK call, so if our own code used colon-methods we would have to
 allowlist our own names and the SDK surface would stop being legible at a
 glance. Defining a colon-method on one of our tables blunts the check. Added in
-Phase 0 as a consequence of how `check-apis.ps1` extracts tokens.
+Phase 0 as a consequence of how `check-apis.py` extracts tokens.
 
 **9. Three events, not one.** The plan said "register `packet_in` only". The
 allowlist permits `packet_in`, `load` and `unload` — the latter two are
@@ -140,27 +155,58 @@ excluded; `packet_out` is denylisted outright.
 
 ---
 
+**10. Skillchains come off the PROC trailer, and Metrics owns the id table.** A
+skillchain is not a packet or a message of its own: it rides on the closing
+weaponskill's result as `proc_message` / `proc_value`. `E.Skillchains` is
+Metrics' `Res.WS.Skillchains` verbatim and `E.skillchain()` is its
+`Res.WS.Get_Skillchain`.
+
+The first cut of this derived the ids arithmetically instead, from the
+LandSandBoat server's `action_result_t::recordSkillchain` (`287 + effect`
+landed, `384 + effect` absorbed). That was the wrong call. It disagrees with
+Metrics on Radiance and Umbra (302/303 vs 767/768) and invents an "absorbed"
+outcome where Metrics simply maps 385/386 to Light and Darkness, and Metrics is
+the parser with a track record against this server. Reading the server source is
+not the same as knowing what this server emits; if the two ever have to be
+reconciled that is a measurement against a live client.
+
+**The table is gated on category 3.** Metrics calls `H.TP.Skillchain_Parse` from
+`H.TP.Action` and nowhere else (`handlers/tp_action.lua:41`), and that gate is
+what resolves 229 — 'DRG Jump Effect' on a weaponskill, `Message.ENSPELL` and
+therefore an additional effect on anything else. A global lookup would file every
+enspell proc as a skillchain. Note also that `proc_kind` cannot identify a chain
+on its own: it is a variant (add-effect OR skillchain), so the message decides.
+
+The trailer is read *outside* the branch that handles the main message, so a
+chain is never lost because its weaponskill's own message was unrecognised. Both
+a skillchain and an additional effect become their own event with their own
+`use`, minted once per action — one weaponskill closes one chain however many
+targets or swings it involved.
+
 ## Architecture
 
 ### Event contract
 
 ```json
 {"t":1785000000,"seq":3,"use":41207,"kind":"ws","actor":"Hasaya","actorKind":"player",
- "action":"Tachi: Jinpu","target":"Goblin Pathfinder","targetKind":"mob",
- "dmg":723,"hit":true,"crit":false,"burst":false}
+ "action":"Tachi: Jinpu","actionId":32,"target":"Goblin Pathfinder","targetKind":"mob",
+ "dmg":723,"hit":true,"crit":false,"burst":false,"msg":185}
 ```
 
-Field-compatible with what `parser.js` emits today, so `stats.js` needs no
-changes. New fields (`actorKind`, `targetKind`, `owner`) are additive.
+`web/lib/source.js` reads it, and `stats.js` is unchanged from the chat-log era
+apart from the fields it carries through `collapse()`.
 
-Three things get strictly better for free:
+Three things got strictly better:
 
-- **The roster stops guessing.** `spawn_flags` gives player/mob/pet outright.
-  The article heuristic, the fixed-point propagation in `roster.rebuild`, and
-  every `guess: true` event become unnecessary. Keep the manual override UI;
-  delete the inference.
+- **The roster stopped guessing.** `spawn_flags` gives player/mob/pet outright.
+  The article heuristic, the fixed-point propagation in `roster.rebuild` and
+  every `guess: true` event are deleted. The manual override UI is kept.
 - **Pets carry their owner** via `pet_index`, closing a documented gap.
-- **Crits, multi-attack and shadows become real flags** rather than phrasings.
+- **Crits, multi-attack and shadows are real flags** rather than phrasings.
+
+One thing to know about the clock: `t` is `os.time()`, whole seconds, with `seq`
+ordering events inside one second (Decision 1). `source.js` scales it to
+milliseconds once on the way in, because everything downstream is in ms.
 
 ### What to take from Metrics
 
@@ -184,22 +230,35 @@ Three things get strictly better for free:
 
 Estimated addon size: ~600 lines.
 
-### Proposed layout
+### Layout
+
+`addons/VibeXI/` is the addon and nothing else — it is what gets copied into
+Ashita, so only Lua the addon loads at runtime may live there. Everything that
+builds, checks or documents the addon sits outside it and never ships.
 
 ```
-addon/
+addons/VibeXI/         copy this folder to …\HorizonXI\Game\addons\
+  vibexi.lua           entry: addon meta, packet_in dispatcher
+  vx_bitreader.lua     bit unpacking (written from XiPackets spec)
+  vx_action.lua        0x028 / 0x029 → action tables
+  vx_entity.lua        mob / party / player memory reads
+  vx_enums.lua         packet ids, categories, spawn flags, message ids
+  vx_emit.lua          event → ASCII JSON → append to file
+  vx_ws_names.lua      generated weaponskill id → name table
+
+addon-dev/             the addon's tooling and docs; never shipped
   PLAN.md              this file
   ALLOWED_APIS.txt     the enforcement manifest
-  check-apis.sh        the allowlist diff, wired to pre-commit
-  src/
-    vibexi.lua         entry: addon meta, packet_in dispatcher
-    bitreader.lua      bit unpacking (written from XiPackets spec)
-    action.lua         0x028 → action table
-    entity.lua         mob / party / player memory reads
-    enums.lua          message IDs, spawn flags, animations
-    emit.lua           event → ASCII JSON → append to file
-    resources/         ID→name tables
+  check-apis.py        the allowlist diff, wired to pre-commit
+  check-lua.py         structural Lua check for a box with no interpreter
+  gen-ws-names.py      regenerates addons/VibeXI/vx_ws_names.lua
+
+.githooks/
+  pre-commit           runs check-apis.py on every commit
 ```
+
+The folder is `VibeXI` because that is the name the addon was approved under
+(ticket addon-0032), and Ashita takes the folder name as the addon name.
 
 ---
 
@@ -209,25 +268,26 @@ addon/
 
 Built:
 
-- `addon/ALLOWED_APIS.txt` — 51 tokens, 3 events, each grouped with why it is safe
-- `addon/check-apis.ps1` — three independent checks (allowlist / denylist / event names)
-- `addon/hooks/pre-commit` — runs it on every commit
+- `addon-dev/ALLOWED_APIS.txt` — 51 tokens, 3 events, each grouped with why it is safe
+- `addon-dev/check-apis.py` — three independent checks (allowlist / denylist / event names)
+- `.githooks/pre-commit` — runs it on every commit
 
 Install the hook once, from the repo root:
 
 ```bash
-git config core.hooksPath addon/hooks
+git config core.hooksPath .githooks
 ```
 
 Run it by hand any time:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File addon/check-apis.ps1
+python addon-dev/check-apis.py
 ```
 
-**PowerShell, not sh** (this plan originally said `check-apis.sh`): the repo is
-PowerShell-first everywhere else and this way it runs without Git Bash. The hook
-itself is a two-line `sh` wrapper, because that is what git invokes.
+**Python, not sh** (this plan originally said `check-apis.sh`, and it was
+PowerShell until 2026-09-04): one language across the repo's tooling, and it
+runs without Git Bash. The hook itself is a two-line `sh` wrapper, because that
+is what git invokes.
 
 **Verified:**
 
@@ -247,7 +307,7 @@ it was still caught — that is the allowlist earning its keep over a denylist.
 
 ### Phase 1 — addon emits JSONL — **WRITTEN, NOT YET RUN**
 
-Source is in `addon/src/`:
+Source is in `addons/VibeXI/`:
 
 | File | Role |
 |---|---|
@@ -257,7 +317,7 @@ Source is in `addon/src/`:
 | `vx_entity.lua` | entity + party memory reads, kind/owner classification |
 | `vx_emit.lua` | event → ASCII JSON → appended file |
 | `vx_enums.lua` | packet ids, categories, spawn flags, message ids |
-| `vx_ws_names.lua` | generated; `addon/tools/gen-ws-names.ps1` rebuilds it |
+| `vx_ws_names.lua` | generated; `addon-dev/gen-ws-names.py` rebuilds it |
 
 **Output path — `%LOCALAPPDATA%\VibeXI\events\<Character>_<YYYY.MM.DD>.jsonl`.**
 Deliberately not `%TEMP%` (Storage Sense deletes it, and this file *is* the
@@ -269,7 +329,7 @@ the path will actually see it.
 
 **Verified without a game:**
 
-- `check-apis.ps1` green — 7 files, 43 distinct external calls, all allowlisted
+- `check-apis.py` green — 7 files, 43 distinct external calls, all allowlisted
 - the bit-reader **algorithm** round-trips a synthetic 0x028 built to the
   documented layout: 32-bit ids without sign corruption, nested
   multi-target/multi-result in order, correct field alignment across byte
@@ -297,7 +357,7 @@ Node is installed). So the Lua has still never executed:
    files. It was calibrated on 108 shipped Ashita `.lua` files — zero false
    positives — and does catch a dropped `end` and a dropped paren. That rules
    out the common typo class, **not** a misspelled identifier or a bad
-   expression, which will still surface on `/addon load vibexi`.
+   expression, which will still surface on `/addon load VibeXI`.
 2. **`GetAbilityById(id + 512)`** — the one number still inferred. `abils.dat`
    lives in the FFXI install, not the Ashita tree, so the table's segmentation
    cannot be read from source. Supporting: `recast` scans `GetAbilityById(0..2048)`
@@ -313,13 +373,17 @@ Node is installed). So the Lua has still never executed:
 
 **Done when:** a fight produces a JSONL file whose events match what the chat
 log says for the same fight — same actors, same damage totals — and
-`check-apis.ps1` is still green.
+`check-apis.py` is still green.
 
 **First-run checklist:**
 
-1. Copy `addon/src/` to `…\HorizonXI\Game\addons\vibexi\`, with `vibexi.lua` as
-   the entry point.
-2. `/addon load vibexi`
+Nothing gates this any more — HorizonXI approved the addon on 2026-09-04 (see
+Resolved, below), so it can load on a real account rather than needing a test
+one.
+
+1. Copy the `addons/VibeXI/` folder into `…\HorizonXI\Game\addons\`, so the
+   addon lands at `…\Game\addons\VibeXI\` with `vibexi.lua` inside it.
+2. `/addon load VibeXI`
 3. Check `%LOCALAPPDATA%\VibeXI\events\` for a file appearing.
 4. Read line 1 of that file — the `"kind":"meta"` probe. Expect
    `"chunkData":"string"`, `"isZoningType":"number"`, `"selfSpawnFlags":525`,
@@ -327,32 +391,45 @@ log says for the same fight — same actors, same damage totals — and
    Anything else points straight at the assumption it belongs to.
 5. Kill one mob. Compare the JSONL totals against the chat log for the same
    fight — **if every number is exactly double, it is the `chunk_data` dedup**.
-6. Point the server at it: `-LogDir %LOCALAPPDATA%\VibeXI\events`
+6. Point the server at it — or just run it, since that path is the default:
+   `python damage_meter/damage-meter.py --events-dir %LOCALAPPDATA%\VibeXI\events`
 
-### Phase 2 — server serves it
+### Phase 2 — server serves it — **DONE**
 
-- Point `-LogDir` at the addon's output directory
-- Let the newest-file scan accept `.jsonl` alongside `.log`
+- `--events-dir`, defaulting to `%LOCALAPPDATA%\VibeXI\events`
+- the newest-file scan takes `*.jsonl`
+- `/api/log` became `/api/events`; decoding is UTF-8, not CP932, because the
+  addon escapes every non-ASCII byte
 
-`/api/log` is already dumb and returns raw lines, and `Read-LogTail` already
-holds back partial lines, so a mid-write flush is safe. This should be a very
-small change.
+The tailer needed no structural change: it already returned raw lines and already
+held back a partial trailing one, which is exactly what makes the addon's
+flush-per-event safe — half a JSON object is not parseable.
 
-**Done when:** `/api/log` returns JSONL lines with a correct `nextOffset`.
+### Phase 3 — client reads it — **DONE**
 
-### Phase 3 — client picks a source
+- `damage_meter/web/lib/source.js` replaces `parser.js`, which is deleted along
+  with `tools/gen-test-log.py` and the CP932 fixture
+- `roster` is a lookup over `actorKind`/`targetKind`; the article heuristic and
+  the fixed point are gone, the manual override is kept
+- `stats.js` is unchanged apart from the fields `collapse()` carries through
+- Diagnostics swapped "unrecognised damage lines" for the addon's own meta lines
+  (the startup probe, and one notice per unrecognised message id)
+- `tools/gen-test-events.py` writes a synthetic event file, so the whole UI is
+  still exercisable with no game running
 
-- New `damage_meter/web/lib/source-jsonl.js`: `JSON.parse` per line → event, DOM-free, same contract as `parser.js`
-- `app.js` chooses by file extension
-- **Keep `parser.js`** — it is how historical chat logs are read and it is the fallback
-- `stats.js` untouched; `roster` keeps manual overrides, drops inference when `actorKind` is present
-
-**Done when:** the UI renders from a live JSONL file, and a chat log still
-renders exactly as it does today.
+**Verified against that fixture:** 709 events over 711 lines, no malformed lines;
+collapse preserves total damage exactly; an AoE folds 3 rows into 1 use reading
+`3 targets`; multi-attack swings do *not* fold; skillchains never share a use
+with the weaponskill that closed them; an absorbed chain counts as a miss worth
+zero; `Leaping Lizzy` classifies as a mob with no heuristic at all; the pet is
+counted, the NPC and the unresolved `Unknown` target are not; the Skillchains
+toggle and the manual roster override both work in the page.
 
 ### Phase 4 — the metrics that were previously impossible
 
-Multi-attack rounds, defense/mitigation, TP-at-weaponskill, real resist rates.
+Defense/mitigation, TP-at-weaponskill, real resist rates. Multi-attack rounds are
+already observable — the swings are separate results — but nothing reports the
+round shape yet (double/triple/quad rates), only the individual swings.
 Also worth revisiting from the earlier Metrics comparison: active-time duration
 (`AUTOPAUSE = 5`), rolling DPS (3s × 3 buckets), running accuracy over last N.
 
@@ -360,16 +437,42 @@ Also worth revisiting from the earlier Metrics comparison: active-time duration
 
 ## Open questions
 
-1. **HorizonXI addon policy.** Metrics carries a `-- Horizon Approved Addon 0457`
-   marker; a custom addon does not. A read-only derivative of an approved parser
-   is *probably* fine, but that is an inference, not a verified fact. **Ask in
-   their Discord before attaching this to a real account.** Unresolved.
-2. **Where the addon installs.** Presumably
-   `...\HorizonXI\Game\addons\vibexi\`, loaded with `/addon load vibexi`.
+1. **Where the addon installs.** Presumably
+   `...\HorizonXI\Game\addons\VibeXI\`, loaded with `/addon load VibeXI`.
    Confirm against how Metrics is registered.
-3. **Output directory.** Ashita's `config/addons/<name>/` via
+2. **Output directory.** Ashita's `config/addons/<name>/` via
    `AshitaCore:GetInstallPath()` + `ashita.fs.create_dir`, matching what
-   `file.lua` does. Needs to be somewhere `damage-meter.ps1` can be pointed at.
+   `file.lua` does. Needs to be somewhere `damage-meter.py` can be pointed at.
+   Phase 1 as written chose `%LOCALAPPDATA%\VibeXI\events\` instead, for the
+   reasons listed there; this question is really "does the server care where an
+   approved addon writes", and the answer so far is no.
+
+## Resolved
+
+**HorizonXI addon policy — approved.**
+
+| | |
+|---|---|
+| Approved by | **Aerec** |
+| Date | **2026-09-04** |
+| Ticket | **addon-0032** |
+
+The server has signed off on this addon; it can be attached to a real account.
+
+Two things follow, and neither is a licence to loosen anything:
+
+- **The constraint does not move.** Approval is permission to run the addon as
+  described — read-only, no outgoing anything, allowlist-enforced. Every rule
+  under "THE CONSTRAINT" and the whole of `check-apis.py` stay exactly as they
+  are. If a future feature would need an API outside `ALLOWED_APIS.txt`, that is
+  a new conversation with the server, not a local edit.
+- **The approval is recorded in the entry file.** Metrics carries
+  `-- Horizon Approved Addon 0457` at the top of its entry file; the equivalent
+  trace for this addon is the approver, date and ticket, and those three lines
+  are now in the header of `src/vibexi.lua` so anyone reading the source — or
+  any staff member asked about it — can follow it back to addon-0032 without
+  reading this plan. If Horizon later issues a numbered marker of the Metrics
+  form, add it there alongside them.
 
 ## Licensing — read before copying anything
 
@@ -442,8 +545,9 @@ io.open  -- "a" mode only, local path under the Ashita config dir
 
 | What | Where |
 |---|---|
-| event shape, `use` id minting | `damage_meter/web/lib/parser.js` |
+| event shape, `use` id minting | `addons/VibeXI/vibexi.lua` (`record`) |
+| reading it back | `damage_meter/web/lib/source.js` |
 | `collapse`, aggregation | `damage_meter/web/lib/stats.js` |
-| log tailer, `/api/log`, CP932 | `damage_meter/damage-meter.ps1` |
+| file tailer, `/api/events` | `damage_meter/damage-meter.py` |
 | operational detail, gotchas | `damage_meter/CLAUDE.md` |
-| test-log generator | `damage_meter/tools/gen-test-log.ps1` |
+| test-event generator | `damage_meter/tools/gen-test-events.py` |

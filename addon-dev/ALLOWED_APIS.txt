@@ -1,7 +1,7 @@
-# VibeXI addon — the complete set of external APIs addon/src/ is allowed to call.
+# VibeXI addon — the complete set of external APIs addons/VibeXI/ is allowed to call.
 #
-# This is an ALLOWLIST, not a denylist. check-apis.ps1 extracts every external
-# call from addon/src/**/*.lua and fails on anything not listed here. A denylist
+# This is an ALLOWLIST, not a denylist. check-apis.py extracts every external
+# call from addons/VibeXI/**/*.lua and fails on anything not listed here. A denylist
 # would only catch the routes we thought of; this catches APIs nobody on this
 # project has heard of yet.
 #

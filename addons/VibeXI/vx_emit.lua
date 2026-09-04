@@ -1,7 +1,7 @@
 -- Event -> one line of ASCII JSON -> appended to a local file.
 --
 -- This is the entire bridge. It is one-way by construction: the addon writes a
--- file, the PowerShell server reads it. Nothing downstream can send anything
+-- file, the Python server reads it. Nothing downstream can send anything
 -- back into the game no matter what happens to it.
 --
 -- WHERE THE FILE GOES, and why it is not %TEMP%:
@@ -24,7 +24,7 @@
 --   machine-local application data that should not roam. That is exactly this.
 --
 -- ASCII-ONLY OUTPUT is deliberate: ASCII bytes pass through the server's CP932
--- decode untouched, so `damage-meter.ps1` needs no encoding change at all.
+-- decode untouched, so `damage-meter.py` needs no encoding change at all.
 --
 -- NOTHING IN HERE MAY THROW. It runs inside the packet callback, on the game's
 -- thread. Every failure is swallowed and counted; a broken emitter must degrade

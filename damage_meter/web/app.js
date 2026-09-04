@@ -1,38 +1,27 @@
 /*
  * app.js -- polling, state and rendering.
  *
- * The server hands over raw log lines and nothing else; parsing (lib/parser.js)
- * and aggregation (lib/stats.js) both run here, so a parse-rule change is a
- * browser refresh rather than a server restart.
+ * The server hands over raw JSONL lines from the addon's event file and nothing
+ * else; reading them (lib/source.js) and aggregating them (lib/stats.js) both
+ * run here, so a change to either is a browser refresh rather than a server
+ * restart.
  */
 (function () {
   'use strict';
 
-  var P = DPS.parser, S = DPS.stats, C = DPS.chart;
+  var P = DPS.source, S = DPS.stats, C = DPS.chart;
   // Not getElementById: a popped-out card's nodes live in another document, and
   // getElementById only searches its own. lib/popout.js keeps the index.
   var $ = DPS.popout.byId;
   var esc = C.esc;
 
   var POLL_MS = 250;
-  /*
-   * `roster.rebuild` is deliberately NOT run at poll rate. It is O(events) with
-   * a 4-pass fixed point over the whole history, and it is the single most
-   * expensive thing in the poll path -- measured at 32ms on a 200k-event
-   * session, against 22ms for an aggregate and 10ms for a filter.
-   *
-   * Nothing needs it faster. It answers "is this name a monster", which changes
-   * only when a name is seen for the first time or gets reclassified, and a
-   * second of latency on that is exactly what shipped at POLL_MS = 1000. So the
-   * render keeps up with the poll and the classification pass does not.
-   */
-  var REBUILD_MS = 1000;
   var FIGHT_GAP_MS = 90000;   // silence longer than this starts a new fight
 
   var app = {
     file: null,
     offset: 0,
-    parser: P.create(null, null),
+    source: P.create(null),
     lines: 0,
     range: 'all',
     chains: 'on',           // 'on' credits skillchain damage, 'off' drops it
@@ -48,7 +37,6 @@
     visibleActors: [],      // names with a chip right now; scopes All / None
     chipsOpen: true,        // character list expanded; persisted
     lastOk: 0,
-    lastRebuild: 0,         // throttles roster.rebuild; see REBUILD_MS
     error: null
   };
 
@@ -59,16 +47,24 @@
    * once and never reassigned, so a character keeps its hue when a filter or a
    * lead change reorders the table.
    *
+   * The file's owner always takes slot 0. They are the one character the user
+   * looks for first and the one who is on every chart of every session, so
+   * their hue is the one that must not drift -- and it otherwise would, since
+   * slots go in first-seen order and whether the owner or the tank swings first
+   * is luck. Everyone else takes the next free slot in the order they appear.
+   *
    * Only characters are slotted. Monsters never appear as an actor anywhere in
-   * this app, so spending one of the eight slots on one would push a real party
-   * member into the muted tail for nothing. `seen` still records every name --
-   * classification arrives late (a name's first article can be three kills in),
-   * and a name reclassified into the party then picks up the next free slot.
-   * Past eight no ninth hue is invented: the tail renders in muted ink and
-   * folds into a single "Other" line on the chart.
+   * this app, so spending a slot on one would push a real party member further
+   * down the palette for nothing. `seen` still records every name, so a name
+   * reclassified into the party by hand picks up the next free slot.
+   *
+   * There are FFXITheme.SLOTS (18) of them, one per alliance member, and past
+   * that the palette wraps and a hue repeats. Nothing here folds a tail into a
+   * shared muted "Other": every character gets their own colour, and the legend,
+   * the table columns and the hover all name them anyway.
    */
   function scanActors() {
-    var ev = app.parser.events;
+    var ev = app.source.events;
     for (var i = app.scanned; i < ev.length; i++) {
       var n = ev[i].actor;
       if (n && !app.seenSet[n]) { app.seenSet[n] = true; app.seen.push(n); }
@@ -78,19 +74,20 @@
 
   function assignSlots() {
     scanActors();
-    var roster = app.parser.roster;
+    var roster = app.source.roster;
+    // Before anyone else, so slot 0 is the owner's whoever swung first.
+    var owner = roster.owner;
+    if (owner && !(owner in app.slots) && !roster.isMob(owner)) app.slots[owner] = app.nextSlot++;
     for (var i = 0; i < app.seen.length; i++) {
       var n = app.seen[i];
       if (n in app.slots) continue;
       if (roster.isMob(n)) continue;
-      app.slots[n] = app.nextSlot < 8 ? app.nextSlot++ : -1;
+      app.slots[n] = app.nextSlot++;
     }
   }
 
   function slotOf(name) {
-    if (!(name in app.slots)) {
-      app.slots[name] = app.nextSlot < 8 ? app.nextSlot++ : -1;
-    }
+    if (!(name in app.slots)) app.slots[name] = app.nextSlot++;
     return app.slots[name];
   }
 
@@ -146,34 +143,30 @@
 
   /*
    * Drops every event collected so far and starts counting from the current
-   * point in the log. The read offset is deliberately left alone -- this is the
-   * "clear the meter between pulls" button, not a re-read; reloading the page
-   * is what replays the whole file from the top.
+   * point in the event file. The read offset is deliberately left alone -- this
+   * is the "clear the meter between pulls" button, not a re-read; reloading the
+   * page is what replays the whole file from the top.
    *
    * Deliberately kept across a reset:
    *   - colour slots, so a character does not change hue mid-session
-   *   - the roster (including its sticky article signal and any manual
-   *     override), so monsters stay classified as monsters
+   *   - the roster, including any manual override, so monsters stay monsters
    *   - every filter, which is user intent rather than collected data
    */
   function resetMeter() {
-    app.parser.reset();
+    app.source.reset();
     app.scanned = 0;          // `seen` is kept; only the scan cursor rewinds
     app.drill = null;
     app.resetAt = Date.now();
     $('drillCard').hidden = true;
     app.rendered = true;
     render();
-    setStatus(app.file || 'waiting for a log file', app.paused ? 'stale' : 'live');
+    setStatus(app.file || 'waiting for the addon', app.paused ? 'stale' : 'live');
   }
 
+  /* Via FFXITheme, not a local getComputedStyle: it caches per theme, and the
+     palette stays in the one stylesheet that drives both apps and both modes. */
   function colorOf(name) {
-    var s = slotOf(name);
-    return s < 0 ? cssVar('--text-muted') : cssVar('--series-' + (s + 1));
-  }
-
-  function cssVar(n) {
-    return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    return FFXITheme.series(slotOf(name));
   }
 
   // ------------------------------------------------------------------- fetch
@@ -182,42 +175,33 @@
     if (app.paused) { schedule(); return; }
 
     var qs = '?offset=' + app.offset + (app.file ? '&file=' + encodeURIComponent(app.file) : '');
-    fetch('/api/log' + qs, { cache: 'no-store' })
+    fetch('/api/events' + qs, { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         app.error = null;
         app.lastOk = Date.now();
 
-        if (!d.file) { setStatus('waiting for a log file', 'stale'); schedule(); return; }
+        if (!d.file) {
+          setStatus('waiting for the addon — is VibeXI loaded?', 'stale');
+          schedule(); return;
+        }
 
         if (d.reset || d.file !== app.file) {
           var meta = P.parseFilename(d.file);
           app.file = d.file;
-          app.parser = P.create(meta.date, meta.owner);
+          app.source = P.create(meta.owner);
           app.lines = 0;
           app.slots = {}; app.nextSlot = 0;
           app.seen = []; app.seenSet = {}; app.scanned = 0;
           app.drill = null;
           app.resetAt = null;   // a new file is its own fresh start
-          app.lastRebuild = 0;  // classify the new file's names immediately
           $('drillCard').hidden = true;
         }
         app.offset = d.nextOffset;
 
         var lines = d.lines || [];
-        for (var i = 0; i < lines.length; i++) app.parser.feed(lines[i]);
+        for (var i = 0; i < lines.length; i++) app.source.feed(lines[i]);
         app.lines += lines.length;
-
-        // Throttled, not skipped -- see REBUILD_MS. `lastRebuild` starts at 0 so
-        // the first batch of a session (or of a new file) always classifies
-        // before anything is drawn.
-        if (lines.length) {
-          var nowMs = Date.now();
-          if (nowMs - app.lastRebuild >= REBUILD_MS) {
-            app.parser.roster.rebuild(app.parser.events);
-            app.lastRebuild = nowMs;
-          }
-        }
 
         setStatus(app.file, 'live');
         // Idle polls must not rebuild the tables -- that would reset scroll
@@ -226,7 +210,7 @@
       })
       .catch(function (e) {
         app.error = e.message || String(e);
-        setStatus('server unreachable — is damage-meter.ps1 still running?', 'err');
+        setStatus('server unreachable — is damage-meter.py still running?', 'err');
       })
       .then(schedule);
   }
@@ -236,7 +220,7 @@
   function setStatus(text, cls) {
     $('srcFile').textContent = text;
     $('liveDot').className = 'dot ' + (cls || '');
-    var ev = app.parser.events.length;
+    var ev = app.source.events.length;
     $('srcCount').textContent = S.fmtInt(ev) + ' event' + (ev === 1 ? '' : 's') +
       ' · ' + S.fmtInt(app.lines) + ' lines' +
       (app.resetAt ? ' · since reset at ' + S.fmtClock(app.resetAt) : '');
@@ -266,8 +250,8 @@
   // ------------------------------------------------------------------ render
 
   function render() {
-    var all = app.parser.events;
-    var roster = app.parser.roster;
+    var all = app.source.events;
+    var roster = app.source.roster;
     assignSlots();
 
     var win = windowOf(all);
@@ -380,35 +364,12 @@
   // ---- cumulative line chart
 
   function renderLine(events, agg) {
-    // Charted series are capped at the eight fixed slots; anything past that
-    // folds into one "Other" line rather than getting a generated hue.
-    var named = [], other = [];
-    agg.actors.forEach(function (a) {
-      (slotOf(a.name) >= 0 ? named : other).push(a.name);
-    });
+    // One line per character, each in that character's own slot colour.
+    var names = agg.actors.map(function (a) { return a.name; });
 
-    var model = S.cumulative(events, named.concat(other.length ? ['__other__'] : []), {});
+    var model = S.cumulative(events, names, {});
 
-    if (other.length && model.series.length) {
-      // Re-bin the tail into the synthetic series.
-      var otherSet = {};
-      other.forEach(function (n) { otherSet[n] = true; });
-      var oi = model.series.length - 1;
-      var o = model.series[oi];
-      var n = model.times.length, run = 0, j;
-      var raw = new Float64Array(n);
-      for (var i = 0; i < events.length; i++) {
-        var e = events[i];
-        if (!e.hit || !e.dmg || !otherSet[e.actor]) continue;
-        raw[Math.min(n - 1, Math.floor((e.t - model.t0) / model.step))] += e.dmg;
-      }
-      for (j = 0; j < n; j++) { run += raw[j]; o.values[j] = run; }
-      o.name = 'Other (' + other.length + ')';
-    }
-
-    model.series.forEach(function (s, i) {
-      s.color = i < named.length ? colorOf(named[i]) : cssVar('--text-muted');
-    });
+    model.series.forEach(function (s) { s.color = colorOf(s.name); });
     // Largest total last so the leading line is drawn on top of the pack.
     model.series.sort(function (a, b) {
       return (a.values[a.values.length - 1] || 0) - (b.values[b.values.length - 1] || 0);
@@ -578,28 +539,38 @@
 
   function renderDiagnostics(roster) {
     var names = {};
-    app.parser.events.forEach(function (e) {
+    app.source.events.forEach(function (e) {
       if (e.actor) names[e.actor] = true;
       if (e.target) names[e.target] = true;
     });
     var list = Object.keys(names).sort();
 
+    // The Kind column is the addon's answer, straight off the entity's spawn
+    // flags; the Counted column is what this meter does with it. They differ
+    // only where the user has overridden one by hand.
     $('rosterTable').innerHTML = list.length
-      ? '<thead><tr><th>Name</th><th>Classified</th><th></th></tr></thead><tbody>' +
+      ? '<thead><tr><th>Name</th><th>Kind</th><th>Counted</th><th></th></tr></thead><tbody>' +
         list.map(function (n) {
           var mob = roster.isMob(n);
           return '<tr><td>' + esc(n) + '</td>' +
-                 '<td>' + (mob ? 'Monster' : 'Character') +
+                 '<td>' + esc(roster.kindOf(n)) + '</td>' +
+                 '<td>' + (mob ? 'No' : 'Yes') +
                  (roster.manual[n] ? ' (manual)' : '') + '</td>' +
                  '<td><button type="button" class="roster-toggle" data-name="' + esc(n) + '" ' +
                  'data-to="' + (mob ? 'ally' : 'mob') + '">' +
-                 (mob ? 'Mark as character' : 'Mark as monster') + '</button></td></tr>';
+                 (mob ? 'Count this name' : 'Leave this name out') + '</button></td></tr>';
         }).join('') + '</tbody>'
       : '';
 
-    var up = app.parser.unparsed;
-    $('unparsed').textContent = up.length
-      ? up.slice(-60).map(function (u) { return 'line ' + u.line + ': ' + u.text; }).join('\n')
+    // The addon's own notices: its startup environment probe, and one line per
+    // message id it saw and did not recognise. A dropped id is a silent
+    // undercount, so it has to be visible somewhere.
+    var notes = app.source.meta;
+    $('addonMeta').textContent = notes.length
+      ? notes.slice(-60).map(function (m) {
+          if (m.bad) return 'line ' + m.line + ': not JSON — ' + m.text;
+          return 'line ' + m.line + ': ' + JSON.stringify(m.data);
+        }).join('\n')
       : 'none';
   }
 
@@ -683,7 +654,7 @@
   $('rosterTable').addEventListener('click', function (ev) {
     var b = ev.target.closest('.roster-toggle');
     if (!b) return;
-    app.parser.roster.setManual(b.dataset.name, b.dataset.to);
+    app.source.roster.setManual(b.dataset.name, b.dataset.to);
     resetColors();
     render();
   });
