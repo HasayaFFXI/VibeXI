@@ -38,7 +38,16 @@ WHAT IS IN HERE ON PURPOSE, and what each case catches:
     that proves the article heuristic is really gone.
   * A PET with `owner` set, and an NPC, and monster damage on the party. None of
     the three may reach the character chips, the bars chart or the actions
-    table; all three must appear in the Diagnostics roster.
+    table; all three must appear in the Diagnostics roster. The monster damage
+    is a BACK-COMPATIBILITY case now rather than a live one -- the addon stopped
+    recording it (`is_ours` in vibexi.lua) -- and it stays because files
+    captured before that change still have to read correctly.
+  * REACTION DAMAGE -- Counter, Retaliation, Spikes -- written with the two ends
+    SWAPPED, which is what `record_reactions` does: the actor is whoever
+    reacted, the target is the monster that swung into them. It is the one place
+    a party member's damage arrives on a packet they were not the actor of, and
+    one of the pet's reactions is in here too, so the pet-to-owner crediting
+    gets exercised on a row that came in backwards.
   * AN UNRESOLVED TARGET -- name "Unknown", targetKind "other" -- which is what
     the addon writes when the entity table has no answer.
   * META LINES: the startup environment probe on line 1, and an unknown-message
@@ -72,6 +81,9 @@ MSG = {
     'rng_crit': 353,    # RangedAttackCrit
     'rng_miss': 354,    # RangedAttackMiss
     'addl': 229,        # AddEffectAdditionalDamage
+    'counter': 33,      # AttackCounteredDamage
+    'spikes': 44,       # SpikesEffectDmg      (the react/spike trailer)
+    'retaliate': 536,   # RetaliateDamage
 }
 
 # Skillchain ids, from Metrics' Res.WS.Skillchains by way of
@@ -324,8 +336,10 @@ def generate(seed=SEED, start=None):
                         mob, 'mob', roll(180, 40), True, MSG['ability'],
                         owner=PET['owner'], pet=PET['n'])
 
-            # The monster's own damage. Parsed, kept, shown in the roster -- and
-            # never counted, charted or totalled anywhere.
+            # The monster's own damage. The addon no longer writes any of this
+            # (see `is_ours`), so it is here as the back-compatibility case:
+            # parsed, kept, shown in the roster -- and never counted, charted or
+            # totalled anywhere.
             if rand.random() < 0.45:
                 victim = rand.choice(MELEE)['n']
                 use = w.next_use()
@@ -339,6 +353,35 @@ def generate(seed=SEED, start=None):
             if rand.random() < 0.07:
                 w.write(w.next_use(), 'mobtp', mob, 'mob', 'Bomb Toss', 592,
                         MELEE[0]['n'], 'player', roll(190, 45), True, MSG['ws_hit'])
+
+            # Reaction damage: what our side dealt BACK on the monster's swing.
+            # The ends are already swapped here, exactly as record_reactions()
+            # writes them -- actor is the one who reacted, target is the monster
+            # -- so nothing downstream has to know these arrived backwards.
+            # Each is its own use: a reaction is one entity's answer to one
+            # swing and must never collapse into another's.
+            r = rand.random()
+            if r < 0.11:
+                who = rand.choice(MELEE)['n']
+                w.write(w.next_use(), 'reaction', who, 'player', 'Counter',
+                        MSG['counter'], mob, 'mob', roll(120, 30), True,
+                        MSG['counter'])
+            elif r < 0.18:
+                who = rand.choice(MELEE)['n']
+                w.write(w.next_use(), 'reaction', who, 'player', 'Retaliation',
+                        MSG['retaliate'], mob, 'mob', roll(140, 35), True,
+                        MSG['retaliate'])
+
+            if rand.random() < 0.09:
+                w.write(w.next_use(), 'reaction', MELEE[0]['n'], 'player', 'Spikes',
+                        MSG['spikes'], mob, 'mob', roll(45, 12), True, MSG['spikes'])
+
+            # The pet reacting. Arrives backwards AND has to be credited to its
+            # owner, which is the two rules meeting on one row.
+            if rand.random() < 0.05:
+                w.write(w.next_use(), 'reaction', PET['n'], 'pet', 'Spikes',
+                        MSG['spikes'], mob, 'mob', roll(38, 10), True, MSG['spikes'],
+                        owner=PET['owner'], pet=PET['n'])
 
             w.advance(2 + rand.randrange(5))
 

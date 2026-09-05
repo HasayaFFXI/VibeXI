@@ -178,8 +178,18 @@ guesswork left in any of it.
 - **Area-of-effect** damage is one action however many targets it reached. The
   packet carries the whole target list, so `Firaga III` on three mobs is a
   single cast of the summed damage, with the target column reading `3 targets`.
-- **Pets** get their own row under their own name. The packet names each pet's
-  owner, so a pet is never confused for a party member or for a monster.
+- **Pets** are counted as their owner's damage. The packet names each pet's
+  owner outright, so this is attribution and not a guess: the pet has no row of
+  its own, and its damage shows up inside the owner's breakdown under the pet's
+  name, like `Fluffikins: Big Scissors`.
+- **Damage dealt *to* the party is not recorded.** This meter measures what the
+  party dealt to monsters; a monster's own swings are dropped by the addon
+  before they are ever written.
+- **Counters, spikes and Retaliation are counted**, under those names, for
+  whoever reacted. They are damage your side dealt to the monster even though
+  the monster is the one who swung, so the addon files them the right way round
+  before writing them. Reactions that dealt no damage are not recorded, so those
+  rows always show 100% accuracy.
 
 ## When something looks wrong
 

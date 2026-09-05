@@ -108,7 +108,8 @@ One line, one `(action, target, result)` row:
  "dmg":723,"hit":true,"crit":false,"burst":false,"msg":185}
 ```
 
-`kind` is one of `melee ranged ws magic ability mobtp pet skillchain addl`.
+`kind` is one of `melee ranged ws magic ability mobtp pet skillchain addl
+reaction`.
 `msg` is the raw game message id, carried on every event so a later phase can
 add outcomes without changing the wire format. `owner` and `pet` appear only on
 a pet's own rows.
@@ -222,8 +223,28 @@ Consequences worth knowing:
 - **Monsters still appear as `target`s** — in the drill-down's per-hit table and
   in the Diagnostics roster list. That is party damage *to* them, which is the
   whole point; only the actor side is filtered.
-- **Pets count as ours** and get their own row under their own name. `owner`
-  names the master but nothing folds a pet into it yet.
+- **A monster's own swings are never recorded.** The addon drops any action one
+  of ours is not the actor of (`is_ours` in `vibexi.lua`), so damage *taken* is
+  not in the file at all. It used to be written and then dropped in the browser;
+  on a long pull that was a large fraction of every line for a view that does
+  not exist. Files captured before that change still parse — `filter` drops
+  monster actors exactly as it always did.
+- **Reaction damage is counted, and it arrives backwards.** A counter, a spikes
+  proc and a Retaliation all ride on a packet the MONSTER is the actor of, and
+  `record_reactions` in `vibexi.lua` writes them with the two ends swapped: the
+  actor is whoever reacted, the target is whoever swung into them. Nothing in
+  the browser knows this happened — the rows arrive already inverted, with
+  `kind:'reaction'` and an action of `Counter`, `Retaliation` or `Spikes`. The
+  same `is_ours` test is applied to the entity that reacted, so a monster's own
+  spikes firing on our swing invert to monster damage and are dropped like any
+  other.
+- **Pets count as ours and are credited to their owner.** `stats.credit` re-actors
+  every row carrying `owner` onto the master, so a pet has no row, no chip and no
+  colour slot of its own; its damage is part of the owner's total and DPS. The
+  action keeps the pet's name (`Fluffikins: Big Scissors`) so the owner's
+  breakdown still separates pet from master — both swing an "Attack", and one
+  average over the two would describe neither. It copies rather than mutates, so
+  `app.source.events` stays true to the file for Diagnostics and the roster.
 - **`windowOf` still resolves `Latest fight` over the unfiltered event list.** A
   fight's boundaries are a property of the combat, not of the display filter, and
   a pull where the monsters got the last word still ended when they did.
@@ -628,16 +649,15 @@ it. What is left:
   `ffxi_dps_chains`, `ffxi_dps_charrow` in localStorage).
 - The exclusion list is keyed by bare name, so it is shared across event files.
   That is intentional: a character you never want counted stays excluded.
-- Pets are ordinary allies with their own row, not folded into their master —
-  even though `owner` now says who that is. Folding them is a UI decision nobody
-  has made yet, not a missing fact.
+- Reaction ATTEMPTS are not recorded — 535 RetaliateShadowAbsorbs, 592
+  PerfectCounterMiss, 14 CounterAbsByShadow. Reaction damage itself is counted,
+  but the reactions that dealt nothing are not, so a Counter or Retaliation row
+  always reads 100% accuracy. Which side of the packet each of those ids belongs
+  to has not been measured against a live client, and guessing would inflate a
+  party member's swing count with reactions that were never theirs.
 - Monster TP moves and pet abilities emit `#<id>` rather than a name. The name
   tables are ~300 KB and every event carries `actionId`, so naming can be added
   without touching the event contract.
-- Reaction damage is not recorded at all: counters, spikes and retaliation are
-  real damage belonging to the *other* entity, and emitting them as-is would
-  credit a victim with their attacker's damage. Attribution has to be inverted
-  first. See the "deliberately in NEITHER table" note in `vx_enums.lua`.
 - MP drain, cures, enfeebles and TP are not parsed; this is a damage meter. Every
   event carries its raw `msg`, so adding them is an enums change, not a format
   change.

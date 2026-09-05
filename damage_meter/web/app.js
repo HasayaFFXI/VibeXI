@@ -66,7 +66,10 @@
   function scanActors() {
     var ev = app.source.events;
     for (var i = app.scanned; i < ev.length; i++) {
-      var n = ev[i].actor;
+      // The credited name: a pet's colour is its owner's, because its damage
+      // is. Otherwise every pet burns an alliance colour slot for a series
+      // that is never drawn.
+      var n = ev[i].owner || ev[i].actor;
       if (n && !app.seenSet[n]) { app.seenSet[n] = true; app.seen.push(n); }
     }
     app.scanned = ev.length;
