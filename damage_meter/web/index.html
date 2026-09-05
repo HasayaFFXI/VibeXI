@@ -32,6 +32,12 @@
              title="Opacity a pop-out panel opens at. Changing it resets every panel to this value; a floating window's own slider still adjusts that one window.">
       <span class="popcfg-val" id="popAlphaVal">85%</span>
     </div>
+    <!-- Screenshot / stream safety. Every character but the file's owner is
+         drawn as their job instead of their name; nothing is filtered out and
+         no total moves. A toggle, not an action, so the label is fixed and the
+         pressed state is what says it is on. -->
+    <button type="button" class="ghost" id="anonBtn" aria-pressed="false"
+            title="Replace every other character's name with their job, for a screenshot or a stream">Hide names</button>
     <button type="button" class="ghost" id="themeBtn" title="Toggle light / dark">Light</button>
   </div>
 </header>
