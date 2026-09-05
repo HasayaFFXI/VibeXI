@@ -61,6 +61,18 @@
   var sessionApi = null;
   var sessionView = null;
 
+  /*
+   * The elapsed readout, pushed in by app.js on its own tick.
+   *
+   * Separate from `sessionView` because it moves on a different clock: the view
+   * changes only when a button is pressed, this changes four times a second and
+   * would otherwise repaint two buttons' labels, titles and classes every time.
+   * Remembered for the same reason the view is -- a window opened mid-pull has
+   * to be born showing the right time, not '00:00' until the next tick.
+   */
+  var clockText = '00:00';
+  var clockState = 'idle';
+
   // Per-panel opacity (15..100) and background punch-out, remembered across
   // sessions. See "opacity" below for what each one actually does.
   var ALPHA_KEY = 'ffxi_dps_alpha';
@@ -403,8 +415,16 @@
   function sessionControl(p, d) {
     if (!sessionApi) return null;
 
+    /* `.pop-session` moved OUT to this wrapper and off the segmented pair. It is
+       what `.pop-bar > *:not(.pop-session)` exempts from the bar's fade, and the
+       clock belongs inside that exemption for the same reason the buttons do:
+       a panel is floated over the game to be read at a glance, and the elapsed
+       time at 45% over a battle scene is not a readout. */
     var wrap = d.createElement('div');
-    wrap.className = 'segmented session pop-session';
+    wrap.className = 'pop-session';
+
+    var seg = d.createElement('div');
+    seg.className = 'segmented session';
 
     var start = d.createElement('button');
     start.type = 'button';
@@ -418,11 +438,22 @@
     pause.textContent = 'Pause';
     pause.addEventListener('click', function () { sessionApi.pause(); });
 
-    wrap.appendChild(start);
-    wrap.appendChild(pause);
+    seg.appendChild(start);
+    seg.appendChild(pause);
+    wrap.appendChild(seg);
+
+    // To the RIGHT of the buttons: the pair is the fixed hit target the user
+    // aims at without looking, and a readout that changes width would move it.
+    var clk = d.createElement('span');
+    clk.className = 'pop-clock';
+    clk.title = 'Elapsed session time';
+    wrap.appendChild(clk);
+
     p.startBtn = start;
     p.pauseBtn = pause;
+    p.clockEl = clk;
     paintPanel(p);
+    paintClock(p);
     return wrap;
   }
 
@@ -439,6 +470,26 @@
     sessionView = view;
     each(function (p) {
       if (p.win && !p.win.closed) paintPanel(p);
+    });
+  }
+
+  /* One panel's readout. The state rides as a class so a held clock looks held
+     -- a number that has merely stopped moving is indistinguishable from one
+     that is moving slowly, and that is the whole question being asked of it. */
+  function paintClock(p) {
+    if (!p.clockEl) return;
+    p.clockEl.textContent = clockText;
+    p.clockEl.className = 'pop-clock is-' + clockState;
+  }
+
+  /* The elapsed time, pushed from app.js's tick. `state` is 'idle', 'live' or
+     'held'. Text is handed over finished, exactly as the session's labels are:
+     this module does no formatting and knows of no clock. */
+  function clock(text, state) {
+    clockText = text;
+    clockState = state || 'idle';
+    each(function (p) {
+      if (p.win && !p.win.closed) paintClock(p);
     });
   }
 
@@ -517,7 +568,9 @@
       p.alphaWarn = d.querySelector('.pop-alpha-warn');
       p.startBtn = d.querySelector('.pop-session .session-start');
       p.pauseBtn = d.querySelector('.pop-session .session-pause');
+      p.clockEl = d.querySelector('.pop-session .pop-clock');
       paintPanel(p);                                // may have moved on since
+      paintClock(p);
       return { body: body, links: [] };
     }
 
@@ -804,6 +857,7 @@
     byId: byId,
     theme: theme,
     session: session,
+    clock: clock,
     place: function (key, mode) { return panels[key] ? place(panels[key], mode) : null; },
     dock: function (key) { if (panels[key]) dock(panels[key]); },
     /* Read or set a panel's opacity (15..100) without the slider -- the console
