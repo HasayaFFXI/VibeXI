@@ -357,22 +357,6 @@
       applyAlpha(p);
     });
 
-    // Drops the background out of the window completely, leaving the readouts
-    // over the game. Separate from the slider because it is a different thing --
-    // one dims the window, the other removes part of it -- and because it is the
-    // one that depends on how the driver composites a layered window.
-    var bg = mkBtn(d, 'BG', 'Drop the panel background out entirely, so only the ' +
-                            'numbers sit over the game');
-    bg.className = 'ghost tiny';
-    bg.setAttribute('aria-pressed', String(!!p.keyBg));
-    bg.addEventListener('click', function () {
-      p.keyBg = !p.keyBg;
-      bg.setAttribute('aria-pressed', String(p.keyBg));
-      keys[p.key] = p.keyBg;
-      saveKeys();
-      applyAlpha(p);
-    });
-
     var warn = d.createElement('span');
     warn.className = 'pop-alpha-warn';
     warn.textContent = 'fade only';
@@ -380,12 +364,10 @@
 
     wrap.appendChild(sl);
     wrap.appendChild(out);
-    wrap.appendChild(bg);
     wrap.appendChild(warn);
     p.alphaWrap = wrap;
     p.alphaSlider = sl;
     p.alphaOut = out;
-    p.alphaBg = bg;
     p.alphaWarn = warn;
     return wrap;
   }
@@ -452,19 +434,16 @@
         'fading the panel — what shows through is the browser, not the game. ' +
         'Most often the meter\'s server is an older copy still running: restart it.';
     }
-    if (p.alphaBg) p.alphaBg.disabled = !on;
   }
 
   function dress(p, win) {
     var d = win.document;
     var body = d.querySelector('.pop-body');
     if (body) {                                     // already dressed
-      p.flag = d.querySelector('.pop-flag');
       p.barTitle = d.querySelector('.pop-title');
       p.alphaWrap = d.querySelector('.pop-alpha');
       p.alphaSlider = p.alphaWrap ? p.alphaWrap.querySelector('input') : null;
       p.alphaOut = d.querySelector('.pop-alpha-val');
-      p.alphaBg = p.alphaWrap ? p.alphaWrap.querySelector('button') : null;
       p.alphaWarn = d.querySelector('.pop-alpha-warn');
       return { body: body, links: [] };
     }
@@ -483,16 +462,11 @@
     h.textContent = p.title;
     var acts = d.createElement('div');
     acts.className = 'pop-actions';
-    p.flag = d.createElement('span');
-    p.flag.className = 'pop-flag';
-    p.flag.textContent = 'kept in focus';
-    p.flag.hidden = true;
     // 'Dock', not 'Dock back': this bar is one line over a game screen.
     var back = mkBtn(d, 'Dock', 'Return this panel to the main window');
     back.className = 'ghost tiny';
     back.addEventListener('click', function () { place(p, 'docked'); });
     acts.appendChild(alphaControl(p, d));
-    acts.appendChild(p.flag);
     acts.appendChild(back);
     bar.appendChild(h);
     bar.appendChild(acts);
@@ -597,9 +571,8 @@
     var win = p.win;
     p.win = null;
     p.mode = 'docked';
-    p.flag = null;
     clearTimeout(p.alphaTimer);
-    p.alphaWrap = p.alphaSlider = p.alphaOut = p.alphaBg = p.alphaWarn = null;
+    p.alphaWrap = p.alphaSlider = p.alphaOut = p.alphaWarn = null;
     p.osAlpha = undefined;
 
     if (p.ph.parentNode) {
@@ -628,7 +601,6 @@
 
   function sync(p) {
     p.focusBtn.setAttribute('aria-pressed', String(p.mode === 'focus'));
-    if (p.flag) p.flag.hidden = p.mode !== 'focus';
   }
 
   function warn(p, msg) {
@@ -768,6 +740,19 @@
       if (p.alphaOut) { p.alphaOut.textContent = p.alpha + '%'; }
       applyAlpha(p);
       return p.alpha;
+    },
+    /* Read or set whether a panel punches its background out (LWA_COLORKEY).
+       On by default, and the bar no longer carries a button for it -- this is
+       the way back if a driver composites the layered window as solid black. */
+    keyBg: function (key, v) {
+      var p = panels[key];
+      if (!p) return null;
+      if (v == null) return p.keyBg;
+      p.keyBg = !!v;
+      keys[key] = p.keyBg;
+      saveKeys();
+      applyAlpha(p);
+      return p.keyBg;
     },
     /* Read or set what a panel opens at (15..100) -- what the page's config
        drives. Setting it resets every panel to it; see setDefaultAlpha. */

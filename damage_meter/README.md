@@ -144,17 +144,15 @@ Floating panels are not remembered across a page reload.
 
 ### Seeing the game through a floating panel
 
-Each floating window's bar carries two controls:
+Two things happen to a floating window:
 
-- **The opacity slider.** Drags the whole window — chrome, panel and background
-  alike — down to 15%. Everything gets ghosted evenly.
-- **BG**, on by default. Drops the panel's background out *completely*, so what
-  is left over the game is the lines, the numbers and the 20px bar. This is the
-  one that makes the game readable rather than merely dimmer. Its side effect is
-  that clicks land on whatever is underneath, so drag the window by its own title
-  bar, not by the empty space inside it.
-
-Both are per-panel and remembered.
+- **Its background is dropped out entirely**, so what is left over the game is
+  the lines, the numbers and the 20px bar. This is what makes the game readable
+  rather than merely dimmer, and it is always on. Its side effect is that clicks
+  land on whatever is underneath, so drag the window by its own title bar, not by
+  the empty space inside it.
+- **The opacity slider in the bar** drags what remains — chrome, panel and all —
+  down to 15%. It is per-panel and remembered.
 
 **Panels open at 85% opacity**, and **Pop-out opacity** in the top bar of the
 main page changes that — it is the one opacity control you can reach without a
@@ -172,8 +170,9 @@ does it (`/api/alpha`), which means:
   still running from before this feature has no `/api/alpha`, and the fallback is
   all you will get — stop it and start it again.
 - If a floating window ever renders **black** instead of transparent, that is the
-  graphics driver refusing to composite it. Turn **BG** off; the slider at 100%
-  undoes the rest.
+  graphics driver refusing to composite it. Open the browser console and run
+  `DPS.popout.keyBg('line', false)` (or `bars`, `actions`, `drill`, `diag`) to stop dropping
+  that panel's background; the slider at 100% undoes the rest.
 
 The window's chrome is otherwise as small as a browser allows — a 20px bar that
 fades until you point at it, no card frame, no headings, no sub-headings.
