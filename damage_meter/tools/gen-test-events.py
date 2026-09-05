@@ -68,12 +68,37 @@ WHAT IS IN HERE ON PURPOSE, and what each case catches:
 import argparse
 import json
 import random
+import re
 import sys
 import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SEED = 20260730
+
+# The addon's own version, read out of the addon rather than copied here.
+#
+# It was copied here once, and it went stale twice -- the fixture's probe line
+# claimed 0.1.0 through two releases, because a constant that has to be updated
+# in two places by hand only ever gets updated in one. The probe line is supposed
+# to be byte-identical to what `vibexi.lua` writes, and the version is the one
+# field of it that moves, so it is read from the source of truth.
+ADDON_LUA = HERE.parent.parent / 'addons' / 'VibeXI' / 'vibexi.lua'
+
+
+def addon_version(default='0.0.0'):
+    """`addon.version` as declared in vibexi.lua.
+
+    Falls back rather than raising: the fixture is still worth generating from a
+    copy of this script sitting outside the repo, and a wrong version string in a
+    line nothing reads is not worth a hard failure over.
+    """
+    try:
+        text = ADDON_LUA.read_text(encoding='utf-8')
+    except OSError:
+        return default
+    m = re.search(r"""addon\.version\s*=\s*['"]([^'"]+)['"]""", text)
+    return m.group(1) if m else default
 
 # Message ids, from addons/VibeXI/vx_enums.lua. Named here so the fixture reads
 # as game outcomes rather than as numbers.
@@ -271,7 +296,7 @@ def generate(seed=SEED, start=None):
 
     # ---- line 1: the startup environment probe, exactly as vibexi.lua writes it
     w.raw({
-        'kind': 'meta', 'v': '0.1.0', 't': w.t,
+        'kind': 'meta', 'v': addon_version(), 't': w.t,
         'chunkData': 'string', 'injected': 'boolean', 'dataLen': 104,
         'isZoningType': 'number', 'selfName': 'Hasaya', 'selfSpawnFlags': 525,
         'abilProbeId': 5, 'abilRaw': 'Combo', 'abilOffset': 'Berserk',

@@ -39,7 +39,7 @@ local WS_NAMES = require('vx_ws_names')
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '0.2.0'
+addon.version = '0.2.1'
 
 -- ---------------------------------------------------------------- state
 
