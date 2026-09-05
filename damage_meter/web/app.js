@@ -15,20 +15,31 @@
   var $ = DPS.popout.byId;
   var esc = C.esc;
 
+  // The charts' empty state. "No damage in the selected range" named a range
+  // control that no longer exists, and the overwhelmingly common reason a chart
+  // is empty now is that nobody has pressed Start.
+  function emptyText() {
+    return armed() ? 'Armed — the clock starts on the first hit, or Cancel to call it off'
+         : !started() ? 'Press Start to begin measuring'
+         : paused() ? 'Paused — nothing is being counted'
+         : 'No damage yet';
+  }
+
   var POLL_MS = 250;
   var TICK_MS = 100;          // cumulative chart's own frame, between polls
-  var FIGHT_GAP_MS = 90000;   // silence longer than this starts a new fight
 
   var app = {
     file: null,
     offset: 0,
     source: P.create(null),
     lines: 0,
-    range: 'all',
+    // THE MEASUREMENT WINDOW. Start arms it; the first counted event sets its
+    // zero, and everything drawn is measured from there. `idleSession()` is the
+    // state before any of that, in which the meter deliberately shows nothing
+    // at all. See `startSession` and `stats.js`'s session block.
+    session: S.idleSession(),
     chains: 'on',           // 'on' credits skillchain damage, 'off' drops it
     actorsOff: {},          // name -> true when excluded; persisted
-    resetAt: null,          // wall-clock of the last meter reset, for the status line
-    paused: false,
     drill: null,            // { actor, action }
     lineModel: null,        // last cumulative model, animated by tickLine
     anon: false,            // draw every other character as their job; persisted
@@ -263,28 +274,217 @@
     b.title = (app.chipsOpen ? 'Collapse' : 'Expand') + ' the character list';
   }
 
-  // ------------------------------------------------------------------- reset
+  // ----------------------------------------------------------------- session
 
   /*
-   * Drops every event collected so far and starts counting from the current
-   * point in the event file. The read offset is deliberately left alone -- this
-   * is the "clear the meter between pulls" button, not a re-read; reloading the
-   * page is what replays the whole file from the top.
+   * Start: ARM the session. The clock does not begin here -- the first event
+   * that would actually be counted sets the zero, and its own timestamp is that
+   * zero (`stats.firstCounted`, latched in `render`).
    *
-   * Deliberately kept across a reset:
+   * This is what makes the button safe to press early. Pressed on the pull, on
+   * the run in, or while the last buff goes up, the measured window is the same
+   * one either way: it opens on the first swing. Pressing at the instant of
+   * that swing would be the only way to get the same answer from a press-is-zero
+   * stopwatch, and nobody can, so every DPS figure would carry the reaction
+   * time as an error in its denominator.
+   *
+   * Also the Reset button, which no longer exists separately -- pressing Start
+   * during a session is how a second pull is measured, and a control that both
+   * begins and re-begins the measurement is one control, not two with a subtle
+   * distinction between them.
+   *
+   * The events collected so far are dropped, exactly as Reset dropped them. The
+   * session window would have hidden them anyway, so this buys nothing on
+   * screen; what it buys is that the poll path stays O(events since Start)
+   * rather than growing without bound across a grinding session. The read
+   * offset is deliberately left alone -- this is not a re-read, and reloading
+   * the page is still what replays the file from the top.
+   *
+   * Deliberately kept, as they were across a reset:
    *   - colour slots, so a character does not change hue mid-session
    *   - the roster, including any manual override, so monsters stay monsters
-   *   - every filter, which is user intent rather than collected data
+   *   - the character exclusions and the skillchain switch, which are user
+   *     intent rather than collected data
    */
-  function resetMeter() {
+  function startSession() {
     app.source.reset();
     app.scanned = 0;          // `seen` is kept; only the scan cursor rewinds
     app.drill = null;
-    app.resetAt = Date.now();
+    app.session = S.arm();
     $('drillCard').hidden = true;
     app.rendered = true;
+    applySession();
+    setStatus(app.file || 'waiting for the addon');
     render();
-    setStatus(app.file || 'waiting for the addon', app.paused ? 'stale' : 'live');
+  }
+
+  /*
+   * Pause: stop counting damage AND stop the clock.
+   *
+   * Both halves matter and they are the same decision. Damage landing while
+   * paused is dropped (`stats.filter` refuses any event inside a pause span),
+   * and the time it landed in is subtracted from the elapsed clock, so the
+   * denominator does not run on either. Freeze one without the other and the
+   * meter lies in one direction or the other -- a running clock over a frozen
+   * numerator reads as a wipe, and a frozen clock over a running numerator
+   * reads as a parse.
+   *
+   * Polling continues while paused, deliberately. The addon keeps writing and
+   * the file keeps growing whatever this page does, so stopping the reader only
+   * moves the same bytes to a burst on resume; the events are read, kept for
+   * Diagnostics, and dropped in the view by their own timestamps. That is the
+   * same shape as the monster filter -- collect everything, decide in the view.
+   */
+  function togglePause() {
+    // Nothing to hold while armed: the clock has not started, so there is no
+    // running total for a pause to freeze and no elapsed time to subtract.
+    if (app.session.startedAt == null) return;
+    if (S.sessionRunning(app.session)) S.sessionPause(app.session);
+    else S.sessionResume(app.session);
+    applySession();
+    setStatus(app.file || 'waiting for the addon');
+    render();
+  }
+
+  /*
+   * Cancel an armed session: disarm, and go back to counting nothing.
+   *
+   * Arming is a statement about a pull that has not happened yet, and a
+   * statement made early is one that can turn out to be wrong -- the puller
+   * pulls something else, the party resets, someone disconnects. Without this
+   * the only way out of an armed meter was to let it catch a hit and then throw
+   * that session away, which means the escape hatch was "measure the thing you
+   * did not want to measure, then discard it".
+   *
+   * Idle is exactly the state a new event file lands in, so this is that same
+   * transition and nothing more. The events read while armed are deliberately
+   * NOT dropped: they are invisible either way (an idle session counts nothing)
+   * and the next Start clears them along with everything else. Colour slots are
+   * kept for the same reason they survive a Start -- a character changing hue
+   * because somebody cancelled a countdown is worse than a stale entry.
+   *
+   * Only reachable while armed. Once the clock is running the same button is
+   * Pause, and a session with damage in it is ended by Start, not by Cancel:
+   * "cancel" would then mean discarding a measurement, which is a different and
+   * much more destructive act than calling one off before it began.
+   */
+  function cancelSession() {
+    if (!armed()) return;
+    app.session = S.idleSession();
+    app.drill = null;
+    $('drillCard').hidden = true;
+    applySession();
+    setStatus(app.file || 'waiting for the addon');
+    render();
+  }
+
+  /*
+   * The second session button does two jobs, because it has exactly one to do
+   * in each state and they never overlap: while armed there is no clock to hold
+   * but there is an arming to call off, and once the clock runs there is no
+   * arming left to cancel. One slot, one meaning at a time.
+   */
+  function secondary() {
+    if (armed()) cancelSession(); else togglePause();
+  }
+
+  function paused() { return app.session.pausedAt != null; }
+  function started() { return app.session.startedAt != null; }
+  function armed() { return S.sessionArmed(app.session); }
+
+  /* Every control that reflects session state, in one place: the two buttons
+     and the status dot are written from the session and never from each other. */
+  /*
+   * The session's state as plain data: labels, titles and the class each button
+   * wears. Derived once and rendered twice -- into this page's bar, and into
+   * every floating window's bar via `DPS.popout.session`.
+   *
+   * The strings live HERE and not in popout.js, which is loaded first and knows
+   * nothing about sessions. That module is handed finished text and applies it,
+   * exactly as it is handed a theme name; the alternative is two copies of this
+   * copy drifting apart, in two windows, side by side on the same screen.
+   */
+  function sessionView() {
+    var isArmed = armed(), isStarted = started(), isPaused = paused();
+    return {
+      startText: (isArmed || isStarted) ? 'Restart' : 'Start',
+      startTitle: isArmed
+        ? 'Armed — the clock starts on the first counted hit. Press again to re-arm.'
+        : isStarted
+          ? 'Zero the clock and measure a fresh pull from here'
+          : 'Arm the meter. The clock starts on the first hit, so pressing early costs nothing.',
+      // A state, not a hover: "Restart" alone cannot say whether the clock is
+      // running or still waiting, and that is the one thing being watched.
+      startClass: isArmed ? 'is-armed' : isStarted ? 'is-running' : 'is-idle',
+
+      pauseText: isArmed ? 'Cancel' : isPaused ? 'Resume' : 'Pause',
+      pauseTitle: isArmed
+        ? 'Cancel — disarm the meter. Nothing is counted until Start is pressed again.'
+        : !isStarted
+          ? 'Press Start first'
+          : isPaused
+            ? 'Resume counting and restart the clock'
+            : 'Stop counting damage and stop the clock. Damage dealt while paused is not counted and the paused time is not divided into DPS.',
+      pauseClass: isArmed ? 'is-cancel' : !isStarted ? '' : isPaused ? 'is-held' : 'is-live',
+      pauseDisabled: !isArmed && !isStarted,
+      pausePressed: isPaused,
+      // Cancel is not a toggle, and `aria-pressed` on a plain action button
+      // announces a two-state control that is not there. The attribute comes
+      // off entirely rather than being reported false.
+      pauseToggle: !isArmed,
+
+      dot: isArmed ? 'armed' : !isStarted ? '' : isPaused ? 'stale' : 'live'
+    };
+  }
+
+  /* Write that state onto one pair of buttons. Shared with the pop-out windows
+     through `DPS.popout.session`, which calls the same shape on its own nodes. */
+  function paintSession(v, start, pause) {
+    if (start) {
+      start.textContent = v.startText;
+      start.title = v.startTitle;
+      start.className = 'session-start ' + v.startClass;
+    }
+    if (pause) {
+      pause.textContent = v.pauseText;
+      pause.title = v.pauseTitle;
+      pause.disabled = v.pauseDisabled;
+      if (v.pauseToggle) pause.setAttribute('aria-pressed', String(v.pausePressed));
+      else pause.removeAttribute('aria-pressed');
+      pause.className = 'session-pause ' + v.pauseClass;
+    }
+  }
+
+  function applySession() {
+    var v = sessionView();
+    paintSession(v, $('startBtn'), $('pauseBtn'));
+    $('liveDot').className = 'dot ' + v.dot;
+    // Every floating window carries the same pair, in the same state.
+    DPS.popout.session(v);
+  }
+
+  /*
+   * Give an armed session its zero, if anything has qualified yet.
+   *
+   * Runs at the top of render(), which is exactly when it can matter: render is
+   * what a new poll's events trigger, so the latch is tested against every
+   * event on the same pass that would have drawn it. A filter change also lands
+   * here, which is deliberate -- flipping a name back to "player" in
+   * Diagnostics can make an already-read event the one that qualifies, and it
+   * should then be the zero, because it is now the first thing being counted.
+   *
+   * `sessionStart` latches once. After that this is a no-op, so no later change
+   * can re-date a running session and re-scale every number in it.
+   */
+  function latchStart(all, roster, enabled) {
+    if (!armed()) return;
+    var t = S.firstCounted(all, app.session, {
+      roster: roster, actors: enabled, skillchains: app.chains === 'on'
+    });
+    if (t == null) return;
+    S.sessionStart(app.session, t);
+    applySession();
+    setStatus(app.file || 'waiting for the addon');
   }
 
   /*
@@ -360,8 +560,6 @@
   // ------------------------------------------------------------------- fetch
 
   function poll() {
-    if (app.paused) { schedule(); return; }
-
     var qs = '?offset=' + app.offset + (app.file ? '&file=' + encodeURIComponent(app.file) : '');
     fetch('/api/events' + qs, { cache: 'no-store' })
       .then(function (r) { return r.json(); })
@@ -382,7 +580,10 @@
           app.slots = {}; app.nextSlot = 0;
           app.seen = []; app.seenSet = {}; app.scanned = 0;
           app.drill = null;
-          app.resetAt = null;   // a new file is its own fresh start
+          // A new file is a new character or a new day; a clock still running
+          // from the old one would measure a session that is not this one.
+          app.session = S.idleSession();
+          applySession();
           $('drillCard').hidden = true;
         }
         app.offset = d.nextOffset;
@@ -391,7 +592,7 @@
         for (var i = 0; i < lines.length; i++) app.source.feed(lines[i]);
         app.lines += lines.length;
 
-        setStatus(app.file, 'live');
+        setStatus(app.file);
         // Idle polls must not rebuild the tables -- that would reset scroll
         // position and kill text selection once a second for no new data.
         if (lines.length || !app.rendered) { app.rendered = true; render(); }
@@ -405,34 +606,23 @@
 
   function schedule() { setTimeout(poll, POLL_MS); }
 
+  /*
+   * `cls` overrides the dot for a connection problem; without one the dot is
+   * the SESSION's, because that is what the user is being told about most of
+   * the time -- not started, running, or held.
+   */
   function setStatus(text, cls) {
     $('srcFile').textContent = text;
-    $('liveDot').className = 'dot ' + (cls || '');
+    if (cls) $('liveDot').className = 'dot ' + cls;
+    else applySession();
     var ev = app.source.events.length;
     $('srcCount').textContent = S.fmtInt(ev) + ' event' + (ev === 1 ? '' : 's') +
       ' · ' + S.fmtInt(app.lines) + ' lines' +
-      (app.resetAt ? ' · since reset at ' + S.fmtClock(app.resetAt) : '');
-  }
-
-  // ------------------------------------------------------------------ window
-
-  /* Resolves the range control into an absolute [from, to] over event time. */
-  function windowOf(events) {
-    if (!events.length) return { from: -Infinity, to: Infinity };
-    var last = events[events.length - 1].t;
-
-    if (app.range === 'all') return { from: -Infinity, to: Infinity };
-
-    if (app.range === 'fight') {
-      // Walk back from the newest event until a gap longer than FIGHT_GAP_MS.
-      var start = last;
-      for (var i = events.length - 1; i > 0; i--) {
-        if (events[i].t - events[i - 1].t > FIGHT_GAP_MS) { start = events[i].t; break; }
-        start = events[i - 1].t;
-      }
-      return { from: start, to: Infinity };
-    }
-    return { from: last - (+app.range) * 1000, to: Infinity };
+      // A time of day, and the one place the app still prints one: this says
+      // when the pull began in the world, not where anything sits on the axis.
+      (started() ? ' · started ' + S.fmtClock(app.session.startedAt)
+       : armed() ? ' · armed, waiting for the first hit'
+       : ' · not started');
   }
 
   // ------------------------------------------------------------------ render
@@ -442,21 +632,33 @@
     var roster = app.source.roster;
     assignSlots();
 
-    var win = windowOf(all);
-    // Passing the roster is what drops the monsters' own damage: this meter
+    var enabled = {};
+    Object.keys(app.actorsOff).forEach(function (n) { enabled[n] = false; });
+
+    // Before anything is filtered: an armed session may have just acquired its
+    // zero, and the same pass has to draw the event that gave it one.
+    latchStart(all, roster, enabled);
+
+    // The one call that knows about wall-clock time. Passing the session drops
+    // everything outside it and puts every survivor on the elapsed clock;
+    // passing the roster drops the monsters' own damage, because this meter
     // counts what the party dealt and nothing else.
     var scoped = S.filter(all, {
-      from: win.from, to: win.to, roster: roster,
+      session: app.session, roster: roster,
       skillchains: app.chains === 'on'
     });
 
-    var enabled = {};
-    Object.keys(app.actorsOff).forEach(function (n) { enabled[n] = false; });
+    // No session here: `scoped` is already on the elapsed clock and converting
+    // a second time would measure it from itself.
     var shown = S.filter(scoped, { actors: enabled });
 
-    var agg = S.aggregate(shown);
+    // The elapsed clock, in seconds, is the denominator under every DPS in the
+    // app -- not each character's own active window. Read once per render so
+    // the party figure and the character column cannot disagree by a frame.
+    var secs = S.sessionElapsed(app.session) / 1000;
+    var agg = S.aggregate(shown, { duration: secs });
 
-    renderChips(S.aggregate(scoped).actors);
+    renderChips(S.aggregate(scoped, { duration: secs }).actors);
     renderTiles(agg);
     renderLine(shown, agg);
     renderBars(agg);
@@ -530,13 +732,10 @@
   // ---- hero + stat tiles
 
   function renderTiles(agg) {
+    app.tileAgg = agg;        // what tickClock re-divides between renders
     $('tTotal').textContent = S.fmtInt(agg.total);
-    $('tTotalSub').textContent = agg.start
-      ? S.fmtClock(agg.start) + ' → ' + S.fmtClock(agg.end) + ' · ' + S.fmtDuration(agg.duration)
-      : 'no events in range';
+    tickClock();
 
-    var dps = agg.duration > 0 ? agg.total / agg.duration : 0;
-    $('tDps').textContent = S.fmtNum(dps, 1);
     $('tDpsSub').textContent = agg.actors.length
       ? agg.actors.length + ' character' + (agg.actors.length === 1 ? '' : 's')
       : '—';
@@ -570,7 +769,9 @@
     // One line per character, each in that character's own colour.
     var names = agg.actors.map(function (a) { return a.name; });
 
-    var model = S.cumulative(events, names, { now: liveEdge(events) });
+    // `from: 0` is the Start press: the axis covers the same span the DPS
+    // beside it is divided by, including any run-up before the first swing.
+    var model = S.cumulative(events, names, { from: 0, now: liveEdge() });
 
     // `real` is kept because the name is still the key -- the legend looks the
     // job up by it -- while `name` is what chart.js prints in its hover card.
@@ -589,28 +790,36 @@
     // order and all, so an animated frame and a rendered one cannot disagree.
     app.lineModel = model;
 
-    C.line($('lineChart'), model, { empty: 'No damage in the selected range' });
+    C.line($('lineChart'), model, { empty: emptyText() });
     renderLegend(model.series);
     renderLineTable(model);
   }
 
   /*
-   * Wall-clock now, or null to end the chart at its last event.
+   * The right-hand edge of the chart: the session clock, or null to end at the
+   * last event.
    *
-   * Live while a fight is in progress: a lull of a few seconds is part of the
-   * fight and the chart should keep sliding through it rather than freeze and
-   * then jump when the next swing lands.
+   * ALWAYS THE CLOCK ONCE A SESSION HAS STARTED -- running or paused. There is
+   * no idle cutoff either; the edge used to stop advancing after 90 s of
+   * silence, on the grounds that the fight was over and a flat line out to the
+   * present said nothing. Under a session clock it says the thing that matters
+   * most: the denominator is still growing, so a flat line is a falling DPS.
    *
-   * Null once the log has been quiet longer than FIGHT_GAP_MS -- by this app's
-   * own definition the fight is over, and the alternative is that opening a
-   * finished session paints a flat line out to the present that says nothing.
-   * Null while paused, for the same reason: paused means the picture is held.
+   * PAUSED IS NOT AN EXCEPTION, and treating it as one was a bug. Returning
+   * null here ended the grid at the newest EVENT, so pressing Pause snapped the
+   * chart back to the last swing and threw away the quiet stretch between that
+   * swing and the button -- while `sessionElapsed`, frozen at the press, kept
+   * counting exactly that stretch. The axis and the DPS beside it were then
+   * describing different windows, which is the one thing this chart may never
+   * do. `sessionElapsed` is already frozen while paused, so handing it over
+   * unconditionally holds the edge still at the moment of the press, which is
+   * both correct and what "paused" should look like.
+   *
+   * Null only before Start: with no zero there is no axis to put an edge on.
    */
-  function liveEdge(events) {
-    if (app.paused || !events.length) return null;
-    var now = Date.now();
-    if (now - events[events.length - 1].t > FIGHT_GAP_MS) return null;
-    return now;
+  function liveEdge() {
+    if (!started()) return null;
+    return S.sessionElapsed(app.session);
   }
 
   /*
@@ -626,9 +835,53 @@
    * scroll position and drop text selection for no new information -- the same
    * reason poll() does not re-render on an idle response.
    */
+  /*
+   * The elapsed clock and the party DPS, re-read on every frame.
+   *
+   * A fixed start makes DPS a function of time even when nothing happens: the
+   * numerator holds and the denominator grows, so ten seconds of silence lower
+   * it. render() cannot express that -- it runs only when a poll brings new
+   * data, and an idle poll deliberately skips it so the tables keep their
+   * scroll position and their text selection. So the two figures that move on
+   * their own are written here instead, and they are text nodes only: no table
+   * is rebuilt and no layout is read.
+   *
+   * The per-character DPS cells move with it, and MUST: they are divided by the
+   * same clock, so a party figure that decayed while the column beside it stood
+   * still would simply not add up -- 100.9 in the tile over a column summing to
+   * 141.2, both correct, at two different instants. They are rewritten by
+   * `data-dps` rather than by rebuilding the table, so scroll position, text
+   * selection and the drill-down's selected row all survive.
+   */
+  function tickClock() {
+    var agg = app.tileAgg;
+    var ms = S.sessionElapsed(app.session);
+    var secs = ms / 1000;
+
+    var el = $('tTotalSub');
+    if (el) {
+      el.textContent = armed() ? 'armed — starts on the first hit'
+        : !started() ? 'not started — press Start'
+        : !agg || !agg.actors.length ? S.fmtElapsed(ms) + ' elapsed · no damage yet'
+        : S.fmtElapsed(ms) + ' elapsed' + (paused() ? ' · held' : '');
+    }
+
+    var d = $('tDps');
+    if (d) d.textContent = S.fmtNum(agg && secs > 0 ? agg.total / secs : 0, 1);
+
+    var table = $('actorTable');
+    if (!table || !agg) return;
+    var totals = {};
+    for (var i = 0; i < agg.actors.length; i++) totals[agg.actors[i].name] = agg.actors[i].total;
+    [].forEach.call(table.querySelectorAll('[data-dps]'), function (cell) {
+      var t = totals[cell.dataset.dps];
+      if (t != null) cell.textContent = S.fmtNum(secs > 0 ? t / secs : 0, 1);
+    });
+  }
+
   function tickLine() {
     var m = app.lineModel;
-    if (!m || !m.live || app.paused) return;
+    if (!m || !m.live || paused()) return;
 
     var canvas = $('lineChart');
     if (!canvas) return;
@@ -641,11 +894,9 @@
     // crosshair and leave the tooltip pointing at nothing.
     if (canvas.matches && canvas.matches(':hover')) return;
 
-    var now = Date.now();
-    if (now - m.tEvent > FIGHT_GAP_MS) { m.live = false; return; }
-
-    m.times[m.times.length - 1] = now;
-    C.line(canvas, m, { empty: 'No damage in the selected range' });
+    // The session clock, not Date.now(): the model's timeline starts at zero.
+    m.times[m.times.length - 1] = S.sessionElapsed(app.session);
+    C.line(canvas, m, { empty: emptyText() });
   }
 
   function renderLegend(series) {
@@ -675,7 +926,7 @@
       cols.map(function (s) { return '<th>' + esc(s.name) + '</th>'; }).join('') +
       '</tr></thead><tbody>' +
       idx.map(function (k) {
-        return '<tr><td>' + S.fmtClock(model.times[k]) + '</td>' +
+        return '<tr><td>' + S.fmtElapsed(model.times[k]) + '</td>' +
           cols.map(function (s) { return '<td>' + S.fmtInt(s.values[k]) + '</td>'; }).join('') +
           '</tr>';
       }).join('') + '</tbody>';
@@ -695,13 +946,18 @@
              (full ? '<tr><td>Job</td><td>' + esc(full) + '</td></tr>' : '') +
              '<tr><td>Damage</td><td>' + S.fmtInt(a.total) + '</td></tr>' +
              '<tr><td>Share</td><td>' + S.fmtNum(a.share * 100, 1) + '%</td></tr>' +
-             '<tr><td>DPS</td><td>' + S.fmtNum(a.dps, 1) + '</td></tr>' +
+             // No DPS row. It is the one figure here that decays with the clock
+             // and a hover card is built once per render, so it would drift out
+             // of step with the same character's live cell in the table
+             // directly below -- which is in this card, always on screen, and
+             // ticked. Every other row here is a running total that only a new
+             // event can change.
              '<tr><td>Avg / action</td><td>' + S.fmtInt(a.avg) + '</td></tr>' +
              '</table>'
       };
     });
     $('barsWrap').style.height = Math.max(120, rows.length * 34 + 16) + 'px';
-    C.bars($('barsChart'), rows, { empty: 'No damage in the selected range' });
+    C.bars($('barsChart'), rows, { empty: emptyText() });
 
     // The Job column is dropped outright while the names are hidden rather than
     // printed twice or blanked to a dash: every character but the owner already
@@ -722,7 +978,7 @@
               : '') +
             '<td>' + S.fmtInt(a.total) + '</td>' +
             '<td>' + S.fmtNum(a.share * 100, 1) + '%</td>' +
-            '<td>' + S.fmtNum(a.dps, 1) + '</td>' +
+            '<td data-dps="' + esc(a.name) + '">' + S.fmtNum(a.dps, 1) + '</td>' +
             '<td>' + S.fmtInt(a.hits) + '</td>' +
             '<td>' + S.fmtInt(a.avg) + '</td>' +
             '<td>' + S.fmtInt(a.max) + '</td>' +
@@ -816,7 +1072,7 @@
       '<thead><tr><th>Time</th><th>Target</th><th>Damage</th><th>vs avg</th></tr></thead><tbody>' +
       d.events.slice().reverse().map(function (e) {
         var delta = e.dmg - d.avg;
-        return '<tr><td>' + S.fmtClock(e.t) + '</td>' +
+        return '<tr><td>' + S.fmtElapsed(e.t) + '</td>' +
                '<td>' + esc(nameOf(e.target) || '—') + '</td>' +
                '<td>' + S.fmtInt(e.dmg) + (e.crit ? ' ✦' : '') + '</td>' +
                '<td>' + (delta >= 0 ? '+' : '−') + S.fmtInt(Math.abs(delta)) + '</td></tr>';
@@ -908,7 +1164,6 @@
     });
   }
 
-  segHandler('rangeSeg', 'range');
   segHandler('chainSeg', 'chains', function () {
     try { localStorage.setItem(CHAIN_KEY, app.chains); } catch (e) { }
     // A drill-down into a skillchain row has no events left to show once the
@@ -949,7 +1204,8 @@
     render();
   });
 
-  $('resetBtn').addEventListener('click', resetMeter);
+  $('startBtn').addEventListener('click', startSession);
+  $('pauseBtn').addEventListener('click', secondary);
 
   /* Nothing but a re-render: no filter moves, no total changes, and the chips
      rebuild because their signature is over the name as drawn. */
@@ -980,13 +1236,6 @@
     render();
   });
 
-  $('pauseBtn').addEventListener('click', function () {
-    app.paused = !app.paused;
-    this.setAttribute('aria-pressed', String(app.paused));
-    this.textContent = app.paused ? 'Resume' : 'Pause';
-    $('liveDot').className = 'dot ' + (app.paused ? 'stale' : 'live');
-  });
-
   // Toggle, persistence and the button label all live in the shared theme
   // module; the only app-specific part is that the charts must be redrawn,
   // because canvas can't restyle itself the way the DOM does.
@@ -1014,13 +1263,23 @@
   loadChains();
   loadCharRow();
   loadAnon();
+  applySession();
 
   // After the handlers above, not before: wiring a card for pop-out moves the
   // buttons already in its head into the new controls group, and a listener
   // attached to a button survives being moved but is not re-attached.
-  DPS.popout.init({ onRender: render });
+  DPS.popout.init({
+    onRender: render,
+    // The floating panels are laid over the game so a pull can be run without
+    // leaving it, which is exactly when reaching back to the page to press
+    // Start is the one thing you cannot do. So they carry the controls too.
+    session: { start: startSession, pause: secondary, paint: paintSession }
+  });
 
   window.DPS.app = app;   // console handle for debugging
   poll();
   setInterval(tickLine, TICK_MS);
+  // The clock is a second-resolution figure, so it is written on its own
+  // slower interval rather than ten times per second alongside the canvas.
+  setInterval(tickClock, 250);
 })();

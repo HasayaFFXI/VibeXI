@@ -64,11 +64,52 @@ either the addon is not loaded, or nothing has happened in game since it was.
 
 ## Using it
 
+**Nothing is counted until you press Start.** The meter is a stopwatch: every
+figure on the page — the totals, the DPS, the chart's x axis — runs on elapsed
+time from the start of the pull, not on the time of day.
+
+The two session buttons are the biggest and the only coloured controls on the
+bar, because they are the only ones that change what is being *measured* rather
+than what is being *shown*. Green means the clock is counting; brass means it is
+not — the status dot beside the filename uses the same two colours.
+
+- **Start** — arms the meter. **The clock does not start on the press; it starts
+  on the first hit that counts**, and that hit sits at 0:00. So you can press it
+  early — on the run in, while the last buff goes up — and still measure the
+  pull and nothing but the pull. While it is waiting the status dot is a pulsing
+  ring and the panels say *armed*. Pressing Start again re-arms, so it is also
+  how you clear the meter between pulls; there is no separate Reset.
+
+  A swing that *misses* starts the clock too — it is still the fight beginning,
+  and it belongs in your accuracy. What does not start it is anything the meter
+  would not have counted anyway: a monster's attack, or a character you have
+  switched off. (Switch every character off and the clock will never start,
+  which is the one way this can look stuck — press Cancel and start again.)
+- **Cancel** — appears in place of Pause while the meter is armed, and calls the
+  arming off. The pull went wrong, the party reset, you armed the wrong moment:
+  press it and the meter goes back to counting nothing, ready to be armed again.
+  It is only there before the clock starts — once a session is running the
+  button is Pause again, and a session that has damage in it is ended by Start.
+
+- **Pause** — stops counting damage *and* stops the clock. Damage dealt while
+  paused is not counted, and the time you were paused is not divided into your
+  DPS, so a break for buffs or a run back to camp does not drag the numbers
+  down. Resume picks the timeline up exactly where it left off — the chart shows
+  no gap, because as far as the meter is concerned that time did not happen.
+
+  Only the paused stretch itself is cut. The quiet before you press Pause, and
+  the quiet after you press Resume, are ordinary parts of the pull and are
+  counted: the clock runs on real time from the moment the first hit lands, not
+  from swing to swing. Waiting for an event happens once, at the very start.
+
+**DPS falls while nothing is happening**, and that is the point of a fixed
+start: the damage stays put while the clock keeps running, so the number you are
+reading is real output over the whole pull rather than over whichever moments
+you happened to be swinging. Every character's DPS is divided by the same
+clock, so the character column adds up to the party figure.
+
 **The filter row scopes everything below it.**
 
-- **Range** — `All`, `Latest fight` (everything since the last gap of 90 s or
-  more with no combat), or a rolling 5 / 15 / 60 minutes measured back from the
-  newest event.
 - **Skillchains** — `On` credits skillchain damage to whoever closed the chain;
   `Off` leaves it out of every total, chart and table. Off is the setting to use
   when you want to compare raw weaponskill and melee output, since a chain's
@@ -81,8 +122,6 @@ either the addon is not loaded, or nothing has happened in game since it was.
   event files, so a character you never want counted stays excluded. `Hide`
   collapses the list to a single line — the count and a summary of who is
   excluded stay visible — and that too is remembered.
-- **Pause** — freezes ingestion so you can read a table mid-fight.
-- **Reset** — drops every event collected so far and starts counting from here.
 
 Select any row in **Actions** to open its drill-down; select it again, or use
 Close, to dismiss it.
@@ -174,19 +213,30 @@ does it (`/api/alpha`), which means:
   `DPS.popout.keyBg('line', false)` (or `bars`, `actions`, `drill`, `diag`) to stop dropping
   that panel's background; the slider at 100% undoes the rest.
 
+**Every floating panel carries its own Start and Pause**, in the same colours as
+the page's, and they stay lit while the rest of the bar fades. The whole reason
+to float a panel is to run a pull without leaving the game, and reaching back to
+the browser to press Start is exactly what that is meant to avoid. Press either
+one anywhere — page or panel — and every window follows.
+
 The window's chrome is otherwise as small as a browser allows — a 20px bar that
 fades until you point at it, no card frame, no headings, no sub-headings.
 
-### What Reset does
+### Starting a second pull
 
-Reset is the "clear the meter between pulls" button: it throws away the
-collected events and keeps following the file from the point it had reached. It
-deliberately **keeps** your filters, each character's colour, and which names
-are known to be monsters — so the next pull looks the same as the last one, just
-counted from zero. The status line then reads *since reset at hh:mm:ss*.
+Press **Start** again. It throws away the collected events, re-arms the clock —
+so the next counted hit becomes the new 0:00 — and keeps following the file from
+the point it had reached. It deliberately
+**keeps** your filters, each character's colour, and which names are known to be
+monsters — so the next pull looks the same as the last one, just counted from
+zero. The status line reads *armed, waiting for the first hit* until one lands,
+then *started hh:mm:ss* — the time of the hit itself, and the one place the
+meter still prints a time of day.
 
-It does **not** re-read the file. If you want the whole session counted again
-from the top, reload the page — that is what a fresh page load already does.
+It does **not** re-read the file. Reloading the page rewinds to the top of the
+file, but it also puts the meter back to *not started* — the clock never
+survives a reload, because a stopwatch restored from a previous page load would
+be timing something you were not doing.
 
 ## Reading the numbers
 
@@ -195,9 +245,12 @@ guesswork left in any of it.
 
 - **Average** is damage per *connecting* hit. Misses are counted in their own
   column and in the accuracy figure, never folded into the average.
-- **DPS** for a character uses that character's own active window — first to
-  last action — not the whole encounter, so someone who joined halfway through
-  is not divided by time they weren't there.
+- **DPS** is damage divided by the session clock — the time since the first
+  counted hit, less any time you were paused. Every character uses that same clock, so
+  the character column adds up to the party figure, and a character who joined
+  late or died early reads lower because they contributed to less of the pull.
+  It falls while nothing is happening, which is what makes it a measure of the
+  pull rather than of your best moments in it.
 - **Accuracy** counts swings, not attack rounds. A double-attack round that
   landed once and missed once is one hit and one miss.
 - **Weaponskills** are one row each. A weaponskill that gets evaded is recorded

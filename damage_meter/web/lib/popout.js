@@ -45,6 +45,22 @@
   var onRender = function () { };
   var watchdog = null;
 
+  /*
+   * The session controls, handed in by app.js: `{ start, pause, paint }`.
+   *
+   * This module builds the two buttons into every floating window's bar and
+   * knows nothing else about them -- not what a session is, not what the labels
+   * say, not which state is which. `paint` is app.js's own renderer and
+   * `sessionView` is the state it renders, pushed in through `session()` the
+   * same way a theme name is pushed through `theme()`.
+   *
+   * `sessionView` is REMEMBERED, not just forwarded, because a window opened
+   * later has to be dressed correctly at birth: it missed every push that came
+   * before it existed.
+   */
+  var sessionApi = null;
+  var sessionView = null;
+
   // Per-panel opacity (15..100) and background punch-out, remembered across
   // sessions. See "opacity" below for what each one actually does.
   var ALPHA_KEY = 'ffxi_dps_alpha';
@@ -372,6 +388,60 @@
     return wrap;
   }
 
+  /*
+   * Start and Pause, in a floating window's own bar.
+   *
+   * The reason these exist out here at all: a panel is floated over the game so
+   * the pull can be run without leaving it, and reaching back to the page to
+   * press Start is the one thing that cannot be done from there. A meter you
+   * have to alt-tab to start is a meter that gets started late, and late is an
+   * error divided into every DPS figure it then reports.
+   *
+   * Built only when app.js supplied the handlers, so the module still works --
+   * and still tests -- on a page with no session controls at all.
+   */
+  function sessionControl(p, d) {
+    if (!sessionApi) return null;
+
+    var wrap = d.createElement('div');
+    wrap.className = 'segmented session pop-session';
+
+    var start = d.createElement('button');
+    start.type = 'button';
+    start.className = 'session-start';
+    start.textContent = 'Start';
+    start.addEventListener('click', function () { sessionApi.start(); });
+
+    var pause = d.createElement('button');
+    pause.type = 'button';
+    pause.className = 'session-pause';
+    pause.textContent = 'Pause';
+    pause.addEventListener('click', function () { sessionApi.pause(); });
+
+    wrap.appendChild(start);
+    wrap.appendChild(pause);
+    p.startBtn = start;
+    p.pauseBtn = pause;
+    paintPanel(p);
+    return wrap;
+  }
+
+  /* One panel's pair, brought up to the current state. `paint` overwrites each
+     button's className, so nothing may be hung on the buttons themselves --
+     the floating-bar sizing is selected through the `.pop-session` wrapper. */
+  function paintPanel(p) {
+    if (!sessionApi || !sessionView || !p.startBtn) return;
+    sessionApi.paint(sessionView, p.startBtn, p.pauseBtn);
+  }
+
+  /* Push a new session state to every window that is currently open. */
+  function session(view) {
+    sessionView = view;
+    each(function (p) {
+      if (p.win && !p.win.closed) paintPanel(p);
+    });
+  }
+
   /* Everything the server needs to find this window: the centre of it in screen
      coordinates, its size to check the hit against, and the pixel ratio, since
      these numbers are CSS pixels and the desktop may not be at 100%. */
@@ -445,6 +515,9 @@
       p.alphaSlider = p.alphaWrap ? p.alphaWrap.querySelector('input') : null;
       p.alphaOut = d.querySelector('.pop-alpha-val');
       p.alphaWarn = d.querySelector('.pop-alpha-warn');
+      p.startBtn = d.querySelector('.pop-session .session-start');
+      p.pauseBtn = d.querySelector('.pop-session .session-pause');
+      paintPanel(p);                                // may have moved on since
       return { body: body, links: [] };
     }
 
@@ -469,6 +542,10 @@
     acts.appendChild(alphaControl(p, d));
     acts.appendChild(back);
     bar.appendChild(h);
+    // Between the title and the chrome: the controls keep a fixed place, and the
+    // title is the thing that gives way when the window is narrow.
+    var sess = sessionControl(p, d);
+    if (sess) bar.appendChild(sess);
     bar.appendChild(acts);
 
     body = d.createElement('main');
@@ -678,6 +755,7 @@
   function init(opts) {
     opts = opts || {};
     if (opts.onRender) onRender = opts.onRender;
+    if (opts.session) sessionApi = opts.session;
 
     [].forEach.call(doc.querySelectorAll('[data-popout]'), function (card) {
       var key = card.getAttribute('data-popout');
@@ -725,6 +803,7 @@
     init: init,
     byId: byId,
     theme: theme,
+    session: session,
     place: function (key, mode) { return panels[key] ? place(panels[key], mode) : null; },
     dock: function (key) { if (panels[key]) dock(panels[key]); },
     /* Read or set a panel's opacity (15..100) without the slider -- the console

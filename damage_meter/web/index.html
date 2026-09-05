@@ -48,14 +48,17 @@
      anything else. -->
 <div class="filterbar" role="group" aria-label="Filters">
  <div class="filter-row">
+  <!-- The clock, and so the whole measurement. There is no Range control: the
+       session IS the range. Start ARMS the meter and the first counted hit sets
+       the zero, so pressing early costs nothing; Pause stops the damage and the
+       clock together. -->
   <div class="filter">
-    <span class="filter-label">Range</span>
-    <div class="segmented" id="rangeSeg" role="radiogroup" aria-label="Time range">
-      <button type="button" role="radio" data-range="all" aria-checked="true" class="on">All</button>
-      <button type="button" role="radio" data-range="fight" aria-checked="false">Latest fight</button>
-      <button type="button" role="radio" data-range="300" aria-checked="false">5m</button>
-      <button type="button" role="radio" data-range="900" aria-checked="false">15m</button>
-      <button type="button" role="radio" data-range="3600" aria-checked="false">60m</button>
+    <span class="filter-label">Session</span>
+    <div class="segmented session">
+      <button type="button" id="startBtn" class="session-start"
+              title="Arm the meter. The clock starts on the first hit, so pressing early costs nothing.">Start</button>
+      <button type="button" id="pauseBtn" class="session-pause" aria-pressed="false" disabled
+              title="Press Start first">Pause</button>
     </div>
   </div>
 
@@ -69,11 +72,6 @@
     </div>
   </div>
 
-  <div class="filter push">
-    <button type="button" class="ghost" id="pauseBtn" aria-pressed="false">Pause</button>
-    <button type="button" class="ghost" id="resetBtn"
-            title="Drop every event collected so far and start counting from here">Reset</button>
-  </div>
  </div>
 
  <div class="filter-row chars" id="charRow">
@@ -99,7 +97,7 @@
     <div class="tile hero">
       <div class="tile-label">Total damage</div>
       <div class="tile-value hero-value" id="tTotal">0</div>
-      <div class="tile-sub" id="tTotalSub">no events in range</div>
+      <div class="tile-sub" id="tTotalSub">not started &mdash; press Start</div>
     </div>
     <div class="tile">
       <div class="tile-label">Party DPS</div>
@@ -142,7 +140,7 @@
       <div class="card-head">
         <div>
           <h2>Damage by character</h2>
-          <p class="card-sub">Total dealt in the selected range.</p>
+          <p class="card-sub">Total dealt since the session started.</p>
         </div>
       </div>
       <div class="chart-wrap" id="barsWrap"><canvas id="barsChart"></canvas></div>
