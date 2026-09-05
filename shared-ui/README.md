@@ -51,7 +51,7 @@ default and needs no attribute; light is opt-in via `data-theme="light"` on
 `<html>` and is the same identity re-stepped for a pale surface, not an inversion.
 ws_calculator never sets the attribute; damage_meter has a toggle.
 
-Two families of color, kept apart on purpose:
+Three families of color, kept apart on purpose:
 
 - **Chrome** — `--ink`, `--surface`, `--surface2`, `--border`, `--bone`, `--mist`,
   `--faint`, `--dim`, `--blade`, `--brass`, `--good`, `--critical`. This is the
@@ -65,6 +65,19 @@ Two families of color, kept apart on purpose:
   in order. Eighteen is past what colour alone can carry: a chart using the upper
   tier owes the reader a legend, labels or a table, and past eighteen the wrap
   repeats a hue.
+- **Jobs** — `--job-war` … `--job-pup`, the colours Metra's Metrics addon paints
+  FFXI jobs in, converted from its `Res.Colors.Jobs` and, in the dark tier,
+  otherwise untouched. Their whole value is that a party already reads them at a
+  glance in game, so re-stepping them for contrast would destroy the only
+  property they have. They are **not** colourblind-separable — WAR, NIN, RDM and
+  SAM are four reds — so use them only where the thing they colour is also named
+  in text, and offer the series ramp as the way out. The light tier is a re-step,
+  because Metrics paints onto the game's 3D scene and half of it vanishes on a
+  pale card; hue is preserved, lightness moves. Four jobs (DNC, SCH, GEO, RUN)
+  have no token at all, because Metrics never gave them one.
+
+Both data families are graded for **marks** — dots, swatches, chart lines — not
+for body text. A label next to a mark stays in `--bone` / `--mist`.
 
 ## Primitives
 
@@ -108,13 +121,26 @@ single source of truth and a theme swap needs no JS palette at all.
 ```js
 FFXITheme.v('--blade')     // one token, resolved, with a fallback
 FFXITheme.chart()          // { surface, grid, axis, ink, ink2, muted, blade, brass, ... }
-FFXITheme.series(slot)     // categorical slot 0..7
+FFXITheme.series(slot)     // categorical slot 0..17, wrapping
+FFXITheme.job('WAR')       // that job's colour, or '' if it has none
+FFXITheme.step(color, k)   // the k-th variant of one colour; k = 0 is itself
 FFXITheme.liveColors()     // same set, but every key is a getter that re-reads
 FFXITheme.bind({ button, storageKey, onChange })   // wire a light/dark toggle
 FFXITheme.flush()          // drop the cache if a stylesheet is swapped at runtime
 ```
 
 Reads are cached per theme, so calling `chart()` once per draw is cheap.
+
+`job()` returns the **empty string** for a job with no token rather than a
+fallback hue, on purpose: the caller almost always has something better to fall
+back to — a series slot for that entity — and a default here would take that
+decision away from it.
+
+`step()` exists for the one thing the job palette cannot do on its own: two
+characters can be the same job, and two identical lines on a chart are not a
+chart. Each step is a fixed lightness move, and the first one goes **away from
+the page** — lighter in dark mode, darker in light — so a variant is never the
+harder one to see. The series ramp never needs it.
 
 `bind()` restores a stored choice **without** firing `onChange` — restoring is not
 a change — so a caller can safely repaint from `onChange` without it running

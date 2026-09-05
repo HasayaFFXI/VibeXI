@@ -107,6 +107,41 @@ function M.encode(e)
     return table.concat(p)
 end
 
+--- Encode one party-member job line.
+---
+--- NOT AN EVENT, and deliberately its own `kind` rather than a field on every
+--- damage row. A job is a property of the character, not of the swing: repeating
+--- it on every line would be the same eleven bytes a few times a second for the
+--- life of a session, and it would still be wrong for the one case that matters
+--- -- a character who changes job mid-session, whose earlier rows would then
+--- disagree with their later ones. One line when it changes says it once and
+--- says it in order.
+---
+--- The abbreviation AND the id both go out: the abbreviation is what the UI
+--- prints, and the id is what survives a name table this file does not have.
+--- The sub-job trio is omitted entirely when there is no sub-job, which is the
+--- same rule `owner` and `pet` follow above.
+function M.encode_job(e)
+    local p = {}
+    p[#p + 1] = '{"kind":"job","t":' .. num(e.t)
+    p[#p + 1] = ',"actor":"'  .. esc(e.actor) .. '"'
+    p[#p + 1] = ',"main":"'   .. esc(e.main) .. '"'
+    p[#p + 1] = ',"mainId":'  .. num(e.mainId)
+    p[#p + 1] = ',"mainLvl":' .. num(e.mainLvl)
+    if e.subId and e.subId > 0 then
+        p[#p + 1] = ',"sub":"'   .. esc(e.sub) .. '"'
+        p[#p + 1] = ',"subId":'  .. num(e.subId)
+        p[#p + 1] = ',"subLvl":' .. num(e.subLvl)
+    end
+    p[#p + 1] = '}'
+    return table.concat(p)
+end
+
+--- Append one job line. Never throws; see M.write.
+function M.write_job(e)
+    return M.write_raw(M.encode_job(e))
+end
+
 -- ---------------------------------------------------------------- file
 
 --- Build the output directory. Returns nil when no usable root can be found, in

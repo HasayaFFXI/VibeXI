@@ -104,6 +104,45 @@
   --series-17: #b13a80;
   --series-18: #028f95;
 
+  /* Job colours -- Metrics' palette, not ours.
+
+     A THIRD FAMILY, kept apart from both the chrome and the series slots. These
+     are neither identity nor a solved categorical ramp: they are the colours
+     Metra's Metrics addon paints FFXI jobs in (Res.Colors.Jobs), and their whole
+     value is that a party already reads them at a glance in game. Re-stepping
+     them for contrast would destroy the only property they have, so the dark
+     tier below is Metrics' own RGB triples converted to hex and nothing else.
+
+     What that costs, said out loud: they are NOT colourblind-separable. WAR,
+     NIN, RDM and SAM are four reds. That is fine here and only here, because a
+     job colour is never the label -- every panel that uses one also prints the
+     character's name and their job next to it, and the accessibility-solved
+     --series ramp is still one control away in the meter's Colour switch.
+
+     FOUR JOBS ARE ABSENT ON PURPOSE: DNC, SCH, GEO and RUN, which Metrics
+     leaves at 0,0,0 -- unfinished, not black-on-purpose, and invisible on a dark
+     card. None of them exists on a 75-era server. FFXITheme.job() returns '' for
+     a job with no token here and the caller falls back to that character's
+     series slot, so an unexpected one gets a real colour rather than a hole. */
+  --job-war: #e60000;
+  --job-mnk: #f5c403;
+  --job-whm: #ffffff;
+  --job-blm: #a685bd;
+  --job-rdm: #e86366;
+  --job-thf: #08c21c;
+  --job-pld: #e6fa17;
+  --job-drk: #e600ff;
+  --job-bst: #ccba78;
+  --job-brd: #f7a3e8;
+  --job-rng: #6ec459;
+  --job-sam: #fc6e03;
+  --job-nin: #f53000;
+  --job-drg: #b34afa;
+  --job-smn: #70fcb5;
+  --job-blu: #4c8fd4;
+  --job-cor: #c97557;
+  --job-pup: #827aab;
+
   --radius:    4px;
   --radius-md: 5px;
   --radius-lg: 6px;
@@ -164,6 +203,35 @@
   --series-16: #00749b;
   --series-17: #98005f;
   --series-18: #129d9c;
+
+  /* Job colours, re-stepped for the pale surface. The dark tier is Metrics'
+     verbatim and must stay so; this tier cannot be, because Metrics paints onto
+     the game's 3D scene and half of it vanishes on a #f7f4ec card -- PLD's
+     yellow-green and WHM's pure white most of all.
+
+     Hue is what carries the recognition, so hue is what is preserved: each of
+     these is its dark counterpart taken down into the light band at the same
+     hue, close enough that a warrior is still red and a samurai still orange.
+     WHM is the one that cannot be: white has no hue to keep, so it becomes the
+     warm dark neutral that reads as "the white mage" against this surface. */
+  --job-war: #c00000;
+  --job-mnk: #9a7a00;
+  --job-whm: #55534d;
+  --job-blm: #6f4e8c;
+  --job-rdm: #c0393c;
+  --job-thf: #0e7c1b;
+  --job-pld: #7c8600;
+  --job-drk: #a400b8;
+  --job-bst: #7d6a30;
+  --job-brd: #b4519f;
+  --job-rng: #3f7f2e;
+  --job-sam: #c25200;
+  --job-nin: #c22600;
+  --job-drg: #7b2cc0;
+  --job-smn: #1e8c5c;
+  --job-blu: #2a6baa;
+  --job-cor: #9a4e33;
+  --job-pup: #565080;
 
   --shadow: 0 4px 12px rgba(20,22,28,0.16);
 

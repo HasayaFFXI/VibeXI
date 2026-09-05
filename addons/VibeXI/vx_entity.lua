@@ -21,6 +21,11 @@ M.party = {}
 M.party_stamp = 0
 local PARTY_TTL = 3          -- seconds; matches what Metrics uses
 
+-- name -> { main, main_lvl, sub, sub_lvl }, for everyone we have ever seen a
+-- job for. Kept for the whole session rather than rebuilt per refresh: see
+-- M.note_job for why a member who left is not forgotten.
+M.jobs = {}
+
 local MAX_ENTITY_INDEX = 2303
 
 --- Entity index for a server id.
@@ -97,25 +102,74 @@ function M.kind(ent)
     return 'other'
 end
 
+--- Record a member's jobs, and say whether that is news.
+---
+--- Returns the record when something CHANGED and nil when it did not, which is
+--- what keeps the emitter quiet: the party table is read every three seconds
+--- and nobody wants a line in the file every three seconds saying the same
+--- warrior is still a warrior.
+---
+--- A MAIN JOB OF ZERO NEVER OVERWRITES A REAL ONE. The party table reports 0
+--- for a member who is zoning, out of range, or mid-update, and taking that at
+--- face value would blank a character's job -- and with it their colour in the
+--- meter -- every time they crossed a zone line. Metrics guards the same way
+--- (Ashita.Party.Update_Job); the first real answer wins and only another real
+--- answer replaces it.
+function M.note_job(name, main, main_lvl, sub, sub_lvl)
+    if not name or name == '' then return nil end
+
+    main     = main     or 0
+    main_lvl = main_lvl or 0
+    sub      = sub      or 0
+    sub_lvl  = sub_lvl  or 0
+
+    local had = M.jobs[name]
+    if had and main == 0 then return nil end
+    if had and had.main == main and had.main_lvl == main_lvl
+           and had.sub == sub and had.sub_lvl == sub_lvl then
+        return nil
+    end
+
+    local rec = { name = name, main = main, main_lvl = main_lvl,
+                  sub = sub, sub_lvl = sub_lvl }
+    M.jobs[name] = rec
+    return rec
+end
+
 --- Refresh the party/alliance name set. Cheap enough to call per action, but
 --- TTL-gated because it walks 18 slots and touches the entity table for each.
+---
+--- Returns the members whose jobs changed on THIS pass, or nil. The party table
+--- is the only place a job is readable, so reading it is already happening here
+--- and the extra four getters per occupied slot ride along for free.
 function M.refresh_party(now, force)
-    if not force and (now - M.party_stamp) < PARTY_TTL then return end
+    if not force and (now - M.party_stamp) < PARTY_TTL then return nil end
     M.party_stamp = now
 
     local mm = AshitaCore:GetMemoryManager()
-    if not mm then return end
+    if not mm then return nil end
     local pt = mm:GetParty()
-    if not pt then return end
+    if not pt then return nil end
 
     local fresh = {}
+    local changed = nil
     for slot = 0, 17 do
         if pt:GetMemberIsActive(slot) == 1 then
             local name = pt:GetMemberName(slot)
-            if name and name ~= '' then fresh[name] = true end
+            if name and name ~= '' then
+                fresh[name] = true
+                local rec = M.note_job(name,
+                    pt:GetMemberMainJob(slot),  pt:GetMemberMainJobLevel(slot),
+                    pt:GetMemberSubJob(slot),   pt:GetMemberSubJobLevel(slot))
+                if rec then
+                    changed = changed or {}
+                    changed[#changed + 1] = rec
+                end
+            end
         end
     end
     M.party = fresh
+    return changed
 end
 
 function M.in_party(name)

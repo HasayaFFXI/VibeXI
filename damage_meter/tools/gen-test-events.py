@@ -52,6 +52,17 @@ WHAT IS IN HERE ON PURPOSE, and what each case catches:
     the addon writes when the entity table has no answer.
   * META LINES: the startup environment probe on line 1, and an unknown-message
     notice. Consumers skip these, and Diagnostics shows them.
+  * JOB LINES -- `kind:"job"`, one per party member, written when the job is
+    first read and again whenever it changes. Four things ride on these and each
+    is here on purpose: a member who NEVER ACTS (the white mage) and therefore
+    appears in no chart and no total, but must still be listed with her job; a
+    MID-SESSION JOB CHANGE (Rhyllis, PLD/WAR to SAM/WAR, in the downtime after
+    the second fight) which must take -- last write wins, unlike the roster's
+    first-answer-wins rule for spawn kinds; the TWO-CHARACTERS-ONE-JOB case that
+    change creates, which is what forces the meter to shade a shared job colour
+    rather than draw two identical lines; and a SUB-JOB-LESS member (the pet's
+    owner is not one, but the mule-style entry is -- see PARTY_JOBS), whose line
+    omits the sub trio entirely the way `vx_emit.encode_job` does.
 """
 
 import argparse
@@ -96,6 +107,18 @@ SC_IDS = [
 ]
 
 
+# Job ids, from addons/VibeXI/vx_enums.lua (E.Jobs), which takes them from
+# Metrics' Res.Jobs.List. The addon writes both the id and the abbreviation, so
+# the fixture has to know the pairing too.
+JOB_IDS = {
+    'NON': 0,
+    'WAR': 1,  'MNK': 2,  'WHM': 3,  'BLM': 4,  'RDM': 5,  'THF': 6,
+    'PLD': 7,  'DRK': 8,  'BST': 9,  'BRD': 10, 'RNG': 11, 'SAM': 12,
+    'NIN': 13, 'DRG': 14, 'SMN': 15, 'BLU': 16, 'COR': 17, 'PUP': 18,
+    'DNC': 19, 'SCH': 20, 'GEO': 21, 'RUN': 22, 'MON': 23,
+}
+
+
 # -------------------------------------------------------------------- fixture
 
 MELEE = [
@@ -111,6 +134,33 @@ RANGER = 'Xatsh'
 MAGE = 'Gillette'
 PET = {'n': 'Fluffikins', 'owner': 'Parabellum'}
 NPC = 'Nomad Moogle'
+
+# The party member who never acts. She heals all night, the addon records no
+# damage for her, and she therefore reaches the app through her job line and
+# nothing else -- which is the case that proves the meter lists the PARTY and not
+# only the characters who dealt damage.
+HEALER = 'Sylviane'
+
+# (name, main, main level, sub, sub level) at the start of the session.
+#
+# Parabellum is the beastmaster, because Fluffikins is his. Vermillion carries no
+# sub-job at all -- a fresh mule parked in the alliance -- so his line omits the
+# sub trio the way the emitter does, and he never swings either.
+PARTY_JOBS = [
+    ('Hasaya',     'SAM', 75, 'WAR', 37),
+    ('Parabellum', 'BST', 75, 'NIN', 37),
+    ('Rhyllis',    'PLD', 75, 'WAR', 37),
+    (RANGER,       'RNG', 75, 'NIN', 37),
+    (MAGE,         'BLM', 75, 'WHM', 37),
+    (HEALER,       'WHM', 75, 'BLM', 37),
+    ('Vermillion', 'WAR',  1, 'NON',  0),
+]
+
+# Rhyllis puts the shield away in the downtime after the second fight. Two things
+# hang off this one line: the reader must take the LAST job line for a character
+# rather than the first, and the party now holds two samurai -- so the meter has
+# to tell Hasaya's SAM colour from Rhyllis's without a second hue to spend.
+JOB_CHANGE = ('Rhyllis', 'SAM', 75, 'WAR', 37)
 
 # No articles anywhere. The packet carries the entity's real name and its spawn
 # flags say what it is, so "Leaping Lizzy" needs no special handling at all --
@@ -157,6 +207,27 @@ class Writer:
 
     def raw(self, obj):
         self.lines.append(json.dumps(obj, ensure_ascii=True, separators=(',', ':')))
+
+    def job(self, actor, main, main_lvl, sub, sub_lvl):
+        """One party-member job line, field-for-field `vx_emit.encode_job`.
+
+        No `seq` and no `use`: this is not an event and takes part in no
+        ordering. The sub trio is dropped entirely when there is no sub-job,
+        which is the same rule `owner` and `pet` follow on a damage row.
+        """
+        e = {
+            'kind': 'job',
+            't': self.t,
+            'actor': actor,
+            'main': main,
+            'mainId': JOB_IDS[main],
+            'mainLvl': main_lvl,
+        }
+        if JOB_IDS[sub]:
+            e['sub'] = sub
+            e['subId'] = JOB_IDS[sub]
+            e['subLvl'] = sub_lvl
+        self.raw(e)
 
     def write(self, use, kind, actor, actor_kind, action, action_id,
               target, target_kind, dmg, hit, msg, crit=False, burst=False,
@@ -207,6 +278,15 @@ def generate(seed=SEED, start=None):
         'spellLookup': 'Cure', 'wsLookup': 'Combo',
         'path': 'C:\\Users\\thadl\\AppData\\Local\\VibeXI\\events\\Hasaya_2026.07.30.jsonl',
     })
+
+    # ---- the party, before anybody swings
+    #
+    # The addon writes these the first time it reads the party table, which is on
+    # the first action packet of the session -- so in a real file they land just
+    # after the probe, exactly as they do here. It writes one again only when a
+    # job CHANGES; there is no periodic re-statement to parse around.
+    for name, main, main_lvl, sub, sub_lvl in PARTY_JOBS:
+        w.job(name, main, main_lvl, sub, sub_lvl)
 
     def melee_round(p, mob):
         """One attack round: one `use` PER SWING.
@@ -401,6 +481,11 @@ def generate(seed=SEED, start=None):
             w.raw({'kind': 'meta', 'unknownMsg': 431, 'category': 4, 'actionId': 245})
 
         w.advance(110 + rand.randrange(200))   # downtime between fights
+
+        # Rhyllis changes job in the downtime. Written AFTER the advance, so it
+        # sits in the gap rather than on the last swing of the fight before it.
+        if fight == 1:
+            w.job(*JOB_CHANGE)
 
     return w
 

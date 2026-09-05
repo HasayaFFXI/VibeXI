@@ -333,4 +333,31 @@ end
 -- session settles it -- see probe() in vibexi.lua.
 E.ABILITY_ID_OFFSET = 512
 
+-- Job id -> the three-letter abbreviation the game itself uses.
+--
+-- The party table hands out job IDS, and an id is unreadable in a JSON file and
+-- unusable as a colour key without a second table on the browser side. Resolving
+-- it here costs 24 lines and makes the event file self-describing: "WAR/NIN" is
+-- in the line, not reconstructed from two integers by whoever reads it.
+--
+-- Ids are the game's, matching Metrics' Res.Jobs.List. 20-23 cannot appear on a
+-- 75-era server; they are listed so an unexpected id resolves to a name rather
+-- than to nil.
+E.Jobs = {
+    [0]  = 'NON',
+    [1]  = 'WAR',  [2]  = 'MNK',  [3]  = 'WHM',  [4]  = 'BLM',
+    [5]  = 'RDM',  [6]  = 'THF',  [7]  = 'PLD',  [8]  = 'DRK',
+    [9]  = 'BST',  [10] = 'BRD',  [11] = 'RNG',  [12] = 'SAM',
+    [13] = 'NIN',  [14] = 'DRG',  [15] = 'SMN',  [16] = 'BLU',
+    [17] = 'COR',  [18] = 'PUP',  [19] = 'DNC',  [20] = 'SCH',
+    [21] = 'GEO',  [22] = 'RUN',  [23] = 'MON',
+}
+
+--- Job abbreviation for an id. Unknown ids degrade to 'NON' rather than to nil,
+--- so nothing downstream has to test for a missing name.
+function E.job(id)
+    if not id then return 'NON' end
+    return E.Jobs[id] or 'NON'
+end
+
 return E

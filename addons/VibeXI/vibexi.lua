@@ -236,6 +236,31 @@ local function note_unknown(message, act)
         ',"actionId":' .. string.format('%d', act.param) .. '}')
 end
 
+--- Write one line per party member whose job changed since the last look.
+---
+--- Fed by Entity.refresh_party, which is the only thing in the addon that reads
+--- the party table and therefore the only thing that can see a job at all. It
+--- returns nil on the overwhelming majority of passes -- jobs change about once
+--- a session -- so this runs a handful of times per file.
+---
+--- The job of a party member who never swings is still recorded, and that is the
+--- point: the meter lists the party, not only the characters who dealt damage.
+local function record_jobs(changed, now)
+    for i = 1, #changed do
+        local m = changed[i]
+        Emit.write_job({
+            t       = now,
+            actor   = m.name,
+            main    = E.job(m.main),
+            mainId  = m.main,
+            mainLvl = m.main_lvl,
+            sub     = E.job(m.sub),
+            subId   = m.sub,
+            subLvl  = m.sub_lvl,
+        })
+    end
+end
+
 local function next_seq(now)
     if now ~= S.seq_at then
         S.seq_at = now
@@ -605,7 +630,9 @@ ashita.events.register('packet_in', 'vibexi_packet_in', function(p)
         end
 
         if Entity.is_zoning() then return end
-        Entity.refresh_party(now)
+
+        local job_changes = Entity.refresh_party(now)
+        if job_changes then record_jobs(job_changes, now) end
 
         local act = Action.parse(p.data)
         if not act then S.dropped = S.dropped + 1 return end

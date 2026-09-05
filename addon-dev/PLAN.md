@@ -193,6 +193,18 @@ targets or swings it involved.
  "dmg":723,"hit":true,"crit":false,"burst":false,"msg":185}
 ```
 
+Alongside it, one line per party member whose jobs the party table reports, and
+another whenever they change:
+
+```json
+{"kind":"job","t":1785000000,"actor":"Hasaya","main":"SAM","mainId":12,"mainLvl":75,
+ "sub":"WAR","subId":1,"subLvl":37}
+```
+
+No `seq` and no `use` — it is a fact about a character, not an event, and the
+reader files it on the roster rather than in the event list. It is the only thing
+the addon writes about a party member who never acts.
+
 `web/lib/source.js` reads it, and `stats.js` is unchanged from the chat-log era
 apart from the fields it carries through `collapse()`.
 

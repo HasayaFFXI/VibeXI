@@ -44,6 +44,16 @@
   </div>
 
   <div class="filter">
+    <span class="filter-label">Colour</span>
+    <div class="segmented" id="colourSeg" role="radiogroup" aria-label="Character colour">
+      <button type="button" role="radio" data-colour="job" aria-checked="true" class="on"
+              title="Paint every character in their job&rsquo;s colour, the same mapping Metrics uses">Job</button>
+      <button type="button" role="radio" data-colour="slot" aria-checked="false"
+              title="Paint every character a colour of their own, from the 18-slot palette">Character</button>
+    </div>
+  </div>
+
+  <div class="filter">
     <span class="filter-label">Skillchains</span>
     <div class="segmented" id="chainSeg" role="radiogroup" aria-label="Skillchain damage">
       <button type="button" role="radio" data-chains="on" aria-checked="true" class="on"

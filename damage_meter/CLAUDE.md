@@ -127,6 +127,44 @@ Diagnostics panel prints. An unrecognised id is damage nobody is being credited
 with, so that panel is the first place to look when a total seems low; the fix
 is a new entry in `../addons/VibeXI/vx_enums.lua`, not here.
 
+**Neither is a `kind:"job"` line.** It states one party member's jobs:
+
+```json
+{"kind":"job","t":1785000000,"actor":"Hasaya","main":"SAM","mainId":12,"mainLvl":75,
+ "sub":"WAR","subId":1,"subLvl":37}
+```
+
+No `seq` and no `use`, because it takes part in no ordering; the `sub` trio is
+omitted entirely when there is no sub-job, the same rule `owner` and `pet`
+follow. `source.js` files it on the **roster**, never in `events` — a job carries
+no damage, and a zero-damage row would land in every count in the app.
+
+Four things about it are load-bearing:
+
+- **Written on change, not on a timer.** `vx_entity.note_job` returns a record
+  only when something actually differs, so the file gets a handful of these per
+  session rather than one every three seconds. The consequence is that
+  `source.reset()` must **keep** the job map — a cleared one would stay empty
+  until somebody changed job — and it does, because the map lives on the roster
+  and reset only drops events.
+- **Last write wins**, unlike `roster.note`'s first-answer-wins for spawn kinds.
+  A second job line for a character is a real change, so the newest one is true.
+  A spawn classification cannot change, which is why the other rule is the
+  opposite.
+- **A main job of 0 never overwrites a real one.** The party table reports 0 for
+  a member who is zoning or out of range, and taking that at face value would
+  blank a character's job — and their colour — every time they crossed a zone
+  line. Guarded in Lua, in `note_job`; Metrics guards the same way.
+- **It also classifies the name as ours.** A job line comes off a party slot, so
+  `source.js` calls `roster.note(name, 'player')` on it. For a member who never
+  acts — the white mage — that is the *only* evidence there is, and without it
+  they read as an unclassified stranger in Diagnostics.
+
+A party member who never deals damage therefore reaches the app through this
+line and nothing else. They appear in the Diagnostics roster, with their job,
+and in no chart, chip or total — which is correct: the meter lists the party,
+but it charts damage.
+
 ## `use` is per swing, not per action
 
 This is the one thing about the contract that is easy to get wrong, and it was
@@ -480,11 +518,57 @@ histogram column's width is the bin interval — it is data, not a mark style �
 it fills its slot less the 2px gap. Capping it makes a distribution read as a
 sparse categorical chart.
 
-### Eighteen slots, one per character
+### Two palettes, and the switch between them
+
+`colorOf(name)` answers with one of two families, chosen by the **Colour**
+control in the filter bar and remembered across reloads.
+
+**Job (the default)** — Metrics' own job colours, `--job-war` … `--job-pup` in
+the shared sheet, read through `FFXITheme.job(abbrev)`. They are in the design
+system because the party already reads them at a glance in game: the warrior is
+red, the samurai orange. Agreeing with the parser sitting next to it is worth
+more here than inventing a second mapping for the same six people.
+
+What that costs is said out loud in the stylesheet and repeated here because it
+is the kind of thing that gets "fixed" later by someone who did not know: **the
+job palette is not colourblind-separable.** WAR, NIN, RDM and SAM are four reds.
+That is acceptable *only* because the meter never identifies a character by
+colour alone — every panel that paints one also prints the name and the job as
+text — and because the solved ramp is one click away.
+
+Three edges it has and the ramp does not:
+
+- **Two characters can share a job.** `assignJobVariants` numbers them and
+  `FFXITheme.step(color, k)` turns the number into a lightness move — away from
+  the page first (lighter in dark mode, darker in light), so a variant is never
+  the harder one to see. Ordered by **colour slot**, not by damage or table
+  position, so the same warrior keeps the same shade all session; ordering it by
+  anything the user can reorder would swap shades under them.
+- **Four jobs have no colour.** Metrics leaves DNC, SCH, GEO and RUN at 0,0,0 —
+  unfinished, not black on purpose — so they have no token, and neither does
+  `NON`. `FFXITheme.job()` returns `''` for those *deliberately*: the caller has
+  something better to fall back to than a made-up hue.
+- **A character with no job on record falls through to their slot.** A trust, a
+  pet's owner seen only through the pet, anyone the party table has not reported
+  yet. The fallback is what makes the empty string safe.
+
+The light tier is **not** Metrics' verbatim and cannot be: Metrics paints onto
+the game's 3D scene, and PLD's yellow-green and WHM's white vanish on a `#f7f4ec`
+card. Hue is what carries the recognition, so hue is what is preserved and
+lightness is what moves. WHM is the one that cannot be preserved — white has no
+hue — and becomes a warm dark neutral.
+
+Job colours are for **marks only** — dots, swatches, chart lines. The job *text*
+beside them stays in `--mist` / `--faint`, exactly as character names stay in ink
+next to their series swatch, and for the same reason: neither palette is graded
+for body text.
+
+### Character: eighteen slots, one per character
 
 **Every character gets their own colour — there is no muted tail and no "Other"
 line.** An alliance is 18 characters, so the palette is 18 slots
-(`FFXITheme.SLOTS`), and `colorOf` is a straight `FFXITheme.series(slotOf(name))`.
+(`FFXITheme.SLOTS`), and this mode is a straight
+`FFXITheme.series(slotOf(name))`.
 
 This is knowingly past where colour alone works, and the `dataviz` skill's own
 rule is that a 9th series folds into "Other" rather than getting a hue. What
@@ -529,6 +613,14 @@ effects, a pet with an owner, an NPC, an article-less NM, an unresolved
 between fights so `Latest fight` has something to find. Its docstring says what
 each case catches; read that before changing it.
 
+The job lines carry four of their own: a member who **never acts** (Sylviane,
+WHM) and so must be listed with her job and charted nowhere; a member with **no
+sub-job** (Vermillion), whose line omits the sub trio; a **mid-session job
+change** (Rhyllis, PLD/WAR → SAM/WAR in the downtime after the second fight),
+which must take, proving last-write-wins; and the **two-characters-one-job** case
+that change creates, which is what forces the shared job colour to be shaded
+rather than drawn twice.
+
 **It must stay field-for-field identical to `vx_emit.encode`.** If the fixture
 and the emitter disagree the fixture is worthless, so that function is the thing
 to diff against when either changes.
@@ -549,6 +641,9 @@ that come back as static top-of-page snapshots. From the page console:
 DPS.app.source.meta                       // probe + unrecognised message ids
 DPS.app.source.state.bad                  // lines that were not JSON at all
 DPS.app.source.roster.kinds               // name -> player | pet | mob | npc | other
+DPS.app.source.roster.jobs                // name -> { main, mainId, mainLevel, sub, ... }
+DPS.app.source.roster.jobLabel('Hasaya')  // 'SAM/WAR', or '' if never reported
+DPS.app.jobVariant                        // name -> 0,1,2... among characters sharing a job
 DPS.source.parseAll(['{"t":1,"use":1,"kind":"ws","actor":"A","actorKind":"player",' +
   '"action":"Tachi: Jinpu","target":"B","targetKind":"mob","dmg":700,"hit":true}']).events
 

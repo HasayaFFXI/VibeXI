@@ -101,6 +101,41 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
 
 button.ghost.tiny { font-size: 11px; padding: 3px 9px; }
 
+/* --------------------------------------------------------------- job labels */
+
+/* The character's job, wherever their name appears: on the chip, in the legend,
+   on an actions group row, and in its own table column.
+
+   DELIBERATELY NOT PAINTED IN THE JOB'S COLOUR. Job colours are graded for
+   MARKS -- dots, swatches, chart lines -- exactly as the series colours are, and
+   a run of small text in Metrics' PLD yellow-green is unreadable on either
+   surface. The swatch beside the name carries the colour; this carries the word.
+   That split is also what makes the job palette safe to default to: two
+   characters on the same job differ by a lightness step in the swatch and by
+   their own name in the same breath. */
+.chip-job,
+.legend-job,
+.row-job {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--faint);
+}
+.chip[aria-pressed="false"] .chip-job { opacity: 0.7; }
+table.data tr.group .row-job { color: var(--mist); }
+
+/* The Job column, in both tables that carry one. Left-aligned with the name it
+   belongs to rather than right with the numbers -- it is a label, and a column
+   of "WAR/NIN" ragged against the right edge reads as figures that failed to
+   line up. */
+table.data th.job,
+table.data td.job {
+  text-align: left;
+  font-variant-numeric: normal;
+  color: var(--mist);
+}
+
 /* ------------------------------------------------------------- name tiles */
 
 /* A tile whose value is a character name instead of a number. Names are longer

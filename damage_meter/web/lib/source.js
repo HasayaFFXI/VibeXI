@@ -25,6 +25,8 @@
  *   hit          A miss, a parry, a shadow and an evade are all distinct
  *                messages, so the accuracy denominator is exact.
  *   owner        A pet names its master.
+ *   job          A party member's main and sub job, on a line of its own
+ *                (kind:"job"). The chat log never said either.
  *
  * TIME IS SECONDS ON THE WIRE, MILLISECONDS IN HERE. The addon deliberately
  * does not link LuaSocket just to get a sub-second clock (addon-dev/PLAN.md,
@@ -65,6 +67,7 @@
       owner: null,
       manual: {},       // name -> 'ally' | 'mob', set from the UI
       kinds: {},        // name -> 'player' | 'pet' | 'mob' | 'npc' | 'other'
+      jobs: {},         // name -> { main, mainId, mainLevel, sub, subId, subLevel }
 
       /*
        * First real answer wins. A target the addon could not resolve in the
@@ -79,6 +82,46 @@
 
       kindOf: function (name) {
         return this.kinds[name] || 'other';
+      },
+
+      /*
+       * A party member's jobs, from the addon's kind:"job" lines.
+       *
+       * LAST WRITE WINS, unlike `note` above. A job line is only written when
+       * the job actually changed, so a second one for the same character is a
+       * real change -- somebody swapped to their sub -- and the newest answer is
+       * the true one. (`note` is the other way round because a spawn-flag
+       * classification cannot change, so there the FIRST good answer is kept and
+       * a later 'other' is a failed lookup rather than news.)
+       */
+      noteJob: function (name, rec) {
+        if (!name || !rec) return;
+        this.jobs[name] = rec;
+      },
+
+      jobOf: function (name) {
+        return this.jobs[name] || null;
+      },
+
+      /*
+       * "WAR/NIN", or "WAR" with no sub-job, or '' if the addon never reported
+       * one. The empty string is the honest answer for a character whose job we
+       * do not know -- a trust, a pet, or anyone the party table never listed --
+       * and every caller renders it as a dash rather than inventing a job.
+       */
+      jobLabel: function (name) {
+        var j = this.jobs[name];
+        if (!j || !j.main || j.main === 'NON') return '';
+        return j.sub && j.sub !== 'NON' ? j.main + '/' + j.sub : j.main;
+      },
+
+      /* The same pair with levels, for a tooltip: "WAR75 / NIN37". */
+      jobTitle: function (name) {
+        var j = this.jobs[name];
+        if (!j || !j.main || j.main === 'NON') return '';
+        var s = j.main + (j.mainLevel ? String(j.mainLevel) : '');
+        if (j.sub && j.sub !== 'NON') s += ' / ' + j.sub + (j.subLevel ? String(j.subLevel) : '');
+        return s;
       },
 
       /*
@@ -157,6 +200,40 @@
         return null;
       }
 
+      /*
+       * A job line is a fact about a CHARACTER, not an event: it carries no
+       * damage, no target and no `use`, and letting one into `events` would put
+       * a zero-damage row into every count in the app. It goes on the roster and
+       * the reader moves on, exactly like the meta lines above.
+       *
+       * A party member who never swings gets one of these and nothing else,
+       * which is deliberate -- the meter lists the party, not only the
+       * characters who dealt damage.
+       */
+      if (raw.kind === 'job') {
+        var who = str(raw.actor);
+        if (who) {
+          /*
+           * A job line comes off a PARTY SLOT, so it is also positive evidence
+           * that this name is one of ours -- and for a member who never acts it
+           * is the ONLY such evidence, because they appear as the actor of no
+           * event and the spawn-flag classification never gets a chance to run.
+           * Without this the white mage reads as an unclassified stranger in
+           * Diagnostics, which is exactly backwards.
+           */
+          roster.note(who, 'player');
+          roster.noteJob(who, {
+            main: str(raw.main) || 'NON',
+            mainId: num(raw.mainId),
+            mainLevel: num(raw.mainLvl),
+            sub: str(raw.sub) || 'NON',
+            subId: num(raw.subId),
+            subLevel: num(raw.subLvl)
+          });
+        }
+        return null;
+      }
+
       var actor = str(raw.actor);
       var target = str(raw.target);
       if (!raw.kind || !actor) return null;
@@ -201,7 +278,9 @@
       /*
        * Drops the events and keeps the roster: which names are monsters does not
        * stop being true because the meter was cleared between pulls. The manual
-       * overrides survive for the same reason.
+       * overrides and the recorded jobs survive for the same reason -- and jobs
+       * especially, because the addon only writes a job line when the job
+       * CHANGES, so a cleared job map would stay empty until somebody swapped.
        */
       reset: function () {
         events.length = 0;
