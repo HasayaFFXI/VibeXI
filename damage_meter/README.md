@@ -97,6 +97,27 @@ colour on record — a trust, a pet's owner seen only through the pet, DNC, SCH,
 GEO or RUN, which Metrics never finished — gets a distinct colour of their own
 instead.
 
+### Hide names
+
+**Hide names**, in the top bar beside the theme toggle, draws every character
+but you as their job — `SAM/WAR` where their name was — so a screenshot or a
+stream can show the numbers without showing the party. Your own name stays,
+because a meter you cannot find yourself on is not much use; the meter knows
+which character is yours from the event file's name.
+
+Nothing is filtered and no number moves: the chips still exclude the same
+people, the colours are unchanged and every total is identical. Only the text
+goes — on the chips, the tiles, the legend, both tables, the drill-down and the
+Diagnostics roster, where the Job column steps aside because the name is now
+carrying it. Two people on the same job come out as `SAM/WAR` and `SAM/WAR 2`,
+numbered in the order they took their colours, so nobody's label moves mid-
+session. Someone whose job the addon has never reported reads `Unknown job`.
+
+The setting is remembered across reloads. Two things it does not hide: a pet
+still goes by its own name, because its name is part of the action
+(`Fluffikins: Big Scissors`) rather than a character's, and the source line at
+the top still shows the event file, which is named after you.
+
 ### Keep in focus
 
 Every chart and table panel has a **Keep in focus** button in its top-right

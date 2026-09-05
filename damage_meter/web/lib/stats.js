@@ -276,6 +276,15 @@
    * Deliberately NOT collapsed: this only ever sums damage into time bins, and
    * the sum is the same either way. Collapsing would move an AoE's later
    * victims back onto the announcement's timestamp for no gain.
+   *
+   * `opts.now` is the LIVE EDGE. Without it the grid stops at the newest event,
+   * so between events the chart is frozen and every arrival jumps it forward;
+   * with it the grid runs to wall-clock now and each series is carried flat
+   * across the silence -- which is what a cumulative total actually did during
+   * that silence, not an extrapolation. The carry is one extra sample pinned to
+   * exactly `now` rather than another whole bin, so the right edge can advance
+   * by a frame's worth of time without the grid step having to change; callers
+   * animating it move `times[times.length - 1]` and redraw (see `live`).
    */
   function cumulative(events, names, opts) {
     opts = opts || {};
@@ -290,13 +299,21 @@
       if (events[i].t < t0) t0 = events[i].t;
       if (events[i].t > t1) t1 = events[i].t;
     }
+    var tEvent = t1;
+    var live = opts.now != null && opts.now > t1;
+    if (live) t1 = opts.now;
     if (t1 <= t0) t1 = t0 + 1000;
 
     var step = Math.max(1000, Math.ceil((t1 - t0) / maxPoints / 1000) * 1000);
-    var n = Math.floor((t1 - t0) / step) + 1;
+    var nb = Math.floor((t1 - t0) / step) + 1;
+    // The live sample is always allocated when there is a live edge, even when
+    // the last bin happens to land on `now` -- an animating caller needs the
+    // slot to exist before it has anywhere to move to.
+    var n = nb + (live ? 1 : 0);
 
     var times = new Array(n);
-    for (i = 0; i < n; i++) times[i] = t0 + i * step;
+    for (i = 0; i < nb; i++) times[i] = t0 + i * step;
+    if (live) times[nb] = t1;
 
     var idx = {}, series = [];
     for (i = 0; i < names.length; i++) {
@@ -309,17 +326,22 @@
       if (!e.hit || !e.dmg) continue;
       var s = series[idx[e.actor]];
       if (!s) continue;
-      var bin = Math.min(n - 1, Math.floor((e.t - t0) / step));
+      var bin = Math.min(nb - 1, Math.floor((e.t - t0) / step));
       s.values[bin] += e.dmg;
     }
 
-    // Bin totals -> running total.
+    // Bin totals -> running total. The live sample holds no damage of its own,
+    // so it inherits the run and the tail comes out flat.
     for (i = 0; i < series.length; i++) {
       var v = series[i].values, run = 0;
       for (var j = 0; j < n; j++) { run += v[j]; v[j] = run; }
     }
 
-    return { times: times, series: series, step: step, t0: t0, t1: t1 };
+    return {
+      times: times, series: series, step: step, t0: t0, t1: t1,
+      live: live,        // the last sample is the live edge, not an event
+      tEvent: tEvent     // newest event in the model, whatever the edge says
+    };
   }
 
   // ------------------------------------------------------------ distribution

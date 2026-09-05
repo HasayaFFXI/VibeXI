@@ -589,6 +589,39 @@ beside them stays in `--mist` / `--faint`, exactly as character names stay in in
 next to their series swatch, and for the same reason: neither palette is graded
 for body text.
 
+### Hiding the names
+
+`#anonBtn` in the top bar draws every character but the file's owner as their
+job. It is a **display** switch and nothing else: `nameOf()` is the only thing it
+changes, every key stays the real name — the exclusion list, `data-actor`, the
+roster override, `colorOf`, `S.filter`, the aggregate itself — and the handler is
+a `render()`. If a total ever moves when it is toggled, something has started
+keying off a drawn name.
+
+- **`assignAliases` mirrors `assignJobVariants`, and for the same reason.**
+  Ordered by colour slot, so a label is stable for the session; ordering it by
+  damage or table position would renumber the party under the user on every lead
+  change. Two people on one job come out `SAM/WAR` and `SAM/WAR 2`, the first
+  unnumbered exactly as the first also takes the base colour.
+- **Slots are not the whole party.** A member who never deals damage is never an
+  actor and so is never slotted, but they do reach the Diagnostics roster off
+  their job line alone — so the map also takes every name `roster.kinds` calls a
+  `player`, trailing the slotted ones in name order. Leaving them out put
+  Sylviane's name back on screen the moment that panel was opened, which is how
+  this was found. The residual: two characters on one job, neither slotted yet,
+  and the one sorting second is the one that acts first — that pair swaps numbers
+  on that first swing and never again.
+- **The Job column is dropped, not blanked**, in both tables that carry one. The
+  name cell is already the job, a second copy of it reads as a bug, and a `—`
+  there would say "job unknown", which is a different fact. `jobBadge()` does the
+  same for the inline badges on a chip, the legend and an actions group row.
+- **The roster table sorts on the drawn name.** Sorting a hidden name by the name
+  it is hiding leaves it sitting in its own alphabetical slot — a sort that looks
+  broken and also narrows down who it is.
+- **A pet keeps its name.** It is not a character, its damage is already the
+  owner's, and its name lives inside the action string. Hiding it means changing
+  the action label, not this map.
+
 ### The fallback: eighteen slots, one per character
 
 `FFXITheme.series(slotOf(name))` is what a character gets when the job palette
@@ -774,9 +807,10 @@ it. What is left:
   top. That replay is the persistence: the addon's file survives an FFXI crash,
   which is why it is written under `%LOCALAPPDATA%` rather than `%TEMP%`. Only
   the theme, the character exclusion list, the skillchain toggle, whether the
-  character row is collapsed and the pop-out opacity settings are stored
-  (`ffxi_dps_theme`, `ffxi_dps_excluded`, `ffxi_dps_chains`, `ffxi_dps_charrow`,
-  `ffxi_dps_alpha`, `ffxi_dps_keybg`, `ffxi_dps_alpha_default` in localStorage).
+  character row is collapsed, whether the names are hidden and the pop-out
+  opacity settings are stored (`ffxi_dps_theme`, `ffxi_dps_excluded`,
+  `ffxi_dps_chains`, `ffxi_dps_charrow`, `ffxi_dps_anon`, `ffxi_dps_alpha`,
+  `ffxi_dps_keybg`, `ffxi_dps_alpha_default` in localStorage).
 - The exclusion list is keyed by bare name, so it is shared across event files.
   That is intentional: a character you never want counted stays excluded.
 - Reaction ATTEMPTS are not recorded — 535 RetaliateShadowAbsorbs, 592
