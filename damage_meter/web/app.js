@@ -25,7 +25,6 @@
     lines: 0,
     range: 'all',
     chains: 'on',           // 'on' credits skillchain damage, 'off' drops it
-    colour: 'job',          // 'job' paints by FFXI job, 'slot' by series palette
     actorsOff: {},          // name -> true when excluded; persisted
     resetAt: null,          // wall-clock of the last meter reset, for the status line
     paused: false,
@@ -145,7 +144,6 @@
   var EXCLUDE_KEY = 'ffxi_dps_excluded';
   var CHAIN_KEY = 'ffxi_dps_chains';
   var CHARROW_KEY = 'ffxi_dps_charrow';
-  var COLOUR_KEY = 'ffxi_dps_colour';
 
   function loadExcluded() {
     try {
@@ -164,14 +162,6 @@
       if (localStorage.getItem(CHAIN_KEY) === 'off') app.chains = 'off';
     } catch (e) { }
     syncSeg('chainSeg', 'chains', app.chains);
-  }
-
-  /* Same shape again: the markup's default is "job", so only "slot" restores. */
-  function loadColour() {
-    try {
-      if (localStorage.getItem(COLOUR_KEY) === 'slot') app.colour = 'slot';
-    } catch (e) { }
-    syncSeg('colourSeg', 'colour', app.colour);
   }
 
   /* Same shape: the markup ships expanded, so only "closed" is restored. */
@@ -217,35 +207,31 @@
   /*
    * The colour a character is drawn in, everywhere in the app.
    *
-   * Via FFXITheme, not a local getComputedStyle: it caches per theme, and both
-   * palettes stay in the one stylesheet that drives both apps and both modes.
+   * Via FFXITheme, not a local getComputedStyle: it caches per theme, and the
+   * palette stays in the one stylesheet that drives both apps and both modes.
    *
-   * TWO PALETTES, and the switch between them is a real trade rather than a
-   * preference:
+   * JOB COLOUR, ALWAYS -- Metrics' own mapping. The party already reads these
+   * at a glance in game (the warrior is red, the samurai orange), so the meter
+   * agrees with the parser sitting next to it instead of inventing a second
+   * mapping for the same six people. There is no alternative palette and no
+   * control to pick one: one mapping means a character's hue means the same
+   * thing in every screenshot, every session and every panel.
    *
-   *   job    Metrics' own job colours. The party already reads these at a
-   *          glance in game -- the warrior is red, the samurai orange -- so the
-   *          meter agrees with the parser sitting next to it instead of
-   *          inventing a second mapping for the same six people. It is NOT
-   *          colourblind-separable (WAR, NIN, RDM and SAM are four reds), and
-   *          two characters on the same job differ only by a lightness step.
-   *   slot   The --series ramp: eighteen hues solved for maximum worst-case
-   *          separation under normal, protan and deutan vision. Every character
-   *          is distinct; none of them says anything about the character.
+   * What that costs, said out loud because it looks like a bug: the job palette
+   * is NOT colourblind-separable -- WAR, NIN, RDM and SAM are four reds -- and
+   * two characters on the same job differ only by a lightness step. It is
+   * acceptable only because the meter never identifies anyone by colour alone:
+   * legend, table rows, chips and hover all carry the name and the job in text.
    *
-   * Job is the default because recognition beats separation when the panel
-   * names everyone anyway -- and it does: legend, table rows, chips and hover
-   * all carry the name and the job in text. A character with no job on record
-   * falls through to their slot rather than to a made-up colour, so a trust, a
-   * pet's owner seen only through their pet, or anyone the party table has not
-   * reported yet is still drawn.
+   * The --series ramp survives as the FALLBACK, not as a mode. Four jobs have
+   * no Metrics colour (DNC, SCH, GEO, RUN), and a trust, a pet's owner seen
+   * only through their pet, or anyone the party table has not reported yet has
+   * no job at all. Those get a slot off the ramp rather than a made-up hue.
    */
   function colorOf(name) {
-    if (app.colour === 'job') {
-      var j = app.source.roster.jobOf(name);
-      var base = j && j.main ? FFXITheme.job(j.main) : '';
-      if (base) return FFXITheme.step(base, app.jobVariant[name] || 0);
-    }
+    var j = app.source.roster.jobOf(name);
+    var base = j && j.main ? FFXITheme.job(j.main) : '';
+    if (base) return FFXITheme.step(base, app.jobVariant[name] || 0);
     return FFXITheme.series(slotOf(name));
   }
 
@@ -465,7 +451,7 @@
   // ---- cumulative line chart
 
   function renderLine(events, agg) {
-    // One line per character, each in that character's own slot colour.
+    // One line per character, each in that character's own colour.
     var names = agg.actors.map(function (a) { return a.name; });
 
     var model = S.cumulative(events, names, {});
@@ -719,13 +705,6 @@
   }
 
   segHandler('rangeSeg', 'range');
-  segHandler('colourSeg', 'colour', function () {
-    try { localStorage.setItem(COLOUR_KEY, app.colour); } catch (e) { }
-    // The chips carry a colour swatch each and are only rebuilt when their
-    // signature changes, which a palette swap does not touch. Drop it so the
-    // next render repaints them.
-    app.chipSig = null;
-  });
   segHandler('chainSeg', 'chains', function () {
     try { localStorage.setItem(CHAIN_KEY, app.chains); } catch (e) { }
     // A drill-down into a skillchain row has no events left to show once the
@@ -820,7 +799,6 @@
 
   loadExcluded();
   loadChains();
-  loadColour();
   loadCharRow();
 
   // After the handlers above, not before: wiring a card for pop-out moves the

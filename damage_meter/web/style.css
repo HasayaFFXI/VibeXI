@@ -267,7 +267,8 @@ table.data td.job {
    translucent where it can, and this only fades the document where it cannot --
    see the "opacity" block in popout.js for why one is not the other. */
 .pop-alpha { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-.pop-alpha input[type="range"] {
+.pop-alpha input[type="range"],
+.popcfg input[type="range"] {
   appearance: none;
   -webkit-appearance: none;
   width: 76px;
@@ -277,12 +278,14 @@ table.data td.job {
   accent-color: var(--brass);
   cursor: pointer;
 }
-.pop-alpha input[type="range"]::-webkit-slider-runnable-track {
+.pop-alpha input[type="range"]::-webkit-slider-runnable-track,
+.popcfg input[type="range"]::-webkit-slider-runnable-track {
   height: 3px;
   border-radius: 2px;
   background: var(--axis);
 }
-.pop-alpha input[type="range"]::-webkit-slider-thumb {
+.pop-alpha input[type="range"]::-webkit-slider-thumb,
+.popcfg input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 10px; height: 10px;
   margin-top: -3.5px;
@@ -290,7 +293,8 @@ table.data td.job {
   border-radius: 50%;
   background: var(--brass);
 }
-.pop-alpha input[type="range"]:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+.pop-alpha input[type="range"]:focus-visible,
+.popcfg input[type="range"]:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
 .pop-alpha-val {
   font-family: var(--font-mono);
   font-size: 9.5px;
@@ -302,6 +306,33 @@ table.data td.job {
 .pop-alpha button.ghost.tiny { font-size: 9px; padding: 0 5px; letter-spacing: 0.06em; }
 .pop-alpha button.ghost.tiny[aria-pressed="true"] { color: var(--brass); border-color: var(--brass); }
 .pop-alpha-warn { font-size: 9.5px; color: var(--critical); cursor: help; white-space: nowrap; }
+
+/* ------------------------------------------------- pop-out opacity config */
+
+/* The main page's copy of the slider. Deliberately the same control as the one
+   in a floating window's bar, because the number means the same thing in both
+   places -- the difference is only which windows it speaks for: this one sets
+   what a panel OPENS at, that one sets what one open window is right now. */
+.popcfg { display: flex; align-items: center; gap: 8px; }
+.popcfg-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mist);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.popcfg-val {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--mist);
+  min-width: 30px;      /* "100%" must not shove the theme button around */
+  text-align: right;
+}
+
+/* Narrow: the slider and its readout still say what this is, and the topbar has
+   a brand and a theme toggle to fit as well. */
+@media (max-width: 720px) { .popcfg-label { display: none; } }
 
 /* The punch-out. The background is painted exactly the colour the server hands
    to LWA_COLORKEY, so those pixels are dropped by the window manager and the
