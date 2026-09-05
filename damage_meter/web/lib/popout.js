@@ -52,6 +52,20 @@
   var alphas = readMap(ALPHA_KEY);
   var keys = readMap(KEYBG_KEY);
 
+  /*
+   * What a panel opens at with nothing else to go on. Not 100: these windows
+   * exist to be laid over the game, so opaque is the wrong thing to start from
+   * -- a panel that comes up already see-through says what it is for without
+   * the user having to find the slider first.
+   *
+   * The main page's "Pop-out opacity" config overwrites it and DEFAULT_KEY
+   * remembers that choice; DEFAULT_ALPHA is only the value before anyone has
+   * said otherwise.
+   */
+  var DEFAULT_ALPHA = 85;
+  var DEFAULT_KEY = 'ffxi_dps_alpha_default';
+  var fallbackAlpha = readDefaultAlpha();
+
   function readMap(k) {
     try { return JSON.parse(global.localStorage.getItem(k) || '{}') || {}; }
     catch (e) { return {}; }
@@ -61,6 +75,14 @@
   }
   function saveKeys() {
     try { global.localStorage.setItem(KEYBG_KEY, JSON.stringify(keys)); } catch (e) { }
+  }
+  /* Clamps for itself rather than calling clampAlpha, which is the one place
+     that cannot: clampAlpha's own fallback is the value being read here. */
+  function readDefaultAlpha() {
+    var v;
+    try { v = Math.round(+global.localStorage.getItem(DEFAULT_KEY)); } catch (e) { }
+    if (!isFinite(v) || !v) return DEFAULT_ALPHA;
+    return Math.max(15, Math.min(100, v));
   }
 
   // ------------------------------------------------------------------ lookup
@@ -279,8 +301,35 @@
 
   function clampAlpha(v) {
     v = Math.round(+v);
-    if (!isFinite(v) || !v) return 100;
+    if (!isFinite(v) || !v) return fallbackAlpha;
     return Math.max(15, Math.min(100, v));
+  }
+
+  /*
+   * The main page's config, and the only opacity control reachable without a
+   * window already being open.
+   *
+   * Setting it also drops every panel's own slider value. An override would
+   * otherwise quietly outrank the config -- set once, sessions ago, on a window
+   * that is not on screen to show what it is doing -- and the config would look
+   * broken on exactly the panel the user was watching. One control, one
+   * meaning: this is what the pop-out windows are, and a window's own slider
+   * adjusts that one window from there on.
+   */
+  function setDefaultAlpha(v) {
+    fallbackAlpha = clampAlpha(v);
+    try { global.localStorage.setItem(DEFAULT_KEY, String(fallbackAlpha)); } catch (e) { }
+
+    alphas = {};
+    saveAlphas();
+
+    each(function (p) {
+      p.alpha = fallbackAlpha;
+      if (p.alphaSlider) p.alphaSlider.value = String(p.alpha);
+      if (p.alphaOut) p.alphaOut.textContent = p.alpha + '%';
+      if (p.win && !p.win.closed) applyAlpha(p);
+    });
+    return fallbackAlpha;
   }
 
   function alphaControl(p, d) {
@@ -666,8 +715,28 @@
       panels[key] = build(key, card, String(title).trim());
     });
 
+    bindConfig();
     global.addEventListener('pagehide', closeAll);
     return panels;
+  }
+
+  /*
+   * The opacity config in the page's top bar. Optional: this module is wired by
+   * scanning for [data-popout] cards, and a page that carries those but not the
+   * control still runs off the stored default.
+   */
+  function bindConfig() {
+    var sl = doc.getElementById('popAlpha');
+    var out = doc.getElementById('popAlphaVal');
+    if (!sl) return;
+
+    sl.value = String(fallbackAlpha);
+    if (out) out.textContent = fallbackAlpha + '%';
+
+    sl.addEventListener('input', function () {
+      var v = setDefaultAlpha(sl.value);
+      if (out) out.textContent = v + '%';
+    });
   }
 
   /* The child windows carry their own <html data-theme>, so the toggle has to
@@ -699,6 +768,11 @@
       if (p.alphaOut) { p.alphaOut.textContent = p.alpha + '%'; }
       applyAlpha(p);
       return p.alpha;
+    },
+    /* Read or set what a panel opens at (15..100) -- what the page's config
+       drives. Setting it resets every panel to it; see setDefaultAlpha. */
+    defaultAlpha: function (v) {
+      return v == null ? fallbackAlpha : setDefaultAlpha(v);
     },
     closeAll: closeAll,
     supportsFocus: PIP,

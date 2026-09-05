@@ -22,6 +22,16 @@
     </div>
   </div>
   <div class="topbar-actions">
+    <!-- The default every pop-out panel opens at. Each floating window keeps
+         its own slider for adjusting itself; this is the one that can be set
+         with no window open, and setting it resets them all to it. -->
+    <div class="popcfg">
+      <label class="popcfg-label" for="popAlpha">Pop-out opacity</label>
+      <input type="range" id="popAlpha" min="15" max="100" step="1" value="85"
+             aria-label="Pop-out opacity"
+             title="Opacity a pop-out panel opens at. Changing it resets every panel to this value; a floating window's own slider still adjusts that one window.">
+      <span class="popcfg-val" id="popAlphaVal">85%</span>
+    </div>
     <button type="button" class="ghost" id="themeBtn" title="Toggle light / dark">Light</button>
   </div>
 </header>
@@ -40,16 +50,6 @@
       <button type="button" role="radio" data-range="300" aria-checked="false">5m</button>
       <button type="button" role="radio" data-range="900" aria-checked="false">15m</button>
       <button type="button" role="radio" data-range="3600" aria-checked="false">60m</button>
-    </div>
-  </div>
-
-  <div class="filter">
-    <span class="filter-label">Colour</span>
-    <div class="segmented" id="colourSeg" role="radiogroup" aria-label="Character colour">
-      <button type="button" role="radio" data-colour="job" aria-checked="true" class="on"
-              title="Paint every character in their job&rsquo;s colour, the same mapping Metrics uses">Job</button>
-      <button type="button" role="radio" data-colour="slot" aria-checked="false"
-              title="Paint every character a colour of their own, from the 18-slot palette">Character</button>
     </div>
   </div>
 

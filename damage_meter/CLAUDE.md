@@ -420,6 +420,21 @@ Only the OS can do it, so `GET /api/alpha` does, with two effects:
 | `LWA_ALPHA` | whole window translucent, chrome and background included | the slider, 15–100% |
 | `LWA_COLORKEY` | pixels of exactly `#010203` dropped entirely | the **BG** button, on by default |
 
+**A panel opens at 85%, and the page's top bar sets that number.** Opaque is the
+wrong thing for a window whose whole job is to be laid over the game: at 100% it
+has to be discovered that the slider exists at all, and the slider is inside the
+window, which is the one place a user who has not opened one yet cannot look.
+The **Pop-out opacity** config (`#popAlpha`, wired by `bindConfig()` in
+`popout.js`, not by `app.js`) is that control, and `DEFAULT_ALPHA = 85` is only
+what it reads before anyone has moved it.
+
+Setting it **clears every panel's own slider value** (`alphas = {}`). That is the
+part to leave alone: a per-panel override would otherwise outrank the config
+silently — set once, sessions ago, on a window that is not on screen to show what
+it is doing — and the config would look broken on exactly the panel being watched.
+One control, one meaning; a window's own slider then adjusts that window from
+there on, and lasts until the config is next touched.
+
 The punch-out is the one that answers "I want to see the game, not a dimmer
 panel": `.key-bg .pop-doc` paints the background that exact colour, the window
 manager drops those pixels, and since `chart.js` draws on a *cleared* canvas what
@@ -453,9 +468,14 @@ Things that will bite:
 - **Never paint `#010203` unless the server confirmed the key.** `osAlpha()`
   toggles `key-bg` off on failure; left on without the punch-out it is simply a
   near-black window.
-- State lives in `ffxi_dps_alpha` (`key -> 15..100`) and `ffxi_dps_keybg`
-  (`key -> bool`); `DPS.popout.alpha(key[, v])` is the console handle, and the
-  response carries `method` and `window` so a wrong match is diagnosable.
+- State lives in `ffxi_dps_alpha` (`key -> 15..100`), `ffxi_dps_keybg`
+  (`key -> bool`) and `ffxi_dps_alpha_default` (one number, what the page config
+  is set to); `DPS.popout.alpha(key[, v])` and `DPS.popout.defaultAlpha([v])` are
+  the console handles, and the response carries `method` and `window` so a wrong
+  match is diagnosable.
+- **`clampAlpha`'s fallback is the configured default, not 100**, so “no value
+  of its own” means “whatever the page says” everywhere at once. The one place
+  that cannot use it is `readDefaultAlpha`, which is reading that fallback.
 - **Verified: the server end applies and reads back** (`alpha`, `flags=2`,
   ex-style gains `0x80000`) against a real Chrome window, and every client branch
   is verified against a stubbed endpoint. **Not verified: how Chrome composites a
@@ -518,32 +538,38 @@ histogram column's width is the bin interval — it is data, not a mark style �
 it fills its slot less the 2px gap. Capping it makes a distribution read as a
 sparse categorical chart.
 
-### Two palettes, and the switch between them
+### Job colour, always — and the ramp underneath it
 
-`colorOf(name)` answers with one of two families, chosen by the **Colour**
-control in the filter bar and remembered across reloads.
+`colorOf(name)` paints **every character in their job's colour**. There is no
+alternative palette and no control to pick one: the Colour segmented control
+that used to sit in the filter bar is gone, and so is `ffxi_dps_colour`. One
+mapping means a hue means the same thing in every screenshot, every session and
+every panel. **Do not reintroduce the toggle** — its removal was asked for
+explicitly, not lost in a refactor.
 
-**Job (the default)** — Metrics' own job colours, `--job-war` … `--job-pup` in
-the shared sheet, read through `FFXITheme.job(abbrev)`. They are in the design
-system because the party already reads them at a glance in game: the warrior is
-red, the samurai orange. Agreeing with the parser sitting next to it is worth
-more here than inventing a second mapping for the same six people.
+Metrics' own job colours, `--job-war` … `--job-pup` in the shared sheet, read
+through `FFXITheme.job(abbrev)`. They are in the design system because the party
+already reads them at a glance in game: the warrior is red, the samurai orange.
+Agreeing with the parser sitting next to it is worth more here than inventing a
+second mapping for the same six people.
 
 What that costs is said out loud in the stylesheet and repeated here because it
 is the kind of thing that gets "fixed" later by someone who did not know: **the
 job palette is not colourblind-separable.** WAR, NIN, RDM and SAM are four reds.
 That is acceptable *only* because the meter never identifies a character by
 colour alone — every panel that paints one also prints the name and the job as
-text — and because the solved ramp is one click away.
+text.
 
-Three edges it has and the ramp does not:
+Three edges, the third of which is why the series ramp still exists:
 
 - **Two characters can share a job.** `assignJobVariants` numbers them and
   `FFXITheme.step(color, k)` turns the number into a lightness move — away from
   the page first (lighter in dark mode, darker in light), so a variant is never
   the harder one to see. Ordered by **colour slot**, not by damage or table
   position, so the same warrior keeps the same shade all session; ordering it by
-  anything the user can reorder would swap shades under them.
+  anything the user can reorder would swap shades under them. Slots are still
+  assigned for every counted character even though most never spend theirs on a
+  hue — this ordering, and the fallback below, are what they are for.
 - **Four jobs have no colour.** Metrics leaves DNC, SCH, GEO and RUN at 0,0,0 —
   unfinished, not black on purpose — so they have no token, and neither does
   `NON`. `FFXITheme.job()` returns `''` for those *deliberately*: the caller has
@@ -563,19 +589,27 @@ beside them stays in `--mist` / `--faint`, exactly as character names stay in in
 next to their series swatch, and for the same reason: neither palette is graded
 for body text.
 
-### Character: eighteen slots, one per character
+### The fallback: eighteen slots, one per character
+
+`FFXITheme.series(slotOf(name))` is what a character gets when the job palette
+has nothing for them. It is no longer reachable as a mode, but it is not dead
+code and must not be deleted: an alliance of six with a SCH, a GEO and two
+trusts is an ordinary party, and every one of those falls here.
 
 **Every character gets their own colour — there is no muted tail and no "Other"
 line.** An alliance is 18 characters, so the palette is 18 slots
-(`FFXITheme.SLOTS`), and this mode is a straight
-`FFXITheme.series(slotOf(name))`.
+(`FFXITheme.SLOTS`).
 
-This is knowingly past where colour alone works, and the `dataviz` skill's own
+That is knowingly past where colour alone works, and the `dataviz` skill's own
 rule is that a 9th series folds into "Other" rather than getting a hue. What
 makes it defensible here is that **the meter never identifies a character by
 colour alone**: the legend names all of them, the line table gives each a
 column, the bars chart and the actions table are labelled rows, and hover names
 the series. Colour is the cross-panel *link* between those, not the label.
+
+The ramp is still sized and solved for all 18 rather than for the handful that
+now reach it, because which characters fall through is a property of the party,
+not of the app — a full alliance of trusts would use every slot.
 
 Slots 9–18 were solved, not picked — a max-min search over OKLCH maximising the
 worst OKLab ΔE across normal, protan and deutan vision, per mode, against its
@@ -739,9 +773,10 @@ it. What is left:
   closing the page loses them, and reopening replays the current file from the
   top. That replay is the persistence: the addon's file survives an FFXI crash,
   which is why it is written under `%LOCALAPPDATA%` rather than `%TEMP%`. Only
-  the theme, the character exclusion list, the skillchain toggle and whether the
-  character row is collapsed are stored (`ffxi_dps_theme`, `ffxi_dps_excluded`,
-  `ffxi_dps_chains`, `ffxi_dps_charrow` in localStorage).
+  the theme, the character exclusion list, the skillchain toggle, whether the
+  character row is collapsed and the pop-out opacity settings are stored
+  (`ffxi_dps_theme`, `ffxi_dps_excluded`, `ffxi_dps_chains`, `ffxi_dps_charrow`,
+  `ffxi_dps_alpha`, `ffxi_dps_keybg`, `ffxi_dps_alpha_default` in localStorage).
 - The exclusion list is keyed by bare name, so it is shared across event files.
   That is intentional: a character you never want counted stays excluded.
 - Reaction ATTEMPTS are not recorded — 535 RetaliateShadowAbsorbs, 592

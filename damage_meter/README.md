@@ -69,16 +69,6 @@ either the addon is not loaded, or nothing has happened in game since it was.
 - **Range** — `All`, `Latest fight` (everything since the last gap of 90 s or
   more with no combat), or a rolling 5 / 15 / 60 minutes measured back from the
   newest event.
-- **Colour** — what a character's colour on the charts *means*. `Job` paints
-  everyone in their job's colour, the same mapping Metrics uses, so the meter
-  agrees with the parser next to it and the tank is the colour you already
-  expect. `Character` gives everyone a colour of their own from an
-  eighteen-slot palette picked for maximum separation, including under
-  colourblindness — worth switching to if two people are on the same job, or if
-  the job colours are hard for you to tell apart, since several of them are
-  shades of red. Either way every panel prints the name and the job in text
-  next to the colour, so nothing depends on reading the hue. Remembered across
-  reloads.
 - **Skillchains** — `On` credits skillchain damage to whoever closed the chain;
   `Off` leaves it out of every total, chart and table. Off is the setting to use
   when you want to compare raw weaponskill and melee output, since a chain's
@@ -96,6 +86,16 @@ either the addon is not loaded, or nothing has happened in game since it was.
 
 Select any row in **Actions** to open its drill-down; select it again, or use
 Close, to dismiss it.
+
+**Everyone is painted in their job's colour** — the same mapping Metrics uses,
+so the meter agrees with the parser next to it and the tank is the colour you
+already expect. Two people on the same job get the same hue at different
+lightnesses. Several jobs are shades of red, so the job palette is not one you
+can read under colourblindness — but nothing here depends on the hue: every
+panel prints the name and the job in text beside the colour. Anyone with no job
+colour on record — a trust, a pet's owner seen only through the pet, DNC, SCH,
+GEO or RUN, which Metrics never finished — gets a distinct colour of their own
+instead.
 
 ### Keep in focus
 
@@ -134,6 +134,11 @@ Each floating window's bar carries two controls:
   bar, not by the empty space inside it.
 
 Both are per-panel and remembered.
+
+**Panels open at 85% opacity**, and **Pop-out opacity** in the top bar of the
+main page changes that — it is the one opacity control you can reach without a
+window already open. Moving it sets every panel back to it; a window's own
+slider then adjusts that one window, until you touch the main-page control again.
 
 A web page cannot make its own window see-through — CSS opacity fades the
 contents against the *browser*, not onto your desktop. So the meter's own server
