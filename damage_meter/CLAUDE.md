@@ -283,9 +283,11 @@ Consequences worth knowing:
   breakdown still separates pet from master — both swing an "Attack", and one
   average over the two would describe neither. It copies rather than mutates, so
   `app.source.events` stays true to the file for Diagnostics and the roster.
-- **`windowOf` still resolves `Latest fight` over the unfiltered event list.** A
-  fight's boundaries are a property of the combat, not of the display filter, and
-  a pull where the monsters got the last word still ended when they did.
+- **The monsters' events still bound nothing.** `windowOf` used to resolve
+  `Latest fight` over the unfiltered list, on the grounds that a pull where the
+  monsters got the last word still ended when they did. There is no automatic
+  window any more -- the user says when the pull started -- so the only thing
+  the monsters' rows are still read for is the Diagnostics roster.
 
 ## Gotchas
 
@@ -420,6 +422,10 @@ Only the OS can do it, so `GET /api/alpha` does, with two effects:
 | `LWA_ALPHA` | whole window translucent, chrome and background included | the slider, 15–100% |
 | `LWA_COLORKEY` | pixels of exactly `#010203` dropped entirely | always on; `DPS.popout.keyBg(key, false)` |
 
+**The bar carries Start and Pause**, at full opacity while the rest of it fades;
+see "The controls are in every pop-out window too" above for why they are there
+and how they stay in step with the page.
+
 **A panel opens at 85%, and the page's top bar sets that number.** Opaque is the
 wrong thing for a window whose whole job is to be laid over the game: at 100% it has to be discovered that the slider exists at all, and the
 slider is inside the window, which is the one place a user who has not opened one
@@ -504,23 +510,250 @@ move *is* exercisable there by standing an iframe in for both constructors; see
 recipe 2 in the validation section, and read its two warnings before assuming a
 silent no-op means the code is broken.
 
-## Reset semantics
+## The session clock
 
-`resetMeter` drops the events and **keeps the read offset** — it is "clear the
-meter between pulls", not a re-read; a page reload is what replays the file from
-the top, and that is documented in the README rather than given its own button.
+**Every number in this app is measured from the session's zero, and there is no
+other clock.** `app.session` is `{ armedAt, startedAt, spans, pausedAt }` and
+the whole model is a handful of functions in `stats.js` over those four fields:
+`sessionAt` (wall clock -> ms since zero, or `null` for an instant the session
+does not cover), `sessionElapsed` (the clock right now), `sessionRunning` and
+`sessionArmed`.
 
-What survives a reset, and why:
+**The Start press is not the zero.** Start only *arms* the session; the clock
+starts on the first event that would actually be counted, and **that event's own
+timestamp becomes the zero**. Pressing early therefore costs nothing, which is
+the entire point — a stopwatch you must press on the frame of the first swing is
+one that is always a second or two wrong, and every DPS figure in the app is
+divided by that error. Three states, each real:
+
+| `armedAt` | `startedAt` | |
+|---|---|---|
+| null | null | idle. Nothing counted, nothing drawn. |
+| set | null | **armed**. Still nothing counted — there is no zero to measure from — but the next counted event will set one. |
+| set | set | running, or paused. |
+
+`at()` and `elapsed()` key on `startedAt` alone, so an armed session behaves
+exactly like an idle one until it latches. That is what keeps arming out of
+every panel: one extra field and no new branch downstream.
+
+The wire clock is still wall-clock seconds, because that is what the addon can
+cheaply know. **It is converted exactly once, in `stats.filter`**, in the same
+place and the same style `credit` re-actors a pet: events outside the session
+are dropped, survivors are *copied* with `t` rewritten to elapsed milliseconds
+and the original kept as `wall`. Downstream of that one call there is no wall
+clock left — `aggregate`, `cumulative`, `distribution`, every table and the
+chart axis all see a timeline that starts at zero.
+
+Consequences worth knowing:
+
+- **`startedAt: null` is a real state and it draws nothing** — whether idle or
+  armed. The meter reads the file, fills the Diagnostics roster and counts not
+  one point of damage. `filter` short-circuits to `[]` when there is no zero, so
+  this is one branch rather than a special case in every panel.
+- **`counted()` is the single predicate, and it has to be.** Every non-time drop
+  rule — combat, the skillchain switch, the monster filter, `credit`, the actor
+  exclusions — lives there, and both `filter` and `firstCounted` go through it.
+  Two copies would let the meter start its clock on an event it then refuses to
+  draw, which is a zero nothing on screen can account for.
+- **What starts the clock is exactly what would be counted.** A monster's swing
+  does not, nor an unresolved `Unknown` actor's, nor a skillchain with chains
+  switched off, nor an excluded character's attack. The consequence: with every
+  character excluded nothing qualifies and the clock never starts. That is
+  consistent — the meter would draw nothing anyway — but it is the one way
+  arming can look stuck, which is why the armed state is loud (a pulsing ring on
+  the status dot, an outlined button, and a line in every empty chart).
+- **A MISS starts the clock, like any other swing.** Waiting for damage to land
+  would put every miss before it outside the session and silently drop them from
+  the accuracy figure — exactly the number a run of whiffs at the start of a
+  pull ought to be moving.
+- **`armedAt` is floored to the second.** The wire clock is `os.time()`, so a
+  swing 300 ms before the press and one 300 ms after carry the *same* `t` and
+  cannot be told apart. Rounding down counts that second rather than discarding
+  it: catching the first swing matters more than excluding one that beat the
+  button by a moment, and the alternative drops it from accuracy too.
+- **The latch is sticky.** `sessionStart` sets `startedAt` once and never moves
+  it. A later filter change cannot re-date a running session and re-scale every
+  number in it.
+- **A filter change CAN latch an armed session**, and should. `latchStart` runs
+  at the top of `render()`, which a filter change also calls, so flipping a name
+  back to `player` in Diagnostics — or switching skillchains on — can make an
+  already-read event the first counted one, and it then becomes the zero. It is
+  the first thing being counted, so it is the right zero.
+- **The second button is Pause OR Cancel, never both.** While armed there is no
+  clock to hold but there is an arming to call off; once the clock runs there is
+  no arming left to cancel. One slot, one meaning at a time, dispatched by
+  `secondary()`. Arming is a statement about a pull that has not happened yet,
+  and a statement made early can turn out to be wrong — the puller pulls
+  something else, the party resets, someone drops. Without Cancel the only way
+  out of an armed meter was to let it catch a hit and throw that session away:
+  "measure the thing you did not want to measure, then discard it".
+- **Cancel is only reachable while armed**, and deliberately. A session with
+  damage in it is ended by Start, not by Cancel — "cancel" would then mean
+  discarding a measurement, which is a different and far more destructive act
+  than calling one off before it began.
+- **Cancelling is exactly the idle transition a new event file makes**, and
+  nothing more. The events read while armed are NOT dropped: an idle session
+  counts nothing, so they are invisible either way, and the next Start clears
+  them with everything else. Colour slots are kept for the same reason they
+  survive a Start — a character changing hue because somebody called off a
+  countdown is worse than a stale entry.
+- **`aria-pressed` comes off the button when it is Cancel.** Pause and Resume
+  are two faces of a toggle; Cancel is a plain action, and announcing a
+  two-state control that is not there is worse than announcing nothing. The
+  attribute is removed rather than reported false (`pauseToggle` in the view).
+- **Pause stops the damage and the clock together, and it has to.** Freeze one
+  without the other and the meter lies: a running clock over a frozen numerator
+  reads as a wipe, a frozen clock over a running numerator reads as a parse.
+- **A pause is subtracted, not skipped over.** Two swings either side of a three
+  minute pause come out three minutes closer together than their timestamps are.
+  That is what keeps the axis and the DPS denominator describing the same span
+  — a gap on the chart that no denominator accounted for would be unreadable.
+- **Polling does not stop while paused.** The addon keeps writing whatever this
+  page does, so stopping the reader only moves the same bytes into a burst on
+  resume. Events during a pause are read, kept for Diagnostics, and dropped in
+  the view by their own timestamps — the same shape as the monster filter.
+  Because the drop is by timestamp and not by arrival, poll latency cannot let
+  an event sneak past the boundary it landed on the wrong side of.
+- **One denominator, everywhere.** `aggregate(events, {duration})` divides every
+  DPS by the session clock — the party's and each character's alike — so the
+  character column sums to the party figure. Each actor's own first-to-last span
+  is still measured and still returned, as `window`; it is simply no longer what
+  anything is divided by. Without `opts.duration` the old per-actor behaviour is
+  what you get, which is what keeps `aggregate` usable on a bare event list.
+- **DPS decays on its own, so two things tick.** The numerator holds and the
+  denominator grows, which `render()` cannot express — it runs only when a poll
+  brings new data, and an idle poll deliberately skips it to keep scroll
+  position and text selection. `tickClock` rewrites the elapsed line, the party
+  DPS and every `[data-dps]` cell in the character table, as text, four times a
+  second. **The party tile and the character cells must move together or not at
+  all**: a tile decaying past a frozen column is two correct numbers at two
+  different instants, and it reads as a bug. That is also why the bars chart's
+  hover card no longer carries a DPS row — it is built once per render and
+  cannot be ticked, and the same character's live cell is in the same card a few
+  pixels below.
+- **The chart's left edge is pinned to zero** (`cumulative`'s `opts.from`), not
+  to the first event. A pull whose first swing landed twenty seconds in would
+  otherwise draw an axis twenty seconds shorter than the span DPS is divided by.
+- **There is no idle cutoff on the live edge.** It used to stop advancing after
+  90 s of silence, and `FIGHT_GAP_MS` is gone with it. Under a session clock a
+  flat line out to the present is the most informative thing on screen: it is a
+  falling DPS, drawn.
+- **`liveEdge` is the clock whenever a session has STARTED, paused included**,
+  and null only before Start. Making paused an exception was a bug: returning
+  null ends `cumulative`'s grid at the newest EVENT, so pressing Pause snapped
+  the chart back to the last swing and discarded the quiet stretch between that
+  swing and the button — while `sessionElapsed`, frozen at the press, went on
+  counting exactly that stretch into the DPS denominator. The axis and the
+  number beside it were describing different windows, which is the one thing
+  this chart may never do. `sessionElapsed` is already frozen while paused, so
+  handing it over unconditionally holds the edge still at the press.
+- **The two silences either side of a pause are both real elapsed time**, and
+  both are drawn: last-event-to-Pause, and Resume-to-next-event. Only the pause
+  span itself is spliced out. The one place the meter waits for an event before
+  its clock moves is the very first arming — after that the clock runs on wall
+  time whether anything is happening or not, because that is what DPS is divided
+  by. `tickLine`'s `paused()` guard is what stops the frozen edge from being
+  animated forward while held.
+- **A new event file resets the session to idle**, armed or not. A clock still
+  running from the previous character or the previous day is measuring a session
+  that is not this one.
+
+### The two controls, and where they live
+
+Start and Pause (Cancel, while armed) are the only controls in this app that
+change what is being *measured*; everything else on the filter bar changes what
+is being *shown*. So they are the only ones that are larger than default and the
+only ones that carry a fill — `.segmented.session` in `web/style.css`, sized 13px/8x20 against the
+filters' 12px/5x12.
+
+**Two colours, one meaning each, and the status dot uses the same pair: green is
+counting, brass is not.** Start is green while it is the thing to press, turns
+brass the moment it is armed and waiting, and steps back to a `--blade` outline
+once a session is running — "Restart" is a re-do, not the main action, and
+filling it would put two loud buttons side by side with the destructive one the
+louder. Pause is brass whenever it is holding the clock. Cancel takes the same
+blade outline Restart wears, because both are the step-back beside a filled
+button and one shape for "undo" is easier to learn than two; it is never filled,
+since a cancel that shouts as loudly as Start is a cancel that gets pressed. A user who has learnt
+the dot has learnt the buttons; that is why `.dot.armed` was moved off green.
+
+`--on-good` and `--on-brass` were added to the shared sheet for this, mirroring
+`--on-blade`: a fill needs a text colour graded against it, and both accents
+invert between the tiers (bright on dark, dark on light).
+
+Three traps, all of which bit:
+
+- **`.segmented.session button` must not set `color`.** It outweighs both
+  `.segmented button:disabled` and every `.session-*.is-*` state rule, so a
+  colour there silently wins them all — it put bone text on the brass fill and
+  cancelled the disabled greying at the same time. That rule may own size and
+  weight; colour belongs to the states.
+- **No `transition` on background or colour.** A pop-out's pair is created bare
+  and dressed a tick later, so a transition opens every new window with a flash
+  of unstyled button. None of the other segmented controls animate their fill
+  either.
+- **A hidden tab freezes transitions**, so while one was in place the buttons
+  read as their *pre*-transition value forever from `getComputedStyle` — which
+  looks exactly like a rule that is not applying. Screenshot before believing a
+  colour measured from the Browser pane.
+
+### The controls are in every pop-out window too
+
+A panel is floated over the game so a pull can be run without leaving it, and
+reaching back to the page to press Start is the one thing that cannot be done
+from there. A meter you have to alt-tab to start is a meter that gets started
+late — and late is an error divided into every DPS figure it then reports. So
+`dress()` builds the same pair into every floating bar.
+
+- **app.js owns the copy, popout.js owns the nodes.** `sessionView()` returns the
+  labels, titles and state class as plain data; `paintSession(view, start, pause)`
+  writes them onto a pair. `DPS.popout.session(view)` pushes that to every open
+  window, exactly as `DPS.popout.theme(name)` pushes a theme. popout.js is loaded
+  first and knows nothing about sessions — it is handed finished text and applies
+  it. The alternative is two copies of this copy, drifting apart, in two windows
+  side by side on one screen.
+- **The view is remembered, not just forwarded.** A window opened later missed
+  every push that came before it existed, so `sessionControl` paints from the
+  stored view at birth.
+- **`paint` overwrites `className` outright**, so nothing may be hung on the
+  buttons themselves. The floating bar's compact sizing is selected through the
+  `.pop-session` wrapper instead.
+- **The bar's fade moved from the bar to its children.** Opacity on a parent
+  cannot be undone by a child, and the session group is the one thing there that
+  must stay readable and hittable without hunting for it: a Start button at 45%
+  over a battle scene is not a Start button. `.pop-bar > *:not(.pop-session)`
+  carries the fade now; the group never does.
+- **The controls survive the module being used without them.** `sessionControl`
+  returns null when `init` was given no `session`, so a page with poppable cards
+  and no session still works — and still tests.
+
+### Start is also the reset
+
+There is no separate Reset button; pressing Start during a session is how the
+next pull gets measured — it re-arms, and the next counted hit is the new zero. It drops the events collected so far and **keeps the
+read offset** — not a re-read; a page reload is still what replays the file
+from the top, and that is documented in the README. Dropping them buys nothing
+on screen, since the session window would have hidden them anyway; what it buys
+is that the poll path stays O(events since Start) rather than growing all
+session.
+
+What survives, and why:
 
 | Kept | Reason |
 |---|---|
 | `app.slots` / `app.seen` | a character changing hue mid-session is worse than a stale entry |
 | the whole roster (`kinds`, `manual`) | monsters must stay monsters across the reset |
-| every filter (`range`, `chains`, `actorsOff`) | user intent, not collected data |
+| `chains`, `actorsOff` | user intent, not collected data |
 
 `app.scanned` **must** be rewound to 0 alongside `source.reset()`. It is a cursor
 into the event list; leaving it past the now-empty list makes `scanActors` skip
 every name until the list grows back past the old length.
+
+**The session is not persisted.** Nothing in `localStorage` holds it and a reload
+returns the meter to "not started" — a clock restored from a previous page load
+would be measuring wall-clock time the user was not in a fight for. An armed
+session is not restored either, for the same reason: arming is a statement about
+the pull that is about to happen.
 
 ## Charts
 
@@ -682,7 +915,8 @@ reproducible — carrying every case worth regression-testing: multi-attack roun
 AoE nukes sharing one `use`, skillchains across both of Metrics' id ranges, additional
 effects, a pet with an owner, an NPC, an article-less NM, an unresolved
 `Unknown` target, monster damage on the party, both kinds of meta line, and gaps
-between fights so `Latest fight` has something to find. Its docstring says what
+between fights, which is what a Start pressed part-way through a session has
+to land in the middle of. Its docstring says what
 each case catches; read that before changing it.
 
 The job lines carry four of their own: a member who **never acts** (Sylviane,
@@ -813,7 +1047,8 @@ it. What is left:
   which is why it is written under `%LOCALAPPDATA%` rather than `%TEMP%`. Only
   the theme, the character exclusion list, the skillchain toggle, whether the
   character row is collapsed, whether the names are hidden and the pop-out
-  opacity settings are stored (`ffxi_dps_theme`, `ffxi_dps_excluded`,
+  opacity settings are stored — the session clock deliberately is not, so a
+  reload returns the meter to "not started" — (`ffxi_dps_theme`, `ffxi_dps_excluded`,
   `ffxi_dps_chains`, `ffxi_dps_charrow`, `ffxi_dps_anon`, `ffxi_dps_alpha`,
   `ffxi_dps_keybg`, `ffxi_dps_alpha_default` in localStorage).
 - The exclusion list is keyed by bare name, so it is shared across event files.
@@ -830,8 +1065,6 @@ it. What is left:
 - MP drain, cures, enfeebles and TP are not parsed; this is a damage meter. Every
   event carries its raw `msg`, so adding them is an enums change, not a format
   change.
-- A character with a single event has a zero-length active window, so their DPS
-  shows as 0.
 - Absorbed and "no effect" outcomes are treated as misses. Skillchains are the
   exception and deliberately so: Metrics has no absorbed-chain concept — it maps
   385/386 to Light and Darkness like any other id — so every chain that fires is

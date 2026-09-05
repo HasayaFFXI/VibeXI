@@ -40,6 +40,20 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
 .dot.stale { background: var(--brass); }
 .dot.err   { background: var(--critical); }
 
+/* Armed: ready, but not yet measuring. A ring rather than a fill, because it is
+   the one state that is waiting for something -- solid would read as running.
+   BRASS, not green, and the same brass the armed Start button takes: across
+   this app green means the clock is counting and brass means it is not, and the
+   dot is where that pairing is learnt. The pulse carries "still waiting"
+   without a word of text; it stops the moment the first hit lands. */
+.dot.armed {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--brass);
+  animation: dot-armed 1.6s ease-in-out infinite;
+}
+@keyframes dot-armed { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .dot.armed { animation: none; } }
+
 /* ---------------------------------------------------------------- filterbar */
 
 /* The filter bar above everything it scopes; every card re-renders off it.
@@ -60,7 +74,94 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
 }
 .filter-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
 .filter { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.filter.push { margin-left: auto; }   /* Pause / Reset ride the right edge */
+
+/* ------------------------------------------------------- session controls */
+
+/* Start and Pause. These are the two controls the meter is actually operated
+   with -- everything else on this bar adjusts a view -- so they are bigger than
+   their neighbours and they are the only ones that carry a fill.
+   Keyed on CLASSES, not ids: lib/popout.js builds the same pair into every
+   floating window's bar, and one rule set has to dress both. */
+
+.segmented.session { border-color: var(--blade-dim); }
+/* NO `color` HERE, deliberately. `.segmented.session button` outweighs both
+   `.segmented button:disabled` and every `.session-* .is-*` state rule below,
+   so a colour set on this rule silently wins them all -- which it did: it put
+   bone text on the brass fill and cancelled the disabled greying. Size and
+   weight are all this rule may own; colour is the states' to say. */
+.segmented.session button {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  letter-spacing: 0.01em;
+}
+/* NO transition on background or colour. A pop-out's pair is created bare and
+   dressed a tick later by `paintPanel`, so a transition makes every new window
+   open with a 120 ms flash of unstyled button; and none of the other segmented
+   controls animate their fill either, so this is also the consistent choice.
+   (It is what made the state look stuck under test, too: a hidden tab freezes
+   transitions, so the buttons read as their pre-transition value forever.) */
+
+/* TWO COLOURS, ONE MEANING EACH, and the status dot uses the same pair:
+   green is counting, brass is not. So Start is green while it is the thing to
+   press, turns brass the moment it is armed and waiting, and Pause is brass
+   whenever it is holding the clock. A user who learns the dot has learnt the
+   buttons. */
+
+/* Idle: the one thing to do on this screen. */
+.session-start.is-idle {
+  background: var(--good);
+  color: var(--on-good);
+}
+.session-start.is-idle:hover { background: var(--good); filter: brightness(1.12); }
+
+/* Armed: waiting for the first hit. Brass, and pulsing, because the state is
+   "something has not happened yet" -- a still button cannot say that. */
+.session-start.is-armed {
+  background: var(--brass);
+  color: var(--on-brass);
+  animation: session-wait 1.6s ease-in-out infinite;
+}
+.session-start.is-armed:hover { background: var(--brass); filter: brightness(1.1); }
+@keyframes session-wait { 50% { opacity: 0.62; } }
+
+/* Running: "Restart" is a re-do, not the main action, so it steps back to an
+   outline. Filling it would put two loud buttons side by side and make the
+   destructive one the louder. */
+.session-start.is-running {
+  box-shadow: inset 0 0 0 1px var(--blade-dim);
+  color: var(--blade);
+}
+.session-start.is-running:hover { background: var(--blade-fill); color: var(--blade-hot); }
+
+/* Pause, available. Outlined: it is armed to act but nothing is held yet. */
+.session-pause.is-live {
+  box-shadow: inset 0 0 0 1px var(--brass-dim);
+  color: var(--brass);
+}
+.session-pause.is-live:hover { background: var(--brass-dim); color: var(--on-brass); }
+
+/* Calling off an arming. The same blade outline "Restart" wears while a session
+   runs, and for the same reason: both are the step-back next to a filled button,
+   and one shape for "undo" is easier to learn than two. Never filled -- a
+   cancel that shouts as loudly as Start is a cancel that gets pressed. */
+.session-pause.is-cancel {
+  box-shadow: inset 0 0 0 1px var(--blade-dim);
+  color: var(--blade);
+}
+.session-pause.is-cancel:hover { background: var(--blade-fill); color: var(--blade-hot); }
+
+/* Holding. Filled, exactly as the skillchain toggle fills its chosen side --
+   this is a state, and the fill is what says the clock is stopped. */
+.session-pause.is-held {
+  background: var(--brass);
+  color: var(--on-brass);
+}
+.session-pause.is-held:hover { background: var(--brass); filter: brightness(1.1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .session-start.is-armed { animation: none; }
+}
 .filter-label {
   font-size: 10.5px;
   text-transform: uppercase;
@@ -230,10 +331,20 @@ table.data td.job {
   position: sticky;
   top: 0;
   z-index: 20;
-  /* Out of the way until wanted: the bar is chrome, the panel is the point. */
+}
+
+/* Out of the way until wanted: the bar is chrome, the panel is the point.
+   The fade is on the CHILDREN and not on the bar, because opacity on a parent
+   cannot be undone by a child -- and the session group is the one thing here
+   that must stay readable and hittable without hunting for it first. A panel is
+   floated over the game precisely so the pull can be started without leaving
+   it, and a Start button at 45% over a battle scene is not a Start button. */
+.pop-bar > *:not(.pop-session) {
   opacity: 0.45;
   transition: opacity 0.12s linear;
 }
+.pop-doc:hover .pop-bar > *,
+.pop-bar:focus-within > * { opacity: 1; }
 .pop-doc:hover .pop-bar,
 .pop-bar:focus-within { opacity: 1; }
 
@@ -251,6 +362,14 @@ table.data td.job {
 }
 .pop-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .pop-bar button.ghost.tiny { font-size: 10px; padding: 1px 7px; }
+
+/* The same two buttons as the page, sized for a 20px overlay bar. Still the
+   largest thing on it, and still the only coloured one. */
+.pop-session { flex: none; margin: 0 6px; }
+.pop-bar .segmented.session button { font-size: 11px; padding: 3px 13px; }
+/* The title yields first: the buttons are a fixed hit target and must not move
+   or shrink as the panel's name gets longer. */
+.pop-bar .pop-title { flex: 1 1 auto; min-width: 0; }
 
 /* ------------------------------------------------------------ opacity slider */
 

@@ -55,7 +55,10 @@ Three families of color, kept apart on purpose:
 
 - **Chrome** — `--ink`, `--surface`, `--surface2`, `--border`, `--bone`, `--mist`,
   `--faint`, `--dim`, `--blade`, `--brass`, `--good`, `--critical`. This is the
-  identity.
+  identity. Each accent that can be used as a *fill* has a text colour graded
+  against it — `--on-blade`, `--on-good`, `--on-brass` — because all three invert
+  between the tiers (bright on dark, dark on light) and text picked for one tier
+  is unreadable in the other. Never put `--bone` on a filled accent.
 - **Series** — `--series-1` … `--series-18`, categorical slots in a fixed,
   accessibility-checked order. 1–8 are the reference eight (blue, orange, aqua,
   yellow, magenta, green, violet, red) and are not to be re-stepped; 9–18 are the
@@ -97,7 +100,13 @@ spread them.
 `select` — forms.
 
 `button.primary` `button.secondary` `button.ghost` `button.link-btn`
-`.segmented` `.chips` / `.chip` — controls.
+`.segmented` `.chips` / `.chip` — controls. `.segmented button:disabled` is an
+option that is not available *yet*, as opposed to one that is merely off: it
+keeps its slot, so a control does not change width as options come and go.
+
+A `.segmented` group whose buttons set their own fill must not declare `color` on
+its own `.segmented … button` rule — that selector outweighs both `:disabled` and
+any state class, and silently wins them.
 
 `.tiles` / `.tile` (dashboard row, left-aligned) and `.stat-row` / `.stat`
 (results panel, centred) `.breakdown` — metrics.

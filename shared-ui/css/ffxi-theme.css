@@ -56,6 +56,8 @@
   --critical:   #b8433a;
 
   --on-blade:   #fff2ee;   /* text on a blade fill */
+  --on-good:    #0f1710;   /* text on a good fill  */
+  --on-brass:   #1a1505;   /* text on a brass fill */
 
   /* Chart furniture. Kept as their own tokens because canvas reads them by
      name -- see shared-ui/js/theme.js. */
@@ -176,6 +178,8 @@
   --critical:   #9d332b;
 
   --on-blade:   #fdf3f0;
+  --on-good:    #f2f8f3;
+  --on-brass:   #fdf8ea;
 
   --grid: rgba(20,22,28,0.07);
   --axis: #c3bba6;
@@ -576,6 +580,14 @@ button.ghost[aria-pressed="true"] {
   font-weight: 600;
 }
 .segmented.tight button { padding: 4px 9px; }
+/* An option that is not available yet, rather than one that is merely off. It
+   keeps its slot -- a segmented control that changes width as options come and
+   go moves everything beside it -- and stops reacting to the pointer. */
+.segmented button:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+.segmented button:disabled:hover { background: transparent; color: var(--faint); }
 
 .chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .chip {

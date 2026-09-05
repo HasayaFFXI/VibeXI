@@ -99,6 +99,16 @@
 
   var TIME_STEPS = [1, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 14400];
 
+  /*
+   * Ticks on the SESSION clock: multiples of the step counted from zero, which
+   * is the instant Start was pressed.
+   *
+   * This used to snap to the wall clock -- midnight plus a whole number of
+   * steps -- so that a tick read as a round time of day. On an elapsed axis
+   * that is exactly wrong: the round number the reader wants is 1:00 into the
+   * pull, not 14:23:00, and zero is a real, meaningful point on this axis in a
+   * way that midnight never was.
+   */
   function timeTicks(t0, t1, count) {
     var span = (t1 - t0) / 1000;
     var want = span / Math.max(1, count);
@@ -107,13 +117,8 @@
       if (TIME_STEPS[i] >= want) { step = TIME_STEPS[i]; break; }
     }
     var out = [];
-    var d = new Date(t0);
-    var startSec = Math.ceil(
-      (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / step) * step;
-    var base = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    for (var t = base + startSec * 1000; t <= t1; t += step * 1000) {
-      if (t >= t0) out.push(t);
-    }
+    var first = Math.ceil(t0 / (step * 1000)) * step * 1000;
+    for (var t = first; t <= t1; t += step * 1000) out.push(t);
     return out;
   }
 
@@ -221,7 +226,7 @@
     ctx.textBaseline = 'top';
     for (i = 0; i < xTicks.length; i++) {
       var xx = Math.round(px(xTicks[i])) + 0.5;
-      ctx.fillText(F.fmtClock(xTicks[i]), xx, plot.y + plot.h + 10);
+      ctx.fillText(F.fmtElapsed(xTicks[i]), xx, plot.y + plot.h + 10);
     }
 
     ctx.strokeStyle = th.axis;
@@ -305,7 +310,7 @@
       }).join('');
 
       showTip(tip,
-        '<div class="chart-tip-head">' + F.fmtClock(times[idx]) + '</div>' +
+        '<div class="chart-tip-head">' + F.fmtElapsed(times[idx]) + '</div>' +
         '<table>' + rows + '</table>',
         px(times[idx]), my, wrapW);
 
