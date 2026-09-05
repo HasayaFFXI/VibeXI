@@ -890,8 +890,17 @@
         : !started() ? '—'
         : 'started ' + S.fmtClock(app.session.startedAt) + (paused() ? ' · held' : '');
     }
-    // Every floating panel carries the same readout beside its own buttons.
-    DPS.popout.clock(clock, state);
+    // Every floating panel carries the same two figures beside its own buttons:
+    // the elapsed clock and the total, in that order, which is the order of the
+    // first two tiles on the page. The total is written HERE rather than in
+    // renderTiles so both reach a floating bar on one push -- and so a window
+    // opened between two polls is not left showing a stale number until the
+    // next one lands.
+    DPS.popout.readout({
+      clock: clock,
+      state: state,
+      total: S.fmtInt(agg ? agg.total : 0)
+    });
 
     var d = $('tDps');
     if (d) d.textContent = S.fmtNum(agg && secs > 0 ? agg.total / secs : 0, 1);

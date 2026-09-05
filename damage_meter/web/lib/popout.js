@@ -62,16 +62,19 @@
   var sessionView = null;
 
   /*
-   * The elapsed readout, pushed in by app.js on its own tick.
+   * The two live figures -- elapsed and total damage -- pushed in by app.js on
+   * its own tick.
    *
-   * Separate from `sessionView` because it moves on a different clock: the view
-   * changes only when a button is pressed, this changes four times a second and
+   * Separate from `sessionView` because they move on a different clock: the view
+   * changes only when a button is pressed, these change four times a second and
    * would otherwise repaint two buttons' labels, titles and classes every time.
    * Remembered for the same reason the view is -- a window opened mid-pull has
-   * to be born showing the right time, not '00:00' until the next tick.
+   * to be born showing the right numbers, not zeroes until the next tick.
+   *
+   * Both text, both finished: this module formats nothing and knows of neither
+   * a clock nor a damage total, exactly as it knows nothing about sessions.
    */
-  var clockText = '00:00';
-  var clockState = 'idle';
+  var readoutView = { clock: '00:00', state: 'idle', total: '0' };
 
   // Per-panel opacity (15..100) and background punch-out, remembered across
   // sessions. See "opacity" below for what each one actually does.
@@ -444,16 +447,24 @@
 
     // To the RIGHT of the buttons: the pair is the fixed hit target the user
     // aims at without looking, and a readout that changes width would move it.
+    // Elapsed first, then the total -- the same order, and the same two figures,
+    // as the first two tiles on the page.
     var clk = d.createElement('span');
     clk.className = 'pop-clock';
     clk.title = 'Elapsed session time';
     wrap.appendChild(clk);
 
+    var tot = d.createElement('span');
+    tot.className = 'pop-total';
+    tot.title = 'Total damage this session';
+    wrap.appendChild(tot);
+
     p.startBtn = start;
     p.pauseBtn = pause;
     p.clockEl = clk;
+    p.totalEl = tot;
     paintPanel(p);
-    paintClock(p);
+    paintReadout(p);
     return wrap;
   }
 
@@ -473,23 +484,26 @@
     });
   }
 
-  /* One panel's readout. The state rides as a class so a held clock looks held
-     -- a number that has merely stopped moving is indistinguishable from one
-     that is moving slowly, and that is the whole question being asked of it. */
-  function paintClock(p) {
-    if (!p.clockEl) return;
-    p.clockEl.textContent = clockText;
-    p.clockEl.className = 'pop-clock is-' + clockState;
+  /* One panel's pair of figures. The session state rides as a class on the clock
+     so a held one looks held -- a number that has merely stopped moving is
+     indistinguishable from one moving slowly, and that is the whole question
+     being asked of it. The total carries no state: it is the same number
+     whether the clock is running or not. */
+  function paintReadout(p) {
+    if (p.clockEl) {
+      p.clockEl.textContent = readoutView.clock;
+      p.clockEl.className = 'pop-clock is-' + readoutView.state;
+    }
+    if (p.totalEl) p.totalEl.textContent = readoutView.total;
   }
 
-  /* The elapsed time, pushed from app.js's tick. `state` is 'idle', 'live' or
-     'held'. Text is handed over finished, exactly as the session's labels are:
-     this module does no formatting and knows of no clock. */
-  function clock(text, state) {
-    clockText = text;
-    clockState = state || 'idle';
+  /* The live figures, pushed from app.js's tick as `{ clock, state, total }`.
+     `state` is 'idle', 'live' or 'held'; both strings arrive finished, exactly
+     as the session's labels do. */
+  function readout(view) {
+    readoutView = view;
     each(function (p) {
-      if (p.win && !p.win.closed) paintClock(p);
+      if (p.win && !p.win.closed) paintReadout(p);
     });
   }
 
@@ -569,8 +583,9 @@
       p.startBtn = d.querySelector('.pop-session .session-start');
       p.pauseBtn = d.querySelector('.pop-session .session-pause');
       p.clockEl = d.querySelector('.pop-session .pop-clock');
+      p.totalEl = d.querySelector('.pop-session .pop-total');
       paintPanel(p);                                // may have moved on since
-      paintClock(p);
+      paintReadout(p);
       return { body: body, links: [] };
     }
 
@@ -857,7 +872,7 @@
     byId: byId,
     theme: theme,
     session: session,
-    clock: clock,
+    readout: readout,
     place: function (key, mode) { return panels[key] ? place(panels[key], mode) : null; },
     dock: function (key) { if (panels[key]) dock(panels[key]); },
     /* Read or set a panel's opacity (15..100) without the slider -- the console
