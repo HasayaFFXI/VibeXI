@@ -418,12 +418,12 @@ Only the OS can do it, so `GET /api/alpha` does, with two effects:
 | | what it does | control |
 |---|---|---|
 | `LWA_ALPHA` | whole window translucent, chrome and background included | the slider, 15–100% |
-| `LWA_COLORKEY` | pixels of exactly `#010203` dropped entirely | the **BG** button, on by default |
+| `LWA_COLORKEY` | pixels of exactly `#010203` dropped entirely | always on; `DPS.popout.keyBg(key, false)` |
 
 **A panel opens at 85%, and the page's top bar sets that number.** Opaque is the
-wrong thing for a window whose whole job is to be laid over the game: at 100% it
-has to be discovered that the slider exists at all, and the slider is inside the
-window, which is the one place a user who has not opened one yet cannot look.
+wrong thing for a window whose whole job is to be laid over the game: at 100% it has to be discovered that the slider exists at all, and the
+slider is inside the window, which is the one place a user who has not opened one
+yet cannot look.
 The **Pop-out opacity** config (`#popAlpha`, wired by `bindConfig()` in
 `popout.js`, not by `app.js`) is that control, and `DEFAULT_ALPHA = 85` is only
 what it reads before anyone has moved it.
@@ -470,9 +470,9 @@ Things that will bite:
   near-black window.
 - State lives in `ffxi_dps_alpha` (`key -> 15..100`), `ffxi_dps_keybg`
   (`key -> bool`) and `ffxi_dps_alpha_default` (one number, what the page config
-  is set to); `DPS.popout.alpha(key[, v])` and `DPS.popout.defaultAlpha([v])` are
-  the console handles, and the response carries `method` and `window` so a wrong
-  match is diagnosable.
+  is set to); `DPS.popout.alpha(key[, v])`, `DPS.popout.keyBg(key[, v])` and
+  `DPS.popout.defaultAlpha([v])` are the console handles, and the response
+  carries `method` and `window` so a wrong match is diagnosable.
 - **`clampAlpha`'s fallback is the configured default, not 100**, so “no value
   of its own” means “whatever the page says” everywhere at once. The one place
   that cannot use it is `readDefaultAlpha`, which is reading that fallback.
@@ -481,7 +481,12 @@ Things that will bite:
   is verified against a stubbed endpoint. **Not verified: how Chrome composites a
   layered PiP window** — that needs a real always-on-top window, which the
   Browser pane cannot produce. If one renders black, that is the GPU compositor:
-  turn **BG** off, and 100% on the slider undoes the rest.
+  `DPS.popout.keyBg('<key>', false)`, and 100% on the slider undoes the rest.
+- **The punch-out has no button any more.** The bar carried a **BG** toggle next
+  to the slider; it was removed on 2026-09-05 as one control too many over a game
+  screen, and the punch-out is simply always on. `keys`/`ffxi_dps_keybg` and the
+  `key=` query parameter all stay, because the black-window escape hatch above is
+  the one case that still needs to turn it off.
 
 **"Keep in focus" is Document Picture-in-Picture**, the only web API that yields
 an always-on-top window; a plain `window.open` cannot be raised above other
