@@ -444,25 +444,125 @@ local function record(act, actor, now)
     end
 end
 
---- Is this action worth recording? Anything where the party is on either side.
---- Unrelated fights happening nearby are ignored entirely.
-local function involves_party(actor, act)
+--- Is this action worth recording? ONLY if one of OURS is the actor.
+---
+--- This meter measures damage the party dealt. Damage dealt TO the party is
+--- explicitly not wanted, so a monster's own swings are dropped here rather
+--- than written and then filtered out in the browser -- on a long pull those
+--- rows were a large fraction of the file and nothing ever read one.
+---
+--- "Ours" is party or alliance: Entity.refresh_party walks all 18 slots, and
+--- trusts occupy party slots like anyone else. A pet qualifies only through
+--- Entity.pet_owner, which searches those same slots, so a passing stranger's
+--- pet is not ours and is not recorded.
+---
+--- NOT the whole test, because it asks only about the packet's actor. Damage
+--- our side dealt as a REACTION -- a counter, spikes, retaliation -- rides on a
+--- packet the monster is the actor of, so `has_reaction` gets a second look at
+--- everything this returns false for. The same predicate then decides it, asked
+--- of the entity that reacted rather than of the one that swung.
+local function is_ours(actor)
     if Entity.in_party(actor.name) then return true end
+    if Entity.kind(actor) == 'pet' and Entity.pet_owner(actor) then return true end
+    return false
+end
 
-    local k = Entity.kind(actor)
-    if k == 'pet' and Entity.pet_owner(actor) then return true end
-
-    -- Defensive: a monster acting on one of ours. Tagged and emitted so the
-    -- damage-taken views in Phase 4 have data; the UI drops non-player actors
-    -- from its totals today, so this costs nothing now.
+--- Does this action carry a reaction at all?
+---
+--- A cheap pre-test, and it has to be: this runs for every monster action in
+--- range, and the overwhelming majority carry no reaction. Integer lookups over
+--- the parsed result blocks only -- not one entity lookup until something is
+--- actually there to credit.
+local function has_reaction(act)
     for _, target in ipairs(act.targets) do
-        local tgt = Entity.by_id(target.id)
-        if tgt then
-            if Entity.in_party(tgt.name) then return true end
-            if Entity.kind(tgt) == 'pet' and Entity.pet_owner(tgt) then return true end
+        for _, res in ipairs(target.results) do
+            if E.Reaction[res.message] then return true end
+            if res.has_react and res.react_message
+               and E.SpikeReaction[res.react_message] then return true end
         end
     end
     return false
+end
+
+--- Emit what our side dealt back on somebody else's action.
+---
+--- THE INVERSION IS THE WHOLE FUNCTION. `attacker` is the packet's actor and
+--- becomes the TARGET of every row written here; the result's target -- whoever
+--- countered, retaliated, or had spikes up -- becomes the ACTOR. Read straight
+--- instead, each of these credits a victim with their attacker's damage. See
+--- the REACTION DAMAGE block in vx_enums.lua.
+---
+--- The is_ours test is applied to the ENTITY THAT REACTED, which is what makes
+--- this symmetric rather than a special case for monsters: when the swing is
+--- ours and the spikes are the monster's, the inverted actor is a monster and
+--- nothing is written, exactly as for any other damage the monsters dealt.
+---
+--- ONE `use` PER ROW, minted fresh. A reaction is one entity's own answer to
+--- one swing: an AoE that lands on two party members with spikes up is two
+--- events by two different actors, and a shared id would let stats.collapse()
+--- fold them into a single row under whichever came first.
+local function record_reactions(act, attacker, now)
+    local atk_kind = Entity.kind(attacker)
+
+    for _, target in ipairs(act.targets) do
+        local defender = Entity.by_id(target.id)
+        if defender and is_ours(defender) then
+            local d_kind = Entity.kind(defender)
+            local owner, pet_name
+            if d_kind == 'pet' then
+                local o = Entity.pet_owner(defender)
+                if o then
+                    owner    = o.name
+                    pet_name = defender.name
+                end
+            end
+
+            local function emit(name, message, dmg)
+                -- A reaction that dealt nothing is not written. It would enter
+                -- the accuracy denominator as a swing this actor never took,
+                -- and a zero would drag the average of an action whose entire
+                -- content is its damage. The reaction ATTEMPTS that would be
+                -- the honest denominator are unwired on purpose -- see the
+                -- 535/592/14 note in vx_enums.lua.
+                if not dmg or dmg <= 0 then return end
+                S.use = S.use + 1
+                Emit.write({
+                    t          = now,
+                    seq        = next_seq(now),
+                    use        = S.use,
+                    kind       = 'reaction',
+                    actor      = defender.name,
+                    actorKind  = d_kind,
+                    action     = name,
+                    actionId   = message,
+                    target     = attacker.name,
+                    targetKind = atk_kind,
+                    dmg        = dmg,
+                    hit        = true,
+                    crit       = false,
+                    burst      = false,
+                    msg        = message,
+                    owner      = owner,
+                    pet        = pet_name,
+                })
+            end
+
+            for _, res in ipairs(target.results) do
+                -- Main slot: the counter or the retaliation that stopped this
+                -- swing, with its damage in res.value.
+                local reaction = E.Reaction[res.message]
+                if reaction then emit(reaction, res.message, res.value) end
+
+                -- React (spike) trailer: fires in ADDITION to the swing, so it
+                -- is read whatever the main message said, and its damage is in
+                -- res.react_value rather than res.value.
+                if res.has_react and res.react_message then
+                    local spike = E.SpikeReaction[res.react_message]
+                    if spike then emit(spike, res.react_message, res.react_value) end
+                end
+            end
+        end
+    end
 end
 
 -- ---------------------------------------------------------------- events
@@ -513,8 +613,12 @@ ashita.events.register('packet_in', 'vibexi_packet_in', function(p)
         local actor = Entity.by_id(act.actor_id)
         if not actor then return end
 
-        if involves_party(actor, act) then
+        if is_ours(actor) then
             record(act, actor, now)
+        elseif has_reaction(act) then
+            -- The one reason a monster's own packet is still looked at: the
+            -- damage our side dealt back on it.
+            record_reactions(act, actor, now)
         end
     end)
 

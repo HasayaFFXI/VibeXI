@@ -157,9 +157,10 @@ E.Damage = {
 -- it rode on. The ids are listed here because Tier 1 is the right answer for
 -- that field too: proc_value is hit points, same as res.value.
 --
--- STILL NOT WIRED: the react (spike) trailer. That damage belongs to the entity
--- being attacked, not to the actor on the packet, so emitting it needs the
--- attribution inverted first -- see the "REACTION DAMAGE" note further down.
+-- The react (spike) trailer is read too, but NOT here: its damage belongs to the
+-- entity being attacked rather than to the actor on the packet, so it goes
+-- through E.SpikeReaction and record_reactions() with the two ends swapped. See
+-- the REACTION DAMAGE block further down.
 
 -- Tier 2 -- the actor acted and dealt nothing. Emitted with dmg 0 and
 -- hit=false, because these are the DENOMINATOR of accuracy: drop them and
@@ -200,17 +201,16 @@ E.Attempt = {
 -- Deliberately in NEITHER table, so they drop. Recorded here so the next person
 -- to see one in the unknown-message meta lines does not "fix" it by accident.
 --
---   REACTION DAMAGE -- the damage is real but it belongs to the OTHER entity.
---     33  AttackCounteredDamage   the counter is the target's; for the actor
---                                 this swing landed nothing, so 33 is a Tier 2
---                                 attempt and the counter damage is not
---                                 recorded at all yet
---     44  SpikesEffectDmg         the target's spikes hit the actor
---     536 RetaliateDamage         the target retaliated
---     535 RetaliateShadowAbsorbs / 592 PerfectCounterMiss
---   Emitting any of these as-is credits the victim with their attacker's
---   damage. Attribution has to be inverted first, which is a Phase 4 change --
---   see PLAN.md, "metrics that were previously impossible".
+--   REACTION DAMAGE moved out of this list -- see E.Reaction below. 33, 44 and
+--   536 are now emitted with the two ends swapped rather than dropped. What is
+--   still unwired is the reaction ATTEMPTS: 535 RetaliateShadowAbsorbs, 592
+--   PerfectCounterMiss and 14 CounterAbsByShadow. Each is a reaction that dealt
+--   nothing, and each would be the honest denominator for a Counter or
+--   Retaliation accuracy -- but which side of the packet a given one belongs to
+--   has not been measured against a live client, and a guess here inflates a
+--   party member's swing count with reactions that were never theirs. So the
+--   damage is counted and the accuracy on those rows reads 100%, which is a
+--   known overstatement and better than a fabricated one.
 --
 --   MP, NOT HP -- 162 AddEffectMPDrained, 225 UsesSkillMPDrained,
 --   366 TargetMPDrained. Metrics keeps MP drain out of the damage total too.
@@ -228,6 +228,44 @@ E.Crit = {
 
 E.Message = {
     BURST = 252,    -- MagicBurstDamage
+}
+
+-- ============================================================================
+-- REACTION DAMAGE -- damage the DEFENDER dealt, riding on the ATTACKER's packet.
+--
+-- Counter, Retaliation and Spikes share one shape: the packet's actor is the
+-- one swinging, and the damage in the result belongs to the entity being swung
+-- AT. Read straight, every one of them credits a victim with their attacker's
+-- damage, which is why they are in neither E.Damage nor E.Attempt. record()
+-- never touches them; record_reactions() emits them with the two ends swapped:
+--
+--     actor  = the RESULT'S TARGET (whoever reacted)
+--     target = the PACKET'S ACTOR  (whoever swung into it)
+--
+-- That rule is symmetric, so neither side needs a special case. A monster
+-- swinging into our spikes inverts to us damaging the monster, and is counted.
+-- Us swinging into a MONSTER's spikes inverts to the monster damaging us, and
+-- is dropped by the same is_ours test every other bit of monster damage is.
+--
+-- 33 IS IN E.Attempt AS WELL, and that is not a contradiction: the two readings
+-- never apply to the same packet. On a packet WE are the actor of, 33 means our
+-- swing was countered and dealt nothing -- a Tier 2 attempt, and the counter
+-- damage in res.value is the monster's. On a packet we are not the actor of, 33
+-- is the counter OUR side landed. Same id, opposite ends, decided by who swung.
+--
+-- TWO SLOTS, TWO TABLES. Counter and Retaliation replace the swing's own
+-- outcome and arrive in the MAIN message with the damage in res.value. Spikes
+-- fire in addition to the swing, so they arrive in the REACT (spike) trailer
+-- with the damage in res.react_value -- the trailer Metrics calls
+-- spike_effect_message. Keeping them apart is what stops a main-slot 44 from
+-- being read as spike damage on the strength of the number alone.
+E.Reaction = {
+    [33]  = 'Counter',
+    [536] = 'Retaliation',
+}
+
+E.SpikeReaction = {
+    [44] = 'Spikes',
 }
 
 -- ============================================================================

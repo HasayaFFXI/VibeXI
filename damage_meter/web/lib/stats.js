@@ -14,11 +14,45 @@
     return e.kind !== 'defeat';
   }
 
+  // -------------------------------------------------------------- attribution
+
+  /*
+   * A PET'S DAMAGE IS ITS OWNER'S DAMAGE.
+   *
+   * The packet names the master on every row a pet produced (`owner`), so this
+   * is attribution and not a guess. The event is re-actored rather than merely
+   * summed under the owner, because everything downstream -- aggregate,
+   * cumulative, distribution, the character chips -- keys on `actor`, and this
+   * one rewrite is then the whole change.
+   *
+   * The action keeps the pet's name as a prefix, so the breakdown INSIDE the
+   * owner still separates the two: a beastmaster and their jug pet both swing
+   * something called 'Attack', and merging those reports one average and one
+   * accuracy over two different creatures. `by` keeps who actually swung.
+   *
+   * A COPY, NEVER A MUTATION. The raw event list is what Diagnostics and the
+   * roster are built from and it stays true to the file. Idempotent as well,
+   * because `filter` runs twice over the same events -- once scoped, once for
+   * the chips -- and the second pass sees actor === owner and does nothing.
+   */
+  function credit(e) {
+    if (!e.owner || e.actor === e.owner) return e;
+    var c = {}, k;
+    for (k in e) if (Object.prototype.hasOwnProperty.call(e, k)) c[k] = e[k];
+    c.actor = e.owner;
+    c.actorKind = 'player';   // the owner came out of a party slot
+    c.by = e.pet || e.actor;
+    c.action = c.by + ': ' + e.action;
+    return c;
+  }
+
   // --------------------------------------------------------------- filtering
 
   /*
    * opts: { from, to, roster, actors: {name:bool}, skillchains: bool }
    * `actors` is the UI's per-actor checkbox map; absent means "all on".
+   *
+   * Pet damage is credited to the owner on the way through; see `credit`.
    *
    * Pass a `roster` and every event whose *actor* is a monster is dropped: this
    * is a party damage meter, and damage the monsters dealt is neither shown nor
@@ -45,7 +79,11 @@
       if (!isCombat(e)) continue;
       if (!skillchains && e.kind === 'skillchain') continue;
       if (e.t < from || e.t > to) continue;
+      // Asked of the RAW actor, so a pet is judged as the pet it is.
       if (roster && roster.isMob(e.actor)) continue;
+      e = credit(e);
+      // Keyed on the CREDITED name, so switching an owner off takes their pet
+      // with them -- the chips are built from this same aggregate.
       if (actors && actors[e.actor] === false) continue;
       out.push(e);
     }
@@ -419,6 +457,7 @@
 
   DPS.stats = {
     filter: filter,
+    credit: credit,
     collapse: collapse,
     aggregate: aggregate,
     cumulative: cumulative,
