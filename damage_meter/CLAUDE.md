@@ -422,9 +422,10 @@ Only the OS can do it, so `GET /api/alpha` does, with two effects:
 | `LWA_ALPHA` | whole window translucent, chrome and background included | the slider, 15–100% |
 | `LWA_COLORKEY` | pixels of exactly `#010203` dropped entirely | always on; `DPS.popout.keyBg(key, false)` |
 
-**The bar carries Start, Pause and the elapsed clock**, at full opacity while the
-rest of it fades; see "The controls are in every pop-out window too" above for
-why they are there and how they stay in step with the page.
+**The bar carries Start, Pause, the elapsed clock and the total**, at full
+opacity while the rest of it fades; see "The controls are in every pop-out
+window too" above for why they are there and how they stay in step with the
+page.
 
 **A panel opens at 85%, and the page's top bar sets that number.** Opaque is the
 wrong thing for a window whose whole job is to be laid over the game: at 100% it has to be discovered that the slider exists at all, and the
@@ -625,7 +626,7 @@ Consequences worth knowing:
   brings new data, and an idle poll deliberately skips it to keep scroll
   position and text selection. `tickClock` rewrites the Elapsed tile, the party
   DPS, every `[data-dps]` cell in the character table and every floating panel's
-  readout, as text, four times a second. **The party tile and the character cells must move together or not at
+  clock-and-total readout, as text, four times a second. **The party tile and the character cells must move together or not at
   all**: a tile decaying past a frozen column is two correct numbers at two
   different instants, and it reads as a bug. That is also why the bars chart's
   hover card no longer carries a DPS row — it is built once per render and
@@ -702,9 +703,11 @@ Three traps, all of which bit:
 It is the denominator under every DPS on the page and the one number in the app
 that keeps moving with nothing happening, so it is the **second tile**, beside
 the total it divides, and it is drawn at 34px rather than buried in the hero
-tile's sub-line. Every floating panel carries the same readout beside its own
-buttons — a panel is over the game so the pull can be run without leaving it,
-and how long the pull has run is exactly the thing being asked from there.
+tile's sub-line. Every floating panel carries **both** figures beside its own
+buttons, in that same order — a panel is over the game so the pull can be run
+without leaving it, and how long it has run and how much it has done are exactly
+what is being asked from there. Together they are the whole meter in one 20px
+line, which is what a panel showing a single chart could not otherwise say.
 
 - **`fmtStopwatch`, not `fmtElapsed`.** Same clock, zero-padded to a fixed
   width: `MM:SS`, and `H:MM:SS` past the hour. `fmtElapsed` drops the leading
@@ -749,17 +752,31 @@ late — and late is an error divided into every DPS figure it then reports. So
   *and* the elapsed readout, and it is what the fade below exempts. It used to
   be the `.segmented.session` element itself; if a selector assumes that, it is
   reading the old shape.
-- **The elapsed clock is pushed separately from the view**, through
-  `DPS.popout.clock(text, state)`, and for a plain reason: the view changes when
-  a button is pressed, the clock changes four times a second, and pushing them
-  together would rewrite two buttons' labels, titles and classes on every tick.
-  Same contract otherwise — the text arrives finished, popout.js does no
-  formatting and knows of no clock, and the last value is REMEMBERED so a window
-  opened mid-pull is born showing the right time instead of `00:00`.
-- **It sits to the RIGHT of the buttons, and must.** The pair is a fixed hit
-  target aimed at without looking; a readout ahead of it would shove both
-  buttons sideways when the clock rolls past an hour. `.pop-clock`'s `min-width`
-  is sized for `H:MM:SS` for the same reason.
+- **The live figures are pushed separately from the view**, through
+  `DPS.popout.readout({ clock, state, total })`, and for a plain reason: the view
+  changes when a button is pressed, these change four times a second, and pushing
+  them together would rewrite two buttons' labels, titles and classes on every
+  tick. Same contract otherwise — both strings arrive finished, popout.js does no
+  formatting and knows of neither a clock nor a damage total, and the last value
+  is REMEMBERED so a window opened mid-pull is born showing the right numbers
+  instead of zeroes.
+- **The total is pushed from `tickClock`, not from `renderTiles`.** It only
+  *changes* on a render — `tickClock` reads the same `app.tileAgg.total` the hero
+  tile was written from, so the two can never disagree — but pushing it on the
+  tick is what gets it into a window opened between two polls. On a static file
+  that is the difference between a floating bar reading `155,195` and one reading
+  `0` until the next event lands.
+- **They sit to the RIGHT of the buttons, and must**, in the page's own order:
+  clock, then total. The pair is a fixed hit target aimed at without looking; a
+  readout ahead of it would shove both buttons sideways when the clock rolls past
+  an hour. `.pop-clock`'s `min-width` is sized for `H:MM:SS` for the same reason,
+  and `.pop-total` is deliberately given none — it is last in the group, so a
+  seventh digit pushes nothing but the panel title, which is the one thing on
+  this bar meant to give way.
+- **The total is `--blade`, the clock is its state colour.** Two adjacent
+  monospace figures in one colour read as a single string; the accent is also
+  what the hero tile paints the total, so the bar and the page agree. The total
+  carries no state class — it is the same number running or held.
 - **The bar's fade moved from the bar to its children.** Opacity on a parent
   cannot be undone by a child, and the session group is the one thing there that
   must stay readable and hittable without hunting for it: a Start button at 45%
