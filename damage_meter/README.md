@@ -69,6 +69,16 @@ either the addon is not loaded, or nothing has happened in game since it was.
 - **Range** — `All`, `Latest fight` (everything since the last gap of 90 s or
   more with no combat), or a rolling 5 / 15 / 60 minutes measured back from the
   newest event.
+- **Colour** — what a character's colour on the charts *means*. `Job` paints
+  everyone in their job's colour, the same mapping Metrics uses, so the meter
+  agrees with the parser next to it and the tank is the colour you already
+  expect. `Character` gives everyone a colour of their own from an
+  eighteen-slot palette picked for maximum separation, including under
+  colourblindness — worth switching to if two people are on the same job, or if
+  the job colours are hard for you to tell apart, since several of them are
+  shades of red. Either way every panel prints the name and the job in text
+  next to the colour, so nothing depends on reading the hue. Remembered across
+  reloads.
 - **Skillchains** — `On` credits skillchain damage to whoever closed the chain;
   `Off` leaves it out of every total, chart and table. Off is the setting to use
   when you want to compare raw weaponskill and melee output, since a chain's
@@ -185,6 +195,13 @@ guesswork left in any of it.
 - **Damage dealt *to* the party is not recorded.** This meter measures what the
   party dealt to monsters; a monster's own swings are dropped by the addon
   before they are ever written.
+- **Jobs** are the game's own, read from the party window rather than guessed
+  from what someone swings: main and sub, as `SAM/WAR`, next to every character
+  in the chips, the legend, the actions list and the character table (hover for
+  levels). The addon reports a job when it first sees the party and again if
+  someone changes, so a job change mid-session is picked up. Characters who are
+  not in your party — a trust, a passing stranger's pet — have no job to show and
+  read as `—`.
 - **Counters, spikes and Retaliation are counted**, under those names, for
   whoever reacted. They are damage your side dealt to the monster even though
   the monster is the one who swung, so the addon files them the right way round
@@ -198,7 +215,10 @@ Open **Diagnostics** at the bottom.
 - **Name classification.** Every name is classified from the game's own spawn
   flags — player, pet, mob, npc — so this should always be right; there is no
   heuristic left to get it wrong. It is still the table to check when someone is
-  missing from the meter entirely, and you can override any row by hand.
+  missing from the meter entirely, and you can override any row by hand. This is
+  also the one place the whole **party** is listed rather than only the people
+  who dealt damage: a white mage who healed all night has no line on any chart,
+  but she is here with her job.
 - **Addon notices.** The addon's startup probe, plus one line for each kind of
   game message it saw and did not recognise. Anything listed there is damage
   nobody is being credited with, and the fix is a new message id in

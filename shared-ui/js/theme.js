@@ -13,6 +13,8 @@
  *   FFXITheme.v('--blade')      one token, resolved
  *   FFXITheme.chart()           the furniture set chart code needs
  *   FFXITheme.series(slot)      categorical slot 0..17, wrapping
+ *   FFXITheme.job('WAR')        the job's own colour, or '' if it has none
+ *   FFXITheme.step(color, k)    the k-th distinguishable variant of one colour
  *   FFXITheme.bind({...})       wire a light/dark toggle button
  *
  * Reads are cached per theme; call FFXITheme.flush() if a stylesheet is swapped
@@ -86,6 +88,60 @@
   }
 
   /*
+   * One job's colour, keyed by the game's own three-letter abbreviation.
+   *
+   * RETURNS '' RATHER THAN A FALLBACK, and that is the interface. The four jobs
+   * Metrics never assigned a colour (DNC, SCH, GEO, RUN) have no token, and
+   * neither does 'NON' -- a member whose job the party table has not reported
+   * yet. The caller has something better to fall back to than a made-up hue:
+   * the character's own series slot. Handing back a default here would take that
+   * decision away from it.
+   */
+  function job(abbrev) {
+    if (!abbrev) return '';
+    return v('--job-' + String(abbrev).toLowerCase(), '');
+  }
+
+  /*
+   * The k-th variant of a colour: k === 0 is the colour itself, and each step
+   * after it is a fixed lightness move, alternating away from and toward the
+   * surface.
+   *
+   * This exists for the one thing a job palette cannot do: a party can hold two
+   * warriors, and two identical lines on a cumulative chart are not a chart. The
+   * series ramp never needs it -- every slot is already distinct -- so nothing
+   * calls this unless a colour is genuinely being handed out twice.
+   *
+   * The FIRST step moves away from the page: lighter in dark mode, darker in
+   * light mode. The variant of a colour should never be the harder one to see.
+   */
+  function step(color, k) {
+    k = k | 0;
+    if (!color || k <= 0) return color;
+
+    var m = /^#([0-9a-f]{6})$/i.exec(String(color).trim());
+    if (!m) return color;                       // rgb()/named: leave it alone
+    var n = parseInt(m[1], 16);
+    var rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+
+    // 1, 2, 3, 4 -> away, toward, away twice, toward twice.
+    var level = Math.ceil(k / 2);
+    var away = (k % 2) === 1;
+    var toward = key() === 'light' ? away : !away;
+    // 0.30 rather than something subtler: these two marks sit next to each other
+    // on a line chart, and a step you have to look for is a step that failed.
+    var mix = Math.min(0.75, level * 0.30);
+    var end = toward ? 0 : 255;
+
+    var out = '#';
+    for (var i = 0; i < 3; i++) {
+      var c = Math.round(rgb[i] + (end - rgb[i]) * mix);
+      out += (c < 16 ? '0' : '') + c.toString(16);
+    }
+    return out;
+  }
+
+  /*
    * A live view of the chart palette: `palette().blade` and `palette.blade` both
    * work, and the property re-reads on access so a theme change needs no
    * re-wiring at the call sites. This is what lets ws_calculator's components keep
@@ -151,6 +207,8 @@
     v: v,
     chart: chart,
     series: series,
+    job: job,
+    step: step,
     liveColors: liveColors,
     bind: bind,
     flush: flush,

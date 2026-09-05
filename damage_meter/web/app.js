@@ -25,16 +25,19 @@
     lines: 0,
     range: 'all',
     chains: 'on',           // 'on' credits skillchain damage, 'off' drops it
+    colour: 'job',          // 'job' paints by FFXI job, 'slot' by series palette
     actorsOff: {},          // name -> true when excluded; persisted
     resetAt: null,          // wall-clock of the last meter reset, for the status line
     paused: false,
     drill: null,            // { actor, action }
     slots: {},              // name -> colour slot 0-7, or -1 for "past eight"
     nextSlot: 0,
+    jobVariant: {},         // name -> 0,1,2... among characters sharing a job
     seen: [],               // distinct actor names, first-appearance order
     seenSet: {},
     scanned: 0,             // how far into the event list `seen` is built
     visibleActors: [],      // names with a chip right now; scopes All / None
+    chipSig: null,          // name+job signature of the built chips
     chipsOpen: true,        // character list expanded; persisted
     lastOk: 0,
     error: null
@@ -87,6 +90,10 @@
       if (roster.isMob(n)) continue;
       app.slots[n] = app.nextSlot++;
     }
+    // Cheap and unconditional: a job line can land at any time, and a variant
+    // index that lags one render behind is a character changing colour a beat
+    // after everything else that names them changed.
+    assignJobVariants();
   }
 
   function slotOf(name) {
@@ -94,10 +101,42 @@
     return app.slots[name];
   }
 
+  /*
+   * WHICH WARRIOR IS THIS -- the first, the second, the third?
+   *
+   * A job palette has a hole a categorical one does not: two warriors are one
+   * colour, and two identical lines on the cumulative chart cannot be read at
+   * all. So each character sharing a job gets a numbered variant of it, and
+   * FFXITheme.step turns that number into a lightness move.
+   *
+   * ORDERED BY COLOUR SLOT, not by damage or by table position. Slots are handed
+   * out once in first-seen order and never reassigned, so this ordering is
+   * stable for the session -- the same warrior keeps the same shade when the
+   * lead changes, a filter moves, or the range control is touched. Ordering it
+   * by anything the user can reorder would make the party swap shades under
+   * them, which is the exact failure the slot rule exists to prevent.
+   */
+  function assignJobVariants() {
+    var roster = app.source.roster;
+    var names = Object.keys(app.slots).sort(function (a, b) {
+      return app.slots[a] - app.slots[b];
+    });
+    var used = {};
+    app.jobVariant = {};
+    for (var i = 0; i < names.length; i++) {
+      var j = roster.jobOf(names[i]);
+      if (!j || !j.main || j.main === 'NON') continue;
+      var k = used[j.main] || 0;
+      app.jobVariant[names[i]] = k;
+      used[j.main] = k + 1;
+    }
+  }
+
   /* Reclassification changes who counts as a party member, so slots restart. */
   function resetColors() {
     app.slots = {};
     app.nextSlot = 0;
+    app.chipSig = null;
     assignSlots();
   }
 
@@ -106,6 +145,7 @@
   var EXCLUDE_KEY = 'ffxi_dps_excluded';
   var CHAIN_KEY = 'ffxi_dps_chains';
   var CHARROW_KEY = 'ffxi_dps_charrow';
+  var COLOUR_KEY = 'ffxi_dps_colour';
 
   function loadExcluded() {
     try {
@@ -124,6 +164,14 @@
       if (localStorage.getItem(CHAIN_KEY) === 'off') app.chains = 'off';
     } catch (e) { }
     syncSeg('chainSeg', 'chains', app.chains);
+  }
+
+  /* Same shape again: the markup's default is "job", so only "slot" restores. */
+  function loadColour() {
+    try {
+      if (localStorage.getItem(COLOUR_KEY) === 'slot') app.colour = 'slot';
+    } catch (e) { }
+    syncSeg('colourSeg', 'colour', app.colour);
   }
 
   /* Same shape: the markup ships expanded, so only "closed" is restored. */
@@ -166,10 +214,50 @@
     setStatus(app.file || 'waiting for the addon', app.paused ? 'stale' : 'live');
   }
 
-  /* Via FFXITheme, not a local getComputedStyle: it caches per theme, and the
-     palette stays in the one stylesheet that drives both apps and both modes. */
+  /*
+   * The colour a character is drawn in, everywhere in the app.
+   *
+   * Via FFXITheme, not a local getComputedStyle: it caches per theme, and both
+   * palettes stay in the one stylesheet that drives both apps and both modes.
+   *
+   * TWO PALETTES, and the switch between them is a real trade rather than a
+   * preference:
+   *
+   *   job    Metrics' own job colours. The party already reads these at a
+   *          glance in game -- the warrior is red, the samurai orange -- so the
+   *          meter agrees with the parser sitting next to it instead of
+   *          inventing a second mapping for the same six people. It is NOT
+   *          colourblind-separable (WAR, NIN, RDM and SAM are four reds), and
+   *          two characters on the same job differ only by a lightness step.
+   *   slot   The --series ramp: eighteen hues solved for maximum worst-case
+   *          separation under normal, protan and deutan vision. Every character
+   *          is distinct; none of them says anything about the character.
+   *
+   * Job is the default because recognition beats separation when the panel
+   * names everyone anyway -- and it does: legend, table rows, chips and hover
+   * all carry the name and the job in text. A character with no job on record
+   * falls through to their slot rather than to a made-up colour, so a trust, a
+   * pet's owner seen only through their pet, or anyone the party table has not
+   * reported yet is still drawn.
+   */
   function colorOf(name) {
+    if (app.colour === 'job') {
+      var j = app.source.roster.jobOf(name);
+      var base = j && j.main ? FFXITheme.job(j.main) : '';
+      if (base) return FFXITheme.step(base, app.jobVariant[name] || 0);
+    }
     return FFXITheme.series(slotOf(name));
+  }
+
+  /* "WAR/NIN", or '' when the addon has not reported this character's job. */
+  function jobOf(name) {
+    return app.source.roster.jobLabel(name);
+  }
+
+  /* The same, as a fragment for a table cell or a chip: '—' when unknown. */
+  function jobCell(name) {
+    var s = jobOf(name);
+    return s ? esc(s) : '<span class="muted">—</span>';
   }
 
   // ------------------------------------------------------------------- fetch
@@ -285,7 +373,12 @@
   function renderChips(actors) {
     var host = $('actorChips');
     var names = actors.map(function (a) { return a.name; });
-    var same = names.join('\0') === app.visibleActors.join('\0');
+    /* The job rides in the signature, not just the name: a job line can land
+       long after the character's first swing, and a chip built before it has to
+       be rebuilt when it does. */
+    var sig = actors.map(function (a) { return a.name + '\u0001' + jobOf(a.name); }).join('\0');
+    var same = sig === app.chipSig;
+    app.chipSig = sig;
     app.visibleActors = names;
 
     if (!actors.length) {
@@ -307,8 +400,9 @@
 
     function state(chip, name) {
       var inc = !app.actorsOff[name];
+      var full = app.source.roster.jobTitle(name);
       chip.setAttribute('aria-pressed', String(inc));
-      chip.title = (inc ? 'Exclude ' : 'Include ') + name;
+      chip.title = (inc ? 'Exclude ' : 'Include ') + name + (full ? ' · ' + full : '');
     }
 
     // Toggling only changes pressed state. Rebuilding the list for that would
@@ -322,8 +416,10 @@
     }
 
     host.innerHTML = actors.map(function (a) {
+      var job = jobOf(a.name);
       return '<button type="button" class="chip" data-actor="' + esc(a.name) + '">' +
-             '<i style="background:' + colorOf(a.name) + '"></i>' + esc(a.name) + '</button>';
+             '<i style="background:' + colorOf(a.name) + '"></i>' + esc(a.name) +
+             (job ? '<b class="chip-job">' + esc(job) + '</b>' : '') + '</button>';
     }).join('');
     [].forEach.call(host.querySelectorAll('.chip'), function (chip) {
       state(chip, chip.dataset.actor);
@@ -347,11 +443,13 @@
     // `aggregate` returns actors sorted by total damage, so the leader is [0].
     // The dot carries the same hue the character has on every chart.
     var top = agg.actors[0];
+    var topJob = top ? jobOf(top.name) : '';
     $('tTopDot').style.background = top ? colorOf(top.name) : 'transparent';
     $('tTopName').textContent = top ? top.name : '—';
-    $('tTopName').title = top ? top.name : '';
+    $('tTopName').title = top ? (app.source.roster.jobTitle(top.name) || top.name) : '';
     $('tTopSub').textContent = top
-      ? S.fmtNum(top.share * 100, 1) + '% of ' + S.fmtInt(agg.total) + ' damage'
+      ? (topJob ? topJob + ' · ' : '') +
+        S.fmtNum(top.share * 100, 1) + '% of ' + S.fmtInt(agg.total) + ' damage'
       : '—';
 
     var best = null;
@@ -386,9 +484,14 @@
   function renderLegend(series) {
     var host = $('lineLegend');
     if (series.length < 2) { host.innerHTML = ''; return; }   // one series: title says it
+    // The job goes in the legend as text. It is what makes the job palette safe
+    // to default to: two warriors differ by a lightness step in the swatch, and
+    // by their name in the very same line.
     host.innerHTML = series.slice().reverse().map(function (s) {
+      var job = jobOf(s.name);
       return '<span class="legend-item"><i style="background:' + s.color + '"></i>' +
-             esc(s.name) + '</span>';
+             esc(s.name) + (job ? '<b class="legend-job">' + esc(job) + '</b>' : '') +
+             '</span>';
     }).join('');
   }
 
@@ -417,11 +520,13 @@
 
   function renderBars(agg) {
     var rows = agg.actors.map(function (a) {
+      var full = app.source.roster.jobTitle(a.name);
       return {
         label: a.name,
         value: a.total,
         color: colorOf(a.name),
         sub: '<table>' +
+             (full ? '<tr><td>Job</td><td>' + esc(full) + '</td></tr>' : '') +
              '<tr><td>Damage</td><td>' + S.fmtInt(a.total) + '</td></tr>' +
              '<tr><td>Share</td><td>' + S.fmtNum(a.share * 100, 1) + '%</td></tr>' +
              '<tr><td>DPS</td><td>' + S.fmtNum(a.dps, 1) + '</td></tr>' +
@@ -433,11 +538,13 @@
     C.bars($('barsChart'), rows, { empty: 'No damage in the selected range' });
 
     $('actorTable').innerHTML = rows.length
-      ? '<thead><tr><th>Character</th><th>Damage</th><th>Share</th><th>DPS</th>' +
+      ? '<thead><tr><th>Character</th><th class="job">Job</th><th>Damage</th><th>Share</th><th>DPS</th>' +
         '<th>Actions</th><th>Avg</th><th>Best</th><th>Acc</th></tr></thead><tbody>' +
         agg.actors.map(function (a) {
           return '<tr><td><span class="swatch" style="background:' + colorOf(a.name) + '"></span>' +
             esc(a.name) + '</td>' +
+            '<td class="job" title="' + esc(app.source.roster.jobTitle(a.name)) + '">' +
+            jobCell(a.name) + '</td>' +
             '<td>' + S.fmtInt(a.total) + '</td>' +
             '<td>' + S.fmtNum(a.share * 100, 1) + '%</td>' +
             '<td>' + S.fmtNum(a.dps, 1) + '</td>' +
@@ -461,9 +568,12 @@
                '<th>Min</th><th>Max</th><th>Share</th></tr></thead><tbody>';
 
     agg.actors.forEach(function (a) {
+      var job = jobOf(a.name);
       html += '<tr class="group"><td colspan="8">' +
               '<span class="swatch" style="background:' + colorOf(a.name) + '"></span>' +
-              esc(a.name) + ' &mdash; ' + S.fmtInt(a.total) + '</td></tr>';
+              esc(a.name) +
+              (job ? ' <b class="row-job">' + esc(job) + '</b>' : '') +
+              ' &mdash; ' + S.fmtInt(a.total) + '</td></tr>';
 
       a.actionList.forEach(function (act) {
         var on = app.drill && app.drill.actor === a.name && app.drill.action === act.name;
@@ -546,16 +656,25 @@
       if (e.actor) names[e.actor] = true;
       if (e.target) names[e.target] = true;
     });
+    /*
+     * The party members the addon reported a job for, whether or not they ever
+     * swung. This is the one panel in the app that lists the party rather than
+     * the damage, so it is the only place a white mage who healed all night
+     * appears at all -- and the place to look when a name is missing from the
+     * charts and you want to know whether the addon ever saw them.
+     */
+    Object.keys(roster.jobs).forEach(function (n) { names[n] = true; });
     var list = Object.keys(names).sort();
 
     // The Kind column is the addon's answer, straight off the entity's spawn
     // flags; the Counted column is what this meter does with it. They differ
     // only where the user has overridden one by hand.
     $('rosterTable').innerHTML = list.length
-      ? '<thead><tr><th>Name</th><th>Kind</th><th>Counted</th><th></th></tr></thead><tbody>' +
+      ? '<thead><tr><th>Name</th><th class="job">Job</th><th>Kind</th><th>Counted</th><th></th></tr></thead><tbody>' +
         list.map(function (n) {
           var mob = roster.isMob(n);
           return '<tr><td>' + esc(n) + '</td>' +
+                 '<td class="job" title="' + esc(roster.jobTitle(n)) + '">' + jobCell(n) + '</td>' +
                  '<td>' + esc(roster.kindOf(n)) + '</td>' +
                  '<td>' + (mob ? 'No' : 'Yes') +
                  (roster.manual[n] ? ' (manual)' : '') + '</td>' +
@@ -600,6 +719,13 @@
   }
 
   segHandler('rangeSeg', 'range');
+  segHandler('colourSeg', 'colour', function () {
+    try { localStorage.setItem(COLOUR_KEY, app.colour); } catch (e) { }
+    // The chips carry a colour swatch each and are only rebuilt when their
+    // signature changes, which a palette swap does not touch. Drop it so the
+    // next render repaints them.
+    app.chipSig = null;
+  });
   segHandler('chainSeg', 'chains', function () {
     try { localStorage.setItem(CHAIN_KEY, app.chains); } catch (e) { }
     // A drill-down into a skillchain row has no events left to show once the
@@ -675,7 +801,13 @@
   window.FFXITheme.bind({
     button: 'themeBtn',
     storageKey: 'ffxi_dps_theme',
-    onChange: function (name) { DPS.popout.theme(name); render(); }
+    onChange: function (name) {
+      DPS.popout.theme(name);
+      // Both palettes re-step per theme, and the chips only rebuild when their
+      // name/job signature changes -- which a theme swap does not touch.
+      app.chipSig = null;
+      render();
+    }
   });
 
   var resizeTimer;
@@ -688,6 +820,7 @@
 
   loadExcluded();
   loadChains();
+  loadColour();
   loadCharRow();
 
   // After the handlers above, not before: wiring a card for pop-out moves the
