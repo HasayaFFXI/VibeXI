@@ -858,13 +858,40 @@
     var ms = S.sessionElapsed(app.session);
     var secs = ms / 1000;
 
+    // The elapsed reading moved OUT of here and into the tile beside it, and is
+    // deliberately not repeated: two adjacent cards printing the same clock in
+    // two different formats is the thing the second card was added to fix. What
+    // stays is the state of the measurement, which the total needs and the
+    // clock does not.
     var el = $('tTotalSub');
     if (el) {
       el.textContent = armed() ? 'armed — starts on the first hit'
         : !started() ? 'not started — press Start'
-        : !agg || !agg.actors.length ? S.fmtElapsed(ms) + ' elapsed · no damage yet'
-        : S.fmtElapsed(ms) + ' elapsed' + (paused() ? ' · held' : '');
+        : !agg || !agg.actors.length ? 'no damage yet'
+        : paused() ? 'held — nothing counting'
+        : 'counting';
     }
+
+    // The clock itself: a fixed-width MM:SS, plus the state as a class so a
+    // held session is visibly held rather than merely a number that stopped
+    // moving -- there is no way to tell those apart by watching.
+    var state = !started() ? 'idle' : paused() ? 'held' : 'live';
+    var clock = started() ? S.fmtStopwatch(ms) : '00:00';
+    var c = $('tClock');
+    if (c) {
+      c.textContent = clock;
+      c.className = 'tile-value clock-value is-' + state;
+    }
+    var cs = $('tClockSub');
+    if (cs) {
+      // The one place a time of DAY still earns its keep on a tile: it says
+      // when the pull began in the world, which the elapsed clock cannot.
+      cs.textContent = armed() ? 'waiting for the first hit'
+        : !started() ? '—'
+        : 'started ' + S.fmtClock(app.session.startedAt) + (paused() ? ' · held' : '');
+    }
+    // Every floating panel carries the same readout beside its own buttons.
+    DPS.popout.clock(clock, state);
 
     var d = $('tDps');
     if (d) d.textContent = S.fmtNum(agg && secs > 0 ? agg.total / secs : 0, 1);

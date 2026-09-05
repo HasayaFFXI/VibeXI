@@ -727,6 +727,23 @@
     return neg ? '-' + out : out;
   }
 
+  /*
+   * The same clock as `fmtElapsed`, zero-padded to a fixed width: `MM:SS`, and
+   * `H:MM:SS` once it runs past the hour.
+   *
+   * For the READOUT rather than a label. `fmtElapsed` drops the leading zero so
+   * that a figure sitting inside a sentence or under an axis tick reads as
+   * short as it is; a stopwatch is watched, and a watched figure that changes
+   * width at 0:59 -> 1:00 shifts every digit beside it. Fixed width also makes
+   * the two minutes columns line up between the tile and every floating bar.
+   */
+  function fmtStopwatch(ms) {
+    var sec = Math.max(0, Math.floor(Math.abs(ms) / 1000));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    var mmss = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    return h ? h + ':' + mmss : mmss;
+  }
+
   function fmtDuration(sec) {
     sec = Math.max(0, Math.round(sec));
     var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
@@ -759,6 +776,7 @@
     fmtCompact: fmtCompact,
     fmtClock: fmtClock,
     fmtElapsed: fmtElapsed,
+    fmtStopwatch: fmtStopwatch,
     fmtDuration: fmtDuration
   };
 })(window);

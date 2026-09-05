@@ -422,9 +422,9 @@ Only the OS can do it, so `GET /api/alpha` does, with two effects:
 | `LWA_ALPHA` | whole window translucent, chrome and background included | the slider, 15–100% |
 | `LWA_COLORKEY` | pixels of exactly `#010203` dropped entirely | always on; `DPS.popout.keyBg(key, false)` |
 
-**The bar carries Start and Pause**, at full opacity while the rest of it fades;
-see "The controls are in every pop-out window too" above for why they are there
-and how they stay in step with the page.
+**The bar carries Start, Pause and the elapsed clock**, at full opacity while the
+rest of it fades; see "The controls are in every pop-out window too" above for
+why they are there and how they stay in step with the page.
 
 **A panel opens at 85%, and the page's top bar sets that number.** Opaque is the
 wrong thing for a window whose whole job is to be laid over the game: at 100% it has to be discovered that the slider exists at all, and the
@@ -623,9 +623,9 @@ Consequences worth knowing:
 - **DPS decays on its own, so two things tick.** The numerator holds and the
   denominator grows, which `render()` cannot express — it runs only when a poll
   brings new data, and an idle poll deliberately skips it to keep scroll
-  position and text selection. `tickClock` rewrites the elapsed line, the party
-  DPS and every `[data-dps]` cell in the character table, as text, four times a
-  second. **The party tile and the character cells must move together or not at
+  position and text selection. `tickClock` rewrites the Elapsed tile, the party
+  DPS, every `[data-dps]` cell in the character table and every floating panel's
+  readout, as text, four times a second. **The party tile and the character cells must move together or not at
   all**: a tile decaying past a frozen column is two correct numbers at two
   different instants, and it reads as a bug. That is also why the bars chart's
   hover card no longer carries a DPS row — it is built once per render and
@@ -697,6 +697,33 @@ Three traps, all of which bit:
   looks exactly like a rule that is not applying. Screenshot before believing a
   colour measured from the Browser pane.
 
+### The clock is a figure, not a caption
+
+It is the denominator under every DPS on the page and the one number in the app
+that keeps moving with nothing happening, so it is the **second tile**, beside
+the total it divides, and it is drawn at 34px rather than buried in the hero
+tile's sub-line. Every floating panel carries the same readout beside its own
+buttons — a panel is over the game so the pull can be run without leaving it,
+and how long the pull has run is exactly the thing being asked from there.
+
+- **`fmtStopwatch`, not `fmtElapsed`.** Same clock, zero-padded to a fixed
+  width: `MM:SS`, and `H:MM:SS` past the hour. `fmtElapsed` drops the leading
+  zero so a figure inside a sentence or under an axis tick reads as short as it
+  is; a stopwatch is *watched*, and one that changes width at `0:59 -> 1:00`
+  shifts every digit beside it. `tabular-nums` is on for the same reason, and it
+  is why the tile and every floating bar line up.
+- **The state rides as a class, in the same two colours as the buttons and the
+  status dot** — green counting, brass held, `--faint` idle. A stopped clock and
+  a slow one are otherwise indistinguishable by watching, which is the one
+  question being asked of it.
+- **The elapsed reading came OUT of `#tTotalSub` and is not repeated there.**
+  Two adjacent cards printing the same clock in two formats is the thing the
+  second card was added to fix; the hero's sub-line now carries only the state of
+  the measurement, which the total needs and the clock does not.
+- **`#tClockSub` is the one tile that still prints a time of DAY.** It says when
+  the pull began in the world, which is the one fact an elapsed clock cannot
+  state — the same reason `fmtClock` survives in the status line.
+
 ### The controls are in every pop-out window too
 
 A panel is floated over the game so a pull can be run without leaving it, and
@@ -718,11 +745,27 @@ late — and late is an error divided into every DPS figure it then reports. So
 - **`paint` overwrites `className` outright**, so nothing may be hung on the
   buttons themselves. The floating bar's compact sizing is selected through the
   `.pop-session` wrapper instead.
+- **`.pop-session` is the WRAPPER, not the segmented pair.** It holds the pair
+  *and* the elapsed readout, and it is what the fade below exempts. It used to
+  be the `.segmented.session` element itself; if a selector assumes that, it is
+  reading the old shape.
+- **The elapsed clock is pushed separately from the view**, through
+  `DPS.popout.clock(text, state)`, and for a plain reason: the view changes when
+  a button is pressed, the clock changes four times a second, and pushing them
+  together would rewrite two buttons' labels, titles and classes on every tick.
+  Same contract otherwise — the text arrives finished, popout.js does no
+  formatting and knows of no clock, and the last value is REMEMBERED so a window
+  opened mid-pull is born showing the right time instead of `00:00`.
+- **It sits to the RIGHT of the buttons, and must.** The pair is a fixed hit
+  target aimed at without looking; a readout ahead of it would shove both
+  buttons sideways when the clock rolls past an hour. `.pop-clock`'s `min-width`
+  is sized for `H:MM:SS` for the same reason.
 - **The bar's fade moved from the bar to its children.** Opacity on a parent
   cannot be undone by a child, and the session group is the one thing there that
   must stay readable and hittable without hunting for it: a Start button at 45%
   over a battle scene is not a Start button. `.pop-bar > *:not(.pop-session)`
-  carries the fade now; the group never does.
+  carries the fade now; the group never does — and the clock is inside the group
+  precisely so it is inside that exemption.
 - **The controls survive the module being used without them.** `sessionControl`
   returns null when `init` was given no `session`, so a page with poppable cards
   and no session still works — and still tests.

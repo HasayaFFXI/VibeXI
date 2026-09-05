@@ -237,6 +237,32 @@ table.data td.job {
   color: var(--mist);
 }
 
+/* ------------------------------------------------------------------- clock */
+
+/* The hero row carries five tiles, not the shared sheet's four. The columns are
+   not equal: the total is the hero figure and needs room for seven digits at
+   44px, while the clock is five characters that never grow. */
+.tiles:not(.compact) {
+  grid-template-columns: 1.35fr 0.75fr repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1100px) { .tiles:not(.compact) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .tiles:not(.compact) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Second only to the hero, and deliberately: this is the denominator under
+   every DPS on the page, and it is the one figure here that keeps moving with
+   nothing happening. `tabular-nums` because it is watched rather than read --
+   a digit that changes width makes the whole readout twitch every second. */
+.clock-value {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+/* Same pair the session buttons and the status dot use: green is counting,
+   brass is not. A stopped clock and a slow one look identical otherwise. */
+.clock-value.is-live { color: var(--good); }
+.clock-value.is-held { color: var(--brass); }
+.clock-value.is-idle { color: var(--faint); }
+
 /* ------------------------------------------------------------- name tiles */
 
 /* A tile whose value is a character name instead of a number. Names are longer
@@ -364,9 +390,31 @@ table.data td.job {
 .pop-bar button.ghost.tiny { font-size: 10px; padding: 1px 7px; }
 
 /* The same two buttons as the page, sized for a 20px overlay bar. Still the
-   largest thing on it, and still the only coloured one. */
-.pop-session { flex: none; margin: 0 6px; }
+   largest thing on it, and still the only coloured one.
+
+   `.pop-session` is the WRAPPER around the pair and the clock, not the pair
+   itself -- it is what the bar's fade exempts, and the readout has to be inside
+   that exemption or it is unreadable over a battle scene. */
+.pop-session { flex: none; margin: 0 6px; display: flex; align-items: center; gap: 8px; }
 .pop-bar .segmented.session button { font-size: 11px; padding: 3px 13px; }
+
+/* To the right of the buttons, never to the left: the pair is a fixed hit
+   target aimed at without looking, and a readout ahead of it would shove it
+   sideways when the clock rolls past an hour. `min-width` holds the bar still
+   for the same reason -- `00:00` and `12:34` are the same width, but `1:02:03`
+   is not, so the slot is sized for the wide one from the start. */
+.pop-clock {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 56px;
+  text-align: center;
+  white-space: nowrap;
+}
+.pop-clock.is-live { color: var(--good); }
+.pop-clock.is-held { color: var(--brass); }
+.pop-clock.is-idle { color: var(--faint); }
 /* The title yields first: the buttons are a fixed hit target and must not move
    or shrink as the panel's name gets longer. */
 .pop-bar .pop-title { flex: 1 1 auto; min-width: 0; }

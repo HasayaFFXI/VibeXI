@@ -99,6 +99,15 @@
       <div class="tile-value hero-value" id="tTotal">0</div>
       <div class="tile-sub" id="tTotalSub">not started &mdash; press Start</div>
     </div>
+    <!-- The clock, as a figure rather than a footnote. It is the denominator
+         under every DPS on the page, and it is the one number here that moves
+         with nothing happening -- so it sits second, beside the total it
+         divides, and reads MM:SS at a fixed width. -->
+    <div class="tile tile-clock">
+      <div class="tile-label">Elapsed</div>
+      <div class="tile-value clock-value is-idle" id="tClock">00:00</div>
+      <div class="tile-sub" id="tClockSub">&mdash;</div>
+    </div>
     <div class="tile">
       <div class="tile-label">Party DPS</div>
       <div class="tile-value" id="tDps">0</div>
