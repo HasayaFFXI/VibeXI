@@ -1,4 +1,4 @@
-# damage_meter — working notes
+# damage-meter — working notes
 
 Live HorizonXI damage meter. **No Node, no build step, nothing to pip install**
 — the server is a stdlib-only Python script and the front end is classic
@@ -7,7 +7,7 @@ detail. `PACKAGING.md` covers turning the server into an `.exe`.
 
 ## The one source is the addon
 
-`../addons/VibeXI/` reads the game's own action packets and appends one JSON
+`../../addons/VibeXI/` reads the game's own action packets and appends one JSON
 object per line to `%LOCALAPPDATA%\VibeXI\events\<Character>_<date>.jsonl`.
 That file is the only input this app has.
 
@@ -39,8 +39,8 @@ What the packet gives that the text could not:
 damage-meter.py     http.server on 127.0.0.1 + newest-event-file tailer
 winalpha.py         ctypes user32: the layered-window alpha behind /api/alpha
 Damage-Meter.cmd    double-click launcher (python damage-meter.py)
-../addons/VibeXI/   the addon that produces every event this app draws
-../shared-ui/       THE design system, shared with ../ws_calculator; mounted at /shared/
+../../addons/VibeXI/  the addon that produces every event this app draws
+../../shared-ui/    THE design system, shared with ../ws-calculator; mounted at /shared/
 web/index.html      page shell; theme -> source -> stats -> chart -> popout -> app
 web/style.css       app-only rules: filter bar, source indicator, diagnostics, pop-outs
 web/app.js          polling, filter state, all DOM writing
@@ -58,7 +58,7 @@ tools/gen-test-events.py   synthetic event file, for working with no game runnin
   browser, so a change there is an F5, not a restart. Do not move any of it into
   the server.
 - **`lib/source.js` and `lib/stats.js` stay DOM-free**, same contract as
-  `../ws_calculator`. They're what gets validated from the console; if a function
+  `../ws-calculator`. They're what gets validated from the console; if a function
   needs a value it takes it as an argument.
 - **Classic scripts on `window.DPS`, never ES modules.** Load order is
   `/shared/js/theme.js -> source -> stats -> chart -> popout -> app`; `chart.js`
@@ -67,15 +67,15 @@ tools/gen-test-events.py   synthetic event file, for working with no game runnin
 - **`$` is `DPS.popout.byId`, not `document.getElementById`.** A popped-out
   card's nodes live in another document, where `getElementById` cannot see them.
   Anything that reaches for an element by id must go through `$`.
-- **The design system lives in `../shared-ui/`, not in `web/`.** `damage-meter.py`
+- **The design system lives in `../../shared-ui/`, not in `web/`.** `damage-meter.py`
   mounts that directory at the `/shared/` URL prefix so nothing is copied in —
   `resolve_static_path` picks a root from the prefix and applies the same
   containment check to each. `web/style.css` loads *after* the shared sheet and
-  holds only what `../ws_calculator` would never want. Before adding a rule, check
+  holds only what `../ws-calculator` would never want. Before adding a rule, check
   whether the shared sheet already has the primitive (`.card`, `.tile`,
   `table.data`, `.chart-wrap`, `.segmented`, `.chip`, `button.ghost`), and if a
   rule in `style.css` starts looking generally useful, move it up rather than
-  letting the other app grow a copy. `../shared-ui/README.md` is the vocabulary
+  letting the other app grow a copy. `../../shared-ui/README.md` is the vocabulary
   list.
 - **No palette in the JS.** `chart.js`'s `theme()` and `seriesColor()` are
   one-line delegations to `FFXITheme`, which reads the live custom properties off
@@ -125,7 +125,7 @@ environment probe, once per session, and one notice per game message id it saw
 and did not recognise. `source.js` routes both into `meta`, which is what the
 Diagnostics panel prints. An unrecognised id is damage nobody is being credited
 with, so that panel is the first place to look when a total seems low; the fix
-is a new entry in `../addons/VibeXI/vx_enums.lua`, not here.
+is a new entry in `../../addons/VibeXI/vx_enums.lua`, not here.
 
 **Neither is a `kind:"job"` line.** It states one party member's jobs:
 
@@ -820,7 +820,7 @@ the pull that is about to happen.
 House style from the `dataviz` skill; the palette is its documented reference
 instance (blue, orange, aqua, yellow, magenta, green, violet, red) with each
 mode's own steps, already validated — **don't re-step it**. It now lives in
-`../shared-ui/css/ffxi-theme.css` as `--series-1..18`, deliberately kept apart
+`../../shared-ui/css/ffxi-theme.css` as `--series-1..18`, deliberately kept apart
 from the blade/brass chrome tokens: series colours encode *data*, so they are not
 folded into the app's identity even though everything around them was. Fixed
 specs, not options: 2px lines, ≥8px markers with a 2px surface ring, hairline
@@ -992,11 +992,11 @@ and the emitter disagree the fixture is worthless, so that function is the thing
 to diff against when either changes.
 
 ```bash
-python damage_meter/tools/gen-test-events.py
-python damage_meter/damage-meter.py --port 8732 --no-browser --events-dir damage_meter/tools/events
+python apps/damage-meter/tools/gen-test-events.py
+python apps/damage-meter/damage-meter.py --port 8732 --no-browser --events-dir apps/damage-meter/tools/events
 ```
 
-That is the `damage-meter-fixture` entry in `../.claude/launch.json`, port 8732.
+That is the `damage-meter-fixture` entry in `../../.claude/launch.json`, port 8732.
 **Reload the page after regenerating** — see the last gotcha above.
 
 Browser-pane screenshots work against `http://localhost`; it is `file://` pages

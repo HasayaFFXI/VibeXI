@@ -5,8 +5,8 @@ Shared-component app extracted from the single-file Jinpu weaponskill calculator
 ## Layout
 
 ```
-../shared-ui/
-  css/ffxi-theme.css       THE design system, shared with ../damage_meter
+../../shared-ui/           at the repo root, a sibling of apps/ — not inside this app
+  css/ffxi-theme.css       THE design system, shared with ../damage-meter
   js/theme.js              window.FFXITheme - the same tokens, resolved for canvas
 shared/
   css/theme.css            app-only rules: mob grid, buff table, presets, run bar, results
@@ -37,7 +37,7 @@ Load order matters — the shared theme, then `core.js`, then data, then lib, th
 components:
 
 ```html
-<script src="../../shared-ui/js/theme.js"></script>
+<script src="../../../shared-ui/js/theme.js"></script>
 <script src="../shared/lib/core.js"></script>
 <script src="../shared/data/mob-data.js"></script>
 ...
@@ -45,7 +45,7 @@ components:
 
 **Styling is shared with the DPS meter.** The palette and every primitive
 (`.card`, `.field`, `table.data`, `.chart-wrap`, buttons) live in
-[`../shared-ui/`](../shared-ui); `shared/css/theme.css` holds only what is
+[`../../shared-ui/`](../../shared-ui); `shared/css/theme.css` holds only what is
 specific to this app. Canvas colours are read from the same custom properties
 through `FFXITheme`, so there is no second palette to keep in sync.
 
@@ -91,7 +91,7 @@ requirement isn't met is disabled outright.
 
 Copy the head and script block from `pages/ws-calculator.html`, mount the
 components you need, and supply the callbacks. Nothing in `shared/` or
-`../shared-ui/` needs to change.
+`../../shared-ui/` needs to change.
 
 ## Validating against the server
 

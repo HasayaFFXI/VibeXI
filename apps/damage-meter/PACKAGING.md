@@ -13,7 +13,7 @@ human-facing overview and `CLAUDE.md` the operational detail.
 
 **The `.exe` is a local web server, not a GUI application.** The UI is the
 browser page in `web/`; the exe's job is to tail the addon's newest event file, serve
-`web/` and `../shared-ui/` on `localhost`, and open a tab. Every decision below
+`web/` and `../../shared-ui/` on `localhost`, and open a tab. Every decision below
 follows from that:
 
 - there is no window to design — the console *is* the app's window
@@ -119,9 +119,9 @@ speculation.
 
 | Thing | Why it breaks | Fix |
 |---|---|---|
-| `web/` and `../shared-ui/` paths | in the dev tree they resolve relative to the script, and **shared-ui is outside the project directory** | one `roots()` helper, two layouts (below) |
+| `web/` and `../../shared-ui/` paths | in the dev tree they resolve relative to the script, and **shared-ui is outside the project directory** | one `roots()` helper, two layouts (below) |
 | `__file__` | meaningless inside a bundle | `sys._MEIPASS` when `sys.frozen` |
-| the `/shared/` URL prefix | it maps to `..\shared-ui`, which does not exist next to the exe | the bundle flattens both roots side by side |
+| the `/shared/` URL prefix | it maps to `..\..\shared-ui`, which does not exist next to the exe | the bundle flattens both roots side by side |
 | the containment check in `resolve_static_path` | it compares against a root that is now a temp path | it still holds, but the traversal test has to be re-run against the frozen layout |
 | Ctrl-C | console control handling differs under a frozen host | explicit `KeyboardInterrupt` path with a "Stopped." line |
 | `webbrowser.open` | fine frozen, but the URL must be the *actual* bound port | see Decision 6 |
@@ -130,13 +130,14 @@ The path helper, concretely:
 
 ```python
 def roots():
-    """(web_root, shared_root). The dev tree has shared-ui as a SIBLING of the
-    project; the bundle has it as a sibling of web/ inside the payload."""
+    """(web_root, shared_root). In the dev tree shared-ui lives at the repo
+    root, two levels above this app; the bundle has it as a sibling of web/
+    inside the payload."""
     if getattr(sys, 'frozen', False):
         base = Path(sys._MEIPASS)
         return base / 'web', base / 'shared-ui'
     here = Path(__file__).resolve().parent
-    return here / 'web', here.parent / 'shared-ui'
+    return here / 'web', here.parent.parent / 'shared-ui'
 ```
 
 Nothing else in the app touches the filesystem except the log tailer, which
@@ -151,8 +152,9 @@ reads an absolute path the user supplied, and the settings file.
 Every PowerShell component is gone. `damage-meter.py` is the server, with the
 Win32 layered-window code in `winalpha.py` via `ctypes` — no `Add-Type`, no
 compiler at startup, which was one of the three reasons an exe could not be cut
-from the old script. The four dev-tool scripts went with it (`check-apis.py`,
-`tools/check-lua.py`, `tools/gen-ws-names.py`, `tools/gen-test-events.py`); they
+from the old script. The four dev-tool scripts went with it
+(`addon-dev/check-apis.py`, `addon-dev/check-lua.py`, `addon-dev/gen-ws-names.py`,
+`apps/damage-meter/tools/gen-test-events.py`); they
 never ship inside the exe but a half-ported repo would have been worse than
 either end state.
 
@@ -182,7 +184,7 @@ That ordering is deliberate — a frozen binary is the worst possible place to
 debug a path bug.
 
 **Done when:** the script behaves identically whether it runs from the repo or
-from a copy of `damage_meter/` moved somewhere else entirely.
+from a copy of `apps/damage-meter/` moved somewhere else entirely.
 
 ### Phase 2 — the build
 
@@ -190,16 +192,16 @@ from a copy of `damage_meter/` moved somewhere else entirely.
    3.14.7, new enough that the toolchain may lag. If it does not, install 3.12
    or 3.13 alongside and build against that; the app is stdlib-only and version-
    agnostic. **Check this first: it decides the day.**
-2. `build/damage-meter.spec` with `datas` for `web/`, `shared-ui/css`,
+2. `apps/damage-meter/build/damage-meter.spec` with `datas` for `web/`, `shared-ui/css`,
    `shared-ui/js`; `console=True`, `upx=False`, icon, version resource.
-3. `build/version-info.txt` (product name, version, company, copyright) — this
+3. `build/version-info.txt` (alongside it) (product name, version, company, copyright) — this
    is what shows in file properties, and it is part of looking legitimate.
 4. An icon. There isn't one yet; it needs making.
 5. `build/build.py` — one command, from a clean venv, producing
    `dist/DamageMeter/`, zipped with the player README and a `SHA256SUMS`.
-6. `.gitignore`: `build/venv/`, `dist/`.
+6. `.gitignore`: `apps/damage-meter/build/venv/`, `apps/damage-meter/dist/`.
 
-**Done when:** `python build/build.py` on a clean checkout produces
+**Done when:** `python apps/damage-meter/build/build.py` on a clean checkout produces
 `DamageMeter-<version>.zip`, and the exe inside it runs on **a Windows machine
 with no Python installed** — that last clause is the entire point, and it cannot
 be verified on this machine.
@@ -231,7 +233,7 @@ double-clicks, and sees their own numbers.
   before promising it; the numbers move.
 - **Inno Setup installer** with a Start Menu shortcut, if the zip proves to be
   too much friction.
-- **One exe, both apps.** `ws_calculator` is static pages that already load the
+- **One exe, both apps.** `ws-calculator` is static pages that already load the
   same `shared-ui`; the server could mount them at `/calc/` and the exe becomes
   the whole VibeXI toolset rather than one app. Cheap, and probably the highest
   value item on this list.
@@ -274,14 +276,14 @@ double-clicks, and sees their own numbers.
 ## Appendix — spec sketch
 
 ```python
-# build/damage-meter.spec
+# apps/damage-meter/build/damage-meter.spec  -- paths are relative to this file
 a = Analysis(
-    ['../damage_meter/damage-meter.py'],
-    pathex=['../damage_meter'],
+    ['../damage-meter.py'],
+    pathex=['..'],
     datas=[
-        ('../damage_meter/web', 'web'),
-        ('../shared-ui/css',    'shared-ui/css'),
-        ('../shared-ui/js',     'shared-ui/js'),
+        ('../web',                 'web'),
+        ('../../../shared-ui/css', 'shared-ui/css'),
+        ('../../../shared-ui/js',  'shared-ui/js'),
     ],
     hiddenimports=[],
     excludes=['tkinter', 'unittest', 'pydoc', 'email', 'xml'],

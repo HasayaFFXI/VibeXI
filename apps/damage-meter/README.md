@@ -300,7 +300,7 @@ Open **Diagnostics** at the bottom.
 - **Addon notices.** The addon's startup probe, plus one line for each kind of
   game message it saw and did not recognise. Anything listed there is damage
   nobody is being credited with, and the fix is a new message id in
-  [`../addons/VibeXI/vx_enums.lua`](../addons/VibeXI/vx_enums.lua).
+  [`../../addons/VibeXI/vx_enums.lua`](../../addons/VibeXI/vx_enums.lua).
 
 ## Layout
 
@@ -308,8 +308,8 @@ Open **Diagnostics** at the bottom.
 damage-meter.py     tails the newest addon event file, serves web/ on localhost
 winalpha.py         ctypes Win32 call that makes a pop-out window see-through
 Damage-Meter.cmd    double-click launcher
-../addons/VibeXI/   the Ashita addon that produces the data
-../shared-ui/       design system shared with ../ws_calculator, served at /shared/
+../../addons/VibeXI/  the Ashita addon that produces the data
+../../shared-ui/    design system shared with ../ws-calculator, served at /shared/
 web/index.html      the page
 web/style.css       app-only styling: filter bar, source indicator, diagnostics
 web/app.js          polling, state, rendering
@@ -321,10 +321,10 @@ tools/gen-test-events.py   writes a synthetic event file, for working without th
 ```
 
 The palette and the shared widgets come from
-[`../shared-ui`](../shared-ui) — the same stylesheet the weaponskill calculator
+[`../../shared-ui`](../../shared-ui) — the same stylesheet the weaponskill calculator
 uses, so the two apps look like one toolset. The server mounts that directory at
-`/shared/` rather than keeping a copy here, which means it must stay a sibling of
-this project. The **Light / Dark** button in the top right switches themes and
+`/shared/` rather than keeping a copy here, which means it must stay at the repo
+root, two levels above this app. The **Light / Dark** button in the top right switches themes and
 remembers the choice.
 
 `CLAUDE.md` has the operational detail.

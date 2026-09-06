@@ -8,23 +8,29 @@ css/ffxi-theme.css   tokens + every shared primitive
 js/theme.js          window.FFXITheme -- the same tokens, for <canvas>
 ```
 
-The look is [`../ws_calculator`](../ws_calculator)'s: dark ink field, bone text, blade-red
+This lives at the repo root, a sibling of `apps/` rather than inside it: it is
+not an app, and both apps under `apps/` reach it by relative path, so its
+position is load-bearing. See the paths below.
+
+The look is [`../apps/ws-calculator`](../apps/ws-calculator)'s: dark ink field, bone text, blade-red
 and brass accents, Shippori Mincho headings, JetBrains Mono for anything numeric.
-[`../damage_meter`](../damage_meter) was brought onto it rather than the other way round.
+[`../apps/damage-meter`](../apps/damage-meter) was brought onto it rather than the other way round.
 
 ## How each app loads it
 
-**ws_calculator** — plain relative paths, because pages are opened straight off disk:
+**apps/ws-calculator** — plain relative paths, because pages are opened straight
+off disk; three levels up from `pages/`:
 
 ```html
-<link rel="stylesheet" href="../../shared-ui/css/ffxi-theme.css">
+<link rel="stylesheet" href="../../../shared-ui/css/ffxi-theme.css">
 <link rel="stylesheet" href="../shared/css/theme.css">
 ...
-<script src="../../shared-ui/js/theme.js"></script>
+<script src="../../../shared-ui/js/theme.js"></script>
 ```
 
-**damage_meter** — `damage-meter.py` mounts this directory at the `/shared/` URL prefix,
-so nothing has to be copied into `web/`:
+**apps/damage-meter** — `damage-meter.py` resolves this directory as
+`HERE.parent.parent / 'shared-ui'` and mounts it at the `/shared/` URL prefix, so
+nothing has to be copied into `web/`:
 
 ```html
 <link rel="stylesheet" href="/shared/css/ffxi-theme.css">
@@ -49,7 +55,7 @@ copying it into the next app.
 Chrome colors, spacing and type are all custom properties on `:root`. Dark is the
 default and needs no attribute; light is opt-in via `data-theme="light"` on
 `<html>` and is the same identity re-stepped for a pale surface, not an inversion.
-ws_calculator never sets the attribute; damage_meter has a toggle.
+ws-calculator never sets the attribute; damage-meter has a toggle.
 
 Three families of color, kept apart on purpose:
 
@@ -155,5 +161,5 @@ harder one to see. The series ramp never needs it.
 a change — so a caller can safely repaint from `onChange` without it running
 before the app has anything to paint.
 
-Classic script on `window.FFXITheme`, never an ES module: ws_calculator pages are
+Classic script on `window.FFXITheme`, never an ES module: ws-calculator pages are
 opened off `file://`, where modules are CORS-blocked.

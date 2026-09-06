@@ -3,8 +3,8 @@ game running: several characters, a pet, multi-attack rounds, weaponskills,
 crits, skillchains, magic bursts, ranged attacks, additional effects, an
 unresolved target, monster damage on the party, and gaps between fights.
 
-    python damage_meter/tools/gen-test-events.py
-    python damage_meter/tools/gen-test-events.py --out somewhere/Hasaya_2026.09.04.jsonl
+    python apps/damage-meter/tools/gen-test-events.py
+    python apps/damage-meter/tools/gen-test-events.py --out somewhere/Hasaya_2026.09.04.jsonl
 
 It writes exactly what `addons/VibeXI/vx_emit.lua` writes: one ASCII JSON object
 per line, same field order, same field names, same message ids. If this file and

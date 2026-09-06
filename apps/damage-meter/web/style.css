@@ -1,5 +1,5 @@
-/* damage_meter page styling.
-   Loads AFTER /shared/css/ffxi-theme.css (served out of projects/shared-ui by
+/* damage-meter page styling.
+   Loads AFTER /shared/css/ffxi-theme.css (served out of the repo-root shared-ui by
    damage-meter.py), which supplies the palette and every primitive this page draws
    with: .topbar, .card, .tile, table.data, .chart-wrap, .chart-tip, .segmented,
    .chip, button.ghost.

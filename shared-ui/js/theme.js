@@ -7,7 +7,7 @@
  * the stylesheet is the single source of truth and a light/dark swap needs no
  * JS palette at all.
  *
- * Classic script on window.FFXITheme, never an ES module: ws_calculator pages are
+ * Classic script on window.FFXITheme, never an ES module: ws-calculator pages are
  * opened straight off disk and modules are CORS-blocked on file://.
  *
  *   FFXITheme.v('--blade')      one token, resolved
@@ -144,7 +144,7 @@
   /*
    * A live view of the chart palette: `palette().blade` and `palette.blade` both
    * work, and the property re-reads on access so a theme change needs no
-   * re-wiring at the call sites. This is what lets ws_calculator's components keep
+   * re-wiring at the call sites. This is what lets ws-calculator's components keep
    * writing `C.COLORS.blade` unchanged.
    */
   function liveColors() {
