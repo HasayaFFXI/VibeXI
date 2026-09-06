@@ -5,7 +5,7 @@
       "name": "damage-meter",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "damage_meter/damage-meter.py",
+        "apps/damage-meter/damage-meter.py",
         "--port", "8731",
         "--no-browser"
       ],
@@ -15,10 +15,10 @@
       "name": "damage-meter-fixture",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "damage_meter/damage-meter.py",
+        "apps/damage-meter/damage-meter.py",
         "--port", "8732",
         "--no-browser",
-        "--events-dir", "damage_meter/tools/events"
+        "--events-dir", "apps/damage-meter/tools/events"
       ],
       "port": 8732
     },
@@ -26,7 +26,7 @@
       "name": "damage-meter-live",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "damage_meter/damage-meter.py",
+        "apps/damage-meter/damage-meter.py",
         "--port", "8831",
         "--no-browser"
       ],

@@ -1,24 +1,24 @@
 /* =============================================================================
    FFXI shared design system
    -----------------------------------------------------------------------------
-   One stylesheet, shared by every app under projects/. The look is ws_calculator's:
+   One stylesheet, shared by every app under apps/. The look is ws-calculator's:
    a dark ink field, bone text, blade-red and brass accents, Shippori Mincho for
    headings and JetBrains Mono for anything numeric.
 
    Consumed by:
-     ws_calculator   pages/*.html   <link href="../../shared-ui/css/ffxi-theme.css">
-     damage_meter   web/index.html <link href="/shared/css/ffxi-theme.css">
-                (damage-meter.py maps the /shared/ URL prefix onto this directory)
+     apps/ws-calculator  pages/*.html    <link href="../../../shared-ui/css/ffxi-theme.css">
+     apps/damage-meter   web/index.html  <link href="/shared/css/ffxi-theme.css">
+                 (damage-meter.py maps the /shared/ URL prefix onto this directory)
 
    Each app then links its OWN stylesheet after this one for rules nothing else
    needs. Anything a second app could plausibly want belongs here instead.
 
    Deliberately a single file with no @import: @import of a relative URL from a
-   file:// stylesheet is unreliable, and ws_calculator has to keep working when a page
+   file:// stylesheet is unreliable, and ws-calculator has to keep working when a page
    is double-clicked off disk.
 
-   Dark is the default -- ws_calculator never sets data-theme at all. Light is an
-   opt-in override for apps with a toggle (damage_meter), and is the same identity
+   Dark is the default -- ws-calculator never sets data-theme at all. Light is an
+   opt-in override for apps with a toggle (damage-meter), and is the same identity
    re-stepped for a pale surface, not an inversion.
    ============================================================================= */
 
@@ -790,9 +790,9 @@ table.data .swatch {
   box-shadow: var(--shadow);
 }
 .chart-tip b { color: var(--blade); }
-/* Manually positioned tips (ws_calculator) anchor above the cursor. */
+/* Manually positioned tips (ws-calculator) anchor above the cursor. */
 .chart-tip.anchor-above { transform: translate(-50%, -100%); }
-/* Tips toggled by opacity (damage_meter) stay laid out so their size can be read. */
+/* Tips toggled by opacity (damage-meter) stay laid out so their size can be read. */
 .chart-tip.fade {
   display: block;
   min-width: 118px;

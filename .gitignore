@@ -1,5 +1,5 @@
-# Generated test fixture (damage_meter/tools/gen-test-events.py writes here)
-damage_meter/tools/events/
+# Generated test fixture (apps/damage-meter/tools/gen-test-events.py writes here)
+apps/damage-meter/tools/events/
 
 # Python bytecode
 __pycache__/

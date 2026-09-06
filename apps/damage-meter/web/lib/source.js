@@ -7,7 +7,7 @@
  *   DPS.source.create(ownerName)  -> stateful line-at-a-time reader
  *   DPS.source.parseAll(lines)    -> one-shot, returns { events, meta }
  *
- * THE ONE SOURCE IS THE ADDON. ../../addons/VibeXI/ reads the game's own action
+ * THE ONE SOURCE IS THE ADDON. addons/VibeXI/ reads the game's own action
  * packets (0x028) and appends one JSON object per line. There is no chat-log
  * reader any more and there is nothing to infer here: this file validates a
  * line, rescales its clock, and hands it on.

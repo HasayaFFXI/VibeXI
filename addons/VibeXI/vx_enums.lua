@@ -195,7 +195,7 @@ E.Attempt = {
 -- says spike trailer. Whichever is right, an absorbed hit is a swing that dealt
 -- nothing, so Tier 2 is the answer both ways: if it never arrives here the entry
 -- is inert, and if it does the swing lands in the accuracy denominator exactly
--- as Metrics counts it. damage_meter/CLAUDE.md already says absorbs read as
+-- as Metrics counts it. apps/damage-meter/CLAUDE.md already says absorbs read as
 -- misses, so this also keeps the two sources telling the same story.
 
 -- Deliberately in NEITHER table, so they drop. Recorded here so the next person
@@ -217,7 +217,7 @@ E.Attempt = {
 --
 --   HEALS, BUFFS, ENFEEBLES, STATUS -- 7, 24, 102, 103 (recovers HP), 230/266
 --   (gains the effect of), 236/237/267 (receives the effect of), 373
---   (SpikesEffectRecover). This is a damage meter; damage_meter/CLAUDE.md says
+--   (SpikesEffectRecover). This is a damage meter; apps/damage-meter/CLAUDE.md says
 --   so under "Known gaps". Every event carries its raw `msg`, so a later phase
 --   can add healing without changing the wire format.
 

@@ -4,7 +4,7 @@ Branch: `DamageMeter-Addon`. Nothing is built yet; this file is the whole plan.
 
 ## Why
 
-`damage_meter/` used to read the FFXI chat log as text. That worked, but the
+`apps/damage-meter/` used to read the FFXI chat log as text. That worked, but the
 ceiling was a hard one: the log did not say who was a player, did not say who
 owned a pet, did not flag crits reliably, could not distinguish a weaponskill
 from a job ability at the announcement, and wrote one damage line per AoE victim
@@ -17,7 +17,7 @@ browser UI, which already knew how to aggregate.
 **The chat-log reader is gone.** It was removed on 2026-09-04 once the addon was
 approved (see Resolved, below) rather than being kept as a fallback: two sources
 that disagree is worse than one that is right, and every "known gap" in the old
-`damage_meter/CLAUDE.md` was a property of the log rather than of the meter.
+`apps/damage-meter/CLAUDE.md` was a property of the log rather than of the meter.
 `web/lib/parser.js` and the CP932 tailer went with it.
 
 ---
@@ -404,7 +404,7 @@ one.
 5. Kill one mob. Compare the JSONL totals against the chat log for the same
    fight — **if every number is exactly double, it is the `chunk_data` dedup**.
 6. Point the server at it — or just run it, since that path is the default:
-   `python damage_meter/damage-meter.py --events-dir %LOCALAPPDATA%\VibeXI\events`
+   `python apps/damage-meter/damage-meter.py --events-dir %LOCALAPPDATA%\VibeXI\events`
 
 ### Phase 2 — server serves it — **DONE**
 
@@ -419,7 +419,7 @@ flush-per-event safe — half a JSON object is not parseable.
 
 ### Phase 3 — client reads it — **DONE**
 
-- `damage_meter/web/lib/source.js` replaces `parser.js`, which is deleted along
+- `apps/damage-meter/web/lib/source.js` replaces `parser.js`, which is deleted along
   with `tools/gen-test-log.py` and the CP932 fixture
 - `roster` is a lookup over `actorKind`/`targetKind`; the article heuristic and
   the fixed point are gone, the manual override is kept
@@ -558,8 +558,8 @@ io.open  -- "a" mode only, local path under the Ashita config dir
 | What | Where |
 |---|---|
 | event shape, `use` id minting | `addons/VibeXI/vibexi.lua` (`record`) |
-| reading it back | `damage_meter/web/lib/source.js` |
-| `collapse`, aggregation | `damage_meter/web/lib/stats.js` |
-| file tailer, `/api/events` | `damage_meter/damage-meter.py` |
-| operational detail, gotchas | `damage_meter/CLAUDE.md` |
-| test-event generator | `damage_meter/tools/gen-test-events.py` |
+| reading it back | `apps/damage-meter/web/lib/source.js` |
+| `collapse`, aggregation | `apps/damage-meter/web/lib/stats.js` |
+| file tailer, `/api/events` | `apps/damage-meter/damage-meter.py` |
+| operational detail, gotchas | `apps/damage-meter/CLAUDE.md` |
+| test-event generator | `apps/damage-meter/tools/gen-test-events.py` |

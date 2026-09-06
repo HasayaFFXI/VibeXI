@@ -1,7 +1,7 @@
 """Tails the newest event file written by the VibeXI Ashita addon and serves a
 live damage meter web UI on localhost.
 
-The one data source is the addon (../addons/VibeXI/). It reads the game's own
+The one data source is the addon (../../addons/VibeXI/). It reads the game's own
 action packets and appends one JSON object per line to
 
     %LOCALAPPDATA%\\VibeXI\\events\\<Character>_<YYYY.MM.DD>.jsonl
@@ -42,9 +42,10 @@ import winalpha
 
 HERE = Path(__file__).resolve().parent
 WEB_ROOT = HERE / 'web'
-# The design system is shared with ../ws_calculator, so it lives outside this
-# project and is mounted at the /shared/ URL prefix rather than being copied in.
-SHARED_ROOT = HERE.parent / 'shared-ui'
+# The design system is shared with ../ws-calculator, so it lives outside this
+# project -- at the repo root, a sibling of apps/ -- and is mounted at the
+# /shared/ URL prefix rather than being copied in.
+SHARED_ROOT = HERE.parent.parent / 'shared-ui'
 SHARED_PREFIX = '/shared/'
 
 # Where the addon writes. LOCALAPPDATA, not APPDATA or TEMP -- the reasoning is
@@ -198,8 +199,8 @@ def resolve_static_path(url_path):
     """Map a URL path onto a file.
 
     Everything resolves under ./web except the /shared/ prefix, which resolves
-    under ../shared-ui -- the design system both this app and ws_calculator link
-    against. Each root gets the same containment check, so a traversal out of one
+    under ../../shared-ui -- the design system both this app and ws-calculator
+    link against. Each root gets the same containment check, so a traversal out of one
     cannot land in the other or anywhere else.
     """
     root = WEB_ROOT

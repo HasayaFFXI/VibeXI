@@ -21,7 +21,7 @@
 
   /* Both of these come from shared-ui/js/theme.js, which reads the live custom
      properties off :root -- so the palette lives in one stylesheet shared with
-     ws_calculator and the light/dark swap needs no JS table here. `el` is accepted
+     ws-calculator and the light/dark swap needs no JS table here. `el` is accepted
      and ignored; the tokens are only ever defined on :root. */
   function theme(el) { return global.FFXITheme.chart(); }
 

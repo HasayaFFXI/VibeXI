@@ -1,4 +1,4 @@
-# ws_calculator — working notes
+# ws-calculator — working notes
 
 Browser FFXI toolset. **No build step, no bundler, no Node, no Python available.**
 Pages are opened directly from disk. `README.md` has the human-facing overview;
@@ -7,9 +7,9 @@ this file is the operational detail.
 ## Paths
 
 ```
-../shared-ui/css/ffxi-theme.css   THE design system, shared with damage_meter — tokens, .card,
-                              .field, .grid, buttons, table.data, .chart-wrap, .chart-tip
-../shared-ui/js/theme.js      window.FFXITheme — the same tokens resolved for <canvas>
+../../shared-ui/css/ffxi-theme.css  THE design system, shared with ../damage-meter — tokens,
+                              .card, .field, .grid, buttons, table.data, .chart-wrap, .chart-tip
+../../shared-ui/js/theme.js   window.FFXITheme — the same tokens resolved for <canvas>
 pages/ws-calculator.html      weaponskill Monte-Carlo sim (currently the only page)
 shared/css/theme.css          app-only rules — mob grid, buff table, presets, run bar, results
 shared/data/mob-data.js       MOB_DATA: zones, mobsByZone, species. ~390KB, ONE LINE.
@@ -39,7 +39,7 @@ is deliberately not vendored here. Formula reference lives in the
 - **Classic scripts on `window.FFXI`. Never ES modules.** Modules are CORS-blocked
   on `file://`, which would break double-click-to-open. This is deliberate, not
   an oversight — don't "modernize" it.
-- **Load order: `../../shared-ui/js/theme.js` → `core.js` → `data/` → `lib/` →
+- **Load order: `../../../shared-ui/js/theme.js` → `core.js` → `data/` → `lib/` →
   `components/`**, all before the page's inline script. `core.js` creates the
   namespace everything else assigns into; `theme.js` comes first because
   `lib/chart.js` builds its colour view from `FFXITheme` at load time.
@@ -61,12 +61,12 @@ is deliberately not vendored here. Formula reference lives in the
   Don't reintroduce a component-owned button — components just expose `render()` /
   `derive()` for the host to call. Anything that writes a field programmatically
   must either fire a bubbling event or call `scheduleRecalc()` itself.
-- **The design system lives in `../shared-ui/`, not here.** `shared/css/theme.css`
-  loads *after* it and holds only what damage_meter would never want. Before adding a
+- **The design system lives in `../../shared-ui/`, not here.** `shared/css/theme.css`
+  loads *after* it and holds only what damage-meter would never want. Before adding a
   rule, check whether the shared sheet already has the primitive — `.card`,
   `.field`, `table.data`, `.chart-wrap`, `.chart-tip`, `.tile`, `.stat`,
   `button.primary` — and if a rule here starts looking generally useful, move it
-  up rather than letting the other app grow a copy. `../shared-ui/README.md` is
+  up rather than letting the other app grow a copy. `../../shared-ui/README.md` is
   the vocabulary list.
 - **Canvas colours come from `FFXITheme`, not from a table in the JS.**
   `FFXI.chart.COLORS` is a live view over the CSS custom properties; every key is
@@ -86,7 +86,7 @@ is deliberately not vendored here. Formula reference lives in the
 
 - **Never read `shared/data/mob-data.js` with the Read tool** — one 390KB line,
   ~250k tokens. Move/inspect it with shell (`sed -n '1p'`, `head -c`). Same for the
-  legacy `../jinpu_calculator/ws_damage_calculator.html`, whose line 748 is that blob.
+  legacy `jinpu_calculator/ws_damage_calculator.html`, whose line 748 is that blob.
 - **The preview pane caches `file://` snapshots hard.** After editing a shared
   `.js` you can keep getting the old file; `force: true` and `?v=N` query-busting
   both fail. Opening a new tab is unreliable too. Verify semantics by evaluating
@@ -239,7 +239,7 @@ answering "what would this look like on a stock server", not the live one.
   preset restores its own saved values and suppresses that one derivation, so a
   preset saved before the mob panel was ever used keeps the numbers it was saved
   with.
-- `../jinpu_calculator/` holds the unmaintained pre-refactor original
+- `jinpu_calculator/` — outside this repo — holds the unmaintained pre-refactor original
   (`ws_damage_calculator.html`) plus two older `- Copy` snapshots. Each carries its
   own copy of the engine, so they will drift from `shared/lib/damage.js` — treat
   them as reference only, and don't fix bugs there.
