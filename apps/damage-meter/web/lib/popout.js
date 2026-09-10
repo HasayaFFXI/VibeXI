@@ -313,11 +313,34 @@
    *
    *   alpha     WS_EX_LAYERED + LWA_ALPHA on the window, from the slider. The
    *             whole window goes translucent, chrome, panel and background alike.
+   *             One byte for the whole HWND; there is no per-region form of it.
    *   punch-out LWA_COLORKEY on top of it, with the document background painted
-   *             exactly KEY. Those pixels are dropped entirely, so the background
-   *             is *gone* rather than dim and the numbers stay crisp over the
-   *             game. It also makes the background click-through, which is what
-   *             an overlay wants; the window's own title bar still drags it.
+   *             exactly KEY. The INTENT is that those pixels are dropped, leaving
+   *             the background gone rather than dim. IT DOES NOT WORK HERE, and
+   *             never has -- see below.
+   *
+   * THE PUNCH-OUT IS INERT AGAINST CHROME. Chrome presents through
+   * DirectComposition rather than the legacy redirection surface LWA_COLORKEY
+   * operates on, so keyed pixels are never dropped. The call still succeeds, so
+   * `applied > 0` comes back true and `key-bg` goes on regardless. Measured
+   * 2026-09-05 against a real Chrome window painted entirely KEY: alpha moved the
+   * on-screen pixel, the key changed nothing at any alpha, and --disable-gpu did
+   * not help. A synthetic non-Chrome layered window keyed fine, so it is Chrome
+   * specifically. See winalpha.py's docstring for the measurements.
+   *
+   * So the transparency users actually see is uniform alpha, and painting the
+   * background KEY is decorative -- a near-black backdrop that alpha then makes
+   * translucent, which is what an overlay wants anyway. That is why this reads
+   * as working. Two things follow, and both have been tried:
+   *
+   *   - A SOLID BAR OVER A TRANSLUCENT PANEL IS NOT POSSIBLE in this window.
+   *     One alpha for the whole window, and the per-pixel escape hatch belongs
+   *     to Chrome. Pinning the alpha to 100 to keep the bar crisp just makes the
+   *     window opaque and the panel a solid near-black slab.
+   *   - Nothing here is click-through, whatever the punch-out would have given.
+   *
+   * Wanting a genuinely solid bar means drawing the overlay in the Ashita addon
+   * rather than in a browser window.
    *
    * `css-alpha` remains as the fallback for when none of that is available (no
    * server, wrong OS), and it is honest about what it is: the bar says "fade
@@ -327,8 +350,10 @@
    * window's caption belongs to Chrome, not to the page. Hence the geometry in
    * the query string.
    */
-  var KEY = '010203';     // punch-out colour: near-black, so text fringes on a
-                          // dark panel stay dark. Matches no palette token.
+  var KEY = '010203';     // near-black, so text fringes on a dark panel stay
+                          // dark. Matches no palette token. Sent as the colour
+                          // key, which Chrome ignores (see above), so in practice
+                          // this is just the pop-out's background colour.
 
   function clampAlpha(v) {
     v = Math.round(+v);
@@ -558,8 +583,10 @@
     // The window is genuinely translucent now, so fading the document as well
     // would darken it twice over.
     root.classList.toggle('css-alpha', !on);
-    // Never paint the punch-out colour unless it is actually being punched out:
-    // unkeyed, it is just a near-black window.
+    // Gated on the server call having landed, because unkeyed this is just a
+    // near-black window -- which, since Chrome ignores the key, is what it always
+    // is. The gate still earns its keep: it also means no KEY background when
+    // there is no OS alpha either, where near-black would be opaque near-black.
     root.classList.toggle('key-bg', on && !!p.keyBg);
 
     if (p.alphaWarn) {
@@ -890,6 +917,9 @@
       return p.alpha;
     },
     /* Read or set whether a panel punches its background out (LWA_COLORKEY).
+       Chrome ignores the key, so in practice this toggles whether the window's
+       background is painted KEY (near-black) or left to the theme. Kept as the
+       escape hatch for a window that renders wrong.
        On by default, and the bar no longer carries a button for it -- this is
        the way back if a driver composites the layered window as solid black. */
     keyBg: function (key, v) {

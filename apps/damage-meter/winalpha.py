@@ -5,6 +5,23 @@ windows' opacity slider cannot on its own let the game show through -- only the
 OS can do that, by making the window layered (WS_EX_LAYERED) and giving it an
 alpha. That is what this module does, and what GET /api/alpha calls.
 
+LWA_ALPHA IS THE ONLY EFFECT THAT LANDS. The colour key below is accepted and
+ignored: Chrome presents its windows through DirectComposition, not through the
+legacy redirection surface that LWA_COLORKEY operates on, so keyed pixels are
+never dropped. SetLayeredWindowAttributes still returns success, which is why
+nothing downstream ever noticed. Measured 2026-09-05 by keying a real Chrome
+window painted entirely #010203 and sampling the screen underneath: alpha=128
+moved the pixel, adding the key changed nothing at alpha 128 or 255. A synthetic
+non-Chrome layered window keyed correctly at every alpha, so this is Chrome
+specifically and not the alpha value; --disable-gpu does not help either.
+
+The consequence worth writing down, because it is the question that keeps being
+asked: a pop-out CANNOT have a solid header over a translucent panel. Alpha is
+one byte for the whole HWND and there is no per-region form of it; the per-pixel
+escape hatch, UpdateLayeredWindow, has to own the window's pixels, and those
+belong to Chrome. Wanting that means drawing the overlay in the Ashita addon
+instead of in a browser window.
+
 FINDING THE WINDOW is the whole difficulty, because a Document Picture-in-Picture
 window's caption is Chrome's to write, not the page's -- it is not reliably the
 document title. So the client sends where its window *is* (the centre of it, in
@@ -225,10 +242,11 @@ def apply(title, cx, cy, w, h, dpr, alpha, key):
     w, h     its size, for the sanity check (0 to skip)
     dpr      device pixel ratio, since a DPI-aware desktop scales those
     alpha    0..255
-    key      colour to punch out entirely, or -1 for none. Painting the page
-             background this exact colour is what makes the *background* vanish
-             while the text over it stays fully crisp; plain alpha fades
-             everything evenly instead.
+    key      colour to punch out entirely, or -1 for none. INERT against Chrome
+             -- see the module docstring. Kept because the flag is harmless, the
+             client still sends it, and a host that did honour it (a non-Chromium
+             browser, or an overlay this app drew itself) would want it. Do not
+             build behaviour on it taking effect.
 
     Returns (method, hwnd, caption), or None if nothing matched.
     """

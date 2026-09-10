@@ -507,12 +507,18 @@ table.data td.job {
    a brand and a theme toggle to fit as well. */
 @media (max-width: 720px) { .popcfg-label { display: none; } }
 
-/* The punch-out. The background is painted exactly the colour the server hands
-   to LWA_COLORKEY, so those pixels are dropped by the window manager and the
-   game shows through them -- the charts already draw on a cleared canvas, so
-   what is left over the game is lines, numbers and the bar. `background`
-   shorthand, not `background-color`: the shared sheet's body gradient has to go
-   with it, or the punched colour is only the corners. */
+/* The background is painted exactly the colour the server hands to
+   LWA_COLORKEY, the intent being that the window manager drops those pixels and
+   the game shows through. CHROME IGNORES THE KEY (see the "opacity" note in
+   popout.js), so nothing is actually dropped and this is simply the pop-out's
+   background: near-black, which uniform alpha then makes translucent. That is
+   the transparency you see, and it is why this still looks right.
+
+   Do not read this rule as a per-region transparency mechanism -- it is not one,
+   and a solid bar over a translucent panel cannot be built on it.
+
+   `background` shorthand, not `background-color`: the shared sheet's body
+   gradient has to go with it, or the colour is only the corners. */
 .key-bg .pop-doc { background: var(--pop-key, #010203); }
 
 /* The fallback path: no OS-level transparency available, so fade the document.

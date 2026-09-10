@@ -39,7 +39,7 @@ local WS_NAMES = require('vx_ws_names')
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '0.2.1'
+addon.version = '0.2.2'
 
 -- ---------------------------------------------------------------- state
 
@@ -607,6 +607,25 @@ ashita.events.register('packet_in', 'vibexi_packet_in', function(p)
     -- broken client.
     pcall(function()
         if not p or not p.data then return end
+
+        -- ROSTER UPDATES. 0x0C8 announces an alliance change, 0x0DD a party
+        -- member change; between them they cover forming an alliance, merging a
+        -- party into one, and anyone joining or leaving. Neither is read here --
+        -- we only mark the cached roster stale, because the client's party
+        -- memory does not update in the same breath as the packet that
+        -- announced the change (Metrics carries the same warning above its own
+        -- dispatch). Entity.refresh_party then re-reads on the next action.
+        --
+        -- Without this the roster is refreshed ONLY by its 3-second TTL, and
+        -- only when an action packet arrives to consult it. An alliance that
+        -- pulls the moment it is assembled therefore spends its first seconds
+        -- with the other twelve members absent from the name set that is_ours
+        -- tests against, and every one of their swings is dropped.
+        if p.id == E.Packet.ALLIANCE or p.id == E.Packet.PARTY then
+            Entity.party_changed()
+            return
+        end
+
         if p.id ~= E.Packet.ACTION then return end
         if not p.injected and is_duplicate(p) then
             S.dupes = S.dupes + 1
