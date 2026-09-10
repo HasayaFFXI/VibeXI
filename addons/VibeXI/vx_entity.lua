@@ -16,9 +16,15 @@ local E = require('vx_enums')
 
 local M = {}
 
--- name -> true, for everyone currently in the party or alliance.
+-- name -> true, for everyone currently in the party or alliance. ALL 18 SLOTS:
+-- the client keeps one 18-member structure (partymember_t Members[18] in
+-- Ashita's plugins/sdk/ffxi/party.h), so slots 0-5 are our own party and 6-17
+-- are the other two parties of the alliance. Nothing below distinguishes them,
+-- and nothing should -- "ours" means the whole alliance, which is exactly what
+-- Metrics' Party.Is_Affiliate (party_number 1, 2 or 3) resolves to.
 M.party = {}
 M.party_stamp = 0
+M.party_dirty = true         -- read the table on the first action, not 3s in
 local PARTY_TTL = 3          -- seconds; matches what Metrics uses
 
 -- name -> { main, main_lvl, sub, sub_lvl }, for everyone we have ever seen a
@@ -136,6 +142,26 @@ function M.note_job(name, main, main_lvl, sub, sub_lvl)
     return rec
 end
 
+--- The server says the roster changed; re-read it on the next action packet.
+---
+--- Called from the 0x0C8 (alliance update) and 0x0DD (party member update)
+--- handlers. It sets a flag rather than reading the party table there and then,
+--- and that is deliberate -- Metrics carries the same note above its own
+--- packet_in dispatch: the client's party memory does not update in the same
+--- breath as the packet that announced the change, so a read taken on arrival
+--- can still hand back the OLD roster. Flag now, read on the next action.
+---
+--- WHAT THIS BUYS. Without it the only thing that ever refreshes the roster is
+--- the 3-second TTL, and that TTL is only consulted when an ACTION packet
+--- arrives. So for up to three seconds after an alliance forms, a party is
+--- merged into one, or somebody joins mid-fight, the new members are absent
+--- from M.party -- and is_ours() in vibexi.lua drops every action they take in
+--- that window. On a pull that starts the moment the alliance is assembled,
+--- that window is the opening of the fight.
+function M.party_changed()
+    M.party_dirty = true
+end
+
 --- Refresh the party/alliance name set. Cheap enough to call per action, but
 --- TTL-gated because it walks 18 slots and touches the entity table for each.
 ---
@@ -143,7 +169,9 @@ end
 --- is the only place a job is readable, so reading it is already happening here
 --- and the extra four getters per occupied slot ride along for free.
 function M.refresh_party(now, force)
-    if not force and (now - M.party_stamp) < PARTY_TTL then return nil end
+    if not force and not M.party_dirty
+       and (now - M.party_stamp) < PARTY_TTL then return nil end
+    M.party_dirty = false
     M.party_stamp = now
 
     local mm = AshitaCore:GetMemoryManager()

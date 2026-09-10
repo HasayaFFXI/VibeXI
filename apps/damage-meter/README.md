@@ -208,10 +208,14 @@ does it (`/api/alpha`), which means:
 - **The server has to be the one this page was loaded from.** An older instance
   still running from before this feature has no `/api/alpha`, and the fallback is
   all you will get — stop it and start it again.
-- If a floating window ever renders **black** instead of transparent, that is the
-  graphics driver refusing to composite it. Open the browser console and run
-  `DPS.popout.keyBg('line', false)` (or `bars`, `actions`, `drill`, `diag`) to stop dropping
-  that panel's background; the slider at 100% undoes the rest.
+- **The whole window fades together — the bar cannot stay solid while the panel
+  goes see-through.** Windows gives a window one opacity, and the per-pixel
+  alternative is not available to a browser window. If you want a solid header
+  over a transparent panel, that needs an in-game overlay, not this.
+- If a floating window ever renders **black** instead of transparent, open the
+  browser console and run `DPS.popout.keyBg('line', false)` (or `bars`,
+  `actions`, `drill`, `diag`) to stop painting that panel's background
+  near-black; the slider at 100% undoes the rest.
 
 **Every floating panel carries its own Start and Pause**, in the same colours as
 the page's, and they stay lit while the rest of the bar fades. The whole reason

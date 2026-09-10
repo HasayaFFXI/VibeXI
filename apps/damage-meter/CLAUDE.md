@@ -420,7 +420,7 @@ Only the OS can do it, so `GET /api/alpha` does, with two effects:
 | | what it does | control |
 |---|---|---|
 | `LWA_ALPHA` | whole window translucent, chrome and background included | the slider, 15–100% |
-| `LWA_COLORKEY` | pixels of exactly `#010203` dropped entirely | always on; `DPS.popout.keyBg(key, false)` |
+| `LWA_COLORKEY` | *intended* to drop pixels of exactly `#010203`. **Inert — see below.** | always on; `DPS.popout.keyBg(key, false)` |
 
 **The bar carries Start, Pause, the elapsed clock and the total**, at full
 opacity while the rest of it fades; see "The controls are in every pop-out
@@ -442,12 +442,45 @@ it is doing — and the config would look broken on exactly the panel being watc
 One control, one meaning; a window's own slider then adjusts that window from
 there on, and lasts until the config is next touched.
 
-The punch-out is the one that answers "I want to see the game, not a dimmer
-panel": `.key-bg .pop-doc` paints the background that exact colour, the window
-manager drops those pixels, and since `chart.js` draws on a *cleared* canvas what
-survives over the game is lines, numbers and the 20px bar. Its side effect is
-that the punched-out area is **click-through** — good for an overlay, but the
-window can then only be dragged by its own title bar.
+#### The punch-out does not work, and never has
+
+`.key-bg .pop-doc` paints the background exactly `#010203` so the window manager
+will drop those pixels. **It doesn't.** Chrome presents its windows through
+DirectComposition rather than the legacy redirection surface `LWA_COLORKEY`
+operates on, so keyed pixels are never dropped. `SetLayeredWindowAttributes`
+still returns success, so `applied > 0` is true, `key-bg` goes on, and nothing
+ever reported a problem.
+
+Measured 2026-09-05, keying a real Chrome window painted entirely `#010203` and
+sampling the screen underneath:
+
+| | sample A | sample B |
+|---|---|---|
+| no layering | `#010203` | `#010203` |
+| `alpha=255`, no key | `#010203` | `#010203` |
+| `alpha=255`, **with key** | `#010203` | `#010203` |
+| `alpha=128`, no key | `#070708` | `#070709` |
+| `alpha=128`, **with key** | `#070708` | `#070709` |
+
+Alpha moves the pixel; the key changes nothing at either alpha. `--disable-gpu`
+does not help. A synthetic non-Chrome layered window keyed correctly at every
+alpha including 255, so this is Chrome specifically, not the alpha value.
+
+So **the transparency you see is uniform alpha alone**, and painting the
+background `#010203` is decorative — a near-black backdrop that alpha then makes
+translucent, which is what an overlay wants anyway. That is precisely why this
+has always looked like it works.
+
+Two things follow, both tried and both dead ends:
+
+- **A solid bar over a translucent panel is not possible in this window.** One
+  alpha byte for the whole `HWND`, no per-region form, and the per-pixel escape
+  hatch (`UpdateLayeredWindow`) has to own the window's pixels — Chrome's, not
+  ours. Pinning the alpha to 100 to keep the bar crisp makes the window opaque
+  and the panel a solid near-black slab. Wanting a genuinely solid bar means
+  drawing the overlay in the Ashita addon instead.
+- **Nothing is click-through.** That was a claimed side effect of the punch-out;
+  since the punch-out is inert, the window takes clicks everywhere.
 
 Things that will bite:
 
@@ -472,9 +505,10 @@ Things that will bite:
   only"** in the window bar with the reason in its tooltip, and why it drops the
   background rather than leaving the un-fadeable canvas behind it. A silent
   half-fade is indistinguishable from a bug.
-- **Never paint `#010203` unless the server confirmed the key.** `osAlpha()`
-  toggles `key-bg` off on failure; left on without the punch-out it is simply a
-  near-black window.
+- **Never paint `#010203` unless the server call landed.** `osAlpha()` toggles
+  `key-bg` off on failure. Since the key is inert anyway this is always "simply a
+  near-black window" — but the gate still earns its keep, because on failure
+  there is no OS alpha either, and near-black with no alpha is an opaque slab.
 - State lives in `ffxi_dps_alpha` (`key -> 15..100`), `ffxi_dps_keybg`
   (`key -> bool`) and `ffxi_dps_alpha_default` (one number, what the page config
   is set to); `DPS.popout.alpha(key[, v])`, `DPS.popout.keyBg(key[, v])` and
@@ -485,15 +519,17 @@ Things that will bite:
   that cannot use it is `readDefaultAlpha`, which is reading that fallback.
 - **Verified: the server end applies and reads back** (`alpha`, `flags=2`,
   ex-style gains `0x80000`) against a real Chrome window, and every client branch
-  is verified against a stubbed endpoint. **Not verified: how Chrome composites a
-  layered PiP window** — that needs a real always-on-top window, which the
-  Browser pane cannot produce. If one renders black, that is the GPU compositor:
-  `DPS.popout.keyBg('<key>', false)`, and 100% on the slider undoes the rest.
+  is verified against a stubbed endpoint. **Also now verified: how Chrome
+  composites a layered window** — alpha yes, colour key no; see the punch-out
+  section above for the measurements. The Browser pane cannot produce an
+  always-on-top window, so that test drives a real Chrome launched with `--app`
+  and samples the desktop with `GetPixel`.
 - **The punch-out has no button any more.** The bar carried a **BG** toggle next
   to the slider; it was removed on 2026-09-05 as one control too many over a game
-  screen, and the punch-out is simply always on. `keys`/`ffxi_dps_keybg` and the
-  `key=` query parameter all stay, because the black-window escape hatch above is
-  the one case that still needs to turn it off.
+  screen, and it is simply always on. `keys`/`ffxi_dps_keybg` and the `key=`
+  query parameter all stay: the flag costs nothing, it is the escape hatch for a
+  window that renders wrong, and a host that *did* honour the key (a
+  non-Chromium browser, or an overlay this app drew itself) would want it.
 
 **"Keep in focus" is Document Picture-in-Picture**, the only web API that yields
 an always-on-top window; a plain `window.open` cannot be raised above other
