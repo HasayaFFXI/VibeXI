@@ -7,8 +7,12 @@ shown anywhere:
 
 - **Cumulative damage over time**, one line per character, with a crosshair that
   reads every character at the same instant.
-- **Damage by character** — total, share, DPS, action count, average per action,
-  best hit, accuracy.
+- **Damage by character** — total damage, share of the party's, DPS,
+  auto-attack accuracy, weaponskill damage / average / share / accuracy,
+  skillchain damage and share, and pet damage and accuracy, each counted the way Metrics counts it (see
+  [The character table](#the-character-table)). Kept in focus over the game it
+  condenses to one 20px row per character — name, damage, share and accuracy,
+  with the bar behind them. Characters who dealt no damage are left off either way.
 - **Action breakdown** — every regular attack, weaponskill (`Tachi: Jinpu`),
   spell, skillchain and additional effect, per character, with count / total /
   average / min / max.
@@ -110,8 +114,9 @@ clock, so the character column adds up to the party figure.
 
 **The filter row scopes everything below it.**
 
-- **Skillchains** — `On` credits skillchain damage to whoever closed the chain;
-  `Off` leaves it out of every total, chart and table. Off is the setting to use
+- **Include Skillchains** — one toggle. Filled (on) credits skillchain damage to whoever
+  closed the chain; outlined (off) leaves it out of every total, chart and
+  table. Off is the setting to use
   when you want to compare raw weaponskill and melee output, since a chain's
   damage depends as much on who opened it. Remembered across reloads.
 - **Characters** — on its own line under the other filters, so a full 18-person
@@ -135,6 +140,33 @@ panel prints the name and the job in text beside the colour. Anyone with no job
 colour on record — a trust, a pet's owner seen only through the pet, DNC, SCH,
 GEO or RUN, which Metrics never finished — gets a distinct colour of their own
 instead.
+
+### The character table
+
+Every column except Job and DPS is one of Metrics' own parse columns, counted
+the way Metrics counts it, so a figure can be checked against Metrics running
+beside the meter. Percentages are to one decimal, as Metrics prints them. A dash
+means there was nothing to measure (a character with no weaponskills, or no
+pet), which is not the same as 0%.
+
+| Column | What it is |
+|---|---|
+| Damage | Everything the character dealt: attacks, weaponskills, job abilities, magic, additional effects, counters and spikes, their pet, and the skillchains they closed while Include Skillchains is on |
+| Damage % | Their Damage out of the whole party's |
+| DPS | Damage divided by the session clock |
+| Accuracy | Their own melee and ranged attacks that connected, out of all attempted. A swing into shadows counts as a hit and a Perfect Dodge is not counted, as in Metrics |
+| WS Damage | Total weaponskill damage, not including skillchains |
+| WS Avg | WS Damage divided by the weaponskills that dealt damage |
+| WS % | WS Damage out of their Damage |
+| WS Acc | Weaponskills that dealt damage, out of all used |
+| SC Damage | Total damage of the skillchains they closed. A dash while Include Skillchains is off |
+| SC % | SC Damage out of their Damage |
+| Pet Damage | Everything their pet dealt. Already part of Damage |
+| Pet Acc | The pet's melee attacks that connected, out of all attempted |
+
+One known difference from Metrics: Metrics leaves additional-effect damage on
+melee swings (enspells and the like) out of its Total, and this meter counts it,
+so on a party with enspells up Damage reads slightly higher than Metrics' Total.
 
 ### Hide names
 

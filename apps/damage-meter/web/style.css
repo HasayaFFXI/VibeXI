@@ -151,7 +151,7 @@ main.wrap { max-width: 1500px; padding: 18px 20px 60px; gap: 16px; }
 }
 .session-pause.is-cancel:hover { background: var(--blade-fill); color: var(--blade-hot); }
 
-/* Holding. Filled, exactly as the skillchain toggle fills its chosen side --
+/* Holding. Filled, exactly as the skillchain toggle fills when it is on --
    this is a state, and the fill is what says the clock is stopped. */
 .session-pause.is-held {
   background: var(--brass);
@@ -546,9 +546,79 @@ main.pop-body { padding: 4px 6px 8px; gap: 8px; }
 .pop-doc ::-webkit-scrollbar-track { background: transparent; }
 
 /* Charts follow the window instead of the fixed .chart-wrap heights: a panel
-   given its own window was given it to be looked at larger. The bars chart is
-   exempt because app.js sets its height inline from the row count. */
+   given its own window was given it to be looked at larger. The bars chart never
+   shows in one -- its card floats as the strip below -- and keeps the inline
+   height app.js sets from the row count for when it docks back. */
 .pop-body .chart-wrap      { height: min(62vh, 560px); }
 .pop-body .chart-wrap.tall { height: min(72vh, 680px); }
 .pop-body .scroll-y        { max-height: min(52vh, 560px); }
 .pop-body .scroll-y.max    { max-height: min(60vh, 640px); }
+
+/* ------------------------------------------- damage by character, floating */
+
+/* The character card's overlay form. Docked it is a bar chart over a
+   fourteen-column table; floating it is this -- one 20px row per character, the
+   bar drawn BEHIND the name and figures rather than beside a table that lists
+   the same people again. Both are always rendered; which one shows is decided
+   here, by whether the card sits inside a pop-out's body. */
+.meter { display: none; }
+.pop-body .meter { display: block; }
+.pop-body .bars-full { display: none; }
+
+/* Fixed number columns in `ch` of the ROW's font, so a figure growing a digit
+   never shifts the columns beside it. The head carries the same font for that
+   reason and restyles only its spans -- `ch` resolves on the element that owns
+   the grid, and a sans head would lay out narrower columns than its rows. */
+.meter-head,
+.meter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 9ch 6ch 6ch;
+  column-gap: 8px;
+  align-items: center;
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+.meter-head { height: 16px; }
+.meter-head > span {
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  text-align: right;
+}
+.meter-head > span:first-child { text-align: left; }
+
+.meter-row {
+  position: relative;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 2px;
+  color: var(--bone);
+  font-variant-numeric: tabular-nums;
+}
+/* The bar. A mark in the character's colour like every other swatch and line,
+   faded so the text over it keeps its own ink -- job colours are not graded for
+   text, and a name printed in one would be unreadable on half of them. */
+.meter-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 2px;
+  opacity: 0.3;
+}
+.meter-row > span { position: relative; text-align: right; white-space: nowrap; }
+.meter-row > .meter-name {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+/* --mist, not the --faint the chips use: this sits ON a fill, and --faint all
+   but vanished over the yellow and green ones. */
+.meter-job { font-weight: 400; font-size: 10.5px; color: var(--mist); margin-left: 5px; }
+/* The file's owner: the one row on every parse, found without reading names. */
+.meter-row.is-owner { box-shadow: inset 2px 0 0 var(--blade); }
+.meter-empty { color: var(--faint); font-size: 12.5px; margin: 4px 0 0; }

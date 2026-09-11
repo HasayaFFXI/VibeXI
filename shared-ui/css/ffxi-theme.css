@@ -554,6 +554,13 @@ button.ghost[aria-pressed="true"] {
   color: var(--ink);
   font-weight: 600;
 }
+/* The plain hover above outweighs the pressed rule, so without this a click
+   that turns a toggle on shows no change until the pointer moves away. */
+button.ghost[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: var(--ink);
+}
 
 .segmented {
   display: inline-flex;

@@ -236,7 +236,15 @@
     try {
       if (localStorage.getItem(CHAIN_KEY) === 'off') app.chains = 'off';
     } catch (e) { }
-    syncSeg('chainSeg', 'chains', app.chains);
+    applyChains();
+  }
+
+  function applyChains() {
+    var b = $('chainBtn'), on = app.chains === 'on';
+    b.setAttribute('aria-pressed', String(on));
+    b.title = on
+      ? 'Skillchains counted: credited to the character whose weaponskill closed each one. Click to leave them out.'
+      : 'Skillchains left out of every total. Click to count them again.';
   }
 
   /* Same shape: the markup ships expanded, so only "closed" is restored. */
@@ -1229,7 +1237,15 @@
   // ---- damage by character
 
   function renderBars(agg) {
-    var rows = agg.actors.map(function (a) {
+    // Nobody at zero. A character reaches the aggregate by ACTING, not by
+    // dealing damage -- a bard whose Carnage Elegy was resisted is an actor
+    // with 0 -- and a row of zeroes and dashes is pure height on an overlay.
+    // Only this card drops them; the chips still list them, so they can still
+    // be excluded, and the Actions table still shows what they did.
+    var actors = agg.actors.filter(function (a) { return a.total > 0; });
+    renderMeter(actors);
+
+    var rows = actors.map(function (a) {
       // The Job row goes when the bar's own label is the job -- see jobBadge.
       var full = aliased(a.name) ? '' : app.source.roster.jobTitle(a.name);
       return {
@@ -1258,12 +1274,36 @@
     // has their job in the Character cell, and a dash there would read as "job
     // unknown", which is a different thing entirely. The owner's job is still on
     // their chip, in the legend and on their actions group row.
+    //
+    // Every column but Job and DPS is one of Metrics' parse columns, counted its
+    // way in stats.js (`connects`, `tally`), and printed its way: percentages to
+    // one decimal. A dash is "nothing to measure" -- no weaponskills, no pet --
+    // never 0%, which would say every one of them missed.
     var withJob = !app.anon;
+    function pct(x) { return x == null ? '—' : S.fmtNum(x * 100, 1) + '%'; }
+    function whole(x) { return x == null ? '—' : S.fmtInt(x); }
+    function th(label, tip) { return '<th title="' + esc(tip) + '">' + label + '</th>'; }
     $('actorTable').innerHTML = rows.length
       ? '<thead><tr><th>Character</th>' + (withJob ? '<th class="job">Job</th>' : '') +
-        '<th>Damage</th><th>Share</th><th>DPS</th>' +
-        '<th>Actions</th><th>Avg</th><th>Best</th><th>Acc</th></tr></thead><tbody>' +
-        agg.actors.map(function (a) {
+        th('Damage', 'Everything this character dealt: attacks, weaponskills, job abilities, ' +
+           'magic, additional effects, counters and spikes, their pet, and the skillchains ' +
+           'they closed while Include Skillchains is on') +
+        th('Damage %', "This character's damage out of the whole party's") +
+        th('DPS', 'Damage divided by the session clock') +
+        th('Accuracy', 'Melee and ranged attacks that connected, out of all attempted. As in ' +
+           'Metrics, a swing taken by shadows counts as a hit and a Perfect Dodge is not ' +
+           'counted. Weaponskills, job abilities and the pet are not included') +
+        th('WS Damage', 'Total weaponskill damage. Skillchain damage is not part of it') +
+        th('WS Avg', 'Average damage of the weaponskills that dealt damage') +
+        th('WS %', "Weaponskill damage out of this character's damage") +
+        th('WS Acc', 'Weaponskills that dealt damage, out of all used') +
+        th('SC Damage', 'Total damage of the skillchains this character closed. ' +
+           'Empty while Include Skillchains is off') +
+        th('SC %', "Skillchain damage out of this character's damage") +
+        th('Pet Damage', "Everything this character's pet dealt. Already part of Damage") +
+        th('Pet Acc', "The pet's melee attacks that connected, out of all attempted") +
+        '</tr></thead><tbody>' +
+        actors.map(function (a) {
           return '<tr><td><span class="swatch" style="background:' + colorOf(a.name) + '"></span>' +
             esc(nameOf(a.name)) + '</td>' +
             (withJob
@@ -1271,14 +1311,70 @@
                 jobCell(a.name) + '</td>'
               : '') +
             '<td>' + S.fmtInt(a.total) + '</td>' +
-            '<td>' + S.fmtNum(a.share * 100, 1) + '%</td>' +
+            '<td>' + pct(a.share) + '</td>' +
             '<td data-dps="' + esc(a.name) + '">' + S.fmtNum(a.dps, 1) + '</td>' +
-            '<td>' + S.fmtInt(a.hits) + '</td>' +
-            '<td>' + S.fmtInt(a.avg) + '</td>' +
-            '<td>' + S.fmtInt(a.max) + '</td>' +
-            '<td>' + S.fmtNum(a.accuracy * 100, 0) + '%</td></tr>';
+            '<td>' + pct(a.autoAcc) + '</td>' +
+            '<td>' + whole(a.wsTotal) + '</td>' +
+            '<td>' + whole(a.wsAvg) + '</td>' +
+            '<td>' + pct(a.wsShare) + '</td>' +
+            '<td>' + pct(a.wsAcc) + '</td>' +
+            '<td>' + whole(a.scTotal) + '</td>' +
+            '<td>' + pct(a.scShare) + '</td>' +
+            '<td>' + whole(a.petTotal) + '</td>' +
+            '<td>' + pct(a.petAcc) + '</td></tr>';
         }).join('') + '</tbody>'
       : '';
+  }
+
+  /*
+   * The character card as it floats over the game: one row per character, the
+   * bar behind the name, and Damage, Damage % and Accuracy -- the three columns
+   * a glance during a pull is for. The other eleven, DPS among them, stay on the
+   * docked table. Accuracy is the table's own `autoAcc`, printed the table's way:
+   * one decimal, and a dash for a character with no swings to measure.
+   *
+   * Written on every render whether or not the card is floating; the stylesheet
+   * decides which form shows. The bar is scaled to the leader, as the chart's is.
+   */
+  function renderMeter(actors) {
+    var host = $('actorMeter');
+    if (!actors.length) {
+      host.innerHTML = '<p class="meter-empty">' + esc(emptyText()) + '</p>';
+      return;
+    }
+    var top = 0;
+    actors.forEach(function (a) { top = Math.max(top, a.total); });
+    var owner = app.source.roster.owner;
+    host.innerHTML =
+      '<div class="meter-head" aria-hidden="true"><span>Character</span>' +
+      '<span>Damage</span><span>%</span><span>Acc%</span></div>' +
+      actors.map(function (a) {
+        var full = aliased(a.name) ? '' : app.source.roster.jobTitle(a.name);
+        var tip = nameOf(a.name) + (full ? ' · ' + full : '') +
+                  ' · ' + S.fmtInt(a.avg) + ' avg per action';
+        return '<div class="meter-row' + (a.name === owner ? ' is-owner' : '') + '"' +
+          ' role="listitem" title="' + esc(tip) + '">' +
+          '<i class="meter-fill" style="width:' + (a.total / top * 100).toFixed(2) + '%;' +
+          'background:' + colorOf(a.name) + '"></i>' +
+          '<span class="meter-name">' + esc(nameOf(a.name)) + jobBadge(a.name, 'meter-job') + '</span>' +
+          '<span>' + S.fmtInt(a.total) + '</span>' +
+          '<span>' + S.fmtNum(a.share * 100, 1) + '%</span>' +
+          '<span>' + (a.autoAcc == null ? '—' : S.fmtNum(a.autoAcc * 100, 1) + '%') + '</span></div>';
+      }).join('');
+  }
+
+  /*
+   * A floating window's opening size, for the cards that know better than their
+   * docked box. Only the character card does: docked it is page-wide and, for
+   * an alliance, over a thousand pixels tall, which is the size popout.js would
+   * otherwise open its window at -- for a strip a fraction of either. Sized from
+   * the rows already rendered, since the strip is always drawn.
+   */
+  function popSize(key) {
+    if (key !== 'bars') return null;
+    var rows = $('actorMeter').querySelectorAll('.meter-row').length;
+    // Bar, body padding and head, then 21px a row (20 plus the 1px gap).
+    return { w: 460, h: 64 + Math.max(rows, 3) * 21 };
   }
 
   // ---- action breakdown, grouped by character
@@ -1375,33 +1471,16 @@
 
   // ------------------------------------------------------------------ events
 
-  /* Paints a segmented control from `app[key]`; the data attribute is the key. */
-  function syncSeg(id, key, value) {
-    [].forEach.call($(id).querySelectorAll('button[role="radio"]'), function (x) {
-      var on = x.dataset[key] === value;
-      x.classList.toggle('on', on);
-      x.setAttribute('aria-checked', String(on));
-    });
-  }
-
-  function segHandler(id, key, after) {
-    $(id).addEventListener('click', function (ev) {
-      var b = ev.target.closest('button[role="radio"]');
-      if (!b) return;
-      app[key] = b.dataset[key];
-      syncSeg(id, key, app[key]);
-      if (after) after();
-      render();
-    });
-  }
-
-  segHandler('chainSeg', 'chains', function () {
+  $('chainBtn').addEventListener('click', function () {
+    app.chains = app.chains === 'on' ? 'off' : 'on';
     try { localStorage.setItem(CHAIN_KEY, app.chains); } catch (e) { }
+    applyChains();
     // A drill-down into a skillchain row has no events left to show once the
     // rows are gone, so it closes rather than sitting there empty.
     if (app.chains === 'off' && app.drill && /^Skillchain:/.test(app.drill.action)) {
       app.drill = null;
     }
+    render();
   });
 
   $('actorChips').addEventListener('click', function (ev) {
@@ -1499,7 +1578,8 @@
     // The floating panels are laid over the game so a pull can be run without
     // leaving it, which is exactly when reaching back to the page to press
     // Start is the one thing you cannot do. So they carry the controls too.
-    session: { start: startSession, pause: secondary, paint: paintSession }
+    session: { start: startSession, pause: secondary, paint: paintSession },
+    size: popSize
   });
 
   window.DPS.app = app;   // console handle for debugging
