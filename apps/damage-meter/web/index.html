@@ -78,14 +78,12 @@
     <span class="parse-note" id="parseNote" role="status" hidden></span>
   </div>
 
+  <!-- One toggle, same shape as Hide names: the label is fixed and the pressed
+       fill is what says skillchain damage is being counted. app.js writes the
+       pressed state and the title. -->
   <div class="filter">
-    <span class="filter-label">Skillchains</span>
-    <div class="segmented" id="chainSeg" role="radiogroup" aria-label="Skillchain damage">
-      <button type="button" role="radio" data-chains="on" aria-checked="true" class="on"
-              title="Credit skillchain damage to the character whose weaponskill closed it">On</button>
-      <button type="button" role="radio" data-chains="off" aria-checked="false"
-              title="Leave skillchain damage out of every total">Off</button>
-    </div>
+    <button type="button" class="ghost" id="chainBtn" aria-pressed="true"
+            title="Skillchains counted: credited to the character whose weaponskill closed each one. Click to leave them out.">Include Skillchains</button>
   </div>
 
  </div>
@@ -159,34 +157,43 @@
     </details>
   </section>
 
-  <div class="two-col">
-    <!-- Damage by character -->
-    <section class="card" data-popout="bars" data-popout-title="Damage by character">
-      <div class="card-head">
-        <div>
-          <h2>Damage by character</h2>
-          <p class="card-sub">Total dealt since the session started.</p>
-        </div>
+  <!-- Damage by character. Full width, not half of a two-column row: its table
+       is fourteen columns, and at half of a 1440px page several sat behind a
+       horizontal scrollbar. -->
+  <section class="card" data-popout="bars" data-popout-title="Damage by character">
+    <div class="card-head">
+      <div>
+        <h2>Damage by character</h2>
+        <p class="card-sub">Total dealt since the session started. Hover a column heading for how it is counted.</p>
       </div>
+    </div>
+    <!-- Docked, the chart and the full table. Floating over the game, the strip
+         below instead: one row per character with the bar drawn behind its
+         figures, because the chart and the table list the same people twice and
+         together stood over a thousand pixels tall for an alliance. The strip is
+         always rendered and the stylesheet picks, so nothing in app.js has to
+         know which window the card is in. -->
+    <div class="bars-full">
       <div class="chart-wrap" id="barsWrap"><canvas id="barsChart"></canvas></div>
       <div class="scroll-x">
         <table class="data" id="actorTable"></table>
       </div>
-    </section>
+    </div>
+    <div class="meter" id="actorMeter" role="list" aria-label="Damage by character"></div>
+  </section>
 
-    <!-- Per-skill breakdown -->
-    <section class="card" data-popout="actions" data-popout-title="Actions">
-      <div class="card-head">
-        <div>
-          <h2>Actions</h2>
-          <p class="card-sub">Every attack and weaponskill. Select a row to drill down.</p>
-        </div>
+  <!-- Per-skill breakdown -->
+  <section class="card" data-popout="actions" data-popout-title="Actions">
+    <div class="card-head">
+      <div>
+        <h2>Actions</h2>
+        <p class="card-sub">Every attack and weaponskill. Select a row to drill down.</p>
       </div>
-      <div class="scroll-y scroll-x">
-        <table class="data selectable" id="actionTable"></table>
-      </div>
-    </section>
-  </div>
+    </div>
+    <div class="scroll-y scroll-x">
+      <table class="data selectable" id="actionTable"></table>
+    </div>
+  </section>
 
   <!-- Drill-down -->
   <section class="card" id="drillCard" data-popout="drill" data-popout-title="Drill-down" hidden>

@@ -43,6 +43,9 @@
   var panels = {};        // key -> panel record
   var index = {};         // element id -> element, while it lives outside `doc`
   var onRender = function () { };
+  // key -> { w, h } or null. A card whose floating form is not its docked form
+  // knows its window size better than its docked box does; null is "measure me".
+  var sizeOf = function () { return null; };
   var watchdog = null;
 
   /*
@@ -672,6 +675,13 @@
   // ------------------------------------------------------------------- moves
 
   function measure(p) {
+    var hint = sizeOf(p.key);
+    if (hint) {
+      return {
+        w: Math.min(1400, Math.max(240, Math.round(hint.w))),
+        h: Math.min(1000, Math.max(120, Math.round(hint.h)))
+      };
+    }
     var r = p.card.getBoundingClientRect();
     return {
       w: Math.min(1400, Math.max(420, Math.round(r.width) + 48)),
@@ -851,6 +861,7 @@
     opts = opts || {};
     if (opts.onRender) onRender = opts.onRender;
     if (opts.session) sessionApi = opts.session;
+    if (opts.size) sizeOf = opts.size;
 
     [].forEach.call(doc.querySelectorAll('[data-popout]'), function (card) {
       var key = card.getAttribute('data-popout');

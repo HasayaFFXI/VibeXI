@@ -290,6 +290,100 @@ Consequences worth knowing:
   window any more -- the user says when the pull started -- and with the
   Diagnostics roster gone, nothing reads the monsters' rows at all.
 
+## The character table
+
+Fourteen columns: Character and Job, then Damage, Damage %, DPS, Accuracy, WS
+Damage, WS Avg, WS %, WS Acc, SC Damage, SC %, Pet Damage, Pet Acc. **Every column but Job and
+DPS is one of Metrics' parse columns, counted the way Metrics counts it** — the
+list was asked for with Metrics named as the source of truth, and agreeing with
+the parser beside the meter is how a figure here gets checked. Printed Metrics'
+way too: every percentage to one decimal (`Column.String.Format_Percent`).
+The counting is `connects`, `tally` and `finishSplit` in `stats.js`; `renderBars`
+only formats.
+
+| Column | Here | Metrics |
+|---|---|---|
+| Damage | `a.total`: everything counted, pet and (toggle on) skillchains included | `Total` |
+| Damage % | `a.share` | `%Total` |
+| Accuracy | own melee + ranged swings that connected / attempted | `%A.Total`, `Column.Acc.By_Type(COMBINED)` |
+| WS Damage | own `kind:'ws'` damage; skillchains are rows of their own | `WS` |
+| WS Avg | WS damage / weaponskills that dealt damage | `WS Avg`, `TOTAL / HIT_COUNT` |
+| WS % | WS damage / the character's Damage | `By_Type(WS, percent)` |
+| WS Acc | weaponskills that dealt damage / used | `WS Acc` |
+| SC Damage | own `kind:'skillchain'` damage, i.e. the chains this character closed; null (a dash) with the toggle off, since `filter` dropped the rows | `SC` (shown only with `Include_SC_Damage`) |
+| SC % | SC damage / the character's Damage | `By_Type(SC, percent)` |
+| Pet Damage | every row carrying `owner`; already inside Damage | the `Pet` trackable |
+| Pet Acc | the pet's melee swings that connected / attempted | `P.Acc`, `PET_MELEE_DISCRETE` |
+
+- **Accuracy is `connects(e)`, not `e.hit`.** `hit` answers "did damage land",
+  which is what totals, averages and histograms need. `connects` answers "did
+  the swing get through", and Metrics answers three outcomes differently: a
+  swing into shadows (31) is a HIT, melee or ranged; a melee swing that healed
+  the target (373) is a HIT; a melee Perfect Dodge (32) is NOT AN ATTEMPT. A
+  weaponskill connects only if it dealt damage (`damage > 0` in
+  `H.TP.Action`), which is why `connects` takes a collapsed use. Every figure
+  called accuracy goes through it — this table, the drill-down tile,
+  `bucket.accuracy` — so the drill-down into "Attack" agrees with the
+  Accuracy cell. The Actions table's Hits / Miss columns do NOT: they are
+  damage counts, so a shadowed swing is a Miss there and a hit in Accuracy.
+  Two questions with two answers, not a bug.
+- **A pet's row is the owner's damage, never the owner's swing.** `tally` keys on
+  `owner`, which `credit` leaves on its copy. A pet's melee must not reach the
+  owner's Accuracy, and a pet TP move must not reach WS.
+- **Null means "nothing to measure" and prints as a dash.** A mage with no
+  weaponskills has no WS Acc; 0% would say they missed every one.
+- **Metrics' Total leaves out melee additional effects; this one does not.**
+  `H.Melee.Additional_Effect` adds enspell and add-effect damage to the Magic
+  trackable with `DB.Data.Update`, which does not roll up into `Total`; ranged
+  ones go through `Catalog.Update_Damage`, which does. The meter counts every
+  `kind:'addl'` row, and that was the choice made when these columns were added
+  ("everything, like Metrics") — so with enspells up, Damage reads a little
+  above Metrics'. Agreeing would mean dropping melee `addl` rows from `a.total`,
+  which changes every panel, not this table.
+- **DRG Jumps and a few other job abilities may count as weaponskills.** See
+  Known gaps.
+- **The card is full width, and the Actions card with it.** They used to share
+  a `.two-col` row; at half of a 1440px page the table (then twelve columns)
+  measured 915px in a 642px column and four columns sat behind a scrollbar. Putting
+  only this card at `span-all` would have left Actions alone in half a row, so
+  the wrapper went and the two stack.
+- **Nobody at zero.** `renderBars` drops every actor whose `total` is 0 before
+  the chart, the table or the strip sees them. Reaching the aggregate takes an
+  action, not damage — a bard whose Carnage Elegy was resisted is an actor with
+  0 — and on the Paradox Kirin alliance parse that was three rows of zeroes and
+  dashes. Only this card drops them: the chips still list them, so they can be
+  excluded, and the Actions table still shows what they cast.
+
+### Floating, it is a strip
+
+Docked, the card is the bars chart over the fourteen-column table. Floating, it
+is `#actorMeter`: one 20px row per character, the bar drawn *behind* the name,
+and Damage, Damage % and Acc% — the table's `autoAcc`, one decimal, a dash for
+nothing to measure. DPS was the third column at first and was swapped for
+accuracy on request; it is still on the docked table. The chart and the table list the same people
+twice, and for an 18-name alliance the pair stood about 1,100px tall — a window
+that covered the game it was meant to sit on.
+
+- **Both forms are always rendered; the stylesheet picks.** `.pop-body .bars-full`
+  hides the chart and table, `.pop-body .meter` shows the strip. Nothing in
+  `app.js` knows which window the card is in, which is the pop-out contract —
+  the card's real nodes are moved, never cloned, so a render-time branch would
+  have to go looking for its own document.
+- **The strip is in the markup, not built at render time**, because `$` only
+  indexes ids that existed when the card went out.
+- **Nothing in the strip ticks.** Every figure in it is a running total that
+  only a new event can change, so `tickClock` walks `#actorTable` alone. If a
+  DPS column ever comes back here it must carry `data-dps` and `tickClock` must
+  walk this host too, or it will sit frozen beside a decaying party tile.
+- **The window is sized for the strip, not the docked card.** `measure()` sizes a
+  window from the card's docked box, which here is page-wide and alliance-tall.
+  `DPS.popout.init({ size })` takes `key -> {w, h}` or null; `popSize` answers
+  for `bars` alone, from the rows already rendered (460 wide, 64 + 21 per row).
+  Every other card still returns null and is measured as before.
+- **The job text is `--mist`, not `--faint`**, because it sits on a fill; the
+  fill is the job colour at 0.3 opacity, a mark like a swatch, so the text over
+  it keeps its own ink.
+
 ## Gotchas
 
 - **Do not write literal control characters anywhere in the source** — not in a
@@ -1232,8 +1326,15 @@ it. What is left:
 - MP drain, cures, enfeebles and TP are not parsed; this is a damage meter. Every
   event carries its raw `msg`, so adding them is an enums change, not a format
   change.
-- Absorbed and "no effect" outcomes are treated as misses. Skillchains are the
-  exception and deliberately so: Metrics has no absorbed-chain concept — it maps
+- Category-3 job abilities whose id collides with a weaponskill's — Metrics'
+  list is Swift Blade/Steal, Atonement/Mug, Gale Axe/Jump, Spinning Axe/Super
+  Jump — are named from `WS_NAMES` first by `action_name` in `vibexi.lua` and
+  emitted as `kind:'ws'`, so they land in WS Damage and WS Acc. Metrics tells
+  them apart by message (`H.TP.WS_Ability`: 185/188 is the weaponskill,
+  anything else the ability). The fix belongs in the addon.
+- Absorbed and "no effect" outcomes are treated as misses — except by
+  accuracy, where a swing into shadows is a hit as Metrics counts it (see "The
+  character table"). Skillchains are the exception and deliberately so: Metrics has no absorbed-chain concept — it maps
   385/386 to Light and Darkness like any other id — so every chain that fires is
   recorded as damage.
 - Multi-attack swings are visible individually, but nothing reports the round

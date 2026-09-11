@@ -48,6 +48,11 @@ WHAT IS IN HERE ON PURPOSE, and what each case catches:
     a party member's damage arrives on a packet they were not the actor of, and
     one of the pet's reactions is in here too, so the pet-to-owner crediting
     gets exercised on a row that came in backwards.
+  * ACCURACY OUTCOMES THAT ARE NOT WHAT `hit` SAYS -- a swing into shadows (31)
+    and a Perfect Dodge (32) among the melee misses -- and the pet's own
+    auto-attacks. Metrics counts the first as a hit and the second as no swing
+    at all, and a pet's swings are the pet's accuracy, not its owner's; the
+    character table's Accuracy and Pet Acc columns are what these catch.
   * AN UNRESOLVED TARGET -- name "Unknown", targetKind "other" -- which is what
     the addon writes when the entity table has no answer.
   * META LINES: the startup environment probe on line 1, and an unknown-message
@@ -108,6 +113,8 @@ MSG = {
     'crit': 67,         # AttackCrit
     'miss': 15,         # AttackMisses
     'parry': 70,        # TargetParries
+    'shadow': 31,       # ShadowAbsorb
+    'dodge': 32,        # TargetDodges       (Perfect Dodge)
     'evade': 282,       # TargetEvades
     'ws_hit': 185,      # UsesSkillTakesDamage
     'ws_miss': 188,     # UsesSkillMisses
@@ -338,8 +345,11 @@ def generate(seed=SEED, start=None):
             else:
                 # Miss, parry and evade are separate messages, so the accuracy
                 # denominator is exact rather than "everything that was not a
-                # damage line".
-                msg = rand.choice([MSG['miss'], MSG['miss'], MSG['parry'], MSG['evade']])
+                # damage line". Shadows and Perfect Dodge are here for a
+                # different reason: Metrics counts the first as a hit and the
+                # second as no swing at all, so neither is simply a miss.
+                msg = rand.choice([MSG['miss'], MSG['miss'], MSG['parry'], MSG['evade'],
+                                   MSG['shadow'], MSG['dodge']])
                 w.write(use, 'melee', p['n'], 'player', 'Attack', 0,
                         mob, 'mob', 0, False, msg)
 
@@ -440,6 +450,21 @@ def generate(seed=SEED, start=None):
                 w.write(w.next_use(), 'pet', PET['n'], 'pet', 'Big Scissors', 720,
                         mob, 'mob', roll(180, 40), True, MSG['ability'],
                         owner=PET['owner'], pet=PET['n'])
+
+            # The pet's own auto-attacks. Category 1 like anybody's, so kind
+            # 'melee' -- but with `owner` set, which makes them the owner's
+            # damage and the PET's accuracy: they belong in Pet Acc and must
+            # stay out of the owner's own Accuracy.
+            if rand.random() < 0.45:
+                use = w.next_use()
+                if rand.random() < 0.80:
+                    w.write(use, 'melee', PET['n'], 'pet', 'Attack', 0,
+                            mob, 'mob', roll(95, 22), True, MSG['hit'],
+                            owner=PET['owner'], pet=PET['n'])
+                else:
+                    w.write(use, 'melee', PET['n'], 'pet', 'Attack', 0,
+                            mob, 'mob', 0, False, MSG['miss'],
+                            owner=PET['owner'], pet=PET['n'])
 
             # The monster's own damage. The addon no longer writes any of this
             # (see `is_ours`), so it is here as the back-compatibility case:

@@ -364,6 +364,43 @@
     return out;
   }
 
+  // ----------------------------------------------------------------- accuracy
+
+  /*
+   * DID IT CONNECT -- the accuracy question, answered the way Metrics answers it.
+   *
+   * true is a hit, false a miss, null not an attempt at all. This is a different
+   * question from `hit`, which asks whether damage landed and is what every
+   * total, average and histogram is built on. Accuracy asks whether the swing got
+   * through, and for three outcomes Metrics' answer is not `hit`'s:
+   *
+   *   31  ShadowAbsorb         A HIT, melee and ranged. The swing connected and
+   *                            a shadow took it; H.Melee.Shadows and
+   *                            H.Ranged.Shadows both count it as one.
+   *   373 SpikesEffectRecover  A HIT, melee only. The swing landed and healed the
+   *                            target (H.Melee.Mob_Heal).
+   *   32  TargetDodges         NOT AN ATTEMPT, melee only. Perfect Dodge;
+   *                            H.Melee.Dodge takes the swing back out of the
+   *                            count rather than filing it as a miss.
+   *
+   * A WEAPONSKILL connects when it dealt damage -- `damage > 0` summed over every
+   * target, which is H.TP.Action's test -- not merely when its message was a hit.
+   * So this takes a COLLAPSED use: before `collapse` a weaponskill's damage is
+   * one target's, not the weaponskill's. Everything else connects exactly when
+   * it hit.
+   */
+  var MSG_SHADOWS = 31, MSG_DODGE = 32, MSG_MOB_HEAL = 373;
+
+  function connects(e) {
+    if (e.kind === 'ws') return e.dmg > 0;
+    if (e.kind === 'melee' || e.kind === 'ranged') {
+      if (e.msg === MSG_SHADOWS) return true;
+      if (e.kind === 'melee' && e.msg === MSG_DODGE) return null;
+      if (e.kind === 'melee' && e.msg === MSG_MOB_HEAL) return true;
+    }
+    return !!e.hit;
+  }
+
   // -------------------------------------------------------------- aggregation
 
   function blankBucket(name) {
@@ -374,6 +411,8 @@
       misses: 0,
       crits: 0,
       bursts: 0,
+      tries: 0,       // accuracy's denominator and numerator -- see `connects`
+      lands: 0,
       min: Infinity,
       max: 0,
       first: Infinity,
@@ -394,6 +433,10 @@
     } else {
       b.misses++;
     }
+    // Counted apart from `hits`: those feed the total, the average and the
+    // histogram, and a swing into shadows is not a hit there.
+    var o = connects(e);
+    if (o != null) { b.tries++; if (o) b.lands++; }
     if (e.t < b.first) b.first = e.t;
     if (e.t > b.last) b.last = e.t;
   }
@@ -402,10 +445,86 @@
     b.swings = b.hits + b.misses;
     b.avg = b.hits ? b.total / b.hits : 0;
     b.avgPerSwing = b.swings ? b.total / b.swings : 0;
-    b.accuracy = b.swings ? b.hits / b.swings : 0;
+    b.accuracy = b.tries ? b.lands / b.tries : 0;
     if (b.min === Infinity) b.min = 0;
     if (b.first === Infinity) { b.first = null; b.last = null; }
     return b;
+  }
+
+  /*
+   * THE CHARACTER TABLE'S COLUMNS, each counted the way Metrics' parse window
+   * counts the column of the same name (modules/parse/display_full.lua), so a
+   * figure here can be checked against the parser running beside it.
+   *
+   *   auto  the character's OWN melee and ranged swings -- Metrics' %A.Total,
+   *         `Column.Acc.By_Type(COMBINED)`, which adds the Melee and Ranged
+   *         trackables' hits and attempts together.
+   *   ws    the character's own weaponskills: damage, uses, and the uses that
+   *         dealt damage. Skillchains are not in it; Metrics keeps them in a
+   *         trackable of their own, and the addon writes them as rows of their
+   *         own.
+   *   sc    those rows: the chains this character closed (Metrics' SC
+   *         column). Nothing at all while Include Skillchains is off, because
+   *         `filter` has already dropped them.
+   *   pet   every row a pet produced. The damage is ALL of it, abilities and
+   *         reactions included (Metrics' PET trackable); the accuracy is its
+   *         melee only (PET_MELEE_DISCRETE, the P.Acc column), the one pet
+   *         trackable Metrics measures accuracy on.
+   *
+   * A pet's rows are told apart by `owner`, which `credit` leaves on the copy
+   * when it re-actors them. They are the owner's DAMAGE and already in the
+   * owner's total; they are not the owner's SWINGS, so none of them reaches
+   * `auto` or `ws`.
+   *
+   * Takes collapsed uses, like `addTo`.
+   */
+  function blankSplit() {
+    return {
+      autoTries: 0, autoHits: 0,
+      wsTotal: 0, wsTries: 0, wsHits: 0,
+      scTotal: 0, scRows: 0,
+      petTotal: 0, petRows: 0, petTries: 0, petHits: 0
+    };
+  }
+
+  function tally(s, e) {
+    var dmg = e.hit ? e.dmg : 0;
+    var o = connects(e);
+    if (e.owner) {
+      s.petRows++;
+      s.petTotal += dmg;
+      if (e.kind === 'melee' && o != null) { s.petTries++; if (o) s.petHits++; }
+    } else if (e.kind === 'melee' || e.kind === 'ranged') {
+      if (o != null) { s.autoTries++; if (o) s.autoHits++; }
+    } else if (e.kind === 'ws') {
+      s.wsTries++;
+      s.wsTotal += dmg;
+      if (o) s.wsHits++;
+    } else if (e.kind === 'skillchain') {
+      // Credited to whoever closed the chain, which is who the addon names as
+      // its actor. With Include Skillchains off these rows never get here.
+      s.scRows++;
+      s.scTotal += dmg;
+    }
+  }
+
+  /*
+   * The split's figures, onto the actor. NULL, NOT ZERO, WHEN THERE IS NOTHING
+   * TO MEASURE: a mage who never weaponskilled has no WS accuracy, and 0% would
+   * say they missed every one. The table prints null as a dash.
+   */
+  function finishSplit(a) {
+    var s = a.split;
+    a.autoAcc = s.autoTries ? s.autoHits / s.autoTries : null;
+    a.wsTotal = s.wsTries ? s.wsTotal : null;
+    a.wsAvg = s.wsHits ? s.wsTotal / s.wsHits : null;         // Metrics: TOTAL / HIT_COUNT
+    a.wsShare = s.wsTries && a.total ? s.wsTotal / a.total : null;
+    a.wsAcc = s.wsTries ? s.wsHits / s.wsTries : null;
+    a.scTotal = s.scRows ? s.scTotal : null;
+    a.scShare = s.scRows && a.total ? s.scTotal / a.total : null;
+    a.petTotal = s.petRows ? s.petTotal : null;
+    a.petAcc = s.petTries ? s.petHits / s.petTries : null;
+    return a;
   }
 
   /*
@@ -445,9 +564,11 @@
         a = byActor[e.actor] = blankBucket(e.actor);
         a.actions = {};
         a.actionOrder = [];
+        a.split = blankSplit();
         order.push(e.actor);
       }
       addTo(a, e);
+      tally(a.split, e);
 
       var act = a.actions[e.action];
       if (!act) {
@@ -470,6 +591,7 @@
       a.window = span;
       a.duration = fixed != null ? fixed : span;
       a.dps = a.duration > 0 ? a.total / a.duration : 0;
+      finishSplit(a);
       grand += a.total;
       if (a.first != null && a.first < tMin) tMin = a.first;
       if (a.last != null && a.last > tMax) tMax = a.last;
@@ -604,7 +726,7 @@
   function distribution(events, actor, action, opts) {
     opts = opts || {};
     var picked = [];
-    var misses = 0, crits = 0, bursts = 0;
+    var misses = 0, crits = 0, bursts = 0, tries = 0, lands = 0, o;
 
     events = collapse(events);
 
@@ -612,6 +734,10 @@
       var e = events[i];
       if (e.actor !== actor) continue;
       if (action != null && e.action !== action) continue;
+      // Accuracy by `connects`, the same rule the character table uses, so the
+      // drill-down into "Attack" agrees with that character's Accuracy cell.
+      o = connects(e);
+      if (o != null) { tries++; if (o) lands++; }
       if (!e.hit) { misses++; continue; }
       picked.push(e);
       if (e.crit) crits++;
@@ -664,7 +790,8 @@
       count: n,
       misses: misses,
       swings: n + misses,
-      accuracy: (n + misses) ? n / (n + misses) : 0,
+      tries: tries,
+      accuracy: tries ? lands / tries : 0,
       crits: crits,
       critRate: n ? crits / n : 0,
       bursts: bursts,
@@ -766,6 +893,7 @@
     filter: filter,
     credit: credit,
     collapse: collapse,
+    connects: connects,
     aggregate: aggregate,
     cumulative: cumulative,
     distribution: distribution,
