@@ -19,7 +19,8 @@
   // control that no longer exists, and the overwhelmingly common reason a chart
   // is empty now is that nobody has pressed Start.
   function emptyText() {
-    return armed() ? 'Armed — the clock starts on the first hit, or Cancel to call it off'
+    return app.imported ? 'Nothing to show in this parse'
+         : armed() ? 'Armed — the clock starts on the first hit, or Cancel to call it off'
          : !started() ? 'Press Start to begin measuring'
          : paused() ? 'Paused — nothing is being counted'
          : 'No damage yet';
@@ -54,7 +55,13 @@
     chipSig: null,          // name+job signature of the built chips
     chipsOpen: true,        // character list expanded; persisted
     lastOk: 0,
-    error: null
+    error: null,
+    // IMPORTED PARSE. Non-null while a file opened with Import is on screen:
+    // { name, file, exported }. The live state it displaced is parked whole in
+    // `live` and put back by Back to live -- see `stashLive`.
+    imported: null,
+    live: null,
+    gen: 0                  // bumped on every swap between live and imported
   };
 
   // ------------------------------------------------------------------ colors
@@ -171,11 +178,11 @@
    * falls through to the series ramp for.
    *
    * SLOTS ARE NOT THE WHOLE PARTY. A member who never deals damage -- the white
-   * mage -- is never an actor, so they are never slotted, and they still reach
-   * the Diagnostics roster through their job line alone. Leaving them out here
-   * would put their name back on screen the moment that panel was opened, so
-   * every name the roster calls a player is aliased whether or not it ever
-   * swung. Those trail the slotted ones in name order, which is stable except
+   * mage -- is never an actor, so they are never slotted, but the roster still
+   * knows them from their job line. Every name the roster calls a player is
+   * aliased whether or not it ever swung, so a party name drawn anywhere is
+   * hidden whether or not it has a colour slot yet. Those trail the slotted
+   * ones in name order, which is stable except
    * in one corner: two characters on the same job, neither yet slotted, and the
    * one sorting second is the one that acts first -- then the pair swaps
    * numbers on that first swing and never again.
@@ -204,14 +211,6 @@
       var k = (used[label] = (used[label] || 0) + 1);
       app.alias[names[i]] = k > 1 ? label + ' ' + k : label;
     }
-  }
-
-  /* Reclassification changes who counts as a party member, so slots restart. */
-  function resetColors() {
-    app.slots = {};
-    app.nextSlot = 0;
-    app.chipSig = null;
-    assignSlots();
   }
 
   // ------------------------------------------------------------- persistence
@@ -307,6 +306,8 @@
    *     intent rather than collected data
    */
   function startSession() {
+    // An imported parse has no file behind it to measure; Back to live first.
+    if (app.imported) return;
     app.source.reset();
     app.scanned = 0;          // `seen` is kept; only the scan cursor rewinds
     app.drill = null;
@@ -314,7 +315,7 @@
     $('drillCard').hidden = true;
     app.rendered = true;
     applySession();
-    setStatus(app.file || 'waiting for the addon');
+    setStatus(srcName());
     render();
   }
 
@@ -331,18 +332,21 @@
    *
    * Polling continues while paused, deliberately. The addon keeps writing and
    * the file keeps growing whatever this page does, so stopping the reader only
-   * moves the same bytes to a burst on resume; the events are read, kept for
-   * Diagnostics, and dropped in the view by their own timestamps. That is the
+   * moves the same bytes to a burst on resume; the events are read, kept, and
+   * dropped in the view by their own timestamps. That is the
    * same shape as the monster filter -- collect everything, decide in the view.
    */
   function togglePause() {
     // Nothing to hold while armed: the clock has not started, so there is no
     // running total for a pause to freeze and no elapsed time to subtract.
     if (app.session.startedAt == null) return;
+    // An imported parse stays exactly as it was exported: resuming it would run
+    // its clock on today's wall time, over a file that will never grow.
+    if (app.imported) return;
     if (S.sessionRunning(app.session)) S.sessionPause(app.session);
     else S.sessionResume(app.session);
     applySession();
-    setStatus(app.file || 'waiting for the addon');
+    setStatus(srcName());
     render();
   }
 
@@ -374,7 +378,7 @@
     app.drill = null;
     $('drillCard').hidden = true;
     applySession();
-    setStatus(app.file || 'waiting for the addon');
+    setStatus(srcName());
     render();
   }
 
@@ -405,9 +409,22 @@
    * copy drifting apart, in two windows, side by side on the same screen.
    */
   function sessionView() {
+    // An imported parse is a finished recording, so both buttons are held off
+    // -- in every floating window too, which is why this lives in the view and
+    // not in a one-off disable on the page's own pair.
+    if (app.imported) {
+      var why = 'Viewing an imported parse. Press Back to live to measure your own.';
+      return {
+        startText: 'Start', startTitle: why, startClass: '', startDisabled: true,
+        pauseText: 'Pause', pauseTitle: why, pauseClass: '', pauseDisabled: true,
+        pausePressed: false, pauseToggle: false,
+        dot: 'stale'
+      };
+    }
     var isArmed = armed(), isStarted = started(), isPaused = paused();
     return {
       startText: (isArmed || isStarted) ? 'Restart' : 'Start',
+      startDisabled: false,
       startTitle: isArmed
         ? 'Armed — the clock starts on the first counted hit. Press again to re-arm.'
         : isStarted
@@ -444,6 +461,7 @@
       start.textContent = v.startText;
       start.title = v.startTitle;
       start.className = 'session-start ' + v.startClass;
+      start.disabled = !!v.startDisabled;
     }
     if (pause) {
       pause.textContent = v.pauseText;
@@ -461,6 +479,7 @@
     $('liveDot').className = 'dot ' + v.dot;
     // Every floating window carries the same pair, in the same state.
     DPS.popout.session(v);
+    applyParse();
   }
 
   /*
@@ -469,8 +488,8 @@
    * Runs at the top of render(), which is exactly when it can matter: render is
    * what a new poll's events trigger, so the latch is tested against every
    * event on the same pass that would have drawn it. A filter change also lands
-   * here, which is deliberate -- flipping a name back to "player" in
-   * Diagnostics can make an already-read event the one that qualifies, and it
+   * here, which is deliberate -- switching skillchains back on or re-including
+   * a character can make an already-read event the one that qualifies, and it
    * should then be the zero, because it is now the first thing being counted.
    *
    * `sessionStart` latches once. After that this is a no-op, so no later change
@@ -484,7 +503,7 @@
     if (t == null) return;
     S.sessionStart(app.session, t);
     applySession();
-    setStatus(app.file || 'waiting for the addon');
+    setStatus(srcName());
   }
 
   /*
@@ -557,34 +576,268 @@
     return j ? '<b class="' + cls + '">' + esc(j) + '</b>' : '';
   }
 
+  // --------------------------------------------------------- export / import
+
+  /*
+   * EXPORT: a paused parse, saved to a file another copy of the meter can open.
+   *
+   * Only while paused. A running clock is a moving target -- the file would be
+   * out of date before it was written -- while a paused one is a finished
+   * measurement with a fixed denominator, which is what makes it worth handing
+   * to someone. An import is always paused, so it can be exported again.
+   *
+   * Only the events the session can ever count go in: after the zero and outside
+   * every pause (`sessionAt` is not null). Nothing else is visible under any
+   * filter the importer could set, since an import cannot be resumed, so the
+   * file is the parse rather than whatever this page happened to be holding.
+   * The FILTERS are not exported -- exclusions, the skillchain switch, hidden
+   * names are the viewer's, and the importer's own apply.
+   *
+   * The folder and the name come from the browser's own Save dialog
+   * (`showSaveFilePicker`). It remembers the last folder under PICKER.id and
+   * shares it with Import's Open dialog, so Import opens where exports went.
+   * Where that API is missing -- anything but Chrome and Edge -- it falls back
+   * to an ordinary download.
+   */
+  var PICKER = {
+    id: 'vibexi-parse',
+    startIn: 'documents',
+    types: [{ description: 'Damage Meter parse', accept: { 'application/json': ['.json'] } }]
+  };
+
+  function exportParse() {
+    if (!paused()) return;
+    // Built NOW, before the dialog opens: a snapshot, so a poll or a button in
+    // a floating window cannot change what is written while the dialog is up.
+    var doc = P.exportParse(app.source, app.session, {
+      file: app.imported ? app.imported.file : app.file,
+      keep: function (e) { return S.sessionAt(app.session, e.t) != null; }
+    });
+    saveFile(exportName(), function () { return P.stringifyParse(doc); })
+      .then(function (where) { if (where) parseNote('Exported ' + where); },
+            function (e) { parseNote('Export failed: ' + errText(e), true); });
+  }
+
+  /* "Hasaya_parse_2026.07.30_2130.json": whose parse, and when the pull began,
+     local time. It reads as a sibling of the addon's Name_YYYY.MM.DD.jsonl and
+     can never match *.jsonl, which is what the server follows. */
+  function exportName() {
+    var who = String(app.source.roster.owner || '').replace(/[^A-Za-z0-9_-]/g, '');
+    var d = new Date(app.session.startedAt);
+    function p2(n) { return String(n).padStart(2, '0'); }
+    return (who ? who + '_' : '') + 'parse_' +
+      d.getFullYear() + '.' + p2(d.getMonth() + 1) + '.' + p2(d.getDate()) + '_' +
+      p2(d.getHours()) + p2(d.getMinutes()) + '.json';
+  }
+
+  /* Resolves to where the file went, or null if the dialog was cancelled --
+     which is not an error and says nothing. */
+  function saveFile(name, build) {
+    if (typeof window.showSaveFilePicker === 'function') {
+      return window.showSaveFilePicker(Object.assign({ suggestedName: name }, PICKER))
+        .then(function (handle) {
+          return handle.createWritable().then(function (w) {
+            return w.write(build()).then(function () { return w.close(); },
+                                         function (e) { w.abort(); throw e; });
+          }).then(function () { return handle.name; });
+        })
+        .catch(function (e) {
+          if (e && e.name === 'AbortError') return null;
+          throw e;
+        });
+    }
+    var url = URL.createObjectURL(new Blob([build()], { type: 'application/json' }));
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    return Promise.resolve(name + ' to your downloads folder');
+  }
+
+  /*
+   * IMPORT: open an exported parse in place of the live file.
+   *
+   * Always available, because it takes nothing away. The live state -- file,
+   * offset, events, session, colour slots -- is set aside whole and put back by
+   * Back to live. A session still running keeps running while it is away: the
+   * clock is wall time, and the events that arrive meanwhile are read on the way
+   * back in, the same way a pause's events are.
+   */
+  function importParse() {
+    openFile().then(function (f) { if (f) loadParse(f.name, f.text); },
+                    function (e) { parseNote('Import failed: ' + errText(e), true); });
+  }
+
+  function openFile() {
+    if (typeof window.showOpenFilePicker === 'function') {
+      return window.showOpenFilePicker(PICKER)
+        .then(function (handles) { return handles[0].getFile(); })
+        .then(readFile)
+        .catch(function (e) {
+          if (e && e.name === 'AbortError') return null;
+          throw e;
+        });
+    }
+    // The fallback cannot tell a cancel from nothing happening, and does not
+    // need to: a cancelled pick simply never resolves.
+    return new Promise(function (resolve, reject) {
+      var input = $('importFile');
+      input.value = '';
+      input.onchange = function () {
+        var f = input.files && input.files[0];
+        if (f) readFile(f).then(resolve, reject);
+      };
+      input.click();
+    });
+  }
+
+  function readFile(file) {
+    return file.text().then(function (text) { return { name: file.name, text: text }; });
+  }
+
+  function loadParse(name, text) {
+    var r;
+    try { r = P.importParse(text); }
+    catch (e) { parseNote('Import failed: ' + errText(e), true); return; }
+
+    // Only the FIRST import parks the live state. A second one replaces the
+    // first import, and Back to live still has to land on the live file.
+    if (!app.imported) app.live = stashLive();
+    app.gen++;
+    app.imported = { name: name, file: r.file, exported: r.exported };
+    adoptSource(r.source);
+    app.session = r.session;
+    app.rendered = true;
+    applySession();
+    setStatus(srcName());
+    render();
+    parseNote('Imported ' + name + (r.skipped
+      ? ' — ' + S.fmtInt(r.skipped) + ' unreadable record' + (r.skipped === 1 ? '' : 's') + ' skipped'
+      : ''));
+  }
+
+  /*
+   * Everything that belongs to the live file, and nothing that belongs to the
+   * viewer: filters, the theme and the pop-outs are the same on both sides and
+   * are never swapped.
+   */
+  var LIVE_STATE = ['file', 'offset', 'source', 'lines', 'slots', 'nextSlot',
+                    'seen', 'seenSet', 'scanned', 'session'];
+
+  function stashLive() {
+    var s = {};
+    LIVE_STATE.forEach(function (k) { s[k] = app[k]; });
+    return s;
+  }
+
+  function backToLive() {
+    if (!app.imported) return;
+    var s = app.live;
+    app.gen++;
+    app.imported = null;
+    app.live = null;
+    LIVE_STATE.forEach(function (k) { app[k] = s[k]; });
+    app.drill = null;
+    app.chipSig = null;
+    $('drillCard').hidden = true;
+    parseNote('');
+    applySession();
+    setStatus(srcName());
+    render();
+  }
+
+  /*
+   * A new event source, with nothing carried over from the last: a new event
+   * file, an import, and the swap between them all start here. The chip
+   * signature goes too -- the same cast can come back in different colour slots,
+   * and a chip carries its colour in its markup.
+   */
+  function adoptSource(source) {
+    app.source = source;
+    app.lines = 0;
+    app.slots = {}; app.nextSlot = 0;
+    app.seen = []; app.seenSet = {}; app.scanned = 0;
+    app.drill = null;
+    app.chipSig = null;
+    $('drillCard').hidden = true;
+  }
+
+  /* What the status line calls the source being shown. */
+  function srcName() {
+    return app.imported ? 'imported · ' + app.imported.name : (app.file || 'waiting for the addon');
+  }
+
+  /* Export follows the clock; Back to live follows the import. Called from
+     applySession, which runs on every change either one depends on. */
+  function applyParse() {
+    var exp = $('exportBtn');
+    exp.disabled = !paused();
+    exp.title = paused()
+      ? 'Save this parse to a file another copy of the meter can open with Import'
+      : started()
+        ? 'Pause first — a parse is exported once its clock has stopped'
+        : 'Nothing to export yet — Start, then Pause, to export a pull';
+    $('importBtn').title = app.imported
+      ? 'Open a different exported parse'
+      : 'Open a parse exported from another copy of the meter. What you are measuring ' +
+        'now is kept, and Back to live returns to it.';
+    $('liveBtn').hidden = !app.imported;
+  }
+
+  var noteTimer = null;
+
+  /* What the last Export or Import did, beside the buttons. Clears itself. */
+  function parseNote(msg, bad) {
+    var n = $('parseNote');
+    clearTimeout(noteTimer);
+    n.textContent = msg || '';
+    n.classList.toggle('bad', !!bad);
+    n.hidden = !msg;
+    if (msg) noteTimer = setTimeout(function () { parseNote(''); }, 8000);
+  }
+
+  function errText(e) {
+    return e && e.message ? e.message : String(e);
+  }
+
   // ------------------------------------------------------------------- fetch
 
   function poll() {
+    // Nothing is read while an import is on screen. The live offset is parked
+    // with the rest of the live state, and reading resumes from exactly there
+    // on Back to live -- the file kept growing, and none of it is skipped.
+    if (app.imported) { schedule(); return; }
+    var gen = app.gen;
     var qs = '?offset=' + app.offset + (app.file ? '&file=' + encodeURIComponent(app.file) : '');
     fetch('/api/events' + qs, { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
+        // An import, or the way back from one, landed while this was in flight.
+        // Dropping the answer loses nothing: the offset was never advanced, so
+        // the next poll reads the same bytes into whichever state is current.
+        if (gen !== app.gen) return;
         app.error = null;
         app.lastOk = Date.now();
 
         if (!d.file) {
+          // No schedule() here: the .then() closing this chain already queues
+          // the next poll, and calling it from here as well doubled the number
+          // of polls on every tick until an event file appeared.
           setStatus('waiting for the addon — is VibeXI loaded?', 'stale');
-          schedule(); return;
+          return;
         }
 
         if (d.reset || d.file !== app.file) {
           var meta = P.parseFilename(d.file);
           app.file = d.file;
-          app.source = P.create(meta.owner);
-          app.lines = 0;
-          app.slots = {}; app.nextSlot = 0;
-          app.seen = []; app.seenSet = {}; app.scanned = 0;
-          app.drill = null;
+          adoptSource(P.create(meta.owner));
           // A new file is a new character or a new day; a clock still running
           // from the old one would measure a session that is not this one.
           app.session = S.idleSession();
           applySession();
-          $('drillCard').hidden = true;
         }
         app.offset = d.nextOffset;
 
@@ -598,6 +851,7 @@
         if (lines.length || !app.rendered) { app.rendered = true; render(); }
       })
       .catch(function (e) {
+        if (gen !== app.gen) return;
         app.error = e.message || String(e);
         setStatus('server unreachable — is damage-meter.py still running?', 'err');
       })
@@ -617,10 +871,14 @@
     else applySession();
     var ev = app.source.events.length;
     $('srcCount').textContent = S.fmtInt(ev) + ' event' + (ev === 1 ? '' : 's') +
-      ' · ' + S.fmtInt(app.lines) + ' lines' +
+      // An import was never read line by line, so it has no line count.
+      (app.imported ? '' : ' · ' + S.fmtInt(app.lines) + ' lines') +
       // A time of day, and the one place the app still prints one: this says
       // when the pull began in the world, not where anything sits on the axis.
-      (started() ? ' · started ' + S.fmtClock(app.session.startedAt)
+      // An import can be from any day, so it carries the date as well.
+      (started() ? ' · started ' +
+                   (app.imported ? new Date(app.session.startedAt).toLocaleDateString('en-CA') + ' ' : '') +
+                   S.fmtClock(app.session.startedAt)
        : armed() ? ' · armed, waiting for the first hit'
        : ' · not started');
   }
@@ -664,7 +922,6 @@
     renderBars(agg);
     renderActions(agg);
     renderDrill(shown);
-    renderDiagnostics(roster);
   }
 
   // ---- character chips (the per-entity on/off filter)
@@ -865,7 +1122,8 @@
     // clock does not.
     var el = $('tTotalSub');
     if (el) {
-      el.textContent = armed() ? 'armed — starts on the first hit'
+      el.textContent = app.imported ? 'imported parse — read only'
+        : armed() ? 'armed — starts on the first hit'
         : !started() ? 'not started — press Start'
         : !agg || !agg.actors.length ? 'no damage yet'
         : paused() ? 'held — nothing counting'
@@ -1115,69 +1373,6 @@
       }).join('') + '</tbody>';
   }
 
-  // ---- diagnostics
-
-  function renderDiagnostics(roster) {
-    var names = {};
-    app.source.events.forEach(function (e) {
-      if (e.actor) names[e.actor] = true;
-      if (e.target) names[e.target] = true;
-    });
-    /*
-     * The party members the addon reported a job for, whether or not they ever
-     * swung. This is the one panel in the app that lists the party rather than
-     * the damage, so it is the only place a white mage who healed all night
-     * appears at all -- and the place to look when a name is missing from the
-     * charts and you want to know whether the addon ever saw them.
-     */
-    Object.keys(roster.jobs).forEach(function (n) { names[n] = true; });
-    // Sorted on what is PRINTED. Sorting hidden names by the name they are
-    // hiding leaves them sitting in their own alphabetical slot, which both
-    // reads as a broken sort and narrows down who they are.
-    var list = Object.keys(names).sort(function (a, b) {
-      var x = nameOf(a), y = nameOf(b);
-      return x < y ? -1 : x > y ? 1 : 0;
-    });
-
-    // The Kind column is the addon's answer, straight off the entity's spawn
-    // flags; the Counted column is what this meter does with it. They differ
-    // only where the user has overridden one by hand.
-    // Hidden here too, and the Job column goes with it for the same reason it
-    // does in the character table. This panel is the one that lists the party
-    // rather than the damage, so leaving it out of the rule would put every
-    // name back on screen the moment somebody opened it on stream. The override
-    // buttons still carry the real name in `data-name`.
-    var withJob = !app.anon;
-    $('rosterTable').innerHTML = list.length
-      ? '<thead><tr><th>Name</th>' + (withJob ? '<th class="job">Job</th>' : '') +
-        '<th>Kind</th><th>Counted</th><th></th></tr></thead><tbody>' +
-        list.map(function (n) {
-          var mob = roster.isMob(n);
-          return '<tr><td>' + esc(nameOf(n)) + '</td>' +
-                 (withJob
-                   ? '<td class="job" title="' + esc(roster.jobTitle(n)) + '">' + jobCell(n) + '</td>'
-                   : '') +
-                 '<td>' + esc(roster.kindOf(n)) + '</td>' +
-                 '<td>' + (mob ? 'No' : 'Yes') +
-                 (roster.manual[n] ? ' (manual)' : '') + '</td>' +
-                 '<td><button type="button" class="roster-toggle" data-name="' + esc(n) + '" ' +
-                 'data-to="' + (mob ? 'ally' : 'mob') + '">' +
-                 (mob ? 'Count this name' : 'Leave this name out') + '</button></td></tr>';
-        }).join('') + '</tbody>'
-      : '';
-
-    // The addon's own notices: its startup environment probe, and one line per
-    // message id it saw and did not recognise. A dropped id is a silent
-    // undercount, so it has to be visible somewhere.
-    var notes = app.source.meta;
-    $('addonMeta').textContent = notes.length
-      ? notes.slice(-60).map(function (m) {
-          if (m.bad) return 'line ' + m.line + ': not JSON — ' + m.text;
-          return 'line ' + m.line + ': ' + JSON.stringify(m.data);
-        }).join('\n')
-      : 'none';
-  }
-
   // ------------------------------------------------------------------ events
 
   /* Paints a segmented control from `app[key]`; the data attribute is the key. */
@@ -1242,6 +1437,9 @@
 
   $('startBtn').addEventListener('click', startSession);
   $('pauseBtn').addEventListener('click', secondary);
+  $('exportBtn').addEventListener('click', exportParse);
+  $('importBtn').addEventListener('click', importParse);
+  $('liveBtn').addEventListener('click', backToLive);
 
   /* Nothing but a re-render: no filter moves, no total changes, and the chips
      rebuild because their signature is over the name as drawn. */
@@ -1263,14 +1461,6 @@
   });
 
   $('drillClose').addEventListener('click', function () { app.drill = null; render(); });
-
-  $('rosterTable').addEventListener('click', function (ev) {
-    var b = ev.target.closest('.roster-toggle');
-    if (!b) return;
-    app.source.roster.setManual(b.dataset.name, b.dataset.to);
-    resetColors();
-    render();
-  });
 
   // Toggle, persistence and the button label all live in the shared theme
   // module; the only app-specific part is that the charts must be redrawn,

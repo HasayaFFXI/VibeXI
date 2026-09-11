@@ -146,9 +146,9 @@ which character is yours from the event file's name.
 
 Nothing is filtered and no number moves: the chips still exclude the same
 people, the colours are unchanged and every total is identical. Only the text
-goes — on the chips, the tiles, the legend, both tables, the drill-down and the
-Diagnostics roster, where the Job column steps aside because the name is now
-carrying it. Two people on the same job come out as `SAM/WAR` and `SAM/WAR 2`,
+goes — on the chips, the tiles, the legend, both tables and the drill-down. The
+character table's Job column steps aside, because the name is now carrying
+it. Two people on the same job come out as `SAM/WAR` and `SAM/WAR 2`,
 numbered in the order they took their colours, so nobody's label moves mid-
 session. Someone whose job the addon has never reported reads `Unknown job`.
 
@@ -214,7 +214,7 @@ does it (`/api/alpha`), which means:
   over a transparent panel, that needs an in-game overlay, not this.
 - If a floating window ever renders **black** instead of transparent, open the
   browser console and run `DPS.popout.keyBg('line', false)` (or `bars`,
-  `actions`, `drill`, `diag`) to stop painting that panel's background
+  `actions`, `drill`) to stop painting that panel's background
   near-black; the slider at 100% undoes the rest.
 
 **Every floating panel carries its own Start and Pause**, in the same colours as
@@ -241,6 +241,32 @@ It does **not** re-read the file. Reloading the page rewinds to the top of the
 file, but it also puts the meter back to *not started* — the clock never
 survives a reload, because a stopwatch restored from a previous page load would
 be timing something you were not doing.
+
+### Saving a parse, and opening someone else's
+
+Pause the session and **Export…**, next to the session buttons, lights up. It
+opens the browser's Save dialog: choose a folder, name the file, save. The
+suggested name is yours plus when the pull began —
+`Hasaya_parse_2026.07.30_1402.json`. The file holds the pull and nothing else:
+every hit inside the session, the party's jobs, and the clock with its pauses.
+Your filters are not in it, so whoever opens it sees it through their own.
+
+**Import…** opens one. The whole page switches to that parse — totals, charts,
+drill-downs — with its clock stopped where it was exported, and the
+status line reads `imported · <file>`. You can filter it, hide names and float
+panels as usual, but Start and Pause are switched off: it is a recording, not a
+fight. **Back to live** returns you to your own meter exactly as you left it.
+
+Importing takes nothing away. If a pull was running when you imported, it is
+still running when you come back, and whatever the addon wrote in the meantime
+is read in then.
+
+- **Chrome or Edge** give you the folder picker and remember the folder, and
+  Import opens in the same place. Other browsers save to your downloads folder.
+- **Only Export needs a pause.** A running clock would be out of date before the
+  file was written.
+- **Keep the `.json` ending.** The meter follows the newest `.jsonl` in the
+  events folder, so an export renamed to `.jsonl` would be read as today's file.
 
 ## Reading the numbers
 
@@ -292,19 +318,12 @@ guesswork left in any of it.
 
 ## When something looks wrong
 
-Open **Diagnostics** at the bottom.
-
-- **Name classification.** Every name is classified from the game's own spawn
-  flags — player, pet, mob, npc — so this should always be right; there is no
-  heuristic left to get it wrong. It is still the table to check when someone is
-  missing from the meter entirely, and you can override any row by hand. This is
-  also the one place the whole **party** is listed rather than only the people
-  who dealt damage: a white mage who healed all night has no line on any chart,
-  but she is here with her job.
-- **Addon notices.** The addon's startup probe, plus one line for each kind of
-  game message it saw and did not recognise. Anything listed there is damage
-  nobody is being credited with, and the fix is a new message id in
-  [`../../addons/VibeXI/vx_enums.lua`](../../addons/VibeXI/vx_enums.lua).
+The addon writes its own notices into the event file alongside the damage — its
+startup probe, and one `"kind":"meta"` line for each kind of game message it saw
+and did not recognise. The meter skips them, so when a total seems low, search
+the file (under `%LOCALAPPDATA%\VibeXI\events\`) for `"meta"`. Anything listed
+there is damage nobody is being credited with, and the fix is a new message id
+in [`../../addons/VibeXI/vx_enums.lua`](../../addons/VibeXI/vx_enums.lua).
 
 ## Layout
 
@@ -315,7 +334,7 @@ Damage-Meter.cmd    double-click launcher
 ../../addons/VibeXI/  the Ashita addon that produces the data
 ../../shared-ui/    design system shared with ../ws-calculator, served at /shared/
 web/index.html      the page
-web/style.css       app-only styling: filter bar, source indicator, diagnostics
+web/style.css       app-only styling: filter bar, source indicator, pop-outs
 web/app.js          polling, state, rendering
 web/lib/source.js   addon JSONL lines -> damage events
 web/lib/stats.js    events -> totals, time series, distributions
