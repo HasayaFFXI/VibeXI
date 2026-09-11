@@ -5,7 +5,10 @@
  * pasted array of lines, which is how the contract gets validated.
  *
  *   DPS.source.create(ownerName)  -> stateful line-at-a-time reader
- *   DPS.source.parseAll(lines)    -> one-shot, returns { events, meta }
+ *   DPS.source.parseAll(lines)    -> one-shot, returns the reader, every line fed
+ *   DPS.source.exportParse(reader, session, opts) / stringifyParse(doc)
+ *                                 -> a paused parse, as an export document
+ *   DPS.source.importParse(text)  -> { source, session, ... } read back from one
  *
  * THE ONE SOURCE IS THE ADDON. addons/VibeXI/ reads the game's own action
  * packets (0x028) and appends one JSON object per line. There is no chat-log
@@ -167,17 +170,9 @@
     roster.owner = ownerName || null;
 
     var events = [];
-    /*
-     * Lines the addon wrote that are not events: its startup environment probe,
-     * and one notice per message id it saw and did not recognise. Surfaced in
-     * the UI's Diagnostics panel, because a silently dropped message id is
-     * indistinguishable from a bug. Malformed lines land here too.
-     */
-    var meta = [];
 
     var state = {
-      lineNo: 0,
-      bad: 0            // lines that were not JSON at all
+      lineNo: 0
     };
 
     function feed(line) {
@@ -188,17 +183,31 @@
       try {
         raw = JSON.parse(line);
       } catch (err) {
-        state.bad++;
-        meta.push({ line: state.lineNo, bad: true, text: String(line).slice(0, 300) });
-        return null;
+        return null;   // not JSON at all; skipped
       }
+      return ingest(raw);
+    }
 
+    /*
+     * One record that is already an object. An exported parse comes back in
+     * through here (`importParse`), and it is the same door `feed` uses, so a
+     * record read back from an export cannot be read differently from the line
+     * it started out as.
+     */
+    function feedRecord(raw) {
+      state.lineNo++;
+      return ingest(raw);
+    }
+
+    function ingest(raw) {
       if (!raw || typeof raw !== 'object') return null;
 
-      if (raw.kind === 'meta') {
-        meta.push({ line: state.lineNo, data: raw });
-        return null;
-      }
+      /*
+       * The addon's own notices -- its startup environment probe, and one line
+       * per message id it saw and did not recognise. Not events, and nothing
+       * here reads them; they stay in the file for anyone searching it.
+       */
+      if (raw.kind === 'meta') return null;
 
       /*
        * A job line is a fact about a CHARACTER, not an event: it carries no
@@ -218,8 +227,8 @@
            * that this name is one of ours -- and for a member who never acts it
            * is the ONLY such evidence, because they appear as the actor of no
            * event and the spawn-flag classification never gets a chance to run.
-           * Without this the white mage reads as an unclassified stranger in
-           * Diagnostics, which is exactly backwards.
+           * Without this the white mage reads as an unclassified stranger,
+           * which is exactly backwards.
            */
           roster.note(who, 'player');
           roster.noteJob(who, {
@@ -271,8 +280,8 @@
 
     return {
       feed: feed,
+      feedRecord: feedRecord,
       events: events,
-      meta: meta,
       roster: roster,
       state: state,
       /*
@@ -284,9 +293,7 @@
        */
       reset: function () {
         events.length = 0;
-        meta.length = 0;
         state.lineNo = 0;
-        state.bad = 0;
       }
     };
   }
@@ -315,10 +322,215 @@
     return out;
   }
 
+  // ------------------------------------------------------------ export file
+
+  /*
+   * A PAUSED PARSE, SAVED FOR ANOTHER COPY OF THE METER TO OPEN.
+   *
+   * The file is the addon's own records plus the three things a reader cannot
+   * recover from them: the session clock, the roster (jobs are written once, on
+   * change, so most of them sit before the Start press and are not in the event
+   * list at all), and the manual overrides. Events and job lines are stored in
+   * the WIRE format -- seconds, `mainLvl` -- and read back through `feedRecord`,
+   * which is the same `ingest` a live line goes through. So an imported parse
+   * is not a second source that could disagree with the first; it is the first
+   * source, replayed.
+   *
+   * `.json`, never `.jsonl`: the server follows the newest *.jsonl in the events
+   * directory, and an export saved there must not be mistaken for today's file.
+   */
+  var PARSE_FORMAT = 'vibexi-parse';
+  var PARSE_VERSION = 1;
+
+  /* A normalised event -> the record the addon wrote. The inverse of `ingest`. */
+  function toRecord(e) {
+    var r = {
+      t: e.t / 1000, seq: e.seq, use: e.use, kind: e.kind,
+      actor: e.actor, actorKind: e.actorKind,
+      action: e.action, actionId: e.actionId,
+      target: e.target, targetKind: e.targetKind,
+      dmg: e.dmg, hit: e.hit, crit: e.crit, burst: e.burst, msg: e.msg
+    };
+    // Same rule as the addon: only a pet's own rows carry these.
+    if (e.owner) r.owner = e.owner;
+    if (e.pet) r.pet = e.pet;
+    return r;
+  }
+
+  /* A roster job -> the kind:"job" line it came from, sub trio omitted when there
+     is no sub-job, exactly as `vx_entity.note_job` writes it. */
+  function jobRecord(name, j) {
+    var r = { kind: 'job', actor: name, main: j.main, mainId: j.mainId, mainLvl: j.mainLevel };
+    if (j.sub && j.sub !== 'NON') { r.sub = j.sub; r.subId = j.subId; r.subLvl = j.subLevel; }
+    return r;
+  }
+
+  function isMap(v) {
+    return !!v && typeof v === 'object' && !Array.isArray(v);
+  }
+
+  function copyMap(m) {
+    var out = {};
+    for (var k in m) if (Object.prototype.hasOwnProperty.call(m, k)) out[k] = m[k];
+    return out;
+  }
+
+  function finite(v) {
+    return typeof v === 'number' && isFinite(v);
+  }
+
+  /*
+   * reader + session -> the export document, as a plain object.
+   *
+   *   opts.keep(e)   which events go in; default all of them
+   *   opts.file      the event file they were read from, kept for the record
+   *
+   * Everything is COPIED, so the document is a snapshot: a poll landing while a
+   * save dialog is open cannot change what gets written.
+   */
+  function exportParse(reader, session, opts) {
+    opts = opts || {};
+    var roster = reader.roster;
+    var keep = opts.keep || function () { return true; };
+    return {
+      format: PARSE_FORMAT,
+      version: PARSE_VERSION,
+      exported: new Date(opts.now == null ? Date.now() : opts.now).toISOString(),
+      file: opts.file || null,
+      owner: roster.owner,
+      session: {
+        armedAt: session.armedAt,
+        startedAt: session.startedAt,
+        spans: session.spans.map(function (s) { return { from: s.from, to: s.to }; }),
+        pausedAt: session.pausedAt
+      },
+      kinds: copyMap(roster.kinds),
+      manual: copyMap(roster.manual),
+      jobs: Object.keys(roster.jobs).map(function (n) { return jobRecord(n, roster.jobs[n]); }),
+      events: reader.events.filter(keep).map(toRecord)
+    };
+  }
+
+  /*
+   * The document -> text. The head is indented for reading; the events are one
+   * per line, the way the addon's own file has them, so a long parse stays
+   * something a person can scroll through and a diff can line up.
+   */
+  function stringifyParse(doc) {
+    var head = {};
+    for (var k in doc) if (k !== 'events') head[k] = doc[k];
+    var events = doc.events || [];
+    return JSON.stringify(head, null, 2).slice(0, -2) + ',\n  "events": [' +
+      (events.length
+        ? '\n    ' + events.map(function (e) { return JSON.stringify(e); }).join(',\n    ') + '\n  '
+        : '') +
+      ']\n}\n';
+  }
+
+  /*
+   * A session read back from a file: shape-checked, and REQUIRED TO BE PAUSED.
+   * Export is only offered while paused, so an unpaused session is not one this
+   * meter wrote -- and it would be meaningless if it were: a running clock would
+   * go on counting from the moment of import, over a file with nothing new in it.
+   */
+  function readSession(s) {
+    if (!isMap(s)) return null;
+    if (!finite(s.startedAt) || !finite(s.pausedAt) || s.pausedAt < s.startedAt) return null;
+    var list = Array.isArray(s.spans) ? s.spans : [];
+    var spans = [];
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      if (!p || !finite(p.from) || !finite(p.to) || p.to < p.from) return null;
+      spans.push({ from: p.from, to: p.to });
+    }
+    return {
+      armedAt: finite(s.armedAt) ? s.armedAt : s.startedAt,
+      startedAt: s.startedAt,
+      spans: spans,
+      pausedAt: s.pausedAt
+    };
+  }
+
+  /* An addon event file opened by mistake: its first line is a record on its own. */
+  function looksLikeEventFile(text) {
+    try {
+      var o = JSON.parse(String(text).split('\n', 1)[0]);
+      return isMap(o) && !!o.kind;
+    } catch (e) { return false; }
+  }
+
+  var NOT_PARSE = 'That file is not a Damage Meter parse export.';
+  var EVENT_FILE = 'That is an addon event file (.jsonl), not an exported parse. ' +
+                   'Import opens a file made with Export.';
+
+  /*
+   * Text -> { source, session, skipped, file, exported }, or throws an Error
+   * whose message is written for the user.
+   *
+   * `source` is an ordinary reader, the same object `create` returns, so nothing
+   * downstream can tell an import from a live file. `skipped` counts event
+   * records that did not survive `ingest`.
+   */
+  function importParse(text) {
+    var doc;
+    try {
+      doc = JSON.parse(text);
+    } catch (err) {
+      throw new Error(looksLikeEventFile(text) ? EVENT_FILE : NOT_PARSE);
+    }
+    if (!isMap(doc) || doc.format !== PARSE_FORMAT) {
+      throw new Error(isMap(doc) && doc.kind ? EVENT_FILE : NOT_PARSE);
+    }
+    if (+doc.version > PARSE_VERSION) {
+      throw new Error('That parse was exported by a newer version of the meter. Update this copy to open it.');
+    }
+    var session = readSession(doc.session);
+    if (!session) throw new Error('That parse has no complete session, so there is no clock to measure it on.');
+    if (!Array.isArray(doc.events)) throw new Error('That parse has no event list.');
+
+    var r = create(str(doc.owner) || null);
+    var k;
+    // Classifications first, so the events' own kinds meet the same
+    // first-answer-wins rule they met when they were live.
+    if (isMap(doc.kinds)) {
+      for (k in doc.kinds) if (Object.prototype.hasOwnProperty.call(doc.kinds, k)) r.roster.note(k, str(doc.kinds[k]));
+    }
+    if (isMap(doc.manual)) {
+      for (k in doc.manual) {
+        if (doc.manual[k] === 'ally' || doc.manual[k] === 'mob') r.roster.setManual(k, doc.manual[k]);
+      }
+    }
+    (Array.isArray(doc.jobs) ? doc.jobs : []).forEach(function (j) {
+      if (isMap(j) && j.kind === 'job') r.feedRecord(j);
+    });
+
+    var skipped = 0;
+    for (var i = 0; i < doc.events.length; i++) {
+      var ev = doc.events[i];
+      // A job or meta record here would be filed, not counted; nothing Export
+      // writes puts one in this list, so it is refused rather than obeyed.
+      if (!isMap(ev) || ev.kind === 'job' || ev.kind === 'meta' || !r.feedRecord(ev)) skipped++;
+    }
+
+    // An older export's `meta` list is ignored: nothing reads the addon's notices.
+
+    return {
+      source: r,
+      session: session,
+      skipped: skipped,
+      file: str(doc.file) || null,
+      exported: str(doc.exported) || null
+    };
+  }
+
   DPS.source = {
     create: create,
     parseAll: parseAll,
     parseFilename: parseFilename,
+    exportParse: exportParse,
+    stringifyParse: stringifyParse,
+    importParse: importParse,
+    PARSE_FORMAT: PARSE_FORMAT,
     createRoster: createRoster,
     ADDL_ACTION: ADDL_ACTION,
     OURS: OURS

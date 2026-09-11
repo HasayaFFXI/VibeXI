@@ -166,8 +166,8 @@
    * The controls group in a card head. Any buttons already sitting directly in
    * the head (the drill-down's Close) are pulled into it so they stay grouped
    * with the new ones instead of being pushed to the far side by the head's
-   * space-between. A card without a head -- Diagnostics is a bare <details> --
-   * gets a free-floating group pinned to its top-right corner.
+   * space-between. A card without a head gets a free-floating group pinned to
+   * its top-right corner.
    */
   function toolsFor(card) {
     var head = card.querySelector('.card-head');

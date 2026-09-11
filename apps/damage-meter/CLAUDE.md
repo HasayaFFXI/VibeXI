@@ -42,9 +42,9 @@ Damage-Meter.cmd    double-click launcher (python damage-meter.py)
 ../../addons/VibeXI/  the addon that produces every event this app draws
 ../../shared-ui/    THE design system, shared with ../ws-calculator; mounted at /shared/
 web/index.html      page shell; theme -> source -> stats -> chart -> popout -> app
-web/style.css       app-only rules: filter bar, source indicator, diagnostics, pop-outs
+web/style.css       app-only rules: filter bar, source indicator, pop-outs
 web/app.js          polling, filter state, all DOM writing
-web/lib/source.js   JSONL lines -> events   (DOM-free)
+web/lib/source.js   JSONL lines -> events, and the export file   (DOM-free)
 web/lib/stats.js    events -> aggregates    (DOM-free)
 web/lib/chart.js    canvas line / bars / histogram
 web/lib/popout.js   moves a card into its own OS window
@@ -122,10 +122,12 @@ downstream of `feed()` is in milliseconds; do not scale it twice.
 
 **A `kind:"meta"` line is not an event.** Two kinds arrive: the addon's startup
 environment probe, once per session, and one notice per game message id it saw
-and did not recognise. `source.js` routes both into `meta`, which is what the
-Diagnostics panel prints. An unrecognised id is damage nobody is being credited
-with, so that panel is the first place to look when a total seems low; the fix
-is a new entry in `../../addons/VibeXI/vx_enums.lua`, not here.
+and did not recognise. `source.js` skips both and keeps nothing — the
+Diagnostics panel that printed them was removed on 2026-09-10, along with the
+bad-line counter and the `meta` field in exports. An unrecognised id is still
+damage nobody is being credited with, so when a total seems low, search the
+event file itself for `"kind":"meta"`; the fix is a new entry in
+`../../addons/VibeXI/vx_enums.lua`, not here.
 
 **Neither is a `kind:"job"` line.** It states one party member's jobs:
 
@@ -158,12 +160,11 @@ Four things about it are load-bearing:
 - **It also classifies the name as ours.** A job line comes off a party slot, so
   `source.js` calls `roster.note(name, 'player')` on it. For a member who never
   acts — the white mage — that is the *only* evidence there is, and without it
-  they read as an unclassified stranger in Diagnostics.
+  they read as an unclassified stranger, and Hide names would not alias them.
 
 A party member who never deals damage therefore reaches the app through this
-line and nothing else. They appear in the Diagnostics roster, with their job,
-and in no chart, chip or total — which is correct: the meter lists the party,
-but it charts damage.
+line and nothing else. They are on the roster, with their job, and in no chart,
+chip or total — the meter charts damage.
 
 ## `use` is per swing, not per action
 
@@ -241,9 +242,8 @@ never totalled, and never charted. There is no Party/Monsters/Both switch.
 **The monsters' events are still parsed and kept.** They are dropped in
 `stats.filter`, on the actor side, and only when a `roster` is passed (the second
 `filter` call in `render()` deliberately passes none — it is re-filtering an
-already-scoped list by the character chips). They stay in the event list because
-the Diagnostics roster is built from it, and because a manual override has to be
-able to bring a name back without a re-read.
+already-scoped list by the character chips). They stay in the event list so the
+list stays true to the file and the drop is one rule in one place.
 
 `roster.isMob` is now a lookup: `actorKind`/`targetKind` in
 (`player`, `pet`) is ours, anything else is not. **Anything not positively ours
@@ -254,13 +254,14 @@ them. Under-counting a stranger beats crediting one.
 Consequences worth knowing:
 
 - **A name misfiled vanishes from the meter completely** rather than showing up
-  under a different tab. The Diagnostics roster table is the fix and its
-  `card-sub` says so. With spawn flags this should never happen; the override
-  survives because a classification the user disagrees with should still be
-  theirs to fix.
-- **Monsters still appear as `target`s** — in the drill-down's per-hit table and
-  in the Diagnostics roster list. That is party damage *to* them, which is the
-  whole point; only the actor side is filtered.
+  under a different tab. With spawn flags this should never happen. There is no
+  UI to override one any more — the Diagnostics roster table that did it was
+  removed on 2026-09-10. `roster.setManual(name, 'ally'|'mob')` still works from
+  the console, and an export still carries `manual`, so a parse that used an
+  override imports the same.
+- **Monsters still appear as `target`s** — in the drill-down's per-hit table.
+  That is party damage *to* them, which is the whole point; only the actor side
+  is filtered.
 - **A monster's own swings are never recorded.** The addon drops any action one
   of ours is not the actor of (`is_ours` in `vibexi.lua`), so damage *taken* is
   not in the file at all. It used to be written and then dropped in the browser;
@@ -282,12 +283,12 @@ Consequences worth knowing:
   action keeps the pet's name (`Fluffikins: Big Scissors`) so the owner's
   breakdown still separates pet from master — both swing an "Attack", and one
   average over the two would describe neither. It copies rather than mutates, so
-  `app.source.events` stays true to the file for Diagnostics and the roster.
+  `app.source.events` stays true to the file.
 - **The monsters' events still bound nothing.** `windowOf` used to resolve
   `Latest fight` over the unfiltered list, on the grounds that a pull where the
   monsters got the last word still ended when they did. There is no automatic
-  window any more -- the user says when the pull started -- so the only thing
-  the monsters' rows are still read for is the Diagnostics roster.
+  window any more -- the user says when the pull started -- and with the
+  Diagnostics roster gone, nothing reads the monsters' rows at all.
 
 ## Gotchas
 
@@ -309,8 +310,8 @@ Consequences worth knowing:
   (`assignSlots`). Monsters are skipped: they can never be an actor, so slotting
   one would push a real party member further down the palette for nothing.
   `app.seen` still records every name, so a name flipped into the party by hand
-  picks up the next free slot on the following render — and a manual flip runs
-  `resetColors()` anyway.
+  (`roster.setManual`, console only now) picks up the next free slot on the
+  following render.
 - **The file's owner is pinned to slot 0, before the first-seen loop runs.**
   Otherwise their hue is decided by whether they or the tank swung first, which
   is luck — and the owner is the one character on every chart of every session,
@@ -584,7 +585,7 @@ chart axis all see a timeline that starts at zero.
 Consequences worth knowing:
 
 - **`startedAt: null` is a real state and it draws nothing** — whether idle or
-  armed. The meter reads the file, fills the Diagnostics roster and counts not
+  armed. The meter reads the file, fills the roster and counts not
   one point of damage. `filter` short-circuits to `[]` when there is no zero, so
   this is one branch rather than a special case in every panel.
 - **`counted()` is the single predicate, and it has to be.** Every non-time drop
@@ -612,8 +613,8 @@ Consequences worth knowing:
   it. A later filter change cannot re-date a running session and re-scale every
   number in it.
 - **A filter change CAN latch an armed session**, and should. `latchStart` runs
-  at the top of `render()`, which a filter change also calls, so flipping a name
-  back to `player` in Diagnostics — or switching skillchains on — can make an
+  at the top of `render()`, which a filter change also calls, so switching
+  skillchains on — or re-including a character — can make an
   already-read event the first counted one, and it then becomes the zero. It is
   the first thing being counted, so it is the right zero.
 - **The second button is Pause OR Cancel, never both.** While armed there is no
@@ -647,7 +648,7 @@ Consequences worth knowing:
   — a gap on the chart that no denominator accounted for would be unreadable.
 - **Polling does not stop while paused.** The addon keeps writing whatever this
   page does, so stopping the reader only moves the same bytes into a burst on
-  resume. Events during a pause are read, kept for Diagnostics, and dropped in
+  resume. Events during a pause are read, kept, and dropped in
   the view by their own timestamps — the same shape as the monster filter.
   Because the drop is by timestamp and not by arrival, poll latency cannot let
   an event sneak past the boundary it landed on the wrong side of.
@@ -851,6 +852,80 @@ would be measuring wall-clock time the user was not in a fight for. An armed
 session is not restored either, for the same reason: arming is a statement about
 the pull that is about to happen.
 
+## Export and import
+
+**Export…** saves a paused parse to a `.json` file, **Import…** opens one in any
+other copy of the meter, and **Back to live** (on screen only while an import
+is) returns from it. The server is not involved — the browser writes and reads
+the file — so the "server is dumb" rule is untouched.
+
+The folder and the name come from the browser's own Save dialog
+(`showSaveFilePicker`). `PICKER.id` (`vibexi-parse`) makes Chrome remember the
+folder, and Import's `showOpenFilePicker` uses the same id, so Import opens
+where exports went. Without that API — anything but Chrome and Edge — Export
+falls back to an `<a download>` and Import to the hidden `#importFile` input.
+localhost is a secure context, which is why the API is available at all.
+
+- **Export is enabled only while paused** (`applyParse`, run from
+  `applySession`). A running clock would be out of date before the file was
+  written; a paused one has a fixed denominator. An import is always paused, so
+  it can be exported again, and that round-trips field for field.
+- **The file is the addon's own records, replayed — not a second source.**
+  Events and job lines are stored in the WIRE format (`t` in seconds, `mainLvl`)
+  and read back through `feedRecord`, which is the same `ingest` a live line
+  goes through. Alongside them go the things the records cannot state: the
+  session, `kinds` and the `manual` overrides. The jobs matter most. They
+  are written on change, so most of them sit before the Start press and are not
+  in the event list at all; without the roster an import would have no jobs.
+- **Only the events the session can count are written** — `keep` is
+  `sessionAt(...) != null`. An import cannot be resumed and its zero is already
+  latched, so nothing before the zero, inside a pause or after the final pause is
+  visible under any filter the importer could set. The file is the parse, not
+  whatever the page happened to be holding.
+- **Filters are not exported.** Exclusions, the skillchain switch and Hide names
+  are the viewer's, and the importer's own apply. The data to flip any of them
+  is in the file.
+- **An import is locked.** `sessionView` returns both session buttons disabled
+  while `app.imported` is set, and `paintSession` now writes `start.disabled` so
+  every pop-out's pair follows. `startSession` and `togglePause` refuse as well.
+  `readSession` rejects a session without `pausedAt`: an unpaused one would run
+  its clock from the moment of import over a file with nothing new in it.
+- **Import takes nothing away.** `stashLive` parks `LIVE_STATE` (file, offset,
+  source, lines, slots, nextSlot, seen, seenSet, scanned, session); `poll()`
+  fetches nothing while an import is on screen; Back to live puts every one of
+  them back, and reading resumes from the parked offset. A live session that was
+  running keeps running — its clock is wall time — and whatever the addon wrote
+  meanwhile is read on the way back in, exactly like a pause's events. Only the
+  first import stashes, so a second one replaces the first and Back to live
+  still lands on the live file.
+- **`app.gen` fences off an in-flight poll.** It is bumped on every swap, and a
+  poll whose generation has moved on drops its answer before touching anything.
+  Nothing is lost by that: it never advanced the offset, so the next poll reads
+  the same bytes into whichever state is current.
+- **`adoptSource` is the one place a source is swapped** — a new event file, an
+  import and Back to live all go through it. It clears `chipSig` as well, because
+  the same cast can come back in different colour slots and a chip carries its
+  colour in its markup.
+- **`.json`, never `.jsonl`.** The server follows the newest `*.jsonl` in the
+  events directory, so an export saved there must not be mistaken for today's
+  file. The suggested name, `<Owner>_parse_<YYYY.MM.DD>_<HHMM>.json`, reads as a
+  sibling of the addon's files and cannot match that glob.
+- **The owner is the exporter.** `owner` travels in the file, so colour slot 0
+  and the one name Hide names leaves visible belong to the exporter's character,
+  not the importer's.
+- **`PARSE_VERSION` gates the shape.** Bump it when the document changes;
+  `importParse` refuses a newer version with a message rather than misreading it.
+
+To verify without a real dialog, stub both pickers with `Object.defineProperty`
+(plain assignment does not stick in the Browser pane — see recipe 6) and do the
+stub, the click and the read in **one** `javascript_tool` call. The fixture's
+events are in the past, so arm it by hand first: `DPS.app.session =
+DPS.stats.arm(firstEvent.t)`, trigger a render (clicking a filter does it), then
+`DPS.stats.sessionPause(DPS.app.session, lastEvent.t + 5000)`. The checks that
+matter: the imported page's per-character and per-action figures equal the
+exporter's, and a re-export of the import is identical to the original apart
+from `exported`.
+
 ## Charts
 
 House style from the `dataviz` skill; the palette is its documented reference
@@ -938,20 +1013,18 @@ keying off a drawn name.
   change. Two people on one job come out `SAM/WAR` and `SAM/WAR 2`, the first
   unnumbered exactly as the first also takes the base colour.
 - **Slots are not the whole party.** A member who never deals damage is never an
-  actor and so is never slotted, but they do reach the Diagnostics roster off
-  their job line alone — so the map also takes every name `roster.kinds` calls a
-  `player`, trailing the slotted ones in name order. Leaving them out put
-  Sylviane's name back on screen the moment that panel was opened, which is how
-  this was found. The residual: two characters on one job, neither slotted yet,
+  actor and so is never slotted, but the roster knows them off their job line
+  alone — so the map also takes every name `roster.kinds` calls a `player`,
+  trailing the slotted ones in name order. That was written for the Diagnostics
+  roster, which put Sylviane's name back on screen when opened; the panel is
+  gone, and the rule stays so any future place that lists the party is already
+  covered. The residual: two characters on one job, neither slotted yet,
   and the one sorting second is the one that acts first — that pair swaps numbers
   on that first swing and never again.
-- **The Job column is dropped, not blanked**, in both tables that carry one. The
+- **The Job column is dropped, not blanked**, in the character table. The
   name cell is already the job, a second copy of it reads as a bug, and a `—`
   there would say "job unknown", which is a different fact. `jobBadge()` does the
   same for the inline badges on a chip, the legend and an actions group row.
-- **The roster table sorts on the drawn name.** Sorting a hidden name by the name
-  it is hiding leaves it sitting in its own alphabetical slot — a sort that looks
-  broken and also narrows down who it is.
 - **A pet keeps its name.** It is not a character, its damage is already the
   owner's, and its name lives inside the action string. Hiding it means changing
   the action label, not this map.
@@ -1040,8 +1113,6 @@ that come back as static top-of-page snapshots. From the page console:
 
 ```js
 // 1. the source contract
-DPS.app.source.meta                       // probe + unrecognised message ids
-DPS.app.source.state.bad                  // lines that were not JSON at all
 DPS.app.source.roster.kinds               // name -> player | pet | mob | npc | other
 DPS.app.source.roster.jobs                // name -> { main, mainId, mainLevel, sub, ... }
 DPS.app.source.roster.jobLabel('Hasaya')  // 'SAM/WAR', or '' if never reported
@@ -1128,9 +1199,7 @@ Neither can catch a misspelled identifier or a bad expression — that surfaces 
 Checks that have caught real problems: append to a running file mid-line and
 confirm the partial line is held back; drop a newer `.jsonl` into the directory
 and confirm the client resets to it; confirm no monster name reaches the
-character chips, the bars chart or the actions table; flip a name to
-"leave out" in Diagnostics and confirm it leaves every total, then flip back and
-confirm no surviving character's colour changed.
+character chips, the bars chart or the actions table.
 
 ## Known gaps
 
@@ -1140,7 +1209,9 @@ it. What is left:
 - Only the newest event file is followed. Events are not persisted by this app —
   closing the page loses them, and reopening replays the current file from the
   top. That replay is the persistence: the addon's file survives an FFXI crash,
-  which is why it is written under `%LOCALAPPDATA%` rather than `%TEMP%`. Only
+  which is why it is written under `%LOCALAPPDATA%` rather than `%TEMP%`. A
+  finished pull can be kept on purpose with Export (see "Export and import"),
+  which writes a file and stores nothing in the page. Only
   the theme, the character exclusion list, the skillchain toggle, whether the
   character row is collapsed, whether the names are hidden and the pop-out
   opacity settings are stored — the session clock deliberately is not, so a

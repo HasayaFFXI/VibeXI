@@ -166,10 +166,10 @@
    * something called 'Attack', and merging those reports one average and one
    * accuracy over two different creatures. `by` keeps who actually swung.
    *
-   * A COPY, NEVER A MUTATION. The raw event list is what Diagnostics and the
-   * roster are built from and it stays true to the file. Idempotent as well,
-   * because `filter` runs twice over the same events -- once scoped, once for
-   * the chips -- and the second pass sees actor === owner and does nothing.
+   * A COPY, NEVER A MUTATION. The raw event list stays true to the file.
+   * Idempotent as well, because `filter` runs twice over the same events --
+   * once scoped, once for the chips -- and the second pass sees actor === owner
+   * and does nothing.
    */
   function credit(e) {
     if (!e.owner || e.actor === e.owner) return e;
@@ -202,8 +202,8 @@
    * `cumulative`, `distribution` and every table downstream see a timeline that
    * begins at zero and never mentions the time of day.
    *
-   * A copy for the same reason `credit` copies: `app.source.events` is what
-   * Diagnostics and the roster are built from and it stays true to the file.
+   * A copy for the same reason `credit` copies: `app.source.events` stays true
+   * to the file.
    * Without a session the events pass through with their wall clock intact,
    * which is what the second, chip-scoping `filter` call in `render` relies on
    * -- it is re-filtering an already-converted list and must not convert twice.
@@ -211,9 +211,8 @@
    * Pass a `roster` and every event whose *actor* is a monster is dropped: this
    * is a party damage meter, and damage the monsters dealt is neither shown nor
    * counted anywhere. It is dropped here in the view rather than on the way in,
-   * so the monsters' own events stay in the event list -- they are what the
-   * Diagnostics roster is built from, and what a manual override has to be able
-   * to bring back without a re-read.
+   * so the monsters' own events stay in the event list -- it stays true to the
+   * file, and the drop is one rule in one place.
    *
    * `skillchains: false` drops skillchain damage entirely. The addon emits a
    * chain as its own event (kind 'skillchain', credited to whoever closed it),
@@ -300,7 +299,7 @@
   function onClock(e, el) {
     var c = {}, k;
     for (k in e) if (Object.prototype.hasOwnProperty.call(e, k)) c[k] = e[k];
-    c.wall = e.wall == null ? e.t : e.wall;   // kept for Diagnostics, drawn nowhere
+    c.wall = e.wall == null ? e.t : e.wall;   // the original wall clock, drawn nowhere
     c.t = el;
     return c;
   }

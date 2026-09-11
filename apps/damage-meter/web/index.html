@@ -62,6 +62,22 @@
     </div>
   </div>
 
+  <!-- A paused parse, saved to a file another copy of the meter can open, and
+       the way to open one. Export wakes up only while paused; Import sets the
+       live state aside rather than dropping it, and Back to live -- on screen
+       only while an import is -- puts it back. app.js writes the titles. -->
+  <div class="filter parse">
+    <span class="filter-label">Parse</span>
+    <div class="segmented">
+      <button type="button" id="exportBtn" disabled>Export&hellip;</button>
+      <button type="button" id="importBtn">Import&hellip;</button>
+    </div>
+    <button type="button" class="ghost parse-live" id="liveBtn" hidden
+            title="Leave the imported parse and return to the live event file">Back to live</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <span class="parse-note" id="parseNote" role="status" hidden></span>
+  </div>
+
   <div class="filter">
     <span class="filter-label">Skillchains</span>
     <div class="segmented" id="chainSeg" role="radiogroup" aria-label="Skillchain damage">
@@ -191,34 +207,6 @@
       <summary>Show every hit</summary>
       <div class="scroll-y max">
         <table class="data" id="drillTable"></table>
-      </div>
-    </details>
-  </section>
-
-  <!-- Diagnostics -->
-  <section class="card" data-popout="diag" data-popout-title="Diagnostics">
-    <details>
-      <summary><h2 class="inline">Diagnostics</h2></summary>
-      <div class="diag">
-        <div>
-          <h3>Name classification</h3>
-          <p class="card-sub">
-            Every name is classified by the addon from the game&rsquo;s own spawn
-            flags, so this should always be right. Only your side is counted;
-            anything left out shows &ldquo;No&rdquo;. Override one here if you
-            ever need to.
-          </p>
-          <div class="scroll-y"><table class="data" id="rosterTable"></table></div>
-        </div>
-        <div>
-          <h3>Addon notices</h3>
-          <p class="card-sub">
-            The addon&rsquo;s startup probe, plus one line per game message it saw
-            and did not recognise &mdash; each of those is damage nobody is being
-            credited with.
-          </p>
-          <div class="scroll-y"><pre class="raw" id="addonMeta">none</pre></div>
-        </div>
       </div>
     </details>
   </section>

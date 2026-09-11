@@ -38,7 +38,7 @@ WHAT IS IN HERE ON PURPOSE, and what each case catches:
     that proves the article heuristic is really gone.
   * A PET with `owner` set, and an NPC, and monster damage on the party. None of
     the three may reach the character chips, the bars chart or the actions
-    table; all three must appear in the Diagnostics roster. The monster damage
+    table. The monster damage
     is a BACK-COMPATIBILITY case now rather than a live one -- the addon stopped
     recording it (`is_ours` in vibexi.lua) -- and it stays because files
     captured before that change still have to read correctly.
@@ -51,7 +51,7 @@ WHAT IS IN HERE ON PURPOSE, and what each case catches:
   * AN UNRESOLVED TARGET -- name "Unknown", targetKind "other" -- which is what
     the addon writes when the entity table has no answer.
   * META LINES: the startup environment probe on line 1, and an unknown-message
-    notice. Consumers skip these, and Diagnostics shows them.
+    notice. Consumers must skip these.
   * JOB LINES -- `kind:"job"`, one per party member, written when the job is
     first read and again whenever it changes. Four things ride on these and each
     is here on purpose: a member who NEVER ACTS (the white mage) and therefore
