@@ -384,6 +384,60 @@ that covered the game it was meant to sit on.
   fill is the job colour at 0.3 opacity, a mark like a swatch, so the text over
   it keeps its own ink.
 
+### Floating, the cumulative graph labels its lines
+
+Floated at overlay size the line card was a 524×713 window with a 134px legend
+of sixteen names over a 240px chart, and scrolled. Now:
+
+- **Nobody at zero here either**, docked or floating — `renderLine` filters
+  `total > 0` before `cumulative`, so there is no line along the floor and no
+  legend entry. On the Kirin parse the legend went from 16 to 13.
+- **`lineOpts(canvas)` is the one place `app.js` asks which window a card is
+  in**, by `canvas.closest('.pop-body')`. Everything else on a floating card is
+  switched by the stylesheet; a canvas cannot be. `renderLine` and `tickLine`
+  both draw through it, and must — a `tickLine` passing its own options would
+  redraw the docked look over the floating one ten times a second.
+- **Every line is coloured.** A first cut kept only the top four and the owner
+  in colour and drew everyone else as thin grey `muted` lines; that was
+  replaced on request by the grouping toggle below, and `muted` is gone from
+  `C.line`.
+- **Group under 5% (`#lineGroupBtn`, `app.lineGroup`, `ffxi_dps_linegroup`)** is
+  a display switch on this chart alone, on by default. `groupSmall` folds every
+  character under `GROUP_SHARE` (0.05) of the aggregate's total into one series,
+  `"N others"`, summed on the shared grid — so the crosshair, the hover card and
+  the line table read it like any other line — with `group: true`, `real: null`
+  and the drawn names in `members` (the legend entry's tooltip). Never the
+  file's owner, and never a group of one. `C.line` draws a `group` series dashed
+  in `th.muted`, and uses that ink for its dot, crosshair dot, label swatch and
+  hover swatch (`inkOf`). On the Kirin parse it folds Kyrias, Bryx,
+  Angermanagement, Kidtony and Selene: 13 lines become 9. The button is in the
+  card head, so `popout.js` moves it into the tools group and it travels with
+  the card into a floating window.
+- **`endLabels` prints every line, name and total**, and nudges collisions
+  apart (13px, downwards, then settled back up from the floor) rather than
+  dropping one — Hasaya and Clarice finish 261 apart. A 10px swatch in the
+  series colour leads each label, because a nudged label is no longer level with
+  its dot; the text stays in `th.ink2`. The right margin is sized to the widest
+  label, names clipped at 104px. The old ≤4-series value labels are untouched
+  when `endLabels` is off.
+- **`compact`** is tighter margins (10/12/24/46), and any plot under 200px tall
+  gets three gridlines instead of five, whatever the mode.
+- **The time axis asks for at least three ticks.** It asked for
+  `floor(plot.w / 90)` with a floor of two; the floating plot is ~257px, so it
+  asked for two, `timeTicks` rounded a 4:58 pull's step up to five minutes, and
+  the axis read `0:00` and nothing else. Docked plots are far past the floor.
+- **The hover card is denser in a floating window** (`.pop-body .chart-tip`:
+  10px type, 1.3 line height, no cell padding). At the page's size a full
+  alliance's thirteen rows stood 329px tall in a 280px window and most of the
+  card was cut off. `showTip` also clamps the card to the bottom of its chart,
+  for every chart.
+- **The chart fills the window.** `.pop-body > .line-card` hides the legend and
+  the data table, and is a flex column `calc(100vh - 40px)` tall — the window
+  bar plus the body's padding measured 39px — with the chart taking whatever
+  the head row (the grouping toggle) leaves. Dragging the window larger grows
+  the plot. `popSize('line')` is 460×304, which leaves a plot about 240px
+  tall.
+
 ## Gotchas
 
 - **Do not write literal control characters anywhere in the source** — not in a
@@ -1307,10 +1361,11 @@ it. What is left:
   finished pull can be kept on purpose with Export (see "Export and import"),
   which writes a file and stores nothing in the page. Only
   the theme, the character exclusion list, the skillchain toggle, whether the
-  character row is collapsed, whether the names are hidden and the pop-out
+  character row is collapsed, whether the names are hidden, the cumulative
+  chart's grouping and the pop-out
   opacity settings are stored — the session clock deliberately is not, so a
   reload returns the meter to "not started" — (`ffxi_dps_theme`, `ffxi_dps_excluded`,
-  `ffxi_dps_chains`, `ffxi_dps_charrow`, `ffxi_dps_anon`, `ffxi_dps_alpha`,
+  `ffxi_dps_chains`, `ffxi_dps_charrow`, `ffxi_dps_anon`, `ffxi_dps_linegroup`, `ffxi_dps_alpha`,
   `ffxi_dps_keybg`, `ffxi_dps_alpha_default` in localStorage).
 - The exclusion list is keyed by bare name, so it is shared across event files.
   That is intentional: a character you never want counted stays excluded.

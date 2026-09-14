@@ -142,12 +142,17 @@
   </section>
 
   <!-- Cumulative damage over time -->
-  <section class="card" data-popout="line" data-popout-title="Cumulative damage">
+  <section class="card line-card" data-popout="line" data-popout-title="Cumulative damage">
     <div class="card-head">
       <div>
         <h2>Cumulative damage</h2>
         <p class="card-sub">Running total per character. Hover for every character at one instant.</p>
       </div>
+      <!-- Same shape as Hide names: a fixed label, and the pressed fill says it
+           is on. In the head rather than the filter bar because it changes this
+           chart and nothing else -- and so it goes wherever the card goes,
+           floating window included. The 5% is GROUP_SHARE in app.js. -->
+      <button type="button" class="ghost tiny" id="lineGroupBtn" aria-pressed="true">Group under 5%</button>
     </div>
     <div class="legend" id="lineLegend"></div>
     <div class="chart-wrap tall"><canvas id="lineChart"></canvas></div>
