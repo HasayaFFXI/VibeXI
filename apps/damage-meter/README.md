@@ -192,9 +192,9 @@ still goes by its own name, because its name is part of the action
 (`Fluffikins: Big Scissors`) rather than a character's, and the source line at
 the top still shows the event file, which is named after you.
 
-### Keep in focus
+### Pop Out
 
-Every chart and table panel has a **Keep in focus** button in its top-right
+Every chart and table panel has a **Pop Out** button in its top-right
 corner. It moves that panel into a window that floats above other applications,
 so it stays visible while you play full-screen-windowed — drag it into a corner
 beside the game, or onto a second monitor.
@@ -211,7 +211,7 @@ It uses the browser's document picture-in-picture, which means:
   to the page — the browser only allows one floating window.
 
 A dashed placeholder holds the panel's place on the main page. **Bring back**
-there, **Dock** in the window itself, or pressing **Keep in focus** again all
+there, **Dock** in the window itself, or pressing **Pop Out** again all
 return it; so does simply closing the window.
 
 Floating panels are not remembered across a page reload.

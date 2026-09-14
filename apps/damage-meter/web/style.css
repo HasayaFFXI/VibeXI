@@ -637,14 +637,25 @@ main.pop-body { padding: 4px 6px 8px; gap: 8px; }
 }
 /* The bar. A mark in the character's colour like every other swatch and line,
    faded so the text over it keeps its own ink -- job colours are not graded for
-   text, and a name printed in one would be unreadable on half of them. */
+   text, and a name printed in one would be unreadable on half of them. 0.3 was
+   the first cut and read as mud once the window's own alpha dimmed it again over
+   the game; 0.7 keeps the job's hue vivid. In dark mode the text halo below is
+   what keeps the pale ink legible on the brightest fills (BST yellow, WHM); the
+   light theme's dark ink needs none, and a white halo only blurs it. */
 .meter-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   border-radius: 2px;
-  opacity: 0.3;
+  opacity: 0.7;
 }
-.meter-row > span { position: relative; text-align: right; white-space: nowrap; }
+.meter-row > span {
+  position: relative;
+  text-align: right;
+  white-space: nowrap;
+  text-shadow: 0 0 3px var(--meter-halo);
+}
+.meter { --meter-halo: rgba(0, 0, 0, 0.75); }
+:root[data-theme="light"] .meter { --meter-halo: transparent; }
 .meter-row > .meter-name {
   text-align: left;
   overflow: hidden;
@@ -652,9 +663,9 @@ main.pop-body { padding: 4px 6px 8px; gap: 8px; }
   font-family: var(--font-sans);
   font-size: 12px;
 }
-/* --mist, not the --faint the chips use: this sits ON a fill, and --faint all
-   but vanished over the yellow and green ones. */
-.meter-job { font-weight: 400; font-size: 10.5px; color: var(--mist); margin-left: 5px; }
+/* The row's own ink, softened -- not --faint, which vanished over the yellow and
+   green fills, and not --mist either once the fills went to 0.7. */
+.meter-job { font-weight: 400; font-size: 10.5px; color: inherit; opacity: 0.75; margin-left: 5px; }
 /* The file's owner: the one row on every parse, found without reading names. */
 .meter-row.is-owner { box-shadow: inset 2px 0 0 var(--blade); }
 .meter-empty { color: var(--faint); font-size: 12.5px; margin: 4px 0 0; }
