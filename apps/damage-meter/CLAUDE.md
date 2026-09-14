@@ -380,9 +380,13 @@ that covered the game it was meant to sit on.
   `DPS.popout.init({ size })` takes `key -> {w, h}` or null; `popSize` answers
   for `bars` alone, from the rows already rendered (460 wide, 64 + 21 per row).
   Every other card still returns null and is measured as before.
-- **The job text is `--mist`, not `--faint`**, because it sits on a fill; the
-  fill is the job colour at 0.3 opacity, a mark like a swatch, so the text over
-  it keeps its own ink.
+- **The fill is the job colour at 0.7 opacity**, a mark like a swatch, so the
+  text over it keeps its own ink. It was 0.3 until 2026-09-13 and read as mud
+  once the window's own alpha dimmed it again. At 0.7 the dark theme's pale ink
+  needs a black `text-shadow` halo (`--meter-halo`) on the yellow and white
+  fills; the light theme sets the halo transparent, since a white one only blurs
+  dark ink. The job text is the row's ink at 0.75 opacity — `--faint` vanished
+  over the fills, and `--mist` did too at 0.7.
 
 ### Floating, the cumulative graph labels its lines
 
@@ -473,7 +477,7 @@ of sixteen names over a 240px chart, and scrolled. Now:
   silently reverts to a 1 s cadence, and any attempt to measure the poll rate
   from a non-visible tab reads ~1000 ms no matter what `POLL_MS` says
   (`document.visibilityState` is the thing to check before believing a
-  measurement). A "Keep in focus" Document PiP panel is always visible, so it
+  measurement). A "Pop Out" Document PiP panel is always visible, so it
   runs unclamped — which is the mode that actually wants the low latency.
 - **The poll path is O(events) and runs at poll rate** — `filter` and `aggregate`
   twice each, plus `cumulative`. `roster.rebuild` is gone, which was the most
@@ -506,8 +510,9 @@ of sixteen names over a 240px chart, and scrolled. Now:
 
 ## Pop-out windows
 
-Any card carrying `data-popout="key"` gets a **Keep in focus** button in its
-head, and that is the only one — there is no "Pop out". `lib/popout.js`
+Any card carrying `data-popout="key"` gets a **Pop Out** button in its
+head, and that is the only one. It is always-on-top (Document PiP), not a plain
+`window.open` — the label was "Keep in focus" until 2026-09-13. `lib/popout.js`
 **moves the card's real DOM** into a child window with `adoptNode` — it is never
 cloned, so `render()` keeps writing to the same nodes and no part of the render
 path knows a panel is elsewhere. A placeholder holds the card's slot in the page
@@ -680,7 +685,7 @@ Things that will bite:
   window that renders wrong, and a host that *did* honour the key (a
   non-Chromium browser, or an overlay this app drew itself) would want it.
 
-**"Keep in focus" is Document Picture-in-Picture**, the only web API that yields
+**"Pop Out" is Document Picture-in-Picture**, the only web API that yields
 an always-on-top window; a plain `window.open` cannot be raised above other
 applications from script. So it is Chromium-only (the button is disabled
 elsewhere, with the reason in its `title`) and the browser allows exactly **one**

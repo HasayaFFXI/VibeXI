@@ -11,7 +11,7 @@
  * Two window kinds, only one of which the UI offers:
  *
  *   'focus'   documentPictureInPicture.requestWindow(). Always-on-top, which
- *             is what "Keep in focus" means -- the only button on a card, and
+ *             is what "Pop Out" means -- the only button on a card, and
  *             the only mode a user can reach. Chromium only, and the browser
  *             allows exactly ONE at a time: asking for a second closes the
  *             first, which lands here as an ordinary close and docks that panel
@@ -191,7 +191,7 @@
     else card.insertBefore(tools, card.firstChild);
 
     // Appended after the pop-out button is added, so ordering is
-    // Keep in focus / Close rather than the reverse.
+    // Pop Out / Close rather than the reverse.
     tools.retake = function () {
       existing.forEach(function (b) { tools.appendChild(b); });
     };
@@ -217,7 +217,7 @@
     };
 
     p.tools = toolsFor(card);
-    p.focusBtn = mkBtn(doc, 'Keep in focus', FOCUS_HINT);
+    p.focusBtn = mkBtn(doc, 'Pop Out', FOCUS_HINT);
     p.focusBtn.setAttribute('aria-pressed', 'false');
     p.focusBtn.disabled = !PIP;
     p.tools.appendChild(p.focusBtn);
@@ -238,8 +238,8 @@
 
   /*
    * What stands in for the card while it is away. It carries "Bring back" and
-   * nothing else: a panel can only be away by being kept in focus, so a second
-   * "Keep in focus" toggle here would be a differently-worded button doing
+   * nothing else: a panel can only be away by being popped out, so a second
+   * "Pop Out" toggle here would be a differently-worded button doing
    * exactly what "Bring back" already does.
    */
   function buildPlaceholder(p) {
@@ -666,7 +666,7 @@
       timer = setTimeout(onRender, 120);
     });
     // Closing the window is the same as docking, whether the user did it or the
-    // browser did (a second "Keep in focus" displaces the first).
+    // browser did (a second "Pop Out" displaces the first).
     win.addEventListener('pagehide', function () { if (p.win === win) dock(p); });
 
     return { body: body, links: links };
