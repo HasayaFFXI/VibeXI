@@ -151,7 +151,12 @@
     if (left + tw > wrapW - 4) left = x - tw - 14;
     if (left < 4) left = 4;
     tip.style.left = left + 'px';
-    tip.style.top = Math.max(4, y - 12) + 'px';
+    // Kept inside the chart vertically as well: in a short floating window a
+    // card hung below the pointer ran off the bottom and was cut off.
+    var wrapH = tip.parentNode.clientHeight;
+    var top = y - 12;
+    if (wrapH && top + tip.offsetHeight > wrapH - 4) top = wrapH - tip.offsetHeight - 4;
+    tip.style.top = Math.max(4, top) + 'px';
   }
 
   // ---------------------------------------------------------- cumulative line
@@ -172,11 +177,32 @@
     var times = model.times || [];
     var series = (model.series || []).filter(function (x) { return x.visible !== false; });
 
+    // Floating over the game (`compact`): tighter margins, and with `endLabels`
+    // every line's name printed at its end in place of a legend the window has
+    // no room for. The right margin is sized to the widest label, so a long name
+    // costs plot width rather than clipping. A series marked `group` stands for
+    // several characters at once (app.js's "N others"): dashed, and in a neutral
+    // ink rather than any one character's colour.
+    var compact = !!opts.compact;
+    var pad = compact ? { top: 10, right: 12, bottom: 24, left: 46 }
+                      : { top: PAD.top, right: PAD.right, bottom: PAD.bottom, left: PAD.left };
+    var named = opts.endLabels ? series : [];
+    function inkOf(se) { return se.group ? th.muted : se.color; }
+    ctx.font = '600 11px ' + th.font;
+    function labelText(se) {
+      return clip(ctx, se.name, 104) + ' ' + F.fmtCompact(se.values[se.values.length - 1] || 0);
+    }
+    if (named.length) {
+      var widest = 0;
+      named.forEach(function (se) { widest = Math.max(widest, ctx.measureText(labelText(se)).width); });
+      pad.right = Math.ceil(widest) + 34;   // gap, swatch, gap, text, air
+    }
+
     var plot = {
-      x: PAD.left,
-      y: PAD.top,
-      w: Math.max(10, s.w - PAD.left - PAD.right),
-      h: Math.max(10, s.h - PAD.top - PAD.bottom)
+      x: pad.left,
+      y: pad.top,
+      w: Math.max(10, s.w - pad.left - pad.right),
+      h: Math.max(10, s.h - pad.top - pad.bottom)
     };
 
     if (!times.length || !series.length) {
@@ -198,7 +224,9 @@
     }
     if (vmax <= 0) vmax = 1;
 
-    var yTicks = niceTicks(0, vmax, 5);
+    // Three gridlines, not five, once the plot is short enough that five would
+    // sit closer together than the labels on them are tall.
+    var yTicks = niceTicks(0, vmax, plot.h < 200 ? 3 : 5);
     var yTop = Math.max(vmax, yTicks[yTicks.length - 1]);
 
     function px(t) { return plot.x + (t - t0) / (t1 - t0) * plot.w; }
@@ -221,7 +249,10 @@
       ctx.fillText(F.fmtCompact(yTicks[i]), plot.x - 10, yy);
     }
 
-    var xTicks = timeTicks(t0, t1, Math.max(2, Math.floor(plot.w / 90)));
+    // At least three: asked for two over a 4:58 pull, the step rounds up to
+    // five minutes and the only tick left on the axis is 0:00 -- which is what a
+    // floating window's ~260px plot got.
+    var xTicks = timeTicks(t0, t1, Math.max(3, Math.floor(plot.w / 90)));
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     for (i = 0; i < xTicks.length; i++) {
@@ -241,7 +272,8 @@
     ctx.lineCap = 'round';
     for (i = 0; i < series.length; i++) {
       var ser = series[i];
-      ctx.strokeStyle = ser.color;
+      ctx.strokeStyle = inkOf(ser);
+      ctx.setLineDash(ser.group ? [5, 4] : []);
       ctx.beginPath();
       for (var j = 0; j < times.length; j++) {
         var X = px(times[j]), Y = py(ser.values[j]);
@@ -249,6 +281,7 @@
       }
       ctx.stroke();
     }
+    ctx.setLineDash([]);
 
     // ---- end markers, 2px surface ring so overlaps stay legible
     for (i = 0; i < series.length; i++) {
@@ -257,16 +290,43 @@
       var ey = py(se.values[se.values.length - 1]);
       ctx.beginPath();
       ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = se.color;
+      ctx.fillStyle = inkOf(se);
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = th.surface;
       ctx.stroke();
     }
 
+    // ---- named end-labels (`endLabels`): every leader, name and total. These
+    // must all be printed, so where two would collide they are nudged apart
+    // rather than dropped -- downwards in order, then settled back up from the
+    // floor if that pushed the last one off the plot.
+    if (named.length) {
+      var gap = 13, floor = plot.y + plot.h;
+      var tags = named.map(function (se) {
+        return { y: py(se.values[se.values.length - 1]), text: labelText(se), color: inkOf(se) };
+      }).sort(function (a, b) { return a.y - b.y; });
+      for (i = 1; i < tags.length; i++) tags[i].y = Math.max(tags[i].y, tags[i - 1].y + gap);
+      if (tags.length && tags[tags.length - 1].y > floor) {
+        tags[tags.length - 1].y = floor;
+        for (i = tags.length - 2; i >= 0; i--) tags[i].y = Math.min(tags[i].y, tags[i + 1].y - gap);
+      }
+      ctx.font = '600 11px ' + th.font;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      var tx = plot.x + plot.w + 11;
+      for (i = 0; i < tags.length; i++) {
+        // A swatch, because a nudged label is no longer level with its dot; the
+        // text still wears an ink token, as every label on this chart does.
+        ctx.fillStyle = tags[i].color;
+        ctx.fillRect(tx, Math.round(tags[i].y) - 1.5, 10, 3);
+        ctx.fillStyle = th.ink2;
+        ctx.fillText(tags[i].text, tx + 15, tags[i].y);
+      }
+
     // ---- direct end-labels, only when <= 4 series and they do not collide.
     // Text wears an ink token, never the series color; the dot carries identity.
-    if (series.length <= 4) {
+    } else if (series.length <= 4) {
       var labels = series.map(function (se) {
         return {
           y: py(se.values[se.values.length - 1]),
@@ -305,7 +365,7 @@
       var rows = series.slice().sort(function (a, b) {
         return b.values[idx] - a.values[idx];
       }).map(function (se) {
-        return '<tr><td><i style="background:' + se.color + '"></i>' + esc(se.name) +
+        return '<tr><td><i style="background:' + inkOf(se) + '"></i>' + esc(se.name) +
                '</td><td>' + F.fmtInt(se.values[idx]) + '</td></tr>';
       }).join('');
 
@@ -344,7 +404,7 @@
         var Y = py(series[k].values[idx]);
         ctx.beginPath();
         ctx.arc(X, Y, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = series[k].color;
+        ctx.fillStyle = inkOf(series[k]);
         ctx.fill();
         ctx.lineWidth = 2;
         ctx.strokeStyle = th.surface;

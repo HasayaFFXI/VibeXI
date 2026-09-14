@@ -6,7 +6,10 @@ damaging action **your side dealt** — damage monsters deal is not counted or
 shown anywhere:
 
 - **Cumulative damage over time**, one line per character, with a crosshair that
-  reads every character at the same instant.
+  reads every character at the same instant. **Group under 5%**, on the card,
+  folds everyone under 5% of the party's damage into one dashed "others" line
+  — never you — and is on until you switch it off. Kept in focus over the game
+  the chart drops the legend, names every line at its end and fills the window.
 - **Damage by character** — total damage, share of the party's, DPS,
   auto-attack accuracy, weaponskill damage / average / share / accuracy,
   skillchain damage and share, and pet damage and accuracy, each counted the way Metrics counts it (see

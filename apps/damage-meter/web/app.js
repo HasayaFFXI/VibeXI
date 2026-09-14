@@ -219,6 +219,7 @@
   var CHAIN_KEY = 'ffxi_dps_chains';
   var CHARROW_KEY = 'ffxi_dps_charrow';
   var ANON_KEY = 'ffxi_dps_anon';
+  var LINEGROUP_KEY = 'ffxi_dps_linegroup';
 
   function loadExcluded() {
     try {
@@ -271,6 +272,25 @@
     b.title = app.anon
       ? 'Names hidden: every character but you is drawn as their job. Click to show them again.'
       : "Replace every other character's name with their job, for a screenshot or a stream";
+  }
+
+  /* On is the default -- the markup ships pressed -- so only "off" is restored. */
+  function loadLineGroup() {
+    app.lineGroup = true;
+    try {
+      if (localStorage.getItem(LINEGROUP_KEY) === 'off') app.lineGroup = false;
+    } catch (e) { }
+    applyLineGroup();
+  }
+
+  function applyLineGroup() {
+    var b = $('lineGroupBtn');
+    b.setAttribute('aria-pressed', String(app.lineGroup));
+    b.title = app.lineGroup
+      ? 'Characters under 5% of the party\'s damage share one "others" line. ' +
+        'Your own line is never grouped. Click to give everyone a line.'
+      : 'Every character has their own line. Click to group everyone under 5% ' +
+        'of the party\'s damage into one.';
   }
 
   function applyCharRow() {
@@ -1031,8 +1051,11 @@
   // ---- cumulative line chart
 
   function renderLine(events, agg) {
-    // One line per character, each in that character's own colour.
-    var names = agg.actors.map(function (a) { return a.name; });
+    // One line per character, each in that character's own colour -- and no
+    // line at all for anyone at zero, as on the character card: a resisted
+    // debuff makes an actor, not a line along the floor and a legend entry.
+    var names = agg.actors.filter(function (a) { return a.total > 0; })
+                          .map(function (a) { return a.name; });
 
     // `from: 0` is the Start press: the axis covers the same span the DPS
     // beside it is divided by, including any run-up before the first swing.
@@ -1045,17 +1068,21 @@
       s.real = s.name;
       s.name = nameOf(s.name);
     });
+    if (app.lineGroup) groupSmall(model, agg);
+
     // Largest total last so the leading line is drawn on top of the pack.
     model.series.sort(function (a, b) {
       return (a.values[a.values.length - 1] || 0) - (b.values[b.values.length - 1] || 0);
     });
+
+    var opts = lineOpts($('lineChart'));
 
     // Kept for tickLine(), which walks this model's live edge forward between
     // renders. It is the same object the chart was drawn from, colours, sort
     // order and all, so an animated frame and a rendered one cannot disagree.
     app.lineModel = model;
 
-    C.line($('lineChart'), model, { empty: emptyText() });
+    C.line($('lineChart'), model, opts);
     renderLegend(model.series);
     renderLineTable(model);
   }
@@ -1198,7 +1225,51 @@
 
     // The session clock, not Date.now(): the model's timeline starts at zero.
     m.times[m.times.length - 1] = S.sessionElapsed(app.session);
-    C.line(canvas, m, { empty: emptyText() });
+    C.line(canvas, m, lineOpts(canvas));
+  }
+
+  /*
+   * How the cumulative chart draws, for renderLine and tickLine alike. Floating
+   * over the game it is compact and names its leaders at their line ends; the
+   * legend and the data table are hidden there by the stylesheet. A canvas is
+   * the one part of a card the stylesheet cannot restyle, so this is the one
+   * place that asks which window the card is in -- by where its canvas sits.
+   */
+  function lineOpts(canvas) {
+    var floating = !!canvas.closest('.pop-body');
+    return { empty: emptyText(), compact: floating, endLabels: floating };
+  }
+
+  /*
+   * GROUP UNDER 5%: every character under GROUP_SHARE of the party's damage
+   * shares one line, "N others", summed on the shared grid so the crosshair,
+   * the hover card and the table read it like any other series. The label on
+   * #lineGroupBtn states the threshold, so the two change together.
+   *
+   * Never the file's owner -- theirs is the one line on every chart that must
+   * not vanish into a sum -- and never a group of one: a single character
+   * renamed "1 others" says less than their own line did. `real` is null on the
+   * group because no roster lookup means anything for it; chart.js draws a
+   * `group` series dashed and in a neutral ink rather than anyone's colour.
+   */
+  var GROUP_SHARE = 0.05;
+
+  function groupSmall(model, agg) {
+    var owner = app.source.roster.owner, small = {};
+    agg.actors.forEach(function (a) {
+      if (a.share < GROUP_SHARE && a.name !== owner) small[a.name] = true;
+    });
+    var parts = model.series.filter(function (s) { return small[s.real]; });
+    if (parts.length < 2) return;
+    var sum = new Float64Array(model.times.length);
+    parts.forEach(function (s) {
+      for (var i = 0; i < sum.length; i++) sum[i] += s.values[i] || 0;
+    });
+    model.series = model.series.filter(function (s) { return !small[s.real]; });
+    model.series.push({
+      name: parts.length + ' others', real: null, group: true, values: sum,
+      members: parts.map(function (s) { return s.name; })
+    });
   }
 
   function renderLegend(series) {
@@ -1208,6 +1279,11 @@
     // to default to: two warriors differ by a lightness step in the swatch, and
     // by their name in the very same line.
     host.innerHTML = series.slice().reverse().map(function (s) {
+      if (s.group) {
+        // Who is in it, on hover -- the line itself cannot say.
+        return '<span class="legend-item is-group" title="' + esc(s.members.join(', ')) + '">' +
+               '<i></i>' + esc(s.name) + '</span>';
+      }
       return '<span class="legend-item"><i style="background:' + s.color + '"></i>' +
              esc(s.name) + jobBadge(s.real, 'legend-job') + '</span>';
     }).join('');
@@ -1365,12 +1441,16 @@
 
   /*
    * A floating window's opening size, for the cards that know better than their
-   * docked box. Only the character card does: docked it is page-wide and, for
-   * an alliance, over a thousand pixels tall, which is the size popout.js would
+   * docked box. The character card: docked it is page-wide and, for an
+   * alliance, over a thousand pixels tall, which is the size popout.js would
    * otherwise open its window at -- for a strip a fraction of either. Sized from
-   * the rows already rendered, since the strip is always drawn.
+   * the rows already rendered, since the strip is always drawn. The cumulative
+   * chart: floating it has no legend and no table and fills whatever window it
+   * is given, so it asks for a short wide one -- a plot about 235px tall under
+   * the grouping toggle's row -- and lets the user drag it.
    */
   function popSize(key) {
+    if (key === 'line') return { w: 460, h: 304 };
     if (key !== 'bars') return null;
     var rows = $('actorMeter').querySelectorAll('.meter-row').length;
     // Bar, body padding and head, then 21px a row (20 plus the 1px gap).
@@ -1529,6 +1609,14 @@
     render();
   });
 
+  /* A display switch on one chart: no total, filter or other panel moves. */
+  $('lineGroupBtn').addEventListener('click', function () {
+    app.lineGroup = !app.lineGroup;
+    try { localStorage.setItem(LINEGROUP_KEY, app.lineGroup ? 'on' : 'off'); } catch (e) { }
+    applyLineGroup();
+    render();
+  });
+
   $('actionTable').addEventListener('click', function (ev) {
     var tr = ev.target.closest('tr.pick');
     if (!tr) return;
@@ -1568,6 +1656,7 @@
   loadChains();
   loadCharRow();
   loadAnon();
+  loadLineGroup();
   applySession();
 
   // After the handlers above, not before: wiring a card for pop-out moves the
