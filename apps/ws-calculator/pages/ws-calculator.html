@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../../shared-ui/css/ffxi-theme.css">
-<link rel="stylesheet" href="../shared/css/theme.css">
+<link rel="stylesheet" href="../../../shared-calc/css/calc.css">
 </head>
 <body>
 <div class="wrap">
@@ -85,7 +85,6 @@
         <div class="field"><label>Resist / elemental multiplier<span class="hint">avg magic-side multiplier, 1.0 = no resist</span></label><input type="number" id="resistMult" value="1.0" step="0.05"></div>
       </div>
       <div id="mobOut" class="mob-out" style="margin:16px 0 4px;"></div>
-      <div class="chart-cap" style="margin-top:8px;">E-rank DEF curve below level 51 wasn't visible in the traced source and is linearly interpolated from the A&ndash;D pattern — flagged in the result if used.</div>
       <input type="hidden" id="tLvl" value="99">
       <input type="hidden" id="vit" value="80">
       <input type="hidden" id="def" value="850">
@@ -270,19 +269,19 @@
 
 <!-- Shared layer. Classic scripts, load order matters: core -> data -> lib -> components. -->
 <script src="../../../shared-ui/js/theme.js"></script>
-<script src="../shared/lib/core.js"></script>
-<script src="../shared/data/mob-data.js"></script>
-<script src="../shared/data/job-data.js"></script>
-<script src="../shared/data/weapon-data.js"></script>
-<script src="../shared/lib/buffs.js"></script>
-<script src="../shared/lib/damage.js"></script>
-<script src="../shared/lib/mob-stats.js"></script>
-<script src="../shared/lib/chart.js"></script>
-<script src="../shared/lib/presets.js"></script>
-<script src="../shared/components/mob-selector.js"></script>
-<script src="../shared/components/fstr-panel.js"></script>
-<script src="../shared/components/attack-panel.js"></script>
-<script src="../shared/components/histogram.js"></script>
+<script src="../../../shared-calc/lib/core.js"></script>
+<script src="../../../shared-calc/data/mob-data.js"></script>
+<script src="../../../shared-calc/data/job-data.js"></script>
+<script src="../../../shared-calc/data/weapon-data.js"></script>
+<script src="../../../shared-calc/lib/buffs.js"></script>
+<script src="../../../shared-calc/lib/damage.js"></script>
+<script src="../../../shared-calc/lib/mob-stats.js"></script>
+<script src="../../../shared-calc/lib/chart.js"></script>
+<script src="../../../shared-calc/lib/presets.js"></script>
+<script src="../../../shared-calc/components/mob-selector.js"></script>
+<script src="../../../shared-calc/components/fstr-panel.js"></script>
+<script src="../../../shared-calc/components/attack-panel.js"></script>
+<script src="../../../shared-calc/components/histogram.js"></script>
 
 <script>
 // Page-specific wiring only. All formulas live in shared/lib/damage.js.

@@ -7,26 +7,16 @@ this file is the operational detail.
 ## Paths
 
 ```
-../../shared-ui/css/ffxi-theme.css  THE design system, shared with ../damage-meter — tokens,
-                              .card, .field, .grid, buttons, table.data, .chart-wrap, .chart-tip
+../../shared-ui/css/ffxi-theme.css  THE design system, shared with every app
 ../../shared-ui/js/theme.js   window.FFXITheme — the same tokens resolved for <canvas>
-pages/ws-calculator.html      weaponskill Monte-Carlo sim (currently the only page)
-shared/css/theme.css          app-only rules — mob grid, buff table, presets, run bar, results
-shared/data/mob-data.js       MOB_DATA: zones, mobsByZone, species. ~390KB, ONE LINE.
-shared/data/job-data.js       JOB_NAMES, JOB_VIT_RANK (LandSandBoat grades.cpp), rankToLetter,
-                              populateJobSelect
-shared/data/weapon-data.js    WEAPON_TYPES (pDIF cap + hit-rate cap), populateWeaponSelect
-shared/lib/core.js            namespace bootstrap + clamp/randomInt/escapeHtml/resolve/resolveAll/
-                              num/checked/scrollWithin/minMax
-shared/lib/damage.js          THE ENGINE — fTPInterp, calcFSTR_PC, wRatioCapPC, spikeRatioPC,
-                              calculateMeleePDIF, calcAlpha, calcMainBase, pDifBoundsForATT, simulate
-shared/lib/mob-stats.js       getBaseToRank, getBaseDefEva, derive  (mobutils.cpp port)
-shared/lib/buffs.js           food model + job-ability uptime model — ABILITIES, derivePotency,
-                              rotationStates, resolveStates, effectiveAtt
-shared/lib/chart.js           setupCanvas, plotBox, drawAxes, scale, label, inPlot, attachTooltip, COLORS/MONO/SANS
-shared/lib/presets.js         10-slot localStorage presets: store + UI + dirty tracking
-shared/components/mob-selector.js  fstr-panel.js  attack-panel.js  histogram.js
+../../shared-calc/            THE engine, data and components — shared with ../penta-calculator
+pages/ws-calculator.html      weaponskill Monte-Carlo sim (currently the only page here)
 ```
+
+Everything this app used to keep under `shared/` now lives in
+[`../../shared-calc/`](../../shared-calc), whose README documents the load order,
+the purity rule for `lib/`, and the component contract. This app is one HTML
+file: it owns no formulas.
 
 Server source of truth for every formula:
 `C:\Users\thadl\OneDrive\Documents\Claude\resources\server\` (LandSandBoat
@@ -40,13 +30,13 @@ is deliberately not vendored here. Formula reference lives in the
   on `file://`, which would break double-click-to-open. This is deliberate, not
   an oversight — don't "modernize" it.
 - **Load order: `../../../shared-ui/js/theme.js` → `core.js` → `data/` → `lib/` →
-  `components/`**, all before the page's inline script. `core.js` creates the
+  `components/`**, all from `../../../shared-calc/`, all before the page's inline script. `core.js` creates the
   namespace everything else assigns into; `theme.js` comes first because
   `lib/chart.js` builds its colour view from `FFXITheme` at load time.
   Within `lib/`, `buffs.js` loads before `damage.js` — the engine consumes buff
   states that `buffs.js` builds, and although it only needs them at call time, the
   dependency direction is one-way and the script order should say so.
-- **`lib/damage.js`, `lib/mob-stats.js`, `lib/buffs.js` must stay DOM-free.** No
+- **`shared-calc/lib/damage.js`, `mob-stats.js`, `buffs.js` must stay DOM-free.** No
   `document`, no element ids. They are what gets validated against the server Lua,
   so they have to run from a bare console call or a harness. If a formula needs a
   value, it takes it as an argument.
@@ -61,7 +51,7 @@ is deliberately not vendored here. Formula reference lives in the
   Don't reintroduce a component-owned button — components just expose `render()` /
   `derive()` for the host to call. Anything that writes a field programmatically
   must either fire a bubbling event or call `scheduleRecalc()` itself.
-- **The design system lives in `../../shared-ui/`, not here.** `shared/css/theme.css`
+- **The design system lives in `../../shared-ui/`, not here.** `../../shared-calc/css/calc.css`
   loads *after* it and holds only what damage-meter would never want. Before adding a
   rule, check whether the shared sheet already has the primitive — `.card`,
   `.field`, `table.data`, `.chart-wrap`, `.chart-tip`, `.tile`, `.stat`,
@@ -84,7 +74,7 @@ is deliberately not vendored here. Formula reference lives in the
 
 ## Gotchas
 
-- **Never read `shared/data/mob-data.js` with the Read tool** — one 390KB line,
+- **Never read `../../shared-calc/data/mob-data.js` with the Read tool** — one 390KB line,
   ~250k tokens. Move/inspect it with shell (`sed -n '1p'`, `head -c`). Same for the
   legacy `jinpu_calculator/ws_damage_calculator.html`, whose line 748 is that blob.
 - **The preview pane caches `file://` snapshots hard.** After editing a shared
@@ -233,7 +223,9 @@ answering "what would this look like on a stock server", not the live one.
   start. It has no notion of a fight shorter than one cycle, of delaying Berserk to
   line it up with a WS, or of Hasso being cancelled for Seigan.
 - Pre-level-50 subjob stat curve isn't ported; halved fallback, flagged in the UI.
-- E-rank DEF below level 51 is interpolated from the A–D pattern, flagged in the UI.
+- ~~E-rank DEF below level 51 is interpolated~~ — **fixed.** The curve is in the
+  source after all (`mobutils.cpp:261`), and it is `2.5`, not the `2.6` this had
+  guessed by continuing the A–D slope. `mobStats` no longer flags it.
 - The hidden `#vit`/`#def`/`#tLvl` keep their page defaults (80 / 850 / 99) until a
   mob-panel field is touched; from then on every recalc re-derives them. A loaded
   preset restores its own saved values and suppresses that one derivation, so a
@@ -241,5 +233,5 @@ answering "what would this look like on a stock server", not the live one.
   with.
 - `jinpu_calculator/` — outside this repo — holds the unmaintained pre-refactor original
   (`ws_damage_calculator.html`) plus two older `- Copy` snapshots. Each carries its
-  own copy of the engine, so they will drift from `shared/lib/damage.js` — treat
+  own copy of the engine, so they will drift from `../../shared-calc/lib/damage.js` — treat
   them as reference only, and don't fix bugs there.

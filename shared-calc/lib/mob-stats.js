@@ -15,6 +15,9 @@ FFXI.mobStats = (function () {
     }
   }
 
+  // mobutils.cpp GetBaseDefEva -- the shared f(level, rank) curve behind both
+  // base DEF and base EVA.
+  //
   // returns { value, interpolated }
   function getBaseDefEva(rank, lvl) {
     rank = +rank;
@@ -32,16 +35,23 @@ FFXI.mobStats = (function () {
         case 2: return { value: Math.floor(5 + (lvl - 1) * 2.9), interpolated: false };
         case 3: return { value: Math.floor(5 + (lvl - 1) * 2.8), interpolated: false };
         case 4: return { value: Math.floor(4 + (lvl - 1) * 2.7), interpolated: false };
-        // E-rank, level <= 50: not visible in the traced source. Interpolated by
-        // continuing the base/-0.1-slope pattern from A-D as a rough estimate.
-        case 5: return { value: Math.floor(4 + (lvl - 1) * 2.6), interpolated: true };
+        // E-rank below 51 used to be guessed here at 2.6, by continuing the
+        // -0.1-per-rank slope of A-D. The server actually says 2.5
+        // (mobutils.cpp:261), which breaks that pattern -- so this is the real
+        // value now, not an estimate, and nothing is flagged.
+        case 5: return { value: Math.floor(4 + (lvl - 1) * 2.5), interpolated: false };
       }
     }
     return { value: 0, interpolated: false };
   }
 
   // opts: { mLvl, sLvl, famVitRank, mainVitRank, subVitRank, defRank, statMult,
-  //         preFiftyZone }
+  //         preFiftyZone,
+  //         famAgiRank, mainAgiRank, subAgiRank, evaRank }   (AGI/EVA optional)
+  //
+  // AGI and EVA are derived the same way as VIT and DEF and by the same source
+  // lines, but only when the AGI ranks are supplied -- a caller that only wants
+  // VIT/DEF (ws-calculator) passes nothing extra and gets AGI/EVA back as null.
   function derive(opts) {
     const fVIT = getBaseToRank(opts.famVitRank, opts.mLvl);
     const mVIT = getBaseToRank(opts.mainVitRank, opts.mLvl);
@@ -58,14 +68,33 @@ FFXI.mobStats = (function () {
     const defResult = getBaseDefEva(opts.defRank, opts.mLvl);
     const DEF = 8 + Math.floor(VIT * 0.5) + defResult.value;
 
-    return {
+    const out = {
       VIT, DEF, fVIT, mVIT, sVIT,
       statMult: opts.statMult,
       defBase: defResult.value,
       defInterpolated: defResult.interpolated,
       subjobApproximate: !!opts.preFiftyZone,
       level: opts.mLvl,
+      AGI: null, EVA: null, evaBase: null, fAGI: null, mAGI: null, sAGI: null,
     };
+
+    if (opts.famAgiRank) {
+      const fAGI = getBaseToRank(opts.famAgiRank, opts.mLvl);
+      const mAGI = getBaseToRank(opts.mainAgiRank, opts.mLvl);
+      const sAGI = Math.floor(getBaseToRank(opts.subAgiRank, opts.sLvl) / 2);
+      const AGI = Math.floor((fAGI + mAGI + sAGI) * opts.statMult);
+
+      // mobutils.cpp:931 seeds Mod::EVA from the base curve at the mob's evasion
+      // rank; battle_entity.cpp:1661 then adds AGI/2 on top for every entity.
+      // Unlike DEF there is no flat +8 term.
+      const evaResult = getBaseDefEva(opts.evaRank, opts.mLvl);
+      out.AGI = AGI;
+      out.fAGI = fAGI; out.mAGI = mAGI; out.sAGI = sAGI;
+      out.evaBase = evaResult.value;
+      out.EVA = evaResult.value + Math.floor(AGI / 2);
+    }
+
+    return out;
   }
 
   return { getBaseToRank, getBaseDefEva, derive };

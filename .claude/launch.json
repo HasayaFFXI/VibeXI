@@ -6,7 +6,8 @@
       "runtimeExecutable": "python",
       "runtimeArgs": [
         "apps/damage-meter/damage-meter.py",
-        "--port", "8731",
+        "--port",
+        "8731",
         "--no-browser"
       ],
       "port": 8731
@@ -16,9 +17,11 @@
       "runtimeExecutable": "python",
       "runtimeArgs": [
         "apps/damage-meter/damage-meter.py",
-        "--port", "8732",
+        "--port",
+        "8732",
         "--no-browser",
-        "--events-dir", "apps/damage-meter/tools/events"
+        "--events-dir",
+        "apps/damage-meter/tools/events"
       ],
       "port": 8732
     },
@@ -27,10 +30,21 @@
       "runtimeExecutable": "python",
       "runtimeArgs": [
         "apps/damage-meter/damage-meter.py",
-        "--port", "8831",
+        "--port",
+        "8831",
         "--no-browser"
       ],
       "port": 8831
+    },
+    {
+      "name": "calc-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8740"
+      ],
+      "port": 8740
     }
   ]
 }

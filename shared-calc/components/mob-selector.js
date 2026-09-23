@@ -10,14 +10,20 @@ FFXI.components.mobSelector = (function () {
   // config:
   //   mount        { zoneSelect, mobSelect, mobMeta, output,
   //                  mLvl, sLvl, famVitRank, mainVitRank, subVitRank,
-  //                  defRank, statMult, subCurveZone }
+  //                  defRank, statMult, subCurveZone,
+  //                  famAgiRank, mainAgiRank, subAgiRank, evaRank }
   //   defaultZone  zone id to preselect
   //   onDerive(result)  called with the FFXI.mobStats.derive() result
   //   onMobPicked(info) optional, called when a mob is chosen
+  //
+  // The AGI/evasion mounts are optional: supply them and the panel also derives
+  // AGI and EVA, leave them out and it behaves exactly as it always did. A page
+  // that cares about hit rate (anything with `accVaries`) wants them; one that
+  // only needs fSTR and pDIF does not.
   function create(config) {
     const m = resolveAll(config.mount || {});
     const MOB_DATA = FFXI.data.MOB_DATA;
-    const { JOB_NAMES, JOB_VIT_RANK } = FFXI.data;
+    const { JOB_NAMES, JOB_VIT_RANK, JOB_AGI_RANK, JOB_EVA_SKILL_RANK } = FFXI.data;
     const onDerive = config.onDerive || function () {};
     const onMobPicked = config.onMobPicked || function () {};
 
@@ -60,9 +66,10 @@ FFXI.components.mobSelector = (function () {
         });
     }
 
-    // Reads the rank/level fields and derives VIT + DEF.
+    // Reads the rank/level fields and derives VIT + DEF (and AGI + EVA when the
+    // AGI mounts are present).
     function derive() {
-      const result = FFXI.mobStats.derive({
+      const opts = {
         mLvl: num(m.mLvl),
         sLvl: num(m.sLvl),
         famVitRank: m.famVitRank ? m.famVitRank.value : 3,
@@ -71,7 +78,16 @@ FFXI.components.mobSelector = (function () {
         defRank: m.defRank ? m.defRank.value : 3,
         statMult: num(m.statMult, 1),
         preFiftyZone: checked(m.subCurveZone),
-      });
+      };
+
+      if (m.famAgiRank) {
+        opts.famAgiRank = m.famAgiRank.value;
+        opts.mainAgiRank = m.mainAgiRank ? m.mainAgiRank.value : 3;
+        opts.subAgiRank = m.subAgiRank ? m.subAgiRank.value : 3;
+        opts.evaRank = m.evaRank ? m.evaRank.value : 3;
+      }
+
+      const result = FFXI.mobStats.derive(opts);
 
       if (m.output) m.output.innerHTML = describe(result);
       onDerive(result);
@@ -82,8 +98,13 @@ FFXI.components.mobSelector = (function () {
       let html =
         `VIT = <b>${r.VIT}</b> &nbsp;(f${r.fVIT} + m${r.mVIT} + s${r.sVIT}) &times; ${r.statMult}` +
         `<br>DEF = <b>${r.DEF}</b> &nbsp;8 + floor(VIT&times;0.5) + ${r.defBase}` +
-        (r.defInterpolated ? `<span class="warn"> — E-rank DEF term is interpolated, not source-confirmed</span>` : '') +
-        `<div class="chart-cap" style="margin-top:6px;">Applied to target stats automatically.</div>`;
+        (r.defInterpolated ? `<span class="warn"> — E-rank DEF term is interpolated, not source-confirmed</span>` : '');
+      if (r.AGI !== null) {
+        html +=
+          `<br>AGI = <b>${r.AGI}</b> &nbsp;(f${r.fAGI} + m${r.mAGI} + s${r.sAGI}) &times; ${r.statMult}` +
+          `<br>EVA = <b>${r.EVA}</b> &nbsp;${r.evaBase} + floor(AGI&times;0.5) &nbsp;<span class="hint">no +8 term, unlike DEF</span>`;
+      }
+      html += `<div class="chart-cap" style="margin-top:6px;">Applied to target stats automatically.</div>`;
       if (r.subjobApproximate) {
         html += `<div class="chart-cap">Note: the source's pre-level-50 subjob curve (rank-specific formulas) isn't ported here; this still uses the halved fallback, so pre-50-zone results are approximate.</div>`;
       }
@@ -125,12 +146,26 @@ FFXI.components.mobSelector = (function () {
         if (sp) {
           if (m.famVitRank) m.famVitRank.value = String(sp[2]);
           if (m.defRank) m.defRank.value = String(Math.min(sp[8], 5));
+          if (m.famAgiRank) m.famAgiRank.value = String(sp[3]);
         }
 
         const mVitRank = JOB_VIT_RANK[mJob];
         const sVitRank = JOB_VIT_RANK[sJob];
         if (mVitRank && m.mainVitRank) m.mainVitRank.value = String(mVitRank);
         if (sVitRank && m.subVitRank) m.subVitRank.value = String(sVitRank);
+
+        if (m.famAgiRank) {
+          const mAgiRank = JOB_AGI_RANK[mJob];
+          const sAgiRank = JOB_AGI_RANK[sJob];
+          if (mAgiRank && m.mainAgiRank) m.mainAgiRank.value = String(mAgiRank);
+          if (sAgiRank && m.subAgiRank) m.subAgiRank.value = String(sAgiRank);
+          // Evasion rank comes from the jobs' evasion *skill* ranks, not from
+          // the species EVA column -- mobutils.cpp:931 builds it that way.
+          if (m.evaRank) {
+            m.evaRank.value = String(FFXI.data.evaSkillRankToBaseRank(
+              JOB_EVA_SKILL_RANK[mJob], JOB_EVA_SKILL_RANK[sJob]));
+          }
+        }
 
         const mJobName = JOB_NAMES[mJob] || mJob;
         const sJobName = JOB_NAMES[sJob] || sJob;
