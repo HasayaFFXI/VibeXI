@@ -8,10 +8,24 @@
 FFXI.damage = (function () {
   const { clamp, randomInt, minMax } = FFXI.core;
 
+  // xi.weaponskills.fTP (weaponskills.lua:1075). Returns 1 with no table or
+  // below 1000 TP -- right for an fTP multiplier, wrong for an additive bonus,
+  // which is what tpFactor below is for.
   function fTPInterp(tp, table) {
     if (!table || tp < 1000) return 1;
     if (tp >= 2000) return table[1] + (tp - 2000) * (table[2] - table[1]) / 1000;
     return table[0] + (tp - 1000) * (table[1] - table[0]) / 1000;
+  }
+
+  // xi.combat.physical.calculateTPfactor (physical_utilities.lua:451). The same
+  // interpolation, but an absent table means *zero*. The server carries both and
+  // uses them for different things; the no-table return value is the whole
+  // difference, and it is the reason accVaries cannot just reuse fTPInterp.
+  function tpFactor(tp, table) {
+    if (!table) return 0;
+    if (tp >= 2000) return table[1] + (tp - 2000) * (table[2] - table[1]) / 1000;
+    if (tp >= 1000) return table[0] + (tp - 1000) * (table[1] - table[0]) / 1000;
+    return table[0];
   }
 
   function calcFSTR_PC(str, vit, weaponRank) {
@@ -61,9 +75,17 @@ FFXI.damage = (function () {
   }
 
   // Positional signature kept identical to the pre-refactor global so the
-  // existing console-validation workflow still works unchanged.
-  function calculateMeleePDIF(actorAttack, targetDefense, isCritical, applyLevelCorrection, levelDiff, weaponCap, dlPlus, dlPercent, critDmgBonus) {
-    const wRatio = (actorAttack / Math.max(1, targetDefense)) + (isCritical ? 1 : 0);
+  // existing console-validation workflow still works unchanged. `atkMult` is
+  // appended, never inserted, for that same reason -- it defaults to 1, so every
+  // existing call site is unaffected.
+  //
+  // atkMult is the WS's `atkVaries` factor. physical_utilities.lua:646 applies
+  // it to ATT *inside* pDIF -- max(1, floor(ATT * wsAttackMod * flourish)) --
+  // so it moves the ratio, and with it which branch of the cap curve you land
+  // on. It is not a flat multiplier on the damage.
+  function calculateMeleePDIF(actorAttack, targetDefense, isCritical, applyLevelCorrection, levelDiff, weaponCap, dlPlus, dlPercent, critDmgBonus, atkMult) {
+    const att = Math.max(1, Math.floor(actorAttack * (atkMult === undefined ? 1 : atkMult)));
+    const wRatio = (att / Math.max(1, targetDefense)) + (isCritical ? 1 : 0);
     const pDifFinalCap = (weaponCap + dlPlus) * dlPercent + (isCritical ? 1 : 0);
 
     if (Math.random() <= spikeRatioPC(wRatio)) return 1.0;
@@ -99,22 +121,71 @@ FFXI.damage = (function () {
     return 1;
   }
 
+  // The order xi.combat.physical.calculateWSC takes its multipliers in.
+  const WSC_STATS = ['str', 'dex', 'vit', 'agi', 'int', 'mnd', 'chr'];
+
+  // Multi-stat WSC (physical_utilities.lua:424). Each stat's term is floored
+  // *separately* before the sum -- floor(STR x 0.20) + floor(DEX x 0.20), not
+  // floor(STR x 0.20 + DEX x 0.20). That is worth a point either way on a WS
+  // like Penta Thrust that splits its modifier across two stats, and it is the
+  // kind of difference that only shows up as an off-by-one nobody can explain.
+  //
+  // gearMods are the WS_<STAT>_BONUS mods, in whole percent, added to the WS's
+  // own multiplier before the multiply -- not to the product.
+  function wscParts(stats, mods, gearMods) {
+    const parts = {};
+    WSC_STATS.forEach(k => {
+      const mult = ((mods && mods[k]) || 0) + (((gearMods && gearMods[k]) || 0) / 100);
+      if (mult === 0) return;
+      parts[k] = Math.floor(((stats && stats[k]) || 0) * mult);
+    });
+    return parts;
+  }
+
+  function calcWSC(stats, mods, gearMods) {
+    const parts = wscParts(stats, mods, gearMods);
+    return Object.keys(parts).reduce((t, k) => t + parts[k], 0);
+  }
+
   // Deterministic part of the WS: the per-hit base before fTP and pDIF.
+  //
+  // Two WSC paths. `p.wscMods` selects the multi-stat one and reads the actor's
+  // stats from `p.stats`; without it the original single-`wscStat` path runs
+  // exactly as before, which is what keeps ws-calculator's readParams() working
+  // untouched.
   function calcMainBase(p) {
     const fSTR = calcFSTR_PC(p.str, p.vit, p.wRank);
-    const wscStatVal = p.wscStat === 'str' ? p.str : p.vit;
     const alpha = calcAlpha(p.aLvl, p.adoulin);
-    // weaponskills.lua: wsc is floored per-stat, then scaled by alpha inside the
-    // mainBase floor.
-    const wsc = Math.floor(wscStatVal * ((p.wscWeight + p.wscGear) / 100));
-    const mainBase = Math.floor(p.wDmg + fSTR + wsc * alpha);
-    return { fSTR, wsc, alpha, mainBase };
+
+    let wsc, parts = null;
+    if (p.wscMods) {
+      parts = wscParts(p.stats || { str: p.str }, p.wscMods, p.wscGearMods);
+      wsc = Object.keys(parts).reduce((t, k) => t + parts[k], 0);
+    } else {
+      const wscStatVal = p.wscStat === 'str' ? p.str : p.vit;
+      // weaponskills.lua: wsc is floored per-stat, then scaled by alpha inside
+      // the mainBase floor.
+      wsc = Math.floor(wscStatVal * ((p.wscWeight + p.wscGear) / 100));
+    }
+
+    const mainBase = Math.floor(p.wDmg + fSTR + (p.bonusWSmods || 0) + wsc * alpha);
+    return { fSTR, wsc, alpha, mainBase, wscParts: parts };
   }
 
   // pDIF bounds for a given ATT, ignoring the random roll -- used by the attack
-  // curve panel.
+  // curve panel. Pass ATT already multiplied by atkMult if the WS has one.
   function pDifBoundsForATT(att, def, pDifFinalCap) {
     return wRatioCapPC(att / Math.max(1, def), pDifFinalCap);
+  }
+
+  // getMultiAttacks (weaponskills.lua:59). QA, else TA, else DA -- and each tier
+  // gets its *own* roll in the server's elseif chain, so a failed QA check does
+  // not hand its number down to TA.
+  function rollMultiAttacks(p) {
+    if (randomInt(1, 100) <= (p.qaRate || 0)) return 3;
+    if (randomInt(1, 100) <= (p.taRate || 0)) return 2;
+    if (randomInt(1, 100) <= (p.daRate || 0)) return 1;
+    return 0;
   }
 
   // Monte-Carlo the whole weaponskill. `p` is the parameter object; `trials` is
@@ -136,13 +207,28 @@ FFXI.damage = (function () {
     // addBonusesAbility: mab multiplier, floored at 0. No buff here touches it.
     const mabMult = Math.max(0, (100 + p.matt) / (100 + p.mdef));
 
+    // 'X varies with TP', for attack and for accuracy. atkVaries goes through
+    // fTPInterp (absent => 1.0, a no-op multiplier); accVaries through tpFactor
+    // (absent => 0, a no-op addend). Both are resolved once -- they depend on TP
+    // only, and TP is fixed for the whole weaponskill.
+    const atkMult = p.atkVaries ? fTPInterp(p.tp, p.atkVaries) : 1;
+    const accBonus = tpFactor(p.tp, p.accVaries);
+    // physical_hit_rate.lua: hitdiff = (acc - eva) / 2, so an accuracy bonus is
+    // worth half as many points of hit rate. Same conversion buffs.js applies to
+    // Hasso's +10 ACC.
+    const accPoints = accBonus / 2;
+
     // Hasso moves STR, which moves fSTR/WSC/mainBase, and its accuracy moves both
     // hit-rate clamps -- so all of that is resolved once per state rather than per
     // trial. Hit 1 is rolled with bonusAcc + 100 (getHitRate): 100 ACC == +50
     // points of hit rate, then clamped to the weapon's cap. Later hits use the
     // unmodified rate.
     const states = inStates.map(s => {
-      const base = calcMainBase(Object.assign({}, p, { str: s.str }));
+      const perState = Object.assign({}, p, { str: s.str });
+      // On the multi-stat path the buff's STR has to reach p.stats too, or the
+      // WSC term would keep using the unbuffed value.
+      if (p.wscMods) perState.stats = Object.assign({}, p.stats, { str: s.str });
+      const base = calcMainBase(perState);
       return {
         prob: s.prob,
         label: s.label,
@@ -150,8 +236,9 @@ FFXI.damage = (function () {
         str: s.str,
         att: s.att,
         fSTR: base.fSTR, wsc: base.wsc, alpha: base.alpha, mainBase: base.mainBase,
-        hitRate: clamp(s.hitRate, 20, p.hitRateCap),
-        firstHitRate: clamp(s.hitRate + 50, 20, p.hitRateCap),
+        wscParts: base.wscParts,
+        hitRate: clamp(s.hitRate + accPoints, 20, p.hitRateCap),
+        firstHitRate: clamp(s.hitRate + accPoints + 50, 20, p.hitRateCap),
         trials: 0, hits: 0, sumAll: 0, sumHit: 0,
       };
     });
@@ -174,7 +261,7 @@ FFXI.damage = (function () {
     }
 
     const landedVals = [];
-    let hits = 0, misses = 0, sumHitsLanded = 0;
+    let hits = 0, misses = 0, sumHitsLanded = 0, sumHitsSwung = 0;
     let sumAll = 0, sumHit = 0, sumPhys = 0, sumMagic = 0;
 
     for (let i = 0; i < trials; i++) {
@@ -186,28 +273,50 @@ FFXI.damage = (function () {
       const mainBase = st.mainBase;
       let physicalTotal = 0;
       let hitsLanded = 0;
+      let hitsDone = 0;   // the server's hitsDone: swings attempted, misses included
 
-      for (let hit = 0; hit < p.numHits; hit++) {
-        // Each hit rolls its own miss check.
-        if (Math.random() * 100 > (hit === 0 ? st.firstHitRate : st.hitRate)) continue;
+      // One swing. Miss, crit and pDIF are each rolled per hit -- a miss does not
+      // end the weaponskill, it just contributes nothing.
+      const swing = (rate, ftp) => {
+        hitsDone++;
+        if (Math.random() * 100 > rate) return;
         hitsLanded++;
-
         const isCrit = Math.random() * 100 < p.critRate;
-        // A hybrid WS forces the physical fTP to 1 + gear fTP regardless of
-        // ftpMod; the table is consumed by the magic component instead. Non-first
-        // hits reset to exactly 1 unless the WS sets multiHitfTP (which also
-        // drops the gear bonus).
-        let ftp;
-        if (hit === 0 || p.multiHitFTP) {
-          ftp = (p.hybridOn ? 1 : fTPInterp(p.tp, p.ftpMod)) + p.gearFTP;
-        } else {
-          ftp = 1;
-        }
-        const pdif = calculateMeleePDIF(st.att, p.def, isCrit, p.lvlCorrection, levelDiff, p.weaponCap, p.dlPlus, p.dlPercent, p.critDmg);
+        const pdif = calculateMeleePDIF(st.att, p.def, isCrit, p.lvlCorrection, levelDiff, p.weaponCap, p.dlPlus, p.dlPercent, p.critDmg, atkMult);
         physicalTotal += mainBase * ftp * pdif;
+      };
+
+      // A hybrid WS forces the physical fTP to 1 + gear fTP regardless of ftpMod;
+      // the table is consumed by the magic component instead.
+      const firstFTP = (p.hybridOn ? 1 : fTPInterp(p.tp, p.ftpMod)) + p.gearFTP;
+      // weaponskills.lua:434 -- fTP resets to a flat 1 after hit 1 unless the WS
+      // sets multiHitfTP, in which case the whole thing, gear bonus included,
+      // carries across every hit.
+      const laterFTP = p.multiHitFTP ? firstFTP : 1;
+
+      swing(st.firstHitRate, firstFTP);
+
+      // Multi-attack is rolled after hit 1 and again after each later hit, but
+      // stops contributing once 2 procs have landed (weaponskills.lua:494). Every
+      // swing, multi-attack included, counts against the hard 8-hit ceiling.
+      let multis = rollMultiAttacks(p);
+      let procs = multis > 0 ? 1 : 0;
+
+      for (let hit = 1; hit < p.numHits && hitsDone < 8; hit++) {
+        swing(st.hitRate, laterFTP);
+        if (procs < 2) {
+          const extra = rollMultiAttacks(p);
+          multis += extra;
+          if (extra > 0) procs++;
+        }
+      }
+
+      for (let m = 0; m < multis && hitsDone < 8; m++) {
+        swing(st.hitRate, laterFTP);
       }
 
       sumHitsLanded += hitsLanded;
+      sumHitsSwung += hitsDone;
 
       if (hitsLanded === 0) {
         misses++;
@@ -262,15 +371,20 @@ FFXI.damage = (function () {
       std: Math.sqrt(variance),
       missRate: misses / trials,
       avgHitsLanded: sumHitsLanded / trials,
+      avgHitsSwung: sumHitsSwung / trials,
       trials, hits, misses,
+      // The TP-varying factors, resolved once -- the UI wants to show them.
+      atkMult, accBonus, accPoints,
       fSTR: modal.fSTR, wsc: modal.wsc, alpha: modal.alpha, mainBase: modal.mainBase,
+      wscParts: modal.wscParts,
       mainBaseMin: Math.min.apply(null, baseVals),
       mainBaseMax: Math.max.apply(null, baseVals),
       // Per-state detail for the breakdown. avgAll is conditional on being in that
       // state, so it is directly comparable across states.
       states: states.map(s => ({
         label: s.label, active: s.active, prob: s.prob,
-        str: s.str, att: s.att, hitRate: s.hitRate, mainBase: s.mainBase,
+        str: s.str, att: s.att, hitRate: s.hitRate, firstHitRate: s.firstHitRate,
+        mainBase: s.mainBase,
         trials: s.trials, hits: s.hits,
         avgAll: s.trials ? s.sumAll / s.trials : 0,
         avgHit: s.hits ? s.sumHit / s.hits : 0,
@@ -280,7 +394,8 @@ FFXI.damage = (function () {
   }
 
   return {
-    fTPInterp, calcFSTR_PC, wRatioCapPC, spikeRatioPC,
-    calculateMeleePDIF, calcAlpha, calcMainBase, pDifBoundsForATT, simulate,
+    fTPInterp, tpFactor, calcFSTR_PC, wRatioCapPC, spikeRatioPC,
+    calculateMeleePDIF, calcAlpha, calcWSC, wscParts, WSC_STATS,
+    calcMainBase, pDifBoundsForATT, rollMultiAttacks, simulate,
   };
 })();

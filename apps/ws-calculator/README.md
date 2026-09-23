@@ -5,27 +5,21 @@ Shared-component app extracted from the single-file Jinpu weaponskill calculator
 ## Layout
 
 ```
-../../shared-ui/           at the repo root, a sibling of apps/ — not inside this app
-  css/ffxi-theme.css       THE design system, shared with ../damage-meter
-  js/theme.js              window.FFXITheme - the same tokens, resolved for canvas
-shared/
-  css/theme.css            app-only rules: mob grid, buff table, presets, run bar, results
-  data/mob-data.js         MOB_DATA - zones, mobsByZone, species (~390KB)
-  data/job-data.js         JOB_NAMES, JOB_VIT_RANK, rankToLetter, populateJobSelect
-  data/weapon-data.js      WEAPON_TYPES (pDIF cap + hit-rate cap), populateWeaponSelect
-  lib/core.js              namespace bootstrap, clamp/randomInt/escapeHtml/resolve/num/minMax
-  lib/buffs.js             food model + job-ability uptime/rotation model             (pure)
-  lib/damage.js            THE ENGINE - fSTR, fTP, pDIF, alpha, mainBase, simulate  (pure)
-  lib/mob-stats.js         getBaseToRank, getBaseDefEva, derive                       (pure)
-  lib/chart.js             canvas setup, plot box, axes, scales, shared tooltip
-  lib/presets.js           slot store + UI (localStorage, import/export, dirty tracking)
-  components/mob-selector.js
-  components/fstr-panel.js
-  components/attack-panel.js
-  components/histogram.js
+../../shared-ui/           at the repo root, a sibling of apps/ — the design system
+  css/ffxi-theme.css       tokens and every shared primitive
+  js/theme.js              window.FFXITheme — the same tokens, for canvas
+../../shared-calc/         also at the repo root — the engine, data and components
+  lib/damage.js            THE ENGINE                                          (pure)
+  lib/buffs.js  lib/mob-stats.js                                               (pure)
+  lib/core.js  lib/chart.js  lib/presets.js
+  data/  components/  css/calc.css
 pages/
-  ws-calculator.html       the weaponskill calculator
+  ws-calculator.html       the weaponskill calculator — the only file this app owns
 ```
+
+See [`../../shared-calc/README.md`](../../shared-calc) for the shared layer's own
+conventions. [`../penta-calculator`](../penta-calculator) is the other page built
+on it.
 
 ## Conventions
 
@@ -38,18 +32,18 @@ components:
 
 ```html
 <script src="../../../shared-ui/js/theme.js"></script>
-<script src="../shared/lib/core.js"></script>
-<script src="../shared/data/mob-data.js"></script>
+<script src="../../../shared-calc/lib/core.js"></script>
+<script src="../../../shared-calc/data/mob-data.js"></script>
 ...
 ```
 
 **Styling is shared with the DPS meter.** The palette and every primitive
 (`.card`, `.field`, `table.data`, `.chart-wrap`, buttons) live in
-[`../../shared-ui/`](../../shared-ui); `shared/css/theme.css` holds only what is
-specific to this app. Canvas colours are read from the same custom properties
+[`../../shared-ui/`](../../shared-ui); `../../shared-calc/css/calc.css` holds the
+calculator shell both pages share. Canvas colours are read from the same custom properties
 through `FFXITheme`, so there is no second palette to keep in sync.
 
-**The `lib/` math layer is pure.** `damage.js`, `mob-stats.js` and `buffs.js`
+**The `shared-calc/lib/` math layer is pure.** `damage.js`, `mob-stats.js` and `buffs.js`
 contain no DOM reads or writes and no element ids. This is the layer validated
 against the server Lua, so it must be callable with a plain object from a console
 or a test harness. Keep it that way — if a formula needs a value, it takes it as
@@ -90,8 +84,9 @@ requirement isn't met is disabled outright.
 ## Adding a page
 
 Copy the head and script block from `pages/ws-calculator.html`, mount the
-components you need, and supply the callbacks. Nothing in `shared/` or
-`../../shared-ui/` needs to change.
+components you need, and supply the callbacks. Nothing in `../../shared-calc/`
+or `../../shared-ui/` needs to change — that is exactly how
+[`../penta-calculator`](../penta-calculator) was built.
 
 ## Validating against the server
 
@@ -125,4 +120,5 @@ combination of uptimes.
   ATT on Berserk/Warcry aren't applied.
 - The pre-level-50 subjob stat curve isn't ported; the halved fallback is used and
   the result is flagged as approximate.
-- E-rank DEF below level 51 is interpolated from the A–D pattern, and flagged.
+- ~~E-rank DEF below level 51 is interpolated~~ — fixed: the source does define it
+  (`mobutils.cpp:261`) and the real slope is `2.5`, not the guessed `2.6`.

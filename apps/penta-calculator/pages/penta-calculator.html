@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penta Thrust Damage Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../shared-ui/css/ffxi-theme.css">
+<link rel="stylesheet" href="../../../shared-calc/css/calc.css">
+<style>
+/* Page-only: the read-only weaponskill constants block. Everything else is a
+   shared primitive. */
+.ws-const { display:grid; grid-template-columns:auto 1fr; gap:4px 14px; font-size:12px; }
+.ws-const dt { color:var(--mist); }
+.ws-const dd { margin:0; font-family:'JetBrains Mono',monospace; color:var(--bone); }
+.ws-const dd .why { font-family:'Inter',sans-serif; color:var(--faint); font-size:11px; }
+.finding { border-left:2px solid var(--brass); padding:6px 0 6px 10px; margin:10px 0; font-size:12px; color:var(--mist); }
+.finding b { color:var(--bone); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <div>
+      <h1>Penta <span>Thrust</span> Damage Calculator</h1>
+      <div class="subtitle">Monte Carlo simulation of the five-hit polearm weaponskill, against <code>scripts/actions/weaponskills/penta_thrust.lua</code>. See <b>PentaThrustDamageCalc.md</b> for the derivation.</div>
+    </div>
+  </header>
+
+  <div class="card presets-card">
+    <h2>Presets <span class="opt" id="storageWarning" style="display:none; color:var(--blade);">— browser storage unavailable, session-only</span></h2>
+    <div class="preset-slots" id="presetSlots"></div>
+    <div class="preset-status" id="presetStatus"></div>
+    <div class="preset-save-row">
+      <input type="text" id="presetName" placeholder="Preset name" maxlength="24">
+      <select id="presetSlotPick"></select>
+      <button id="presetSaveBtn" class="secondary">Save</button>
+      <span class="preset-io">
+        <button id="presetExport" class="link-btn">Export all</button>
+        <button id="presetImport" class="link-btn">Import</button>
+        <input type="file" id="presetImportFile" accept="application/json" style="display:none;">
+      </span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card wide">
+      <h2>Derive Mob VIT / DEF / AGI / EVA</h2>
+      <div class="mob-grid">
+        <div class="field field-zone"><label>Zone</label>
+          <select id="zoneSelect" style="width:100%;"><option value="">— select zone —</option></select>
+        </div>
+        <div class="field field-mob"><label>Mob</label>
+          <select id="mobSelect" style="width:100%;" disabled><option value="">— select zone first —</option></select>
+        </div>
+        <div class="field field-meta" id="mobMeta" style="display:none;"></div>
+        <div class="field"><label>Mob level</label><input type="number" id="mLvl" value="99"></div>
+        <div class="field"><label>Sub level</label><input type="number" id="sLvl" value="99"></div>
+        <div class="field"><label>Family VIT rank</label>
+          <select id="famVitRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Main job VIT rank</label>
+          <select id="mainVitRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Sub job VIT rank</label>
+          <select id="subVitRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Family DEF rank</label>
+          <select id="defRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option>
+          </select>
+        </div>
+        <div class="field"><label>Family AGI rank<span class="hint">feeds EVA, which feeds hit rate</span></label>
+          <select id="famAgiRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Main job AGI rank</label>
+          <select id="mainAgiRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Sub job AGI rank</label>
+          <select id="subAgiRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option><option value="6">F</option><option value="7">G</option>
+          </select>
+        </div>
+        <div class="field"><label>Evasion rank<span class="hint">better of main/sub evasion skill rank</span></label>
+          <select id="evaRank">
+            <option value="1">A</option><option value="2">B</option><option value="3" selected>C</option>
+            <option value="4">D</option><option value="5">E</option>
+          </select>
+        </div>
+        <div class="field"><label>Stat multiplier<span class="hint">MOB/NM_STAT_MULTIPLIER setting</span></label><input type="number" id="statMult" value="1.0" step="0.05"></div>
+        <div class="checkbox-field" style="padding-top:16px;">
+          <input type="checkbox" id="subCurveZone">
+          <label for="subCurveZone">Pre-50 subjob curve zone<span class="hint" style="display:block;">unchecked = standard halved subjob stat</span></label>
+        </div>
+        <div class="checkbox-field" style="padding-top:16px;">
+          <input type="checkbox" id="lvlCorrection" checked>
+          <label for="lvlCorrection">Apply level correction (T-rank+ zones)<span class="hint" style="display:block;">hits both pDIF and accuracy; for a PC both are penalties only</span></label>
+        </div>
+      </div>
+      <div id="mobOut" class="mob-out" style="margin:16px 0 4px;"></div>
+      <input type="hidden" id="tLvl" value="99">
+      <input type="hidden" id="vit" value="107">
+      <input type="hidden" id="def" value="438">
+      <input type="hidden" id="eva" value="401">
+    </div>
+
+    <div class="card">
+      <h2>Actor</h2>
+      <div class="field"><label>Main level</label><input type="number" id="aLvl" value="99"></div>
+      <div class="field"><label>STR (base, no food)</label><input type="number" id="str" value="130"></div>
+      <div class="field"><label>DEX (base)<span class="hint">counts twice on this WS — 20% to WSC and 0.75 accuracy per point</span></label><input type="number" id="dex" value="120"></div>
+      <div class="field"><label>Current TP</label><input type="number" id="tp" value="1000" step="100" min="1000" max="3000"></div>
+      <div class="field"><label>Base weapon damage (D)</label><input type="number" id="wDmg" value="104"></div>
+      <div class="field"><label>Weapon rank<span class="hint">used for the fSTR clamp; roughly floor(D / 9)</span></label><input type="number" id="wRank" value="11"></div>
+      <div class="field"><label>ATT (base, no food)</label><input type="number" id="att" value="900"></div>
+
+      <h2 style="margin-top:20px;">Accuracy <span class="opt">derived, not typed</span></h2>
+      <div class="field"><label>Polearm skill<span class="hint">converted by GetAccFromSkill — 1:1 to 200, then 0.9 / 0.8 / 0.9</span></label><input type="number" id="polearmSkill" value="424"></div>
+      <div class="field"><label>Gear / merit accuracy (flat)<span class="hint">Mod::ACC + Accuracy merits + TWOHAND_ACC from gear</span></label><input type="number" id="gearAcc" value="0"></div>
+      <div class="field"><label>Weaponskill accuracy (WSACC)<span class="hint">gear that reads "Weapon skill accuracy +N"</span></label><input type="number" id="wsAcc" value="0"></div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="gearFTP" checked>
+        <label for="gearFTP">Gorget / Belt equipped<span class="hint" style="display:block;">Penta Thrust is Compression (Dark), so Shadow Gorget/Belt apply: +0.1 fTP <i>and</i> +10 accuracy, because the server reuses ceil(fTP&times;100) as an accuracy bonus</span></label>
+      </div>
+      <div class="field"><label>Hit-rate override (%)<span class="hint">blank = use the derived rate below</span></label><input type="number" id="hitRateOverride" placeholder="auto" step="1"></div>
+      <div class="chart-cap" id="accSummary" style="margin-top:10px;"></div>
+
+      <h2 style="margin-top:20px;">Multi-attack <span class="opt">procs during a weaponskill</span></h2>
+      <div class="field"><label>Double Attack (%)</label><input type="number" id="daRate" value="0" step="1"></div>
+      <div class="field"><label>Triple Attack (%)</label><input type="number" id="taRate" value="0" step="1"></div>
+      <div class="field"><label>Quad Attack (%)</label><input type="number" id="qaRate" value="0" step="1"></div>
+      <div class="chart-cap" style="margin-top:8px;">Rolled after hit 1 and after each later hit, but only the first <b>two</b> procs count, and the weaponskill is hard-capped at <b>8</b> swings total.</div>
+
+      <h2 style="margin-top:20px;">Food <span class="opt">applied before all derived calculations</span></h2>
+      <div class="field"><label>ATT bonus (%)</label><input type="number" id="foodAttPct" value="18" step="1"></div>
+      <div class="field"><label>ATT bonus cap (flat)<span class="hint">e.g. "Attack +25%, up to 60"</span></label><input type="number" id="foodAttCap" value="90" step="1"></div>
+      <div class="field"><label>STR bonus (flat)</label><input type="number" id="foodStr" value="0" step="1"></div>
+      <div class="chart-cap" id="foodSummary" style="margin-top:10px;"></div>
+
+      <h2 style="margin-top:20px;">Buffs <span class="opt">job abilities, modeled by uptime</span></h2>
+      <div class="field" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <label style="flex:none;">Job setup <span class="opt" style="font-size:10.5px;">main / sub / sub level</span>
+          <span class="hint">The main job's level is <b>Main level</b> above. Sub level is normally floor(main&nbsp;/&nbsp;2). Drives every potency default below.</span>
+        </label>
+        <div class="buff-jobs">
+          <select id="mainJob" aria-label="Main job"></select>
+          <select id="subJob" aria-label="Sub job"></select>
+          <input type="number" id="subLvl" value="49" min="0" max="99" step="1" aria-label="Sub job level">
+        </div>
+      </div>
+      <div class="buff-grid">
+        <div class="buff-head"><span>Ability</span><span>Uptime %</span><span>Potency</span></div>
+        <div class="buff-row" id="buffRowHasso">
+          <label for="hassoUptime">Hasso<span class="hint" id="hassoHint"></span></label>
+          <input type="number" id="hassoUptime" value="100" min="0" max="100" step="5">
+          <input type="number" id="hassoPotency" min="0" step="1" placeholder="auto">
+        </div>
+        <div class="buff-row" id="buffRowBerserk">
+          <label for="berserkUptime">Berserk<span class="hint" id="berserkHint"></span></label>
+          <input type="number" id="berserkUptime" value="60" min="0" max="100" step="5">
+          <input type="number" id="berserkPotency" min="0" step="1" placeholder="auto">
+        </div>
+        <div class="buff-row" id="buffRowWarcry">
+          <label for="warcryUptime">Warcry<span class="hint" id="warcryHint"></span></label>
+          <input type="number" id="warcryUptime" value="10" min="0" max="100" step="5">
+          <input type="number" id="warcryPotency" min="0" step="1" placeholder="auto">
+        </div>
+      </div>
+      <div class="chart-cap" style="margin-top:10px;">Uptime defaults are duration &divide; recast from the server tables, capped at 100%. Leave a potency blank to keep it derived from the job setup. Hasso needs a two-handed weapon, which polearm is.</div>
+      <div class="chart-cap" id="buffSummary" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Weaponskill <span class="opt">fixed constants</span></h2>
+      <dl class="ws-const" id="wsConst"></dl>
+      <div class="chart-cap" style="margin-top:12px;">These are not inputs — they are the <code>params</code> table the server builds for weaponskill&nbsp;116, transcribed into <code>shared-calc/data/ws-data.js</code>. Change them there, not here.</div>
+
+      <div class="finding" id="findingFTP"></div>
+      <div class="finding" id="findingCrit"></div>
+      <div class="finding" id="findingAtk"></div>
+
+      <h2 style="margin-top:20px;">Gear modifiers</h2>
+      <div class="field"><label>WS_STR_BONUS (%)<span class="hint">added to the WS's own 20% before the multiply</span></label><input type="number" id="wsStrBonus" value="0" step="1"></div>
+      <div class="field"><label>WS_DEX_BONUS (%)</label><input type="number" id="wsDexBonus" value="0" step="1"></div>
+      <div class="field"><label>Weaponskill damage bonus (%)<span class="hint">ALL_WSDMG_ALL_HITS + the per-WS mod 570+116 = 686</span></label><input type="number" id="wsdPercent" value="0" step="1"></div>
+      <div class="field"><label>Damage Limit (flat / %)<span class="hint">DAMAGE_LIMIT / DAMAGE_LIMITP — raises the 3.75 pDIF ceiling</span></label>
+        <div class="row2" style="grid-template-columns:1fr 1fr;">
+          <input type="number" id="dlPlus" value="0">
+          <input type="number" id="dlPercent" value="0">
+        </div>
+      </div>
+      <div class="field"><label>Crit rate (%)<span class="hint">0 on this server — Penta Thrust defines no critVaries, so only Mighty Strikes or Sneak Attack crit. Set it to model those.</span></label><input type="number" id="critRate" value="0" step="1"></div>
+      <div class="field"><label>Crit damage bonus (%)<span class="hint">CRIT_DMG_INCREASE − target CRIT_DEF_BONUS, clamped 0–100</span></label><input type="number" id="critDmg" value="25" step="1"></div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="adoulinWS">
+        <label for="adoulinWS">USE_ADOULIN_WEAPON_SKILL_CHANGES<span class="hint" style="display:block;">unchecked = alpha applies to WSC. The repo default is <code>true</code>; leave this off to match the live server.</span></label>
+      </div>
+    </div>
+
+    <div class="card span2">
+      <h2>DEX Curve <span class="opt">the reason this page exists</span></h2>
+      <div class="subtitle" id="dexSummary" style="margin-bottom:14px;"></div>
+      <div class="fstr-layout">
+        <div class="table-wrap">
+          <table class="data" id="dexTable">
+            <thead><tr><th>DEX</th><th>WSC</th><th>Hit rate</th><th>Avg damage</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="chart-wrap mid">
+          <canvas id="dexChart"></canvas>
+          <div class="chart-tip anchor-above" id="dexTooltip"></div>
+          <div class="chart-cap">Avg damage vs DEX &mdash; DEX moves <b>both</b> the WSC term and accuracy &middot; marker = current DEX &middot; hover for details</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:20px;">fSTR Tiers <span class="opt">for the selected target</span></h2>
+      <div class="subtitle" id="fstrSummary" style="margin-bottom:14px;"></div>
+      <div class="fstr-layout">
+        <div class="table-wrap">
+          <table class="data" id="fstrTable">
+            <thead><tr><th>fSTR</th><th>STR range</th><th>&Delta; from current</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="chart-wrap mid">
+          <canvas id="fstrChart"></canvas>
+          <div class="chart-tip anchor-above" id="fstrTooltip"></div>
+          <div class="chart-cap">fSTR vs STR (VIT fixed at target's current value) &mdash; marker shows current STR &middot; hover for details</div>
+        </div>
+      </div>
+
+      <h2 style="margin-top:20px;">Attack Curve <span class="opt">pDIF vs ATT, after the 0.875 penalty</span></h2>
+      <div class="subtitle" id="attackSummary" style="margin-bottom:14px;"></div>
+      <div class="fstr-layout">
+        <div class="table-wrap">
+          <table class="data" id="attackTable">
+            <thead><tr><th>ATT range</th><th>pDIF (mid)</th><th>&Delta; / 100 ATT</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="chart-wrap mid">
+          <canvas id="attackChart"></canvas>
+          <div class="chart-tip anchor-above" id="attackTooltip"></div>
+          <div class="chart-cap">Shaded band = pDIF lower/upper bounds &middot; dashed line = polearm's 3.75 cap &middot; marker = current effective ATT &middot; hover for details</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="run-bar">
+    <div class="trials-field">
+      <label for="trials">Trials</label>
+      <input type="number" id="trials" value="20000" step="1000">
+    </div>
+    <div class="chart-cap" style="margin:0;">Live — editing any field above reruns the tables, the charts and this simulation.</div>
+  </div>
+
+  <div id="results" class="results-panel">
+    <div class="stat-row">
+      <div class="stat primary"><div class="num" id="outAvg">—</div><div class="lbl">Avg damage (all attempts)</div></div>
+      <div class="stat"><div class="num" id="outAvgHit">—</div><div class="lbl">Avg damage (on hit)</div></div>
+      <div class="stat"><div class="num" id="outMin">—</div><div class="lbl">Min (on hit)</div></div>
+      <div class="stat"><div class="num" id="outMax">—</div><div class="lbl">Max</div></div>
+    </div>
+    <div class="breakdown">
+      <div>Std dev: <b id="outStd">—</b></div>
+      <div>Whiff rate: <b id="outMiss">—</b></div>
+      <div>Avg hits landed: <b id="outHits">—</b></div>
+      <div>Hit rate: <b id="outHitRate">—</b></div>
+      <div>TP accuracy bonus: <b id="outAccBonus">—</b></div>
+      <div>ATT after 0.875: <b id="outAtt">—</b></div>
+      <div>mainBase: <b id="outBase">—</b></div>
+    </div>
+    <div class="buff-states" id="outStates"></div>
+    <div class="chart-wrap short">
+      <canvas id="hist"></canvas>
+      <div class="chart-tip anchor-above" id="histTooltip"></div>
+    </div>
+    <div class="chart-cap">Distribution of landed-hit damage across all trials · hover a bar for details</div>
+  </div>
+
+  <footer>
+    Simulates fSTR, dual-stat WSC, flat fTP, the TP-varying accuracy and attack factors, and melee pDIF per hit, matching <code>weaponskills.lua</code> and <code>physical_utilities.lua</code>. <b>Not modelled:</b> the WS stopping early once accumulated damage exceeds the target's HP, shadows / parry / block / guard, PIERCE_SDT and <code>physicalDmgTaken</code>, Sneak&nbsp;Attack's DEX addition, Phalanx and Stoneskin, and skillchains. This estimates raw landed-hit damage. See <b>PentaThrustDamageCalc.md</b> for every input and its source line.
+  </footer>
+
+</div>
+
+<!-- Shared layer. Classic scripts, load order matters: core -> data -> lib -> components. -->
+<script src="../../../shared-ui/js/theme.js"></script>
+<script src="../../../shared-calc/lib/core.js"></script>
+<script src="../../../shared-calc/data/mob-data.js"></script>
+<script src="../../../shared-calc/data/job-data.js"></script>
+<script src="../../../shared-calc/data/weapon-data.js"></script>
+<script src="../../../shared-calc/data/ws-data.js"></script>
+<script src="../../../shared-calc/lib/buffs.js"></script>
+<script src="../../../shared-calc/lib/damage.js"></script>
+<script src="../../../shared-calc/lib/mob-stats.js"></script>
+<script src="../../../shared-calc/lib/chart.js"></script>
+<script src="../../../shared-calc/lib/presets.js"></script>
+<script src="../../../shared-calc/components/mob-selector.js"></script>
+<script src="../../../shared-calc/components/fstr-panel.js"></script>
+<script src="../../../shared-calc/components/attack-panel.js"></script>
+<script src="../../../shared-calc/components/histogram.js"></script>
+
+<script>
+// Page-specific wiring only. Every formula lives in shared-calc/lib/damage.js
+// and shared-calc/data/ws-data.js.
+const $ = id => document.getElementById(id);
+const { num, checked, clamp } = FFXI.core;
+
+// The weaponskill itself is a constant, not a form field.
+const WS = FFXI.data.WS.penta_thrust;
+const WEAPON = FFXI.data.weaponType(WS.weapon);
+
+FFXI.data.populateJobSelect($('mainJob'), 'DRG');
+FFXI.data.populateJobSelect($('subJob'), 'SAM');
+
+let presets = null;
+
+// --- the fixed weaponskill constants, rendered from the data table ---
+
+function renderWSConstants(){
+  const rows = [
+    ['Weaponskill', `${WS.name} (id ${WS.id})`, ''],
+    ['Weapon', `${WEAPON.label}, skill ${WS.skillLevel}`, 'two-handed, so the hit-rate cap is 95%'],
+    ['Jobs', WS.jobs.join(' / '), ''],
+    ['numHits', String(WS.numHits), ''],
+    ['ftpMod', `{ ${WS.ftpMod.join(', ')} }`, 'flat — no TP scaling at all'],
+    ['WSC', `STR ${WS.wsc.str * 100}% + DEX ${WS.wsc.dex * 100}%`, 'each term floored separately'],
+    ['accVaries', `{ ${WS.accVaries.join(', ')} }`, 'accuracy at 1000 / 2000 / 3000 TP'],
+    ['atkVaries', `{ ${WS.atkVaries.join(', ')} }`, 'attack penalty, applied inside pDIF'],
+    ['critVaries', '—', 'absent, so WS hits never crit naturally'],
+    ['pDIF cap', String(WEAPON.pdifCap), 'before Damage Limit'],
+    ['Skillchain', 'Compression (Lv1 Dark)', 'Shadow Gorget / Shadow Belt aligned'],
+  ];
+  $('wsConst').innerHTML = rows.map(([k, v, why]) =>
+    `<dt>${k}</dt><dd>${v}${why ? ` <span class="why">— ${why}</span>` : ''}</dd>`).join('');
+
+  $('findingFTP').innerHTML = `<b>TP buys accuracy, not damage.</b> fTP is 1.0 at every TP level, so raising TP cannot increase a hit's damage. What 3000 TP actually buys is <code>accVaries</code>: +60 accuracy, worth +30 points of hit rate — which is only worth anything if you are not already at the 95% cap.`;
+  $('findingCrit').innerHTML = `<b>Penta Thrust cannot crit on this server.</b> <code>weaponskills.lua:163</code> gates the crit roll on <code>wsParams.critVaries</code>, and Penta defines none — so crit rate is not merely low, it is unreachable. Only Mighty Strikes (every hit) or Sneak Attack (hit 1) produce one.`;
+  $('findingAtk').innerHTML = `<b>The 0.875 attack penalty is not a flat 12.5% damage loss.</b> It is applied to ATT <i>inside</i> pDIF (<code>physical_utilities.lua:646</code>), so it moves the attack/defense ratio and with it which branch of the pDIF cap curve you land on. Near a ratio breakpoint it costs far more than 12.5%; deep in a capped region, far less.`;
+}
+
+// --- buffs ---
+//
+// Identical plumbing to ws-calculator: the uptime fields feed
+// FFXI.buffs.resolveStates, which returns the exact distribution over buff
+// states, and everything downstream reads that one distribution.
+
+const B = FFXI.buffs;
+
+function potencyOverride(id){
+  const el = $(id);
+  if (!el || el.value.trim() === '') return null;
+  const v = +el.value;
+  return Number.isFinite(v) ? v : null;
+}
+
+function jobSetup(){
+  return {
+    mainJob: $('mainJob').value,
+    mainLvl: num('aLvl'),
+    subJob: $('subJob').value,
+    subLvl: num('subLvl'),
+  };
+}
+
+function buffPotency(){
+  const setup = jobSetup();
+  const p = B.derivePotency(setup);
+  const hasso = potencyOverride('hassoPotency');
+  const berserk = potencyOverride('berserkPotency');
+  const warcry = potencyOverride('warcryPotency');
+  if (hasso !== null) { p.hasso.str = hasso; p.hasso.acc = 10; }
+  if (berserk !== null) p.berserk.attPct = berserk;
+  if (warcry !== null) p.warcry.attPct = warcry;
+  return { setup, potency: p, derived: B.derivePotency(setup) };
+}
+
+// --- accuracy ---
+//
+// The whole point of deriving rather than typing a hit rate: on a two-handed
+// weapon DEX is worth 0.75 accuracy per point (battle_entity.cpp:1482), and
+// Penta Thrust *also* spends 20% of DEX on WSC. One field, two effects.
+
+function gearFTPBonus(){ return checked('gearFTP') ? 0.1 : 0; }
+
+// weaponskills.lua:659 -- gearAcc = ceil(gearFTP * 100). The server reuses the
+// gorget's fTP bonus as a flat accuracy bonus; it is flagged as a TODO there,
+// but it is what runs.
+function gorgetAcc(){ return Math.ceil(gearFTPBonus() * 100); }
+
+// Accuracy before the WS's own accVaries, which the engine adds itself.
+function actorAcc(dexOverride){
+  const dex = dexOverride === undefined ? num('dex') : dexOverride;
+  return FFXI.data.accFromSkill(num('polearmSkill'))
+    + Math.floor(dex * 0.75)          // TWO_HANDED_DEX_ACCURACY_MULTIPLIER
+    + num('gearAcc')
+    + gorgetAcc()
+    + num('wsAcc');                   // Mod::WSACC
+}
+
+// Base hit rate, before accVaries and before Hasso. Returns a percentage.
+// A manual override wins, so the page stays usable when you already know the
+// number you want to model.
+function baseHitRate(dexOverride, accBonusFromBuff){
+  const override = $('hitRateOverride').value.trim();
+  if (override !== '' && Number.isFinite(+override)) return +override;
+  return FFXI.data.hitRateFromAccEva({
+    acc: actorAcc(dexOverride) + (accBonusFromBuff || 0),
+    eva: num('eva'),
+    aLvl: num('aLvl'),
+    tLvl: num('tLvl'),
+    levelCorrection: checked('lvlCorrection'),
+    cap: WEAPON.hitRateCap,
+  });
+}
+
+function buffStates(dexOverride){
+  const { setup, potency } = buffPotency();
+  return B.resolveStates({
+    uptimes: {
+      hasso: num('hassoUptime'),
+      berserk: num('berserkUptime'),
+      warcry: num('warcryUptime'),
+    },
+    potency,
+    enabled: {
+      hasso: B.isAvailable('hasso', setup),
+      berserk: B.isAvailable('berserk', setup),
+      warcry: B.isAvailable('warcry', setup),
+    },
+    base: {
+      str: num('str'),
+      att: num('att'),
+      // resolveStates adds Hasso's accuracy as buffAcc/2 on top of this, so what
+      // it needs here is the hit rate *without* Hasso.
+      hitRate: baseHitRate(dexOverride),
+      foodStr: num('foodStr'),
+      foodAttPct: num('foodAttPct'),
+      foodAttCap: num('foodAttCap'),
+    },
+  });
+}
+
+function modalState(){ return buffStates()[0]; }
+function getEffectiveSTR(){ return modalState().str; }
+function getEffectiveATT(){ return modalState().att; }
+function modalNote(){
+  const s = modalState();
+  return s.active.length ? `incl. food + ${s.label}` : 'incl. food, no buffs up';
+}
+
+function renderFoodSummary(){
+  const e = FFXI.buffs.effective({
+    str: num('str'), att: num('att'),
+    foodStr: num('foodStr'), foodAttPct: num('foodAttPct'), foodAttCap: num('foodAttCap'),
+  });
+  $('foodSummary').innerHTML =
+    `With food only &mdash; STR: <b style="color:var(--bone);">${e.str}</b> (${e.baseStr} + ${e.foodStrBonus})` +
+    `, ATT: <b style="color:var(--bone);">${e.att}</b> (${e.baseAtt} + ${e.foodAttBonus}, capped)`;
+}
+
+function renderAccSummary(){
+  const skillAcc = FFXI.data.accFromSkill(num('polearmSkill'));
+  const dexAcc = Math.floor(num('dex') * 0.75);
+  const acc = actorAcc();
+  const tpAcc = FFXI.damage.tpFactor(num('tp'), WS.accVaries);
+  const lvlPen = (checked('lvlCorrection') && num('aLvl') < num('tLvl'))
+    ? (num('aLvl') - num('tLvl')) * 4 : 0;
+  const raw = 75 + (acc + tpAcc + lvlPen - num('eva')) / 2;
+  const capped = clamp(raw, 20, WEAPON.hitRateCap);
+  const overridden = $('hitRateOverride').value.trim() !== '';
+
+  $('accSummary').innerHTML =
+    `ACC = <b style="color:var(--bone);">${acc}</b> &nbsp;= ${skillAcc} (skill ${num('polearmSkill')}) + ${dexAcc} (DEX&times;0.75)` +
+    ` + ${num('gearAcc')} (gear) + ${gorgetAcc()} (gorget) + ${num('wsAcc')} (WSACC)` +
+    `<br>vs EVA ${num('eva')}${lvlPen ? `, level penalty ${lvlPen}` : ''}, +${tpAcc} from TP &rarr; ` +
+    `hit rate <b style="color:var(--bone);">${capped.toFixed(1)}%</b>` +
+    (raw > WEAPON.hitRateCap ? ` <span class="warn">— capped at ${WEAPON.hitRateCap}%, so ${(raw - WEAPON.hitRateCap).toFixed(1)} points of accuracy are doing nothing</span>` : '') +
+    (overridden ? ` <span class="warn">— overridden to ${num('hitRateOverride')}%</span>` : '');
+}
+
+function renderBuffSummary(){
+  const { setup, potency, derived } = buffPotency();
+
+  B.ABILITY_IDS.forEach(id => {
+    const a = B.ABILITIES[id];
+    const row = $('buffRow' + a.name);
+    const hint = $(id + 'Hint');
+    const available = B.isAvailable(id, setup);
+    const overridden = potencyOverride(id + 'Potency') !== null;
+    const val = id === 'hasso' ? potency.hasso.str : potency[id].attPct;
+    const derivedVal = id === 'hasso' ? derived.hasso.str : derived[id].attPct;
+    const unit = id === 'hasso' ? ' STR' : '% ATT';
+
+    row.classList.toggle('unavailable', !available);
+    $(id + 'Uptime').disabled = !available;
+    $(id + 'Potency').disabled = !available;
+    $(id + 'Potency').placeholder = available ? String(derivedVal) : '—';
+
+    if (!available) {
+      hint.textContent = `Requires ${a.job} ${a.reqLevel} — not in this job setup, so it contributes nothing.`;
+      return;
+    }
+    hint.innerHTML =
+      `${B.fmtTime(a.duration)} duration / ${B.fmtTime(a.recast)} recast &middot; ${a.potencyHint} &middot; ` +
+      `<b style="color:var(--mist);">${val}${unit}</b>${overridden ? ' (override)' : ' (derived)'}`;
+  });
+
+  const states = buffStates();
+  const marginal = {};
+  B.ABILITY_IDS.forEach(id => {
+    marginal[id] = states.reduce((t, s) => t + (s.active.indexOf(id) !== -1 ? s.prob : 0), 0);
+  });
+
+  const tpAccPoints = FFXI.damage.tpFactor(num('tp'), WS.accVaries) / 2;
+  const rows = states.map((s, i) => {
+    const pct = (s.prob * 100).toFixed(s.prob * 100 < 10 ? 1 : 0);
+    return `<div class="buff-state${i === 0 ? ' modal' : ''}">` +
+      `<span>${i === 0 ? '&#9656; ' : '&nbsp;&nbsp;'}${s.label}</span>` +
+      `<span><b>${pct}%</b> of WSs &middot; STR ${s.str} &middot; ATT ${s.att} ` +
+      `&middot; hit ${clamp(s.hitRate + tpAccPoints, 20, WEAPON.hitRateCap).toFixed(0)}%</span>` +
+      `</div>`;
+  }).join('');
+
+  const marginalLine = B.ABILITY_IDS
+    .filter(id => marginal[id] > 0)
+    .map(id => `${B.ABILITIES[id].name} ${(marginal[id] * 100).toFixed(0)}%`)
+    .join(' &middot; ') || 'none';
+
+  $('buffSummary').innerHTML =
+    `Rotation states (&#9656; = modal, used for the tables and chart markers below):` +
+    `<div class="buff-states">${rows}</div>` +
+    `<div style="margin-top:6px;">Realised uptime: ${marginalLine}</div>`;
+}
+
+// --- parameter object handed to the shared engine ---
+
+function readParams(dexOverride){
+  const dex = dexOverride === undefined ? num('dex') : dexOverride;
+  const states = buffStates(dexOverride);
+  return {
+    aLvl: num('aLvl'),
+    str: states[0].str,
+    // The multi-stat WSC path. The engine overrides stats.str per buff state.
+    stats: { str: states[0].str, dex: dex },
+    wscMods: WS.wsc,
+    wscGearMods: { str: num('wsStrBonus'), dex: num('wsDexBonus') },
+    tp: clamp(num('tp'), 1000, 3000),
+    wDmg: num('wDmg'),
+    wRank: num('wRank'),
+    att: states[0].att,
+    gearFTP: gearFTPBonus(),
+    buffStates: states,
+
+    tLvl: num('tLvl'),
+    vit: num('vit'),
+    def: num('def'),
+    lvlCorrection: checked('lvlCorrection'),
+
+    weaponCap: WEAPON.pdifCap,
+    hitRateCap: WEAPON.hitRateCap,
+    numHits: WS.numHits,
+    ftpMod: WS.ftpMod,
+    accVaries: WS.accVaries,
+    atkVaries: WS.atkVaries,
+    multiHitFTP: WS.multiHitFTP,
+    adoulin: checked('adoulinWS'),
+
+    critRate: num('critRate'),
+    critDmg: num('critDmg'),
+    hitRate: states[0].hitRate,
+    wsdPercent: num('wsdPercent'),
+    dlPlus: num('dlPlus') / 100,
+    dlPercent: 1 + (num('dlPercent') / 100),
+
+    daRate: num('daRate'),
+    taRate: num('taRate'),
+    qaRate: num('qaRate'),
+
+    // Penta Thrust has no magic component; these keep the param object complete
+    // for the shared engine, which branches on hybridOn.
+    hybridOn: false, magicDmg: 0, matt: 0, mdef: 0, resistMult: 1,
+  };
+}
+
+// --- shared components ---
+
+const histogram = FFXI.components.histogram.create({
+  mount: { canvas: 'hist', tooltip: 'histTooltip' },
+  xLabel: 'Damage', yLabel: 'Hits', unit: 'hit',
+});
+
+const fstrPanel = FFXI.components.fstrPanel.create({
+  mount: { table: 'fstrTable', canvas: 'fstrChart', tooltip: 'fstrTooltip', summary: 'fstrSummary' },
+  getInputs: () => ({
+    str: getEffectiveSTR(), vit: num('vit'), weaponRank: num('wRank'), note: modalNote(),
+  }),
+});
+
+const attackPanel = FFXI.components.attackPanel.create({
+  mount: { table: 'attackTable', canvas: 'attackChart', tooltip: 'attackTooltip', summary: 'attackSummary' },
+  getInputs: () => ({
+    // The panel draws pDIF against the ATT actually used in the ratio, which on
+    // this WS is ATT x 0.875 -- showing raw ATT here would put the marker on the
+    // wrong part of the curve.
+    att: Math.max(1, Math.floor(getEffectiveATT() * FFXI.damage.fTPInterp(clamp(num('tp'), 1000, 3000), WS.atkVaries))),
+    def: num('def'),
+    weaponCap: WEAPON.pdifCap,
+    dlPlus: num('dlPlus') / 100,
+    dlPercent: 1 + (num('dlPercent') / 100),
+    note: `${modalNote()}, after the 0.875 penalty`,
+  }),
+});
+
+const mobSelector = FFXI.components.mobSelector.create({
+  mount: {
+    zoneSelect: 'zoneSelect', mobSelect: 'mobSelect', mobMeta: 'mobMeta',
+    output: 'mobOut',
+    mLvl: 'mLvl', sLvl: 'sLvl',
+    famVitRank: 'famVitRank', mainVitRank: 'mainVitRank', subVitRank: 'subVitRank',
+    defRank: 'defRank', statMult: 'statMult', subCurveZone: 'subCurveZone',
+    famAgiRank: 'famAgiRank', mainAgiRank: 'mainAgiRank', subAgiRank: 'subAgiRank',
+    evaRank: 'evaRank',
+  },
+  defaultZone: '42',
+  onDerive: (r) => {
+    $('vit').value = r.VIT;
+    $('def').value = r.DEF;
+    $('tLvl').value = r.level;
+    if (r.EVA !== null) $('eva').value = r.EVA;
+    if (presets) presets.refreshStates();
+  },
+});
+
+// --- the DEX curve ---
+//
+// Damage vs DEX, run as a small sim per sample point. Both of DEX's effects are
+// in there: the WSC term moves mainBase, and the accuracy moves the hit rate.
+// Sample count is deliberately small and trials per point low -- this redraws on
+// every keystroke.
+
+const C = FFXI.chart;
+
+function dexCurve(){
+  const cur = num('dex');
+  const lo = Math.max(0, cur - 60);
+  const points = [];
+  for (let d = lo; d <= cur + 60; d += 10) {
+    const p = readParams(d);
+    const s = FFXI.damage.simulate(p, 3000);
+    points.push({
+      dex: d,
+      wsc: FFXI.damage.calcWSC({ str: p.stats.str, dex: d }, WS.wscMods || WS.wsc, p.wscGearMods),
+      hitRate: p.buffStates[0].hitRate + FFXI.damage.tpFactor(p.tp, WS.accVaries) / 2,
+      avg: s.avgAll,
+    });
+  }
+  return points;
+}
+
+function renderDexPanel(){
+  const pts = dexCurve();
+  const cur = num('dex');
+  const capNote = pts.every(p => Math.min(p.hitRate, WEAPON.hitRateCap) >= WEAPON.hitRateCap)
+    ? ' Hit rate is capped across this whole range, so here DEX only buys WSC.'
+    : '';
+  $('dexSummary').innerHTML =
+    `Damage vs DEX at the current setup (${modalNote()}).` +
+    ` DEX contributes <b>${WS.wsc.dex * 100}% to WSC</b> and <b>0.75 accuracy per point</b> on a two-handed weapon.${capNote}`;
+
+  const tbody = $('dexTable').querySelector('tbody');
+  tbody.innerHTML = pts.map(p => {
+    const hr = Math.min(p.hitRate, WEAPON.hitRateCap);
+    const isCur = Math.abs(p.dex - cur) < 5;
+    return `<tr${isCur ? ' class="current-tier"' : ''}><td>${p.dex}</td><td>${p.wsc}</td>` +
+      `<td>${hr.toFixed(1)}%</td><td>${Math.round(p.avg).toLocaleString()}</td></tr>`;
+  }).join('');
+
+  drawDexChart(pts, cur);
+}
+
+// Chart state, read by the tooltip resolver -- the same shape fstr-panel uses,
+// so the tooltip is attached once at init rather than on every redraw.
+let dexChartParams = null;
+
+function drawDexChart(pts, cur){
+  const canvas = $('dexChart');
+  if (!canvas) return;
+  const { ctx, w, h } = C.setupCanvas(canvas);
+  const box = C.plotBox(w, h, { left: 48, right: 12, top: 12, bottom: 24 });
+
+  const xs = pts.map(p => p.dex);
+  const ys = pts.map(p => p.avg);
+  const xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+  const yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+
+  const xForDex = C.scale(xMin, xMax, box.left, box.right);
+  const yForAvg = C.scale(yMin, yMax || yMin + 1, box.bottom, box.top);
+  dexChartParams = { pts, xMin, xMax, box };
+
+  C.drawAxes(ctx, box);
+  C.label(ctx, String(Math.round(yMax)), box.left - 6, yForAvg(yMax) + 3, 'right');
+  C.label(ctx, String(Math.round(yMin)), box.left - 6, yForAvg(yMin) + 3, 'right');
+  C.label(ctx, String(xMin), box.left, box.bottom + 16, 'center');
+  C.label(ctx, String(xMax), box.right, box.bottom + 16, 'center');
+
+  ctx.strokeStyle = C.COLORS.brass;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const px = xForDex(p.dex), py = yForAvg(p.avg);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+
+  // Current-DEX marker, same vocabulary as the fSTR panel: brass dot, dim rule.
+  const mx = xForDex(cur);
+  const here = pts.reduce((b, p) => Math.abs(p.dex - cur) < Math.abs(b.dex - cur) ? p : b, pts[0]);
+  ctx.fillStyle = C.COLORS.brass;
+  ctx.beginPath();
+  ctx.arc(mx, yForAvg(here.avg), 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = C.COLORS.brassDim;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(mx, box.top);
+  ctx.lineTo(mx, box.bottom);
+  ctx.stroke();
+}
+
+// --- simulation ---
+
+let lastSim = null;
+
+function renderStateBreakdown(s){
+  const out = $('outStates');
+  if (!s.states || s.states.length < 2) { out.innerHTML = ''; return; }
+  out.innerHTML = s.states.map((st, i) => {
+    const pct = (st.prob * 100).toFixed(st.prob * 100 < 10 ? 1 : 0);
+    return `<div class="buff-state${i === 0 ? ' modal' : ''}">` +
+      `<span>${st.label}</span>` +
+      `<span>${pct}% of WSs &middot; avg <b>${Math.round(st.avgAll).toLocaleString()}</b>` +
+      ` &middot; on hit ${Math.round(st.avgHit).toLocaleString()}</span>` +
+      `</div>`;
+  }).join('');
+}
+
+function runSimulation(){
+  const p = readParams();
+  const trials = clamp(num('trials') || 20000, 100, 200000);
+  const s = FFXI.damage.simulate(p, trials);
+  lastSim = s;
+
+  $('outAvg').textContent = Math.round(s.avgAll).toLocaleString();
+  $('outAvgHit').textContent = Math.round(s.avgHit).toLocaleString();
+  $('outMin').textContent = s.min.toLocaleString();
+  $('outMax').textContent = s.max.toLocaleString();
+  $('outStd').textContent = Math.round(s.std).toLocaleString();
+  $('outMiss').textContent = (s.missRate * 100).toFixed(1) + '%';
+  $('outHits').textContent = s.avgHitsLanded.toFixed(2) + ' / ' + s.avgHitsSwung.toFixed(2) + ' swung';
+  $('outHitRate').textContent = s.states[0].hitRate.toFixed(1) + '% (hit 1: ' + s.states[0].firstHitRate.toFixed(1) + '%)';
+  $('outAccBonus').textContent = '+' + s.accBonus + ' ACC (+' + s.accPoints + ' pts)';
+  $('outAtt').textContent = Math.max(1, Math.floor(s.states[0].att * s.atkMult)).toLocaleString() +
+    ' (from ' + s.states[0].att.toLocaleString() + ')';
+
+  const parts = s.wscParts || {};
+  const partStr = Object.keys(parts).map(k => `${k.toUpperCase()} ${parts[k]}`).join(' + ');
+  const baseLabel = s.mainBaseMin === s.mainBaseMax
+    ? s.mainBase.toLocaleString()
+    : `${s.mainBase.toLocaleString()} (${s.mainBaseMin}–${s.mainBaseMax})`;
+  $('outBase').textContent = baseLabel + ' (fSTR ' + s.fSTR + ', WSC ' + s.wsc +
+    (partStr ? ' = ' + partStr : '') + ', alpha ' + s.alpha.toFixed(2) + ')';
+
+  renderStateBreakdown(s);
+  $('results').classList.add('show');
+  histogram.draw(s.landedVals);
+  if (presets) presets.recordMetric(s.avgAll);
+  return s;
+}
+
+// --- auto recalculation ---
+
+const MOB_FIELD_IDS = new Set([
+  'zoneSelect', 'mobSelect', 'mLvl', 'sLvl',
+  'famVitRank', 'mainVitRank', 'subVitRank', 'defRank', 'statMult', 'subCurveZone',
+  'famAgiRank', 'mainAgiRank', 'subAgiRank', 'evaRank',
+]);
+
+const NON_FIELD_IDS = new Set(['presetName', 'presetSlotPick', 'presetImportFile']);
+
+let pendingDerive = false;
+let recalcTimer = null;
+
+function recalcAll(){
+  if (pendingDerive) {
+    pendingDerive = false;
+    mobSelector.derive();   // writes #vit / #def / #eva / #tLvl through onDerive
+  }
+  renderFoodSummary();
+  renderAccSummary();
+  renderBuffSummary();
+  renderDexPanel();
+  fstrPanel.render();
+  attackPanel.render();
+  runSimulation();
+}
+
+function scheduleRecalc(delay){
+  clearTimeout(recalcTimer);
+  recalcTimer = setTimeout(recalcAll, delay === undefined ? 180 : delay);
+}
+
+['input', 'change'].forEach(evt => {
+  document.addEventListener(evt, (e) => {
+    const el = e.target;
+    if (!el || !el.id || NON_FIELD_IDS.has(el.id)) return;
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) return;
+    if (MOB_FIELD_IDS.has(el.id)) pendingDerive = true;
+    scheduleRecalc(evt === 'change' ? 0 : 180);
+  });
+});
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (fstrPanel.hasRendered()) fstrPanel.render();
+    if (attackPanel.hasRendered()) attackPanel.render();
+    renderDexPanel();
+    if (lastSim) histogram.draw(lastSim.landedVals);
+  }, 120);
+});
+
+C.attachTooltip($('dexChart'), $('dexTooltip'), (x, y) => {
+  if (!dexChartParams) return null;
+  const { pts, xMin, xMax, box } = dexChartParams;
+  if (!C.inPlot(box, x, y)) return null;
+  const dex = xMin + ((x - box.left) / box.width) * (xMax - xMin);
+  const best = pts.reduce((b, p) => Math.abs(p.dex - dex) < Math.abs(b.dex - dex) ? p : b, pts[0]);
+  if (!best) return null;
+  const hr = Math.min(best.hitRate, WEAPON.hitRateCap);
+  return {
+    left: x, top: y,
+    html: `<b>DEX ${best.dex}</b><br>WSC term ${best.wsc}<br>hit rate ${hr.toFixed(1)}%<br>avg ${Math.round(best.avg).toLocaleString()}`,
+  };
+});
+
+// --- init ---
+
+renderWSConstants();
+
+// Derive the target once up front, unlike ws-calculator, which leaves its hidden
+// #vit/#def at placeholder values until a mob field is touched. This page shows a
+// derived hit rate, so a target that doesn't match the panel above it reads as a
+// bug rather than as a default -- the hidden fields must agree with the visible
+// ranks from the first paint.
+pendingDerive = true;
+recalcAll();
+
+presets = FFXI.presets.create({
+  storageKey: 'penta_calc_presets_v1',
+  slotCount: 10,
+  metricLabel: 'Avg dmg',
+  exportName: 'penta_calc_presets.json',
+  applyFirst: ['zoneSelect', 'mobSelect'],
+  mount: {
+    slots: 'presetSlots', status: 'presetStatus', name: 'presetName',
+    slotPick: 'presetSlotPick', saveBtn: 'presetSaveBtn',
+    exportBtn: 'presetExport', importBtn: 'presetImport',
+    importFile: 'presetImportFile', warning: 'storageWarning',
+  },
+  onApply: () => {
+    pendingDerive = false;
+    scheduleRecalc(0);
+  },
+});
+
+// Page globals, for the same console-validation workflow ws-calculator has.
+window.WS = WS;
+window.readParams = readParams;
+window.buffStates = buffStates;
+window.buffPotency = buffPotency;
+window.jobSetup = jobSetup;
+window.actorAcc = actorAcc;
+window.baseHitRate = baseHitRate;
+window.dexCurve = dexCurve;
+</script>
+</body>
+</html>
