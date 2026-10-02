@@ -190,7 +190,7 @@
     function inkOf(se) { return se.group ? th.muted : se.color; }
     ctx.font = '600 11px ' + th.font;
     function labelText(se) {
-      return clip(ctx, se.name, 104) + ' ' + F.fmtCompact(se.values[se.values.length - 1] || 0);
+      return clip(ctx, se.name, 104) + ' ' + F.fmtCompact(lastValue(se.values));
     }
     if (named.length) {
       var widest = 0;
@@ -217,10 +217,12 @@
     var t0 = times[0], t1 = times[times.length - 1];
     if (t1 === t0) t1 = t0 + 1000;
 
+    // The largest finite value, not the last one: a series can END early (see
+    // `lastIndex`), and a cumulative one peaks wherever it stops.
     var vmax = 0;
     for (var i = 0; i < series.length; i++) {
       var v = series[i].values;
-      if (v.length && v[v.length - 1] > vmax) vmax = v[v.length - 1];
+      for (var q = 0; q < v.length; q++) if (v[q] > vmax) vmax = v[q];
     }
     if (vmax <= 0) vmax = 1;
 
@@ -275,9 +277,14 @@
       ctx.strokeStyle = inkOf(ser);
       ctx.setLineDash(ser.group ? [5, 4] : []);
       ctx.beginPath();
+      var pen = false;
       for (var j = 0; j < times.length; j++) {
+        // A NaN sample is "no data here" -- the compare view's shorter run,
+        // past its own end -- and lifts the pen rather than drawing to zero.
+        if (!isFinite(ser.values[j])) { pen = false; continue; }
         var X = px(times[j]), Y = py(ser.values[j]);
-        if (j === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+        if (!pen) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+        pen = true;
       }
       ctx.stroke();
     }
@@ -286,8 +293,10 @@
     // ---- end markers, 2px surface ring so overlaps stay legible
     for (i = 0; i < series.length; i++) {
       var se = series[i];
-      var ex = px(times[times.length - 1]);
-      var ey = py(se.values[se.values.length - 1]);
+      var li = lastIndex(se.values);
+      if (li < 0) continue;
+      var ex = px(times[li]);
+      var ey = py(se.values[li]);
       ctx.beginPath();
       ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
       ctx.fillStyle = inkOf(se);
@@ -304,7 +313,7 @@
     if (named.length) {
       var gap = 13, floor = plot.y + plot.h;
       var tags = named.map(function (se) {
-        return { y: py(se.values[se.values.length - 1]), text: labelText(se), color: inkOf(se) };
+        return { y: py(lastValue(se.values)), text: labelText(se), color: inkOf(se) };
       }).sort(function (a, b) { return a.y - b.y; });
       for (i = 1; i < tags.length; i++) tags[i].y = Math.max(tags[i].y, tags[i - 1].y + gap);
       if (tags.length && tags[tags.length - 1].y > floor) {
@@ -328,9 +337,11 @@
     // Text wears an ink token, never the series color; the dot carries identity.
     } else if (series.length <= 4) {
       var labels = series.map(function (se) {
+        var li = lastIndex(se.values);
         return {
-          y: py(se.values[se.values.length - 1]),
-          text: F.fmtCompact(se.values[se.values.length - 1])
+          y: py(lastValue(se.values)),
+          text: F.fmtCompact(lastValue(se.values)),
+          x: px(times[Math.max(0, li)])
         };
       }).sort(function (a, b) { return a.y - b.y; });
 
@@ -344,7 +355,9 @@
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         for (i = 0; i < labels.length; i++) {
-          ctx.fillText(labels[i].text, plot.x + plot.w + 11, labels[i].y);
+          // Beside its own end marker, which is the plot's right edge unless the
+          // series stopped early.
+          ctx.fillText(labels[i].text, labels[i].x + 11, labels[i].y);
         }
       }
     }
@@ -362,7 +375,8 @@
       var frac = (mx - plot.x) / plot.w;
       var idx = Math.max(0, Math.min(times.length - 1, Math.round(frac * (times.length - 1))));
 
-      var rows = series.slice().sort(function (a, b) {
+      var rows = series.filter(function (se) { return isFinite(se.values[idx]); })
+        .sort(function (a, b) {
         return b.values[idx] - a.values[idx];
       }).map(function (se) {
         return '<tr><td><i style="background:' + inkOf(se) + '"></i>' + esc(se.name) +
@@ -401,6 +415,7 @@
       ctx.lineTo(X, plot.y + plot.h);
       ctx.stroke();
       for (var k = 0; k < series.length; k++) {
+        if (!isFinite(series[k].values[idx])) continue;
         var Y = py(series[k].values[idx]);
         ctx.beginPath();
         ctx.arc(X, Y, 4.5, 0, Math.PI * 2);
@@ -626,6 +641,18 @@
   }
 
   // ------------------------------------------------------------------ helpers
+
+  /* Index of a series' last finite sample, or -1. Every live series ends at its
+     last sample; only the compare view hands over one that ends early. */
+  function lastIndex(values) {
+    for (var i = values.length - 1; i >= 0; i--) if (isFinite(values[i])) return i;
+    return -1;
+  }
+
+  function lastValue(values) {
+    var i = lastIndex(values);
+    return i < 0 ? 0 : values[i];
+  }
 
   function clip(ctx, text, maxW) {
     text = String(text);

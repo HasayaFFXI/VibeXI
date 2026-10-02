@@ -669,3 +669,197 @@ main.pop-body { padding: 4px 6px 8px; gap: 8px; }
 /* The file's owner: the one row on every parse, found without reading names. */
 .meter-row.is-owner { box-shadow: inset 2px 0 0 var(--blade); }
 .meter-empty { color: var(--faint); font-size: 12.5px; margin: 4px 0 0; }
+
+/* ----------------------------------------------------------------- sections */
+
+/* Meter | Compare, beside the title. Exactly one section is on screen; the body
+   class picks, because both <main>s and the filter bar set their own `display`
+   and would outrank a bare [hidden]. The filter bar scopes the live meter and
+   nothing in Compare, so it goes with it. */
+.view-switch { align-self: center; }
+.view-switch button { font-size: 12px; padding: 4px 14px; }
+#compareView { display: none; }
+body.view-compare #compareView { display: grid; }
+body.view-compare #meterView,
+body.view-compare .filterbar { display: none; }
+
+/* ------------------------------------------------------------------ compare */
+
+/* The two runs' colours: series slots 1 and 2, the validated blue and orange.
+   They encode which RUN a mark belongs to, and nothing else on the page uses
+   them that way -- a character keeps their job colour on their swatch. */
+#compareView { --run-a: var(--series-1); --run-b: var(--series-2); }
+
+.cmp-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+@media (max-width: 760px) { .cmp-slots { grid-template-columns: minmax(0, 1fr); } }
+
+.cmp-slot {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  background: var(--surface2);
+  min-width: 0;
+  position: relative;
+}
+.cmp-slot[data-slot="a"] { box-shadow: inset 3px 0 0 var(--run-a); }
+.cmp-slot[data-slot="b"] { box-shadow: inset 3px 0 0 var(--run-b); }
+.cmp-slot.is-empty { border-style: dashed; background: transparent; }
+.cmp-slot.is-over { border-color: var(--brass); background: var(--wash); }
+
+.cmp-slot-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cmp-slot-head .cmp-slot-actions { margin-left: auto; }
+.cmp-slot-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.cmp-role {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mist);
+}
+.cmp-drop { text-align: center; padding: 18px 8px 8px; }
+.cmp-drop p { margin: 0 0 10px; color: var(--faint); font-size: 12.5px; }
+.cmp-drop .cmp-slot-actions { justify-content: center; }
+
+.cmp-name {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bone);
+  margin: 8px 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cmp-meta { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; }
+.cmp-meta div { display: flex; gap: 6px; align-items: baseline; }
+.cmp-meta dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+.cmp-meta dd { margin: 0; font-family: var(--font-mono); font-size: 12px; color: var(--bone); }
+.cmp-note { margin: 8px 0 0; font-size: 11.5px; color: var(--mist); }
+.cmp-note.bad { color: var(--critical); }
+
+/* The A / B badge. Filled with the run's colour -- a mark -- and the letter on
+   it in the page's ink, graded for the fill in both themes by being bold and
+   dark. */
+.cmp-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex: none;
+}
+.cmp-tag.ra { background: var(--run-a); }
+.cmp-tag.rb { background: var(--run-b); }
+
+
+.cmp-body { display: grid; gap: 16px; }
+
+/* Six tiles, each A over B with the change beneath. */
+.tiles.cmp-tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1200px) { .tiles.cmp-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .tiles.cmp-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cmp-tv { display: flex; align-items: baseline; gap: 7px; margin-top: 6px; flex-wrap: wrap; }
+.cmp-tv .cmp-tag { width: 15px; height: 15px; font-size: 9.5px; align-self: center; }
+.cmp-num {
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--bone);
+  font-variant-numeric: tabular-nums;
+}
+.tile.hero .cmp-num { color: var(--blade); }
+.cmp-tsub { font-size: 11px; color: var(--faint); width: 100%; padding-left: 22px; margin-top: -2px; }
+.cmp-tdelta { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--rule); }
+.cmp-tdelta .cmp-d { font-size: 13px; }
+
+/* A delta. The sign is in the text; the colour only repeats it. Status colours,
+   used for status: better or worse than the baseline. */
+.cmp-d {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cmp-d small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--faint);
+}
+.cmp-tdelta .cmp-d small { display: inline; margin-left: 8px; }
+.cmp-d.is-up   { color: var(--good); }
+.cmp-d.is-down { color: var(--critical); }
+.cmp-d.is-flat { color: var(--mist); }
+.cmp-d.is-na   { color: var(--faint); font-weight: 400; }
+
+/* A over B in one cell: two lines, each led by a short tick in its run's
+   colour so the order never has to be remembered. */
+.cmp-ab { display: inline-grid; gap: 1px; justify-items: end; }
+.cmp-ab > span { position: relative; padding-left: 10px; line-height: 1.35; }
+.cmp-ab > span::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  width: 5px; height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+}
+.cmp-ab > .ra::before { background: var(--run-a); }
+.cmp-ab > .rb::before { background: var(--run-b); }
+td.job .cmp-ab { justify-items: start; }
+
+/* Two bars in a cell, A above B, scaled to the table's largest value. Thin
+   marks, rounded data-end, a 2px gap between them. */
+.cmp-barcol { width: 34%; min-width: 180px; }
+.cmp-bars { display: grid; gap: 2px; }
+.cmp-bar { display: flex; align-items: center; gap: 6px; height: 11px; }
+.cmp-bar i {
+  display: block;
+  height: 9px;
+  border-radius: 0 3px 3px 0;
+  flex: none;
+  max-width: calc(100% - 64px);
+}
+.cmp-bar.ra i { background: var(--run-a); }
+.cmp-bar.rb i { background: var(--run-b); }
+.cmp-bar b {
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--mist);
+  font-variant-numeric: tabular-nums;
+}
+table.data td.cmp-barcol { text-align: left; }
+
+.cmp-table tbody td { vertical-align: middle; }
+.cmp-caret { display: inline-block; width: 12px; color: var(--brass); font-size: 10px; }
+.cmp-members {
+  display: inline-block;
+  max-width: 240px;
+  white-space: normal;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--mist);
+}
+
+/* The expanded row: the action table, inset. */
+table.data tr.cmp-detail > td {
+  padding: 4px 10px 12px 30px;
+  background: var(--surface2);
+  white-space: normal;
+}
+table.data.cmp-acts { margin-top: 4px; font-size: 12px; }
+table.data.cmp-acts th { position: static; background: transparent; }
+.cmp-body .scroll-y { max-height: 470px; }

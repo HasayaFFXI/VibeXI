@@ -170,6 +170,8 @@
     roster.owner = ownerName || null;
 
     var events = [];
+    // Healing, kept APART from `events` so no damage count can ever see it.
+    var heals = [];
 
     var state = {
       lineNo: 0
@@ -243,6 +245,42 @@
         return null;
       }
 
+      /*
+       * A heal (kind:"heal") is not a damage event either, and it must not be
+       * one: every count in stats.js runs over `events`, so a heal there would
+       * be a miss in the Actions table and could start the session clock. It
+       * goes on its own list, which nothing that counts damage reads.
+       *
+       * Which actions are heals, and the amount, are decided in the addon by
+       * Metrics' rules (see the HEALING block in vx_enums.lua); this only
+       * files the line. Returns null like a job line: it is not an event.
+       */
+      if (raw.kind === 'heal') {
+        var healer = str(raw.actor);
+        if (!healer) return null;
+        roster.note(healer, str(raw.actorKind));
+        roster.note(str(raw.target), str(raw.targetKind));
+        var h = {
+          t: num(raw.t) * 1000,
+          seq: num(raw.seq),
+          use: raw.use == null ? null : num(raw.use),
+          via: str(raw.via),
+          actor: healer,
+          actorKind: str(raw.actorKind),
+          action: str(raw.action),
+          actionId: num(raw.actionId),
+          target: str(raw.target),
+          targetKind: str(raw.targetKind),
+          hp: num(raw.hp),
+          msg: num(raw.msg),
+          line: state.lineNo
+        };
+        if (raw.owner) h.owner = str(raw.owner);
+        if (raw.pet) h.pet = str(raw.pet);
+        heals.push(h);
+        return null;
+      }
+
       var actor = str(raw.actor);
       var target = str(raw.target);
       if (!raw.kind || !actor) return null;
@@ -282,6 +320,7 @@
       feed: feed,
       feedRecord: feedRecord,
       events: events,
+      heals: heals,
       roster: roster,
       state: state,
       /*
@@ -293,6 +332,7 @@
        */
       reset: function () {
         events.length = 0;
+        heals.length = 0;
         state.lineNo = 0;
       }
     };
@@ -357,6 +397,21 @@
     return r;
   }
 
+  /* A filed heal -> the kind:"heal" line the addon wrote. The inverse of the
+     heal branch of `ingest`, field for field `vx_emit.encode_heal`. */
+  function healRecord(h) {
+    var r = {
+      kind: 'heal', t: h.t / 1000, seq: h.seq, use: h.use, via: h.via,
+      actor: h.actor, actorKind: h.actorKind,
+      action: h.action, actionId: h.actionId,
+      target: h.target, targetKind: h.targetKind,
+      hp: h.hp, msg: h.msg
+    };
+    if (h.owner) r.owner = h.owner;
+    if (h.pet) r.pet = h.pet;
+    return r;
+  }
+
   /* A roster job -> the kind:"job" line it came from, sub trio omitted when there
      is no sub-job, exactly as `vx_entity.note_job` writes it. */
   function jobRecord(name, j) {
@@ -407,7 +462,10 @@
       kinds: copyMap(roster.kinds),
       manual: copyMap(roster.manual),
       jobs: Object.keys(roster.jobs).map(function (n) { return jobRecord(n, roster.jobs[n]); }),
-      events: reader.events.filter(keep).map(toRecord)
+      events: reader.events.filter(keep).map(toRecord),
+      // Optional, so a version-1 reader that predates it simply ignores it.
+      // The same `keep`: only what the session covers.
+      heals: (reader.heals || []).filter(keep).map(healRecord)
     };
   }
 
@@ -418,13 +476,17 @@
    */
   function stringifyParse(doc) {
     var head = {};
-    for (var k in doc) if (k !== 'events') head[k] = doc[k];
-    var events = doc.events || [];
-    return JSON.stringify(head, null, 2).slice(0, -2) + ',\n  "events": [' +
-      (events.length
-        ? '\n    ' + events.map(function (e) { return JSON.stringify(e); }).join(',\n    ') + '\n  '
-        : '') +
-      ']\n}\n';
+    for (var k in doc) if (k !== 'events' && k !== 'heals') head[k] = doc[k];
+    function list(name, rows) {
+      return ',\n  "' + name + '": [' +
+        (rows.length
+          ? '\n    ' + rows.map(function (e) { return JSON.stringify(e); }).join(',\n    ') + '\n  '
+          : '') + ']';
+    }
+    return JSON.stringify(head, null, 2).slice(0, -2) +
+      list('events', doc.events || []) +
+      (doc.heals ? list('heals', doc.heals) : '') +
+      '\n}\n';
   }
 
   /*
@@ -511,6 +573,12 @@
       // writes puts one in this list, so it is refused rather than obeyed.
       if (!isMap(ev) || ev.kind === 'job' || ev.kind === 'meta' || !r.feedRecord(ev)) skipped++;
     }
+
+    // Heals, if the export has them -- one made before the addon recorded
+    // healing simply has no list. Through the same `ingest`, which files them.
+    (Array.isArray(doc.heals) ? doc.heals : []).forEach(function (h) {
+      if (isMap(h) && h.kind === 'heal') r.feedRecord(h);
+    });
 
     // An older export's `meta` list is ignored: nothing reads the addon's notices.
 

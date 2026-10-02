@@ -41,11 +41,13 @@ winalpha.py         ctypes user32: the layered-window alpha behind /api/alpha
 Damage-Meter.cmd    double-click launcher (python damage-meter.py)
 ../../addons/VibeXI/  the addon that produces every event this app draws
 ../../shared-ui/    THE design system, shared with ../ws-calculator; mounted at /shared/
-web/index.html      page shell; theme -> source -> stats -> chart -> popout -> app
+web/index.html      page shell; theme -> source -> stats -> compare -> chart -> popout -> app -> compare view
 web/style.css       app-only rules: filter bar, source indicator, pop-outs
-web/app.js          polling, filter state, all DOM writing
+web/app.js          polling, filter state, all DOM writing for the meter
+web/compare.js      the Compare section's DOM writing; owns the Meter | Compare switch
 web/lib/source.js   JSONL lines -> events, and the export file   (DOM-free)
 web/lib/stats.js    events -> aggregates    (DOM-free)
+web/lib/compare.js  two imports -> paired rows, pace lines   (DOM-free)
 web/lib/chart.js    canvas line / bars / histogram
 web/lib/popout.js   moves a card into its own OS window
 tools/gen-test-events.py   synthetic event file, for working with no game running
@@ -165,6 +167,40 @@ Four things about it are load-bearing:
 A party member who never deals damage therefore reaches the app through this
 line and nothing else. They are on the roster, with their job, and in no chart,
 chip or total — the meter charts damage.
+
+**Nor is a `kind:"heal"` line** (addon 0.3.0 onwards). One per target result of
+a heal:
+
+```json
+{"kind":"heal","t":1785000000,"seq":2,"use":7,"via":"magic","actor":"Catpirate",
+ "actorKind":"player","action":"Curaga II","actionId":8,"target":"Hasaya",
+ "targetKind":"player","hp":190,"msg":367}
+```
+
+- **The rule is Metrics', copied, not designed.** A heal is recognised by its
+  ACTION ID against Metrics' own curated lists (`Res.Spells.Healing`,
+  `Res.Abilities.Healing` + `Pet_Healing`, `Res.Avatar.Healing`,
+  `Res.Pets.Healing_Wyvern_Breath`), each consulted only on the category Metrics
+  routes it from (4, 6 at +512, 13). The message is not consulted; `hp` is the
+  result's value, as Metrics' `result.param`. Category 14 is ignored because
+  Metrics' dispatcher ignores it. See the HEALING block in `vx_enums.lua`.
+- **`hp`, never `dmg` or `hit`.** Those are the fields every count sums, so a
+  heal line mistaken for an event still adds nothing. `source.js` files heals on
+  `reader.heals`, apart from `events`, the way job lines go on the roster —
+  nothing in `stats.js` sees them. A healing action is never a damage row either,
+  even where its message reads as damage (a Cure on an undead target), because
+  Metrics' healing trackables are excluded from its damage total.
+- **`via`** is which list matched (`magic`, `ability`, `pet`). Metrics' Healing
+  column is spell HEALING + ABILITY_HEALING; PET_HEAL is its own trackable, and
+  `via` plus `owner` is what lets the browser split them the same way.
+- **One `use` per action**, shared by every target: a Curaga on five is one cast
+  (Metrics' `H.Spell.Count`). A target the client cannot resolve is skipped, as
+  Metrics skips it.
+- **Exports carry them** as an optional `heals` list beside `events`, same `keep`
+  filter; `PARSE_VERSION` is unchanged because a version-1 reader ignores the key.
+  Exports made before 0.3.0 simply have no list.
+- **Nothing draws them yet.** They are recorded and kept; showing healing is a
+  separate change.
 
 ## `use` is per swing, not per action
 
@@ -1079,6 +1115,56 @@ matter: the imported page's per-character and per-action figures equal the
 exporter's, and a re-export of the import is identical to the original apart
 from `exported`.
 
+## Compare
+
+A second section, switched by **Meter | Compare** beside the title
+(`ffxi_dps_view`). Two exported parses go in slots A and B; A is the baseline
+and **every delta is B − A, every percentage that over A**. `lib/compare.js`
+counts, `compare.js` draws.
+
+- **A run is an import, measured by the meter's own pipeline.** `measure()` is
+  `importParse` -> `stats.filter` (with the parse's session and roster) ->
+  `stats.aggregate`, with the export's frozen clock (`sessionElapsed(sn,
+  sn.pausedAt)`) as the denominator. So a compared figure IS the figure the meter
+  prints when that file is imported; there is no second way of counting. Party
+  tiles are summed from the per-actor `split`s so they agree with the table.
+  Checked on Tav_Run1/Run2: 1,247,411 and 1,574,488, matching an independent
+  count of the raw files.
+- **Compare by Job re-actors onto the main job before `aggregate`**, so a job's
+  accuracy and WS average are over its combined swings, not an average of
+  per-character figures. An unreported job (`NON`, an alliance member outside
+  the party table) is `Unknown job` and is **never borrowed from the other
+  run**: Tav_Run2's Pestii is a DRG (Geirskogul, wyvern), not Run1's PUP.
+- **The cumulative damage chart's shorter run is NaN past its own end**, not carried flat;
+  a flat line would claim it was still being measured. `C.line` lifts the pen on
+  a non-finite sample, puts the end marker and direct label at the last finite
+  one, and skips NaN series in the hover. Live series never contain NaN, so the
+  meter's charts are unchanged by that.
+- **Run colours are `--series-1`/`--series-2` (`--run-a`/`--run-b`)** and mean
+  only "which run". A row's swatch keeps the character's job colour. Delta
+  colours are status (`--good`/`--critical`) and the sign is always in the text;
+  Length is deliberately neutral, since shorter is not obviously better.
+- **One skillchain setting.** The compare toggle clicks `#chainBtn`, so
+  `app.chains` and its storage stay the only state. Hide names reads
+  `DPS.app.anon` and hides EVERY name.
+- **No owner.** The file's owner is the meter's concept (colour slot 0, the one
+  name Hide names keeps); a comparison has no "you" -- the two files may belong
+  to two different people -- so nothing here reads `roster.owner`.
+- **app.js lends two things through `DPS.meter`**: `render` (the meter is
+  redrawn on the way back, because a canvas laid out under `display:none`
+  measures zero) and `openFile` (the same picker id as Import, so the same
+  folder). Its theme handler calls `DPS.compareView.render()`.
+- **Sections are switched by a body class, not `[hidden]`.** Both `<main>`s and
+  the filter bar set their own `display`, which outranks the UA's `[hidden]`.
+  The meter keeps polling while Compare is on screen.
+- **Use current** round-trips the on-screen parse through `exportParse` /
+  `importParse`, freezing a running clock at the press. It is a snapshot.
+- **Nothing is persisted but the section and Compare by** (`ffxi_dps_cmpby`). A
+  parse is 1-2 MB; a reload empties both slots.
+
+Console: `DPS.compareView.load('a', name, text)` fills a slot without a dialog,
+and `DPS.compareView.state.last` holds the last `{ ma, mb, d }` drawn.
+
 ## Charts
 
 House style from the `dataviz` skill; the palette is its documented reference
@@ -1371,7 +1457,7 @@ it. What is left:
   opacity settings are stored — the session clock deliberately is not, so a
   reload returns the meter to "not started" — (`ffxi_dps_theme`, `ffxi_dps_excluded`,
   `ffxi_dps_chains`, `ffxi_dps_charrow`, `ffxi_dps_anon`, `ffxi_dps_linegroup`, `ffxi_dps_alpha`,
-  `ffxi_dps_keybg`, `ffxi_dps_alpha_default` in localStorage).
+  `ffxi_dps_keybg`, `ffxi_dps_alpha_default`, `ffxi_dps_view`, `ffxi_dps_cmpby` in localStorage).
 - The exclusion list is keyed by bare name, so it is shared across event files.
   That is intentional: a character you never want counted stays excluded.
 - Reaction ATTEMPTS are not recorded — 535 RetaliateShadowAbsorbs, 592
@@ -1383,9 +1469,12 @@ it. What is left:
 - Monster TP moves and pet abilities emit `#<id>` rather than a name. The name
   tables are ~300 KB and every event carries `actionId`, so naming can be added
   without touching the event contract.
-- MP drain, cures, enfeebles and TP are not parsed; this is a damage meter. Every
+- MP drain, enfeebles and TP are not parsed; this is a damage meter. Every
   event carries its raw `msg`, so adding them is an enums change, not a format
-  change.
+  change. Healing IS recorded (`kind:"heal"`, see the event contract) but not
+  yet drawn anywhere.
+- `tools/gen-test-events.py` writes no heal lines yet, so the fixture does not
+  exercise the heal filing in `source.js`.
 - Category-3 job abilities whose id collides with a weaponskill's — Metrics'
   list is Swift Blade/Steal, Atonement/Mug, Gale Axe/Jump, Spinning Axe/Super
   Jump — are named from `WS_NAMES` first by `action_name` in `vibexi.lua` and

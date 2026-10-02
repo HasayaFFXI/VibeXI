@@ -215,11 +215,13 @@ E.Attempt = {
 --   MP, NOT HP -- 162 AddEffectMPDrained, 225 UsesSkillMPDrained,
 --   366 TargetMPDrained. Metrics keeps MP drain out of the damage total too.
 --
---   HEALS, BUFFS, ENFEEBLES, STATUS -- 7, 24, 102, 103 (recovers HP), 230/266
---   (gains the effect of), 236/237/267 (receives the effect of), 373
---   (SpikesEffectRecover). This is a damage meter; apps/damage-meter/CLAUDE.md says
---   so under "Known gaps". Every event carries its raw `msg`, so a later phase
---   can add healing without changing the wire format.
+--   BUFFS, ENFEEBLES, STATUS -- 230/266 (gains the effect of), 236/237/267
+--   (receives the effect of), 373 (SpikesEffectRecover).
+--
+--   HEALS -- 7, 24, 102, 103 (recovers HP) -- stay out of BOTH tables, but they
+--   are no longer dropped. Healing is recognised by ACTION ID, not by message,
+--   and written as its own kind:"heal" line; see the HEALING block below. A
+--   heal reaching these tables would be summed as damage.
 
 E.Crit = {
     [67]  = true,   -- AttackCrit
@@ -319,6 +321,104 @@ E.Skillchains = {
 function E.skillchain(message)
     if not message then return nil end
     return E.Skillchains[message]
+end
+
+-- ============================================================================
+-- HEALING -- recognised by ACTION ID, never by message.
+--
+-- THE RULE IS METRICS', AND ONLY METRICS'. Nothing here is a judgement of ours:
+-- every id below is copied verbatim from Metrics' resource tables, and record()
+-- does with them exactly what Metrics' handlers do. A heal Metrics does not
+-- count is not counted here.
+--
+-- How Metrics decides (handlers/spells.lua, handlers/abilities.lua):
+--
+--   * By the action's id against a curated list -- `Res.Spells.Get_Healing`,
+--     `Res.Abilities.Get_Player_Healing` / `Get_Pet_Healing`,
+--     `Res.Avatar.Get_Healing`, `Res.Pets.Get_Healing_Wyvern_Breath`. The
+--     result's message is not consulted at all.
+--   * The amount is the result's value (Metrics' `result.param`), for every
+--     result on every target the client can resolve. A cure on a full-HP
+--     target is a 0 -- still a cast, and what overcure is measured from.
+--   * Healing never enters the damage total
+--     (`DB.Catalog.Include_Total_Damage` excludes every healing trackable).
+--     So a healing id is written as kind:"heal" and NEVER as a damage row, even
+--     where the message would otherwise read as damage.
+--
+-- WHICH CATEGORY EACH LIST IS CONSULTED ON matters as much as the ids, because
+-- the id spaces overlap (649 is Repair as an ability and Sand Breath as a pet
+-- ability). Each list is looked up only on the category Metrics routes it from:
+--
+--   category 4  (magic)        E.HealingSpells      key = act.param
+--   category 6  (ability)      E.HealingAbilities   key = act.param + 512
+--   category 13 (pet ability)  E.PetHealing         key = act.param
+--
+-- NOT consulted on category 14. Metrics' dispatcher does nothing there
+-- ("Unblinkable Job Ability; Waltz", metrics.lua) -- so a waltz that arrives on
+-- 14 is not counted by Metrics and is not counted here, even though the Curing
+-- Waltz ids are on the ability list for category 6.
+--
+-- Metrics' Divine Seal clamp (`DB.Healing_Max`) limits only a spell's recorded
+-- MAX, which is the reference overcure is measured against; the totals take the
+-- raw value. So the raw value is what goes on the wire, as for damage.
+
+-- Res.Spells.Healing, resources/spells_curated.lua.
+E.HealingSpells = {
+    [1]   = 'Cure',       [2]   = 'Cure II',     [3]  = 'Cure III',
+    [4]   = 'Cure IV',    [5]   = 'Cure V',      [6]  = 'Cure VI',
+    [7]   = 'Curaga',     [8]   = 'Curaga II',   [9]  = 'Curaga III',
+    [10]  = 'Curaga IV',  [11]  = 'Curaga V',
+    [549] = 'Pollen',     [578] = 'Wild Carrot', [581] = 'Healing Breeze',
+    [593] = 'Magic Fruit', [645] = 'Exuviation', [658] = 'Plenilune Embrace',
+    [690] = 'White Wind', [711] = 'Restoral',
+}
+
+-- Res.Abilities.Healing + Res.Abilities.Pet_Healing, resources/abilities.lua.
+-- Keyed as Metrics keys them: the packet's param PLUS the 512 offset
+-- (H.Enum.Offsets.ABILITY), which is E.ABILITY_ID_OFFSET below. The pet ones
+-- (Reward, Spirit Link, Repair) are cast BY the player ON the pet, and Metrics
+-- credits them to the player as ability healing.
+E.HealingAbilities = {
+    [541] = 'Spirit Surge',
+    [550] = 'Chakra',
+    [702] = 'Curing Waltz',   [703] = 'Curing Waltz II',
+    [704] = 'Curing Waltz III', [705] = 'Curing Waltz IV',
+    [707] = 'Divine Waltz',
+    [590] = 'Reward',
+    [592] = 'Spirit Link',
+    [649] = 'Repair',
+}
+
+-- Res.Avatar.Healing (resources/avatars.lua) and Res.Pets.Healing_Wyvern_Breath
+-- (resources/pets.lua). A PET's action, credited to its owner with the pet's
+-- name kept -- record() already does that for every pet row.
+E.PetHealing = {
+    [869] = 'Whispering Wind',
+    [906] = 'Healing Ruby',
+    [911] = 'Healing Ruby II',
+    [639] = 'Healing Breath IV',
+    [640] = 'Healing Breath',
+    [641] = 'Healing Breath II',
+    [642] = 'Healing Breath III',
+}
+
+--- The heal's English name when this action is one Metrics counts as healing,
+--- else nil. `via` is which list matched: 'magic', 'ability' or 'pet' -- the
+--- browser needs it to split the totals the way Metrics' columns do (spell
+--- HEALING + ABILITY_HEALING is its Healing column; PET_HEAL is separate).
+function E.healing(category, param)
+    if not param then return nil end
+    if category == E.Category.MAGIC then
+        local n = E.HealingSpells[param]
+        if n then return n, 'magic' end
+    elseif category == E.Category.ABILITY then
+        local n = E.HealingAbilities[param + E.ABILITY_ID_OFFSET]
+        if n then return n, 'ability' end
+    elseif category == E.Category.PET_ABILITY then
+        local n = E.PetHealing[param]
+        if n then return n, 'pet' end
+    end
+    return nil
 end
 
 -- Ability ids in the action packet are offset by 512 from the resource table.

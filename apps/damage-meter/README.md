@@ -303,6 +303,34 @@ is read in then.
 - **Keep the `.json` ending.** The meter follows the newest `.jsonl` in the
   events folder, so an export renamed to `.jsonl` would be read as today's file.
 
+### Comparing two runs
+
+**Compare**, next to the title, switches to a second section that lines two
+exported parses up against each other. Open (or drag in) one parse as **A**, the
+baseline, and another as **B**; every difference on the page reads B against A,
+in green when it is better and red when it is worse, and always with its sign
+spelled out. **Use current** puts whatever is on the meter right now into a
+slot — a snapshot, so the live meter keeps counting. **Swap** makes B the
+baseline. The meter keeps running underneath while you look; **Meter** goes
+back to it.
+
+- **Tiles** put each headline figure — total, length, party DPS, accuracy,
+  weaponskill and skillchain damage — as A over B with the change beneath.
+- **Cumulative damage** draws both runs' party damage on one clock, so hovering reads where
+  each run was at the same minute.
+- **By character** matches people by name, with each figure A over B. Click a
+  row to compare that character's actions — uses, accuracy, average and max for
+  each weaponskill, spell and attack — which is the view for a gear or job
+  change. A character in only one run shows a dash on the other side.
+- **Compare by Job** combines everyone on a main job instead, for runs with a
+  different roster. A character whose job the party window never reported (an
+  alliance member in another party, usually) goes under *Unknown job*; their
+  job is never borrowed from the other run, because it is often a different one.
+- **By damage type** and **By target** show where the damage came from and went.
+
+Include Skillchains and Hide names apply here too; the skillchain switch is the
+same setting as the meter's. Reloading the page empties both slots.
+
 ## Reading the numbers
 
 Everything here comes from the game's own action packets, so there is no
@@ -371,8 +399,10 @@ Damage-Meter.cmd    double-click launcher
 web/index.html      the page
 web/style.css       app-only styling: filter bar, source indicator, pop-outs
 web/app.js          polling, state, rendering
+web/compare.js      the Compare section
 web/lib/source.js   addon JSONL lines -> damage events
 web/lib/stats.js    events -> totals, time series, distributions
+web/lib/compare.js  two exported parses -> an A/B comparison
 web/lib/chart.js    canvas line / bar / histogram
 web/lib/popout.js   panels in their own windows
 tools/gen-test-events.py   writes a synthetic event file, for working without the game
