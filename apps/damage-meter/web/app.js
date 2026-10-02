@@ -1641,6 +1641,9 @@
       // name/job signature changes -- which a theme swap does not touch.
       app.chipSig = null;
       render();
+      // The compare view's chart is a canvas too. compare.js loads after this
+      // file, so it is looked up at call time rather than captured here.
+      if (DPS.compareView) DPS.compareView.render();
     }
   });
 
@@ -1672,6 +1675,10 @@
   });
 
   window.DPS.app = app;   // console handle for debugging
+  // What compare.js borrows: a redraw for when the meter comes back into view
+  // (a canvas laid out while hidden measures zero), and the same Open dialog
+  // Import uses, so both remember the folder exports went to.
+  window.DPS.meter = { render: render, openFile: openFile };
   poll();
   setInterval(tickLine, TICK_MS);
   // The clock is a second-resolution figure, so it is written on its own

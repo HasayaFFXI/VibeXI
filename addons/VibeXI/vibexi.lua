@@ -39,7 +39,7 @@ local WS_NAMES = require('vx_ws_names')
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '0.2.2'
+addon.version = '0.3.0'
 
 -- ---------------------------------------------------------------- state
 
@@ -270,6 +270,53 @@ local function next_seq(now)
     return S.seq
 end
 
+--- Write a heal: one kind:"heal" line per resolved target result.
+---
+--- Metrics' H.Spell.Action / H.Ability.Action / H.Ability.Pet_Action, reduced to
+--- what they record about healing: every result on every target the client can
+--- resolve, its value as the amount, whatever its message says. A target that
+--- does not resolve is skipped, because Metrics skips it (`if target_mob then`).
+--- Proc trailers are not read -- Metrics' healing paths never read them, and a
+--- heal has no skillchain or additional effect to carry.
+---
+--- ONE `use` FOR THE WHOLE ACTION. A heal has no multi-attack dimension, so the
+--- per-slot rule record() uses for swings does not apply: a Curaga on five
+--- people is one cast (Metrics counts it once, in H.Spell.Count).
+local function record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
+    local name = action_name(act.category, act.param, nil)
+    -- Pet abilities have no resource lookup and come back as '#id'; Metrics
+    -- names those from the same table that identified them.
+    if string.sub(name, 1, 1) == '#' then name = heal_name end
+
+    S.use = S.use + 1
+    local use = S.use
+
+    for _, target in ipairs(act.targets) do
+        local tgt = Entity.by_id(target.id)
+        if tgt then
+            local tgt_kind = Entity.kind(tgt)
+            for _, res in ipairs(target.results) do
+                Emit.write_heal({
+                    t          = now,
+                    seq        = next_seq(now),
+                    use        = use,
+                    via        = via,
+                    actor      = actor.name,
+                    actorKind  = actor_kind,
+                    action     = name,
+                    actionId   = act.param,
+                    target     = tgt.name,
+                    targetKind = tgt_kind,
+                    hp         = res.value or 0,
+                    msg        = res.message,
+                    owner      = owner,
+                    pet        = pet_name,
+                })
+            end
+        end
+    end
+end
+
 --- Turn one decoded action packet into rows and write them.
 local function record(act, actor, now)
     local kind = E.EmitCategory[act.category]
@@ -283,6 +330,16 @@ local function record(act, actor, now)
             owner    = o.name
             pet_name = actor.name
         end
+    end
+
+    -- HEALING IS DECIDED BY THE ACTION'S ID, BEFORE ANY MESSAGE IS LOOKED AT, and
+    -- a healing action never reaches the damage branch below. That is Metrics'
+    -- rule (see the HEALING block in vx_enums.lua): a cure is healing whatever
+    -- its result message says, and healing never counts as damage.
+    local heal_name, via = E.healing(act.category, act.param)
+    if heal_name then
+        record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
+        return
     end
 
     -- ONE USE ID PER SWING, SHARED ACROSS THE TARGETS THAT SWING REACHED.

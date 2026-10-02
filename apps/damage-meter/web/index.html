@@ -14,6 +14,13 @@
 <header class="topbar sticky">
   <div class="brand">
     <h1>Damage <span>Meter</span></h1>
+    <!-- Two sections: the live meter, and Compare, which lines two exported
+         parses up against each other. The meter keeps polling while Compare is
+         on screen, so switching back loses nothing. compare.js owns this. -->
+    <div class="segmented view-switch" role="group" aria-label="Section">
+      <button type="button" id="viewMeter" class="on" aria-pressed="true">Meter</button>
+      <button type="button" id="viewCompare" aria-pressed="false">Compare</button>
+    </div>
     <div class="src" id="srcLine">
       <span class="dot" id="liveDot"></span>
       <span id="srcFile">connecting&hellip;</span>
@@ -104,7 +111,7 @@
  </div>
 </div>
 
-<main class="wrap stack">
+<main class="wrap stack" id="meterView">
 
   <!-- Hero row: exactly one hero figure per view -->
   <section class="tiles">
@@ -225,11 +232,98 @@
 
 </main>
 
+<!-- COMPARE: two exported parses, A against B. A is the baseline and every
+     difference on this page reads B against A. Built by compare.js from
+     lib/compare.js; nothing here touches the live meter's state. -->
+<main class="wrap stack" id="compareView">
+
+  <section class="card cmp-runs">
+    <div class="card-head">
+      <div>
+        <h2>Compare runs</h2>
+        <p class="card-sub">Open or drop two exported parses. A is the baseline &mdash; every difference reads B against A.</p>
+      </div>
+      <div class="card-tools">
+        <span class="filter-label">Compare by</span>
+        <div class="segmented tight" role="group" aria-label="Compare by">
+          <button type="button" id="cmpByActor" class="on" aria-pressed="true"
+                  title="One row per character, matched by name across the two runs">Character</button>
+          <button type="button" id="cmpByJob" aria-pressed="false"
+                  title="One row per main job, every character on it combined -- for runs with a different roster">Job</button>
+        </div>
+        <button type="button" class="ghost tiny" id="cmpChainBtn" aria-pressed="true">Include Skillchains</button>
+        <button type="button" class="ghost tiny" id="cmpSwap" disabled title="Make B the baseline">Swap A &harr; B</button>
+      </div>
+    </div>
+    <div class="cmp-slots">
+      <div class="cmp-slot" id="cmpSlotA" data-slot="a"></div>
+      <div class="cmp-slot" id="cmpSlotB" data-slot="b"></div>
+    </div>
+    <input type="file" id="cmpFile" accept=".json,application/json" hidden>
+  </section>
+
+  <div class="cmp-body" id="cmpBody" hidden>
+
+    <section class="tiles cmp-tiles" id="cmpTiles"></section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>Cumulative damage</h2>
+          <p class="card-sub">Party damage since each run's first hit, on one clock. Hover to read both runs at the same moment.</p>
+        </div>
+      </div>
+      <div class="legend" id="cmpPaceLegend"></div>
+      <div class="chart-wrap tall"><canvas id="cmpPace"></canvas></div>
+      <details class="tableview">
+        <summary>Show data table</summary>
+        <div class="scroll-x"><table class="data" id="cmpPaceTable"></table></div>
+      </details>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2 id="cmpRowsTitle">By character</h2>
+          <p class="card-sub" id="cmpRowsSub">Each figure shows A over B. Select a row to compare its actions.</p>
+        </div>
+      </div>
+      <div class="scroll-x">
+        <table class="data selectable cmp-table" id="cmpTable"></table>
+      </div>
+    </section>
+
+    <div class="two-col">
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>By damage type</h2>
+            <p class="card-sub">Where the party's damage came from. Share is of that run's total.</p>
+          </div>
+        </div>
+        <div class="scroll-x"><table class="data cmp-table" id="cmpKinds"></table></div>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>By target</h2>
+            <p class="card-sub">Party damage dealt to each target name, largest first.</p>
+          </div>
+        </div>
+        <div class="scroll-y scroll-x"><table class="data cmp-table" id="cmpTargets"></table></div>
+      </section>
+    </div>
+
+  </div>
+</main>
+
 <script src="/shared/js/theme.js"></script>
 <script src="lib/source.js"></script>
 <script src="lib/stats.js"></script>
+<script src="lib/compare.js"></script>
 <script src="lib/chart.js"></script>
 <script src="lib/popout.js"></script>
 <script src="app.js"></script>
+<script src="compare.js"></script>
 </body>
 </html>

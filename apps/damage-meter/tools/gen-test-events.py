@@ -55,6 +55,10 @@ WHAT IS IN HERE ON PURPOSE, and what each case catches:
     character table's Accuracy and Pet Acc columns are what these catch.
   * AN UNRESOLVED TARGET -- name "Unknown", targetKind "other" -- which is what
     the addon writes when the entity table has no answer.
+  * HEAL LINES -- `kind:"heal"`, `hp` rather than `dmg`, as `vx_emit.encode_heal`
+    writes them: single cures, a Curaga that is one use across four targets with
+    a 0 on a full-HP target, and a Reward by the beastmaster on his pet. The
+    meter must file every one on `reader.heals` and move no damage figure.
   * META LINES: the startup environment probe on line 1, and an unknown-message
     notice. Consumers must skip these.
   * JOB LINES -- `kind:"job"`, one per party member, written when the job is
@@ -127,7 +131,16 @@ MSG = {
     'counter': 33,      # AttackCounteredDamage
     'spikes': 44,       # SpikesEffectDmg      (the react/spike trailer)
     'retaliate': 536,   # RetaliateDamage
+    'cured': 7,         # recovers HP -- carried on a heal line for the record;
+    'cured_ja': 102,    # the addon decides healing by ACTION id, not by these
 }
+
+# Healing ids, the way addons/VibeXI/vx_enums.lua keys them (Metrics' lists).
+# Spells by spell id; abilities by the packet's param, which the addon offsets
+# by 512 before the lookup (Reward is 78 on the wire, 590 in Metrics' table).
+HEAL_SPELLS = [('Cure III', 3), ('Cure IV', 4)]
+CURAGA = ('Curaga II', 8)
+REWARD = ('Reward', 78)
 
 # Skillchain ids, from Metrics' Res.WS.Skillchains by way of
 # addons/VibeXI/vx_enums.lua. A lookup, not a formula -- see the long note there.
@@ -167,10 +180,10 @@ MAGE = 'Gillette'
 PET = {'n': 'Fluffikins', 'owner': 'Parabellum'}
 NPC = 'Nomad Moogle'
 
-# The party member who never acts. She heals all night, the addon records no
-# damage for her, and she therefore reaches the app through her job line and
-# nothing else -- which is the case that proves the meter lists the PARTY and not
-# only the characters who dealt damage.
+# The party member who never deals damage. She heals all night -- those are
+# kind:"heal" lines, which never enter the event list -- so she reaches the
+# damage meter through her job line and nothing else, which is the case that
+# proves the meter lists the PARTY and not only the characters who dealt damage.
 HEALER = 'Sylviane'
 
 # (name, main, main level, sub, sub level) at the start of the session.
@@ -260,6 +273,35 @@ class Writer:
             e['subId'] = JOB_IDS[sub]
             e['subLvl'] = sub_lvl
         self.raw(e)
+
+    def heal(self, use, via, actor, actor_kind, action, action_id,
+             target, target_kind, hp, msg, owner=None, pet=None):
+        """One healing line, field-for-field `vx_emit.encode_heal`.
+
+        `hp`, never `dmg` or `hit` -- a heal is not a damage event and must
+        never be summed as one. One `use` per CAST, shared by every target.
+        """
+        e = {
+            'kind': 'heal',
+            't': self.t,
+            'seq': self._next_seq(),
+            'use': use,
+            'via': via,
+            'actor': actor,
+            'actorKind': actor_kind,
+            'action': action,
+            'actionId': action_id,
+            'target': target,
+            'targetKind': target_kind,
+            'hp': int(hp),
+            'msg': msg,
+        }
+        if owner:
+            e['owner'] = owner
+        if pet:
+            e['pet'] = pet
+        self.raw(e)
+        self.counts['heal'] = self.counts.get('heal', 0) + 1
 
     def write(self, use, kind, actor, actor_kind, action, action_id,
               target, target_kind, dmg, hit, msg, crit=False, burst=False,
@@ -512,6 +554,27 @@ def generate(seed=SEED, start=None):
                 w.write(w.next_use(), 'reaction', PET['n'], 'pet', 'Spikes',
                         MSG['spikes'], mob, 'mob', roll(38, 10), True, MSG['spikes'],
                         owner=PET['owner'], pet=PET['n'])
+
+            # Healing. kind:"heal" lines, exactly as record_heal() writes them:
+            # a single-target cure, an AoE Curaga that is ONE cast across four
+            # targets (one use) with a 0 on whoever was already full, and a
+            # beastmaster's Reward on his pet -- a job ability, credited to the
+            # player who used it, as Metrics credits it. None of it may move a
+            # single damage figure.
+            if rand.random() < 0.22:
+                name, sid = rand.choice(HEAL_SPELLS)
+                tgt = rand.choice(MELEE)['n']
+                w.heal(w.next_use(), 'magic', HEALER, 'player', name, sid,
+                       tgt, 'player', roll(330 if sid == 3 else 520, 60), MSG['cured'])
+            if rand.random() < 0.06:
+                use = w.next_use()
+                for i, tgt in enumerate([m['n'] for m in MELEE] + [HEALER]):
+                    hp = 0 if i == 3 else roll(240, 40)     # she was at full HP
+                    w.heal(use, 'magic', HEALER, 'player', CURAGA[0], CURAGA[1],
+                           tgt, 'player', hp, MSG['cured'])
+            if rand.random() < 0.04:
+                w.heal(w.next_use(), 'ability', PET['owner'], 'player', REWARD[0],
+                       REWARD[1], PET['n'], 'pet', roll(410, 70), MSG['cured_ja'])
 
             w.advance(2 + rand.randrange(5))
 

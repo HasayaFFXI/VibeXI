@@ -142,6 +142,42 @@ function M.write_job(e)
     return M.write_raw(M.encode_job(e))
 end
 
+--- Encode one healing line: one target's result of one heal.
+---
+--- ITS OWN KIND AND ITS OWN AMOUNT FIELD, and that is the safety of it. A heal
+--- carries `hp`, never `dmg` and never `hit`: those are the two fields the
+--- browser sums and counts as damage, so a heal line read by anything that
+--- treats it as an event still adds nothing to a damage total. Metrics keeps
+--- healing out of its damage total the same way, by trackable.
+---
+--- `via` is which of Metrics' healing lists matched -- 'magic', 'ability' or
+--- 'pet' -- because its columns total them differently (see E.healing).
+--- `use` is one per ACTION, shared by every target: a Curaga is one cast.
+function M.encode_heal(e)
+    local p = {}
+    p[#p + 1] = '{"kind":"heal","t":' .. num(e.t)
+    p[#p + 1] = ',"seq":'      .. num(e.seq)
+    p[#p + 1] = ',"use":'      .. num(e.use)
+    p[#p + 1] = ',"via":"'     .. esc(e.via) .. '"'
+    p[#p + 1] = ',"actor":"'   .. esc(e.actor) .. '"'
+    p[#p + 1] = ',"actorKind":"' .. esc(e.actorKind) .. '"'
+    p[#p + 1] = ',"action":"'  .. esc(e.action) .. '"'
+    p[#p + 1] = ',"actionId":' .. num(e.actionId)
+    p[#p + 1] = ',"target":"'  .. esc(e.target) .. '"'
+    p[#p + 1] = ',"targetKind":"' .. esc(e.targetKind) .. '"'
+    p[#p + 1] = ',"hp":'       .. num(e.hp)
+    p[#p + 1] = ',"msg":'      .. num(e.msg)
+    if e.owner then p[#p + 1] = ',"owner":"' .. esc(e.owner) .. '"' end
+    if e.pet   then p[#p + 1] = ',"pet":"'   .. esc(e.pet)   .. '"' end
+    p[#p + 1] = '}'
+    return table.concat(p)
+end
+
+--- Append one healing line. Never throws; see M.write.
+function M.write_heal(e)
+    return M.write_raw(M.encode_heal(e))
+end
+
 -- ---------------------------------------------------------------- file
 
 --- Build the output directory. Returns nil when no usable root can be found, in
