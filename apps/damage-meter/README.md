@@ -144,6 +144,22 @@ colour on record — a trust, a pet's owner seen only through the pet, DNC, SCH,
 GEO or RUN, which Metrics never finished — gets a distinct colour of their own
 instead.
 
+### Healing
+
+**Healing**, next to the title, is the same meter laid out the same way but for
+heals: total healing, the clock, party HPS, the top healer and the biggest heal,
+then cumulative healing, healing by character (chart, table, and the floating
+strip), and a Heals table you can select a row of to see a histogram of each
+cast. It shares the session, the Start / Pause buttons and the character
+filter with **Damage** — switching between them changes what you are looking
+at, not what is being measured. Everything is counted the way Metrics counts
+it. A Curaga on five people is one cast. There is no overcure figure: the game
+does not say how much HP a target was missing, and Metrics' estimate of it was
+not accurate enough to show. Pet heals are kept out of Healing
+and shown on their own, as Metrics does. Healing never counts toward any damage
+figure. It needs the VibeXI addon 0.3.0 or later; an older event file or export
+has none to show.
+
 ### The character table
 
 Every column except Job and DPS is one of Metrics' own parse columns, counted
@@ -305,8 +321,9 @@ is read in then.
 
 ### Comparing two runs
 
-**Compare**, next to the title, switches to a second section that lines two
-exported parses up against each other. Open (or drag in) one parse as **A**, the
+**Compare**, next to the title, lines two exported parses up against each
+other. **Show: Damage | Healing** switches every card between the two — the
+tiles, the cumulative chart, the per-character table and the two breakdowns. Open (or drag in) one parse as **A**, the
 baseline, and another as **B**; every difference on the page reads B against A,
 in green when it is better and red when it is worse, and always with its sign
 spelled out. **Use current** puts whatever is on the meter right now into a
@@ -326,6 +343,10 @@ back to it.
   different roster. A character whose job the party window never reported (an
   alliance member in another party, usually) goes under *Unknown job*; their
   job is never borrowed from the other run, because it is often a different one.
+- **Healing** compares cures, waltzes and pet heals the same way — healing, casts,
+  average per cast and biggest heal, A over B, with a row per healer you can open
+  for each spell. A parse exported before addon 0.3.0 has no healing in it and
+  reads as a dash rather than as zero.
 - **By damage type** and **By target** show where the damage came from and went.
 
 Include Skillchains and Hide names apply here too; the skillchain switch is the

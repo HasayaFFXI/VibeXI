@@ -199,8 +199,23 @@ a heal:
 - **Exports carry them** as an optional `heals` list beside `events`, same `keep`
   filter; `PARSE_VERSION` is unchanged because a version-1 reader ignores the key.
   Exports made before 0.3.0 simply have no list.
-- **Nothing draws them yet.** They are recorded and kept; showing healing is a
-  separate change.
+- **Drawn by the Healing section and Compare's Healing mode**, both counted
+  in `stats.healing` (DOM-free). `stats.filterHeals` applies the same
+  session window and character exclusions `filter` applies to damage, and
+  credits a pet's heal to its owner the way `credit` does. The rules are
+  Metrics', named in the comment above `filterHeals`:
+  - **Healing** excludes pet heals (Metrics' Healing column = spell HEALING +
+    ABILITY_HEALING); pet heals are a column of their own (PET_HEAL).
+  - **Casts** are one per `use`, however many targets; **Avg** is total / casts.
+  - **There is no overcure, on purpose.** Metrics' estimate (`H.Spell.Overcure`)
+    measures each cast against the spell's best so far, because the packet does
+    not carry the target's missing HP. It was shipped and then removed on
+    2026-10-02 as not accurate enough -- early casts get a pass, and every cast
+    after a buffed one is charged. Its Divine Seal cap on MAX
+    (`DB.Healing_Max`) went with it, so Max is the raw value. Do not bring
+    either back without a real source for missing HP.
+  - In Compare, a parse with no heal lines at all (exported before addon 0.3.0)
+    reads as a dash, not 0, with a note saying why (`measure().hasHeals`).
 
 ## `use` is per swing, not per action
 
@@ -685,6 +700,16 @@ Things that will bite:
   (scaled and raw) disagree, and on a scaled desktop the wrong one still lands on
   *something*, quite possibly the game. Only the size comparison tells them
   apart. Never take a point hit without it.
+- **Every match must be the panel's size — the fallbacks too.** Only the point
+  match used to check size; the title and "topmost browser" fallbacks did not,
+  and on 2026-10-02 a pop-out's alpha (217, with the key) landed on the MAIN
+  Chrome window — the whole page went see-through — and an earlier call had
+  layered the Claude desktop app's window. `winalpha._sized` now gates all three.
+  The client also refuses to send its own main window's geometry
+  (`applyAlpha`: a panel reporting the page's position and size waits, then
+  concedes to the fade). A wrongly layered window stays that way until it is
+  reset or closed; `SetLayeredWindowAttributes(h, 0, 255, LWA_ALPHA)` and
+  clearing `WS_EX_LAYERED` put one back.
 - **`Apply` refuses the shell** (`Progman`, `WorkerW`, `Shell_TrayWnd`, …). A
   point is always over *some* window.
 - **The em dash makes the query non-ASCII.** The handler parses it with
@@ -1115,10 +1140,45 @@ matter: the imported page's per-character and per-action figures equal the
 exporter's, and a re-export of the import is identical to the original apart
 from `exported`.
 
+## The Healing section
+
+The Damage section's layout over heal lines only, rendered by `renderHealView`
+in app.js on every `render()` beside the damage cards: the same session, clock
+and filter bar, so it is the same meter seen from the other side. Its cards are
+`#healView`; their ids are the damage ones with a heal prefix (`hTotal`,
+`healLineChart`, `healBarsChart`, `healMeter`, `healActionTable`,
+`healDrillCard`), and the pop-out keys are `hline`, `hbars`, `hactions`,
+`hdrill`.
+
+- **The chips follow the section on screen.** `render()` lists the healers in
+  the Healing section and the damage dealers in Damage; one exclusion list,
+  keyed by name, serves both.
+- **Healing excludes pet heals** in the hero tile, the line and the bars, as
+  Metrics' Healing column does; Pet Healing is a column of its own.
+- **The line and the histogram reuse `cumulative` and `distribution`** on an
+  event-shaped copy (`healEvents`): `dmg` is HP healed and `hit` is always
+  true -- a cure on a full-HP target healed 0, it did not miss. The drill-down
+  collapses by `use`, so it is per CAST, as the damage drill-down is per use.
+- **Biggest heal is one target's raw value.** Compare's Healing mode uses the
+  same figure in the slot overcure used to fill.
+- **HPS ticks with DPS.** `tickClock` rewrites `#hHps` and every `[data-hps]`
+  cell from `app.healAgg`, over the same clock; `tickLine` animates both
+  cumulative charts' live edges.
+- **A heal does not start the clock.** Only a counted damage event latches an
+  armed session's zero (`firstCounted`), so cures before the first swing fall
+  before it. Heals are not events, and making them latch would mean a second
+  definition of "counted".
+- The skillchain switch is hidden in this section; it moves no healing figure.
+
 ## Compare
 
-A second section, switched by **Meter | Compare** beside the title
-(`ffxi_dps_view`). Two exported parses go in slots A and B; A is the baseline
+One of three sections, switched by **Damage | Healing | Compare** beside the
+title (`ffxi_dps_view`; compare.js owns the switch and sets `DPS.app.view`).
+Compare has its own **Damage | Healing** toggle (`ffxi_dps_cmpmode`, a
+`data-mode` attribute on `#compareView`): the tiles and the cumulative chart
+are shared and redrawn per mode, the other cards are `.cmp-only-damage` /
+`.cmp-only-healing` and the stylesheet hides the other mode's. A side whose
+parse has no heal lines at all prints dashes in Healing mode, never zeroes. Two exported parses go in slots A and B; A is the baseline
 and **every delta is B − A, every percentage that over A**. `lib/compare.js`
 counts, `compare.js` draws.
 
@@ -1471,10 +1531,8 @@ it. What is left:
   without touching the event contract.
 - MP drain, enfeebles and TP are not parsed; this is a damage meter. Every
   event carries its raw `msg`, so adding them is an enums change, not a format
-  change. Healing IS recorded (`kind:"heal"`, see the event contract) but not
-  yet drawn anywhere.
-- `tools/gen-test-events.py` writes no heal lines yet, so the fixture does not
-  exercise the heal filing in `source.js`.
+  change. Healing IS recorded and drawn (`kind:"heal"`, see the event contract).
+- The healing card has no pop-out and no drill-down histogram.
 - Category-3 job abilities whose id collides with a weaponskill's — Metrics'
   list is Swift Blade/Steal, Atonement/Mug, Gale Axe/Jump, Spinning Axe/Super
   Jump — are named from `WS_NAMES` first by `action_name` in `vibexi.lua` and

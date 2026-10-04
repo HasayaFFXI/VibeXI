@@ -1,5 +1,12 @@
 # Generated test fixture (apps/damage-meter/tools/gen-test-events.py writes here)
 apps/damage-meter/tools/events/
+apps/zerg/tools/events/
+
+# .NET build output (apps/zerg)
+apps/zerg/**/bin/
+apps/zerg/**/obj/
+apps/zerg/dist/
+*.csproj.user
 
 # Python bytecode
 __pycache__/

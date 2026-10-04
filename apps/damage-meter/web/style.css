@@ -672,16 +672,30 @@ main.pop-body { padding: 4px 6px 8px; gap: 8px; }
 
 /* ----------------------------------------------------------------- sections */
 
-/* Meter | Compare, beside the title. Exactly one section is on screen; the body
-   class picks, because both <main>s and the filter bar set their own `display`
-   and would outrank a bare [hidden]. The filter bar scopes the live meter and
-   nothing in Compare, so it goes with it. */
+/* Damage | Healing | Compare, beside the title. Exactly one section is on
+   screen; the body class picks, because the <main>s and the filter bar set
+   their own `display` and would outrank a bare [hidden]. Damage and Healing are
+   the same live meter seen two ways, so they share the filter bar; Compare
+   scopes nothing on it, so the bar goes with it. */
 .view-switch { align-self: center; }
 .view-switch button { font-size: 12px; padding: 4px 14px; }
-#compareView { display: none; }
+#healView, #compareView { display: none; }
+body.view-healing #healView { display: grid; }
 body.view-compare #compareView { display: grid; }
+body.view-healing #meterView,
 body.view-compare #meterView,
 body.view-compare .filterbar { display: none; }
+/* The skillchain switch changes no healing figure, so it is not offered there. */
+body.view-healing #chainBtn { display: none; }
+
+/* The Healing hero figure takes the good colour rather than the blade: it is
+   the one number on that page, and healing is not the meter's red. */
+.hero-value.heal-hero { color: var(--good); }
+
+/* Compare's two modes. The tiles and the cumulative chart are shared and
+   redrawn per mode; these cards exist in one mode only. */
+#compareView:not([data-mode="healing"]) .cmp-only-healing,
+#compareView[data-mode="healing"] .cmp-only-damage { display: none; }
 
 /* ------------------------------------------------------------------ compare */
 
@@ -863,3 +877,5 @@ table.data tr.cmp-detail > td {
 table.data.cmp-acts { margin-top: 4px; font-size: 12px; }
 table.data.cmp-acts th { position: static; background: transparent; }
 .cmp-body .scroll-y { max-height: 470px; }
+/* The skillchain switch moves no healing figure. */
+#compareView[data-mode="healing"] #cmpChainBtn { display: none; }

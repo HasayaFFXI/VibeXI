@@ -807,6 +807,132 @@
     };
   }
 
+  // ------------------------------------------------------------------ healing
+
+  /*
+   * HEALING, COUNTED THE WAY METRICS COUNTS IT. Nothing here is a choice of
+   * ours; each rule names the Metrics code it reproduces.
+   *
+   * The lines are the addon's kind:"heal" records (`reader.heals`), which never
+   * enter `events` -- so nothing above this point can see them, and nothing
+   * here can move a damage figure.
+   *
+   *   Healing     every heal NOT from a pet: Metrics' Healing column, which is
+   *               spell HEALING + ABILITY_HEALING (columns/healing.lua).
+   *   Pet         every heal a pet did (`owner` set): Metrics' PET_HEAL, a
+   *               trackable of its own, credited to the owner with the pet's
+   *               name kept -- the same crediting as pet damage.
+   *   Casts       one per ACTION, however many targets: H.Spell.Count adds 1
+   *               to COUNT per cast, not per target. A Curaga on five is one.
+   *   Average     total / casts -- the catalog's TOTAL / HIT_COUNT, where a
+   *               heal's HIT_COUNT is also one per cast.
+   *   Min / Max   one target's heal, raw. Min is the lowest above zero, as the
+   *               catalog keeps it, so a cure on a full-HP target does not
+   *               make every spell's minimum read 0.
+   *
+   * NO OVERCURE, deliberately. Metrics estimates it (H.Spell.Overcure) by
+   * measuring each cast against the best that spell has done so far, because
+   * the packet does not carry the target's missing HP. That was shipped here,
+   * and removed on 2026-10-02 as not accurate enough: it gives early casts a
+   * pass and charges every cast after a buffed one. Do not bring it back
+   * without a real source for missing HP. Its companion, Metrics' Divine Seal
+   * cap on MAX (DB.Healing_Max), existed only to keep that estimate sane and
+   * went with it, so Max here is the raw value.
+   */
+
+  /*
+   * opts: { session, roster, actors } -- the same scoping `filter` applies to
+   * damage, so healing and damage are always measured over the same window.
+   * Copies, with `t` moved onto the session clock and a pet's heal credited to
+   * its owner (action prefixed with the pet's name, as `credit` does).
+   */
+  function filterHeals(heals, opts) {
+    opts = opts || {};
+    var sn = opts.session, roster = opts.roster, actors = opts.actors, out = [];
+    if (!heals || (sn && sn.startedAt == null)) return out;
+    for (var i = 0; i < heals.length; i++) {
+      var h = heals[i], el = null;
+      if (sn) {
+        el = at(sn, h.t);
+        if (el == null) continue;
+      }
+      if (roster && roster.isMob(h.actor)) continue;
+      var c = {}, k;
+      for (k in h) if (Object.prototype.hasOwnProperty.call(h, k)) c[k] = h[k];
+      if (h.owner && h.actor !== h.owner) {
+        c.actor = h.owner;
+        c.by = h.pet || h.actor;
+        c.action = c.by + ': ' + h.action;
+      }
+      if (actors && actors[c.actor] === false) continue;
+      if (el != null) { c.wall = h.t; c.t = el; }
+      out.push(c);
+    }
+    return out;
+  }
+
+  /* Heals (already filtered) -> per character, per action. Largest first. */
+  function healing(heals) {
+    var by = {}, order = [], i, h, a, act;
+    var party = { total: 0, petTotal: 0, casts: 0, max: 0 };
+
+    for (i = 0; i < heals.length; i++) {
+      h = heals[i];
+      var pet = !!h.owner;
+      a = by[h.actor];
+      if (!a) {
+        a = by[h.actor] = { name: h.actor, total: 0, petTotal: 0, casts: 0, max: 0,
+                            actions: {}, actionOrder: [] };
+        order.push(h.actor);
+      }
+      act = a.actions[h.action];
+      if (!act) {
+        act = a.actions[h.action] = { name: h.action, via: h.via, pet: pet,
+                                      total: 0, casts: 0, min: null, max: 0, uses: {} };
+        a.actionOrder.push(h.action);
+      }
+
+      var v = h.hp || 0;
+      var newCast = h.use == null || !act.uses[h.use];
+      if (h.use != null) act.uses[h.use] = true;
+
+      if (v > act.max) act.max = v;
+      if (v > 0 && (act.min == null || v < act.min)) act.min = v;
+      act.total += v;
+      if (newCast) act.casts++;
+
+      if (pet) {
+        a.petTotal += v;
+        party.petTotal += v;
+      } else {
+        a.total += v;
+        if (v > a.max) a.max = v;
+        if (newCast) a.casts++;
+        party.total += v;
+        if (v > party.max) party.max = v;
+        if (newCast) party.casts++;
+      }
+    }
+
+    var actors = order.map(function (n) {
+      var x = by[n];
+      x.avg = x.casts ? x.total / x.casts : null;
+      x.share = party.total ? x.total / party.total : null;
+      x.actionList = x.actionOrder.map(function (k) {
+        var y = x.actions[k];
+        delete y.uses;
+        y.avg = y.casts ? y.total / y.casts : 0;
+        return y;
+      }).sort(function (p, q) { return q.total - p.total; });
+      return x;
+    }).sort(function (p, q) { return (q.total + q.petTotal) - (p.total + p.petTotal); });
+
+    party.avg = party.casts ? party.total / party.casts : null;
+    return { actors: actors, total: party.total, petTotal: party.petTotal,
+             casts: party.casts, max: party.max, avg: party.avg,
+             lines: heals.length };
+  }
+
   // -------------------------------------------------------------- formatting
 
   function fmtInt(n) {
@@ -897,6 +1023,8 @@
     aggregate: aggregate,
     cumulative: cumulative,
     distribution: distribution,
+    filterHeals: filterHeals,
+    healing: healing,
     quantile: quantile,
     fmtInt: fmtInt,
     fmtNum: fmtNum,

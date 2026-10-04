@@ -1,0 +1,23 @@
+<UserControl x:Class="Zerg.Views.Away"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Visibility="{Binding IsOut, Converter={StaticResource Visible}}">
+
+  <!-- What stands in the main window for a card that is floating: quiet and
+       short, a signpost and not a card. Its data context is the card's
+       PanelInfo. It carries "Bring back" and nothing else, since a card can
+       only be away by having been popped out. -->
+  <Border CornerRadius="8" Padding="16,12" BorderThickness="1"
+          BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+    <DockPanel>
+      <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" VerticalAlignment="Center" Margin="12,0,0,0"
+              Content="Bring back" Command="{Binding DockCommand}" ToolTip="Return this card to the main window"
+              AutomationProperties.Name="{Binding Title, StringFormat='Bring back {0}'}"/>
+      <StackPanel>
+        <TextBlock Text="{Binding Title}" FontFamily="{StaticResource NumberFont}" FontSize="16" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <TextBlock Text="Showing in its own panel." Style="{StaticResource Label}" Margin="0,2,0,0"/>
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</UserControl>

@@ -1,0 +1,64 @@
+<UserControl x:Class="Zerg.Views.ChangeText"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:core="clr-namespace:Zerg.Core;assembly=Zerg.Core"
+             x:Name="Self" Focusable="False" IsTabStop="False">
+
+  <!-- B against A. The sign is in the text; the colour only repeats it, in
+       the theme's own colours for good and bad news, so a reader who cannot
+       tell the two apart still reads "+" and "−". In a table the plain
+       difference sits under the percentage; on a tile, beside it. -->
+  <StackPanel VerticalAlignment="Center">
+    <StackPanel.Style>
+      <Style TargetType="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="Margin" Value="8,2"/>
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding Beside, ElementName=Self}" Value="True">
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="0"/>
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </StackPanel.Style>
+    <TextBlock Text="{Binding Value.Main, ElementName=Self}" FontSize="13" HorizontalAlignment="Right"
+               VerticalAlignment="Center" Typography.NumeralAlignment="Tabular">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="FontWeight" Value="SemiBold"/>
+          <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.Better}">
+              <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.Worse}">
+              <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.None}">
+              <Setter Property="FontWeight" Value="Normal"/>
+              <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+    <TextBlock Text="{Binding Value.Sub, ElementName=Self}" FontSize="10.5" VerticalAlignment="Center"
+               Typography.NumeralAlignment="Tabular">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="HorizontalAlignment" Value="Right"/>
+          <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding Beside, ElementName=Self}" Value="True">
+              <Setter Property="Margin" Value="8,1,0,0"/>
+            </DataTrigger>
+            <Trigger Property="Text" Value="">
+              <Setter Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+  </StackPanel>
+</UserControl>

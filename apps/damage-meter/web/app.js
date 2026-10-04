@@ -18,12 +18,12 @@
   // The charts' empty state. "No damage in the selected range" named a range
   // control that no longer exists, and the overwhelmingly common reason a chart
   // is empty now is that nobody has pressed Start.
-  function emptyText() {
+  function emptyText(what) {
     return app.imported ? 'Nothing to show in this parse'
          : armed() ? 'Armed — the clock starts on the first hit, or Cancel to call it off'
          : !started() ? 'Press Start to begin measuring'
          : paused() ? 'Paused — nothing is being counted'
-         : 'No damage yet';
+         : 'No ' + (what || 'damage') + ' yet';
   }
 
   var POLL_MS = 250;
@@ -42,6 +42,8 @@
     chains: 'on',           // 'on' credits skillchain damage, 'off' drops it
     actorsOff: {},          // name -> true when excluded; persisted
     drill: null,            // { actor, action }
+    healDrill: null,        // the same, in the Healing section
+    view: 'damage',         // 'damage' | 'healing' | 'compare'; compare.js sets it
     lineModel: null,        // last cumulative model, animated by tickLine
     anon: false,            // draw every other character as their job; persisted
     alias: {},              // name -> 'SAM/WAR', the label anon mode draws instead
@@ -341,6 +343,8 @@
     app.drill = null;
     app.session = S.arm();
     $('drillCard').hidden = true;
+    app.healDrill = null;
+    $('healDrillCard').hidden = true;
     app.rendered = true;
     applySession();
     setStatus(srcName());
@@ -405,6 +409,8 @@
     app.session = S.idleSession();
     app.drill = null;
     $('drillCard').hidden = true;
+    app.healDrill = null;
+    $('healDrillCard').hidden = true;
     applySession();
     setStatus(srcName());
     render();
@@ -771,6 +777,8 @@
     app.drill = null;
     app.chipSig = null;
     $('drillCard').hidden = true;
+    app.healDrill = null;
+    $('healDrillCard').hidden = true;
     parseNote('');
     applySession();
     setStatus(srcName());
@@ -791,6 +799,8 @@
     app.drill = null;
     app.chipSig = null;
     $('drillCard').hidden = true;
+    app.healDrill = null;
+    $('healDrillCard').hidden = true;
   }
 
   /* What the status line calls the source being shown. */
@@ -944,12 +954,25 @@
     var secs = S.sessionElapsed(app.session) / 1000;
     var agg = S.aggregate(shown, { duration: secs });
 
-    renderChips(S.aggregate(scoped, { duration: secs }).actors);
+    // Healing, over the same window and the same exclusions. Filed apart from
+    // `events` by source.js, so nothing above this line can see a heal.
+    var healScoped = S.filterHeals(app.source.heals, { session: app.session, roster: roster });
+    var healShown = S.filterHeals(healScoped, { actors: enabled });
+    var hagg = S.healing(healShown);
+
+    // The chips list whoever the section on screen is about: the characters
+    // who dealt damage, or the ones who healed. One exclusion list serves both,
+    // keyed by name, so excluding someone in one section excludes them in the
+    // other too.
+    renderChips(app.view === 'healing'
+      ? S.healing(healScoped).actors
+      : S.aggregate(scoped, { duration: secs }).actors);
     renderTiles(agg);
     renderLine(shown, agg);
     renderBars(agg);
     renderActions(agg);
     renderDrill(shown);
+    renderHealView(healShown, hagg);
   }
 
   // ---- character chips (the per-entity on/off filter)
@@ -1198,6 +1221,37 @@
     var d = $('tDps');
     if (d) d.textContent = S.fmtNum(agg && secs > 0 ? agg.total / secs : 0, 1);
 
+    // The Healing section's copy of the same clock, and its HPS -- divided by
+    // the same denominator, so it decays with the DPS beside it.
+    var hagg = app.healAgg;
+    var hc = $('hClock');
+    if (hc) {
+      hc.textContent = clock;
+      hc.className = 'tile-value clock-value is-' + state;
+    }
+    var hcs = $('hClockSub');
+    if (hcs && cs) hcs.textContent = cs.textContent;
+    var hts = $('hTotalSub');
+    if (hts) {
+      hts.textContent = app.imported ? 'imported parse — read only'
+        : armed() ? 'armed — starts on the first hit'
+        : !started() ? 'not started — press Start'
+        : !hagg || !hagg.actors.length ? 'no healing yet'
+        : paused() ? 'held — nothing counting'
+        : 'counting';
+    }
+    var hh = $('hHps');
+    if (hh) hh.textContent = S.fmtNum(hagg && secs > 0 ? hagg.total / secs : 0, 1);
+    var htable = $('healActorTable');
+    if (htable && hagg) {
+      var htot = {};
+      hagg.actors.forEach(function (a) { htot[a.name] = a.total; });
+      [].forEach.call(htable.querySelectorAll('[data-hps]'), function (cell) {
+        var v = htot[cell.dataset.hps];
+        if (v != null) cell.textContent = S.fmtNum(secs > 0 ? v / secs : 0, 1);
+      });
+    }
+
     var table = $('actorTable');
     if (!table || !agg) return;
     var totals = {};
@@ -1209,10 +1263,15 @@
   }
 
   function tickLine() {
-    var m = app.lineModel;
+    tickOneLine(app.lineModel, 'lineChart', 'damage');
+    tickOneLine(app.healLineModel, 'healLineChart', 'healing');
+  }
+
+  /* One cumulative chart's live edge -- the damage one, or the healing one. */
+  function tickOneLine(m, canvasId, what) {
     if (!m || !m.live || paused()) return;
 
-    var canvas = $('lineChart');
+    var canvas = $(canvasId);
     if (!canvas) return;
     // ownerDocument, not this one: the card may have been popped out, and a
     // hidden window's canvas is worth no frames.
@@ -1225,7 +1284,7 @@
 
     // The session clock, not Date.now(): the model's timeline starts at zero.
     m.times[m.times.length - 1] = S.sessionElapsed(app.session);
-    C.line(canvas, m, lineOpts(canvas));
+    C.line(canvas, m, lineOpts(canvas, what));
   }
 
   /*
@@ -1235,9 +1294,9 @@
    * the one part of a card the stylesheet cannot restyle, so this is the one
    * place that asks which window the card is in -- by where its canvas sits.
    */
-  function lineOpts(canvas) {
+  function lineOpts(canvas, what) {
     var floating = !!canvas.closest('.pop-body');
-    return { empty: emptyText(), compact: floating, endLabels: floating };
+    return { empty: emptyText(what), compact: floating, endLabels: floating };
   }
 
   /*
@@ -1272,8 +1331,8 @@
     });
   }
 
-  function renderLegend(series) {
-    var host = $('lineLegend');
+  function renderLegend(series, hostId) {
+    var host = $(hostId || 'lineLegend');
     if (series.length < 2) { host.innerHTML = ''; return; }   // one series: title says it
     // The job goes in the legend as text. It is what makes the job palette safe
     // to default to: two warriors differ by a lightness step in the swatch, and
@@ -1290,8 +1349,8 @@
   }
 
   /* The chart's WCAG-clean twin. Sampled to ~16 rows so it stays readable. */
-  function renderLineTable(model) {
-    var t = $('lineTable');
+  function renderLineTable(model, tableId) {
+    var t = $(tableId || 'lineTable');
     if (!model.times.length) { t.innerHTML = ''; return; }
     var stride = Math.max(1, Math.ceil(model.times.length / 16));
     var idx = [];
@@ -1366,8 +1425,8 @@
            'they closed while Include Skillchains is on') +
         th('Damage %', "This character's damage out of the whole party's") +
         th('DPS', 'Damage divided by the session clock') +
-        th('Accuracy', 'Melee and ranged attacks that connected, out of all attempted. As in ' +
-           'Metrics, a swing taken by shadows counts as a hit and a Perfect Dodge is not ' +
+        th('Accuracy', 'Melee and ranged attacks that connected, out of all attempted. A ' +
+           'swing taken by shadows counts as a hit and a Perfect Dodge is not ' +
            'counted. Weaponskills, job abilities and the pet are not included') +
         th('WS Damage', 'Total weaponskill damage. Skillchain damage is not part of it') +
         th('WS Avg', 'Average damage of the weaponskills that dealt damage') +
@@ -1450,9 +1509,9 @@
    * the grouping toggle's row -- and lets the user drag it.
    */
   function popSize(key) {
-    if (key === 'line') return { w: 460, h: 304 };
-    if (key !== 'bars') return null;
-    var rows = $('actorMeter').querySelectorAll('.meter-row').length;
+    if (key === 'line' || key === 'hline') return { w: 460, h: 304 };
+    if (key !== 'bars' && key !== 'hbars') return null;
+    var rows = $(key === 'bars' ? 'actorMeter' : 'healMeter').querySelectorAll('.meter-row').length;
     // Bar, body padding and head, then 21px a row (20 plus the 1px gap).
     return { w: 460, h: 64 + Math.max(rows, 3) * 21 };
   }
@@ -1493,6 +1552,252 @@
 
     t.innerHTML = html + '</tbody>';
     pane.scrollTop = keepScroll;
+  }
+
+  // ================================================================ healing
+
+  /*
+   * THE HEALING SECTION: the Damage section's layout, over heal lines only.
+   *
+   * One session, one clock, one filter bar -- it is the same meter looked at
+   * from the other side, so it is rendered on every render() beside the damage
+   * cards rather than on demand. Every figure is `stats.healing` (Metrics'
+   * rules: Healing leaves pet heals out, casts are one per cast); this
+   * section only formats and draws. There is no overcure -- see `healing`.
+   *
+   * Two shapes of the same lines are used. `stats.healing` for the totals, and
+   * an event-shaped copy (`healEvents`) so the generic `cumulative` and
+   * `distribution` can draw the line and the histogram unchanged: `dmg` there
+   * is HP healed, and `hit` is always true -- a cure on a full-HP target healed
+   * 0, it did not miss.
+   */
+  function healEvents(heals) {
+    return heals.map(function (h) {
+      return { t: h.t, use: h.use, kind: 'heal', actor: h.actor, action: h.action,
+               target: h.target, dmg: h.hp, hit: true, owner: h.owner };
+    });
+  }
+
+  function renderHealView(heals, h) {
+    app.healAgg = h;
+    renderHealTiles(heals, h);
+    renderHealLine(heals, h);
+    renderHealBars(h);
+    renderHealActions(h);
+    renderHealDrill(heals);
+  }
+
+  function renderHealTiles(heals, h) {
+    $('hTotal').textContent = S.fmtInt(h.total);
+    var n = h.actors.filter(function (a) { return a.total + a.petTotal > 0; }).length;
+    $('hHpsSub').textContent = n ? n + ' healer' + (n === 1 ? '' : 's') : '—';
+
+    // The leader by Healing -- the column that leaves pet heals out.
+    var top = null;
+    h.actors.forEach(function (a) { if (a.total > 0 && (!top || a.total > top.total)) top = a; });
+    var topJob = top && !aliased(top.name) ? jobOf(top.name) : '';
+    $('hTopDot').style.background = top ? colorOf(top.name) : 'transparent';
+    $('hTopName').textContent = top ? nameOf(top.name) : '—';
+    $('hTopName').title = top ? (app.source.roster.jobTitle(top.name) || nameOf(top.name)) : '';
+    $('hTopSub').textContent = top
+      ? (topJob ? topJob + ' · ' : '') + S.fmtNum(top.share * 100, 1) + '% of ' + S.fmtInt(h.total) + ' healing'
+      : '—';
+
+    // One target's heal.
+    var best = null;
+    heals.forEach(function (x) { if (!best || x.hp > best.hp) best = x; });
+    $('hBig').textContent = best ? S.fmtInt(best.hp) : '0';
+    $('hBigSub').textContent = best ? nameOf(best.actor) + ' · ' + best.action : '—';
+    tickClock();
+  }
+
+  function renderHealLine(heals, h) {
+    var names = h.actors.filter(function (a) { return a.total > 0; })
+                        .map(function (a) { return a.name; });
+    // Healing, so pet heals stay out of the line exactly as they stay out of
+    // the Healing column.
+    var ev = healEvents(heals.filter(function (x) { return !x.owner; }));
+    var model = S.cumulative(ev, names, { from: 0, now: liveEdge() });
+    model.series.forEach(function (s) {
+      s.color = colorOf(s.name);
+      s.real = s.name;
+      s.name = nameOf(s.name);
+    });
+    model.series.sort(function (a, b) {
+      return (a.values[a.values.length - 1] || 0) - (b.values[b.values.length - 1] || 0);
+    });
+    app.healLineModel = model;
+    var canvas = $('healLineChart');
+    C.line(canvas, model, lineOpts(canvas, 'healing'));
+    renderLegend(model.series, 'healLegend');
+    renderLineTable(model, 'healLineTable');
+  }
+
+  function renderHealBars(h) {
+    var actors = h.actors.filter(function (a) { return a.total + a.petTotal > 0; });
+    renderHealMeter(actors);
+
+    var rows = actors.map(function (a) {
+      var full = aliased(a.name) ? '' : app.source.roster.jobTitle(a.name);
+      return {
+        label: nameOf(a.name),
+        value: a.total,
+        color: colorOf(a.name),
+        sub: '<table>' +
+             (full ? '<tr><td>Job</td><td>' + esc(full) + '</td></tr>' : '') +
+             '<tr><td>Healing</td><td>' + S.fmtInt(a.total) + '</td></tr>' +
+             '<tr><td>Share</td><td>' + (a.share == null ? '—' : S.fmtNum(a.share * 100, 1) + '%') + '</td></tr>' +
+             '<tr><td>Casts</td><td>' + S.fmtInt(a.casts) + '</td></tr>' +
+             (a.petTotal ? '<tr><td>Pet healing</td><td>' + S.fmtInt(a.petTotal) + '</td></tr>' : '') +
+             '</table>'
+      };
+    });
+    $('healBarsWrap').style.height = Math.max(120, rows.length * 34 + 16) + 'px';
+    C.bars($('healBarsChart'), rows, { empty: emptyText('healing') });
+
+    var withJob = !app.anon;
+    function pct(x) { return x == null ? '—' : S.fmtNum(x * 100, 1) + '%'; }
+    function whole(x) { return x == null ? '—' : S.fmtInt(x); }
+    function th(label, tip) { return '<th title="' + esc(tip) + '">' + label + '</th>'; }
+    $('healActorTable').innerHTML = rows.length
+      ? '<thead><tr><th>Character</th>' + (withJob ? '<th class="job">Job</th>' : '') +
+        th('Healing', 'Every cure, waltz and healing ability this character used. Pet heals are not included') +
+        th('Healing %', "This character's healing out of the whole party's") +
+        th('HPS', 'Healing divided by the session clock') +
+        th('Casts', 'One per cast, however many people it reached') +
+        th('Avg / cast', 'Healing divided by casts') +
+        th('Pet Healing', "Everything this character's pet healed. Not part of Healing") +
+        '</tr></thead><tbody>' +
+        actors.map(function (a) {
+          return '<tr><td><span class="swatch" style="background:' + colorOf(a.name) + '"></span>' +
+            esc(nameOf(a.name)) + '</td>' +
+            (withJob
+              ? '<td class="job" title="' + esc(app.source.roster.jobTitle(a.name)) + '">' + jobCell(a.name) + '</td>'
+              : '') +
+            '<td>' + S.fmtInt(a.total) + '</td>' +
+            '<td>' + pct(a.share) + '</td>' +
+            '<td data-hps="' + esc(a.name) + '">—</td>' +
+            '<td>' + S.fmtInt(a.casts) + '</td>' +
+            '<td>' + whole(a.avg) + '</td>' +
+            '<td>' + (a.petTotal ? S.fmtInt(a.petTotal) : '—') + '</td></tr>';
+        }).join('') + '</tbody>'
+      : '';
+    tickClock();   // fills the HPS cells just written
+  }
+
+  /* The floating strip, as `renderMeter` draws it for damage: Healing, its
+     share, and casts -- the three figures a glance during a pull is for. */
+  function renderHealMeter(actors) {
+    var host = $('healMeter');
+    if (!actors.length) {
+      host.innerHTML = '<p class="meter-empty">' + esc(emptyText('healing')) + '</p>';
+      return;
+    }
+    var top = 0;
+    actors.forEach(function (a) { top = Math.max(top, a.total); });
+    host.innerHTML =
+      '<div class="meter-head" aria-hidden="true"><span>Character</span>' +
+      '<span>Healing</span><span>%</span><span>Casts</span></div>' +
+      actors.map(function (a) {
+        var full = aliased(a.name) ? '' : app.source.roster.jobTitle(a.name);
+        var tip = nameOf(a.name) + (full ? ' · ' + full : '') +
+                  (a.avg != null ? ' · ' + S.fmtInt(a.avg) + ' avg per cast' : '');
+        return '<div class="meter-row" role="listitem" title="' + esc(tip) + '">' +
+          '<i class="meter-fill" style="width:' + (top ? a.total / top * 100 : 0).toFixed(2) + '%;' +
+          'background:' + colorOf(a.name) + '"></i>' +
+          '<span class="meter-name">' + esc(nameOf(a.name)) + jobBadge(a.name, 'meter-job') + '</span>' +
+          '<span>' + S.fmtInt(a.total) + '</span>' +
+          '<span>' + (a.share == null ? '—' : S.fmtNum(a.share * 100, 1) + '%') + '</span>' +
+          '<span>' + S.fmtInt(a.casts) + '</span></div>';
+      }).join('');
+  }
+
+  function renderHealActions(h) {
+    var t = $('healActionTable');
+    var pane = t.parentNode;
+    var keepScroll = pane.scrollTop;
+    if (!h.actors.length) { t.innerHTML = ''; return; }
+
+    var html = '<thead><tr><th>Heal</th>' +
+      '<th title="One per cast, however many people it reached">Casts</th>' +
+      '<th>Total</th><th title="Total divided by casts">Avg</th><th>Min</th><th>Max</th>' +
+      '<th>Share</th></tr></thead><tbody>';
+
+    h.actors.forEach(function (a) {
+      var badge = jobBadge(a.name, 'row-job');
+      var all = a.total + a.petTotal;
+      html += '<tr class="group"><td colspan="7">' +
+        '<span class="swatch" style="background:' + colorOf(a.name) + '"></span>' +
+        esc(nameOf(a.name)) + (badge ? ' ' + badge : '') +
+        ' &mdash; ' + S.fmtInt(a.total) +
+        (a.petTotal ? ' <span class="muted">+ ' + S.fmtInt(a.petTotal) + ' pet</span>' : '') +
+        '</td></tr>';
+      a.actionList.forEach(function (x) {
+        var on = app.healDrill && app.healDrill.actor === a.name && app.healDrill.action === x.name;
+        html += '<tr class="sub pick' + (on ? ' on' : '') + '"' +
+          ' data-actor="' + esc(a.name) + '" data-action="' + esc(x.name) + '">' +
+          '<td>' + esc(x.name) + '</td>' +
+          '<td>' + S.fmtInt(x.casts) + '</td>' +
+          '<td>' + S.fmtInt(x.total) + '</td>' +
+          '<td>' + S.fmtInt(x.avg) + '</td>' +
+          '<td>' + (x.min == null ? '—' : S.fmtInt(x.min)) + '</td>' +
+          '<td>' + S.fmtInt(x.max) + '</td>' +
+          '<td>' + S.fmtNum(all ? x.total / all * 100 : 0, 1) + '%</td></tr>';
+      });
+    });
+    t.innerHTML = html + '</tbody>';
+    pane.scrollTop = keepScroll;
+  }
+
+  /* One heal, one healer: what each CAST healed, summed over its targets --
+     the same collapse the damage drill-down applies to an AoE. */
+  function renderHealDrill(heals) {
+    var card = $('healDrillCard');
+    if (!app.healDrill) { card.hidden = true; return; }
+    var dr = app.healDrill;
+
+    var d = S.distribution(healEvents(heals), dr.actor, dr.action);
+    card.hidden = false;
+    $('healDrillTitle').textContent = dr.action;
+    $('healDrillSub').textContent = nameOf(dr.actor) + ' · ' + S.fmtInt(d.count) +
+      ' cast' + (d.count === 1 ? '' : 's') + ' · ' + S.fmtInt(d.total) + ' healed';
+
+    if (!d.count) {
+      $('healDrillTiles').innerHTML = '<div class="tile"><div class="tile-label">No casts in range</div></div>';
+      C.histogram($('healHistChart'), null, {});
+      $('healHistCap').textContent = '';
+      $('healDrillTable').innerHTML = '';
+      return;
+    }
+
+    var tiles = [
+      ['Min', S.fmtInt(d.min)],
+      ['Average', S.fmtInt(d.avg)],
+      ['Max', S.fmtInt(d.max)],
+      ['Median', S.fmtInt(d.median)],
+      ['Std dev', S.fmtInt(d.stdev)],
+      ['Casts', S.fmtInt(d.count)]
+    ];
+    $('healDrillTiles').innerHTML = tiles.map(function (t) {
+      return '<div class="tile"><div class="tile-label">' + t[0] + '</div>' +
+             '<div class="tile-value">' + t[1] + '</div></div>';
+    }).join('');
+
+    C.histogram($('healHistChart'), d, { color: colorOf(dr.actor), empty: 'No casts recorded' });
+    $('healHistCap').textContent =
+      'Healed per cast · ' + d.bins.length + ' bins · ' +
+      'IQR ' + S.fmtInt(d.q1) + '–' + S.fmtInt(d.q3) + ' · ' +
+      '90th percentile ' + S.fmtInt(d.p90);
+
+    $('healDrillTable').innerHTML =
+      '<thead><tr><th>Time</th><th>Target</th><th>Healed</th><th>vs avg</th></tr></thead><tbody>' +
+      d.events.slice().reverse().map(function (e) {
+        var delta = e.dmg - d.avg;
+        return '<tr><td>' + S.fmtElapsed(e.t) + '</td>' +
+               '<td>' + esc(nameOf(e.target) || '—') + '</td>' +
+               '<td>' + S.fmtInt(e.dmg) + '</td>' +
+               '<td>' + (delta >= 0 ? '+' : '−') + S.fmtInt(Math.abs(delta)) + '</td></tr>';
+      }).join('') + '</tbody>';
   }
 
   // ---- drill-down
@@ -1628,6 +1933,18 @@
   });
 
   $('drillClose').addEventListener('click', function () { app.drill = null; render(); });
+
+  $('healActionTable').addEventListener('click', function (ev) {
+    var tr = ev.target.closest('tr.pick');
+    if (!tr) return;
+    var a = tr.dataset.actor, k = tr.dataset.action;
+    if (app.healDrill && app.healDrill.actor === a && app.healDrill.action === k) app.healDrill = null;
+    else app.healDrill = { actor: a, action: k };
+    render();
+    if (app.healDrill) $('healDrillCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  $('healDrillClose').addEventListener('click', function () { app.healDrill = null; render(); });
 
   // Toggle, persistence and the button label all live in the shared theme
   // module; the only app-specific part is that the charts must be redrawn,

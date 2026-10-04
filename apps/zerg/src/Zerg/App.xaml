@@ -1,0 +1,308 @@
+<Application x:Class="Zerg.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Zerg"
+             xmlns:v="clr-namespace:Zerg.Views"
+             ThemeMode="System"
+             ShutdownMode="OnMainWindowClose">
+  <Application.Resources>
+
+    <!-- Plain "Segoe UI Variable" silently falls back: WPF sees the variable
+         font only under its optical-size names. Segoe UI is the Windows 10 face. -->
+    <FontFamily x:Key="TextFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="NumberFont">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <!-- Segoe Fluent Icons ships with Windows 11; MDL2 has the same code points. -->
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <local:EqualsConverter x:Key="Equals"/>
+
+    <!-- A layered surface on Mica, from the theme's own card brushes. In a
+         floating panel the card is the whole window, so its own frame is
+         chrome over the game: it gives it up. -->
+    <Style x:Key="Card" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="16"/>
+      <Style.Triggers>
+        <Trigger Property="v:Float.On" Value="True">
+          <Setter Property="Background" Value="Transparent"/>
+          <Setter Property="BorderThickness" Value="0"/>
+          <Setter Property="Padding" Value="0"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- A figure that updates live: tabular, so digits don't shuffle sideways
+         as the value changes. -->
+    <Style x:Key="Figure" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource NumberFont}"/>
+      <Setter Property="FontSize" Value="28"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+
+    <Style x:Key="Label" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+    </Style>
+
+    <!-- One choice of a few, drawn as a toggle (a row of these is a segmented
+         control). Stock radio buttons are far taller than a toolbar allows. -->
+    <Style x:Key="Segment" TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+      <Setter Property="Padding" Value="10,4"/>
+      <Setter Property="Margin" Value="0,0,4,0"/>
+    </Style>
+
+    <BooleanToVisibilityConverter x:Key="Visible"/>
+    <v:HiddenConverter x:Key="Hidden"/>
+    <v:PresentConverter x:Key="Present"/>
+
+    <!-- A card's heading and the line under it. Neither is drawn in a
+         floating panel: the panel's bar already names the card, and there is
+         no room over a game for a sentence explaining a card someone chose
+         to float. -->
+    <Style x:Key="CardTitle" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource NumberFont}"/>
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Style.Triggers>
+        <Trigger Property="v:Float.On" Value="True">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="CardNote" TargetType="TextBlock" BasedOn="{StaticResource Label}">
+      <Setter Property="Margin" Value="0,2,0,0"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Style.Triggers>
+        <Trigger Property="v:Float.On" Value="True">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- A job beside a name ("SAM/WAR"). Gone, not blank, when there is none
+         to show: the name already is the job, or no job was ever reported. -->
+    <Style x:Key="Badge" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Margin" Value="6,0,0,0"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+      <Style.Triggers>
+        <Trigger Property="Text" Value="">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- A character's colour, as a mark beside their name. -->
+    <Style x:Key="Swatch" TargetType="Rectangle">
+      <Setter Property="Width" Value="10"/>
+      <Setter Property="Height" Value="10"/>
+      <Setter Property="RadiusX" Value="2"/>
+      <Setter Property="RadiusY" Value="2"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Table cells. Figures are right-aligned and tabular, so a column of
+         them lines up and holds still while it updates. -->
+    <Style x:Key="Cell" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Padding" Value="8,0"/>
+      <Setter Property="TextAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <Style x:Key="CellText" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
+      <Setter Property="TextAlignment" Value="Left"/>
+    </Style>
+    <Style x:Key="Head" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+      <!-- So the whole cell, not just its letters, shows the tooltip. -->
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style x:Key="HeadText" TargetType="TextBlock" BasedOn="{StaticResource Head}">
+      <Setter Property="TextAlignment" Value="Left"/>
+    </Style>
+
+    <!-- A tooltip takes its text alignment from the element it is on, and a
+         column of figures is right-aligned. A tooltip always reads from the left. -->
+    <Style TargetType="ToolTip" BasedOn="{StaticResource DefaultToolTipStyle}">
+      <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+    </Style>
+
+    <!-- The line between table rows. -->
+    <Style x:Key="RowLine" TargetType="Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+      <Setter Property="BorderThickness" Value="0,1,0,0"/>
+      <Setter Property="MinHeight" Value="32"/>
+    </Style>
+
+    <!-- Small controls that sit in a card's heading or the filter bar. -->
+    <Style x:Key="SmallButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Padding" Value="10,3,10,4"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="MinHeight" Value="0"/>
+    </Style>
+    <Style x:Key="SmallToggle" TargetType="ToggleButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+      <Setter Property="Padding" Value="10,3,10,4"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="MinHeight" Value="0"/>
+    </Style>
+
+    <!-- Sends a card out to float over the game. Not on the card once it is
+         out there: the panel's bar has Dock. -->
+    <Style x:Key="PopOut" TargetType="Button" BasedOn="{StaticResource SmallButton}">
+      <Setter Property="Content" Value="Pop out"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="8,0,0,0"/>
+      <Setter Property="ToolTip" Value="Float this card in a panel of its own, always on top, to lay over the game"/>
+      <Style.Triggers>
+        <Trigger Property="v:Float.On" Value="True">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- The two session buttons. They are the only controls that change what
+         is measured rather than what is shown, so they are the largest on the
+         bar and the only ones whose fill says a state. Their own template,
+         because a stock button repaints its fill when pointed at. -->
+    <Style x:Key="SessionButton" TargetType="ButtonBase">
+      <Setter Property="MinWidth" Value="96"/>
+      <Setter Property="Padding" Value="18,7,18,8"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ControlElevationBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ButtonBase">
+            <Border x:Name="Face" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Face" Property="Opacity" Value="0.88"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Face" Property="Opacity" Value="0.72"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Face" Property="Opacity" Value="0.45"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Start is the thing to press until it has been pressed; while it
+         waits for the first hit it wears the waiting colour; once the clock
+         runs it steps back, because Restart is a re-do. Bound to the view
+         model's session, wherever the button is: the main window's bar and
+         every floating panel's carry the same pair. -->
+    <Style x:Key="StartButton" TargetType="Button" BasedOn="{StaticResource SessionButton}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding View.StartLook}" Value="Idle">
+          <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding View.StartLook}" Value="Armed">
+          <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- Pause, or Cancel while armed. Filled only while it is holding the clock. -->
+    <Style x:Key="SecondButton" TargetType="Button" BasedOn="{StaticResource SessionButton}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding View.SecondLook}" Value="Held">
+          <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- Two colours, one meaning each, on the clock and the status dot alike:
+         green is counting, amber is not. -->
+    <Style x:Key="Clock" TargetType="TextBlock" BasedOn="{StaticResource Figure}">
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Light}" Value="Live">
+          <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Light}" Value="Held">
+          <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- One character's on/off switch: a pill with their colour, name and
+         job. Switched off it fades, so the ones being counted stand out. -->
+    <Style x:Key="Chip" TargetType="ToggleButton">
+      <Setter Property="Margin" Value="0,0,6,6"/>
+      <Setter Property="Padding" Value="9,3,11,4"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="Face" CornerRadius="13" Padding="{TemplateBinding Padding}" BorderThickness="1"
+                    Background="{DynamicResource ControlFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+              <ContentPresenter VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="False">
+                <Setter TargetName="Face" Property="Opacity" Value="0.45"/>
+                <Setter TargetName="Face" Property="Background" Value="Transparent"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Face" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="Face" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- A table row that can be picked: plain until pointed at. -->
+    <Style x:Key="RowButton" TargetType="Button">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Face" Background="{TemplateBinding Background}" CornerRadius="4" MinHeight="30">
+              <ContentPresenter VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Face" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="Face" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+  </Application.Resources>
+</Application>

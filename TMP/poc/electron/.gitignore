@@ -1,0 +1,5 @@
+# portable Node (see README) and installed packages
+.node/
+node_modules/
+out/
+*.log

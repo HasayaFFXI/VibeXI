@@ -1,0 +1,21 @@
+<Application x:Class="FluentSpike.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ThemeMode="System">
+  <Application.Resources>
+    <!-- Segoe Fluent Icons ships with Windows 11; MDL2 is the Windows 10 face
+         with the same code points, as a fallback. -->
+    <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <FontFamily x:Key="Numbers">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <!-- A layered surface on Mica, from the theme's own card brushes. -->
+    <Style x:Key="Card" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="16"/>
+      <Setter Property="Margin" Value="0,0,12,12"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+    </Style>
+  </Application.Resources>
+</Application>

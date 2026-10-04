@@ -1,0 +1,67 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Zerg's own colours for the light theme. AppTheme merges this file or its
+       twin, whichever matches what Windows' Fluent theme is showing. -->
+
+  <!-- The eighteen fallback slots, one per character of a full alliance, for
+       anyone whose job has no colour of its own. Solved as a set, per theme,
+       so that every pair stays distinguishable, including for colour-blind
+       readers, and so that neighbouring slots (the order characters are
+       handed them in) are far apart. Don't adjust one on its own. -->
+  <Color x:Key="Series1">#2A78D6</Color>
+  <Color x:Key="Series2">#C94F18</Color>
+  <Color x:Key="Series3">#12855C</Color>
+  <Color x:Key="Series4">#9A6800</Color>
+  <Color x:Key="Series5">#C23A6D</Color>
+  <Color x:Key="Series6">#3D7F21</Color>
+  <Color x:Key="Series7">#5A4BC4</Color>
+  <Color x:Key="Series8">#CF3B3A</Color>
+  <Color x:Key="Series9">#B056B8</Color>
+  <Color x:Key="Series10">#3B5B0B</Color>
+  <Color x:Key="Series11">#6D3C78</Color>
+  <Color x:Key="Series12">#098AA7</Color>
+  <Color x:Key="Series13">#9E0822</Color>
+  <Color x:Key="Series14">#284A99</Color>
+  <Color x:Key="Series15">#BB76AA</Color>
+  <Color x:Key="Series16">#00749B</Color>
+  <Color x:Key="Series17">#98005F</Color>
+  <Color x:Key="Series18">#129D9C</Color>
+
+  <!-- A job's own colour, the one the party already knows it by in game. The
+       hues are the dark theme's; the lightness is not, because yellow-green
+       and white vanish on a light card. White has no hue to keep, so the
+       white mage becomes a warm dark neutral. See Dark.xaml for the rules. -->
+  <Color x:Key="JobWAR">#C00000</Color>
+  <Color x:Key="JobMNK">#9A7A00</Color>
+  <Color x:Key="JobWHM">#55534D</Color>
+  <Color x:Key="JobBLM">#6F4E8C</Color>
+  <Color x:Key="JobRDM">#C0393C</Color>
+  <Color x:Key="JobTHF">#0E7C1B</Color>
+  <Color x:Key="JobPLD">#7C8600</Color>
+  <Color x:Key="JobDRK">#A400B8</Color>
+  <Color x:Key="JobBST">#7D6A30</Color>
+  <Color x:Key="JobBRD">#B4519F</Color>
+  <Color x:Key="JobRNG">#3F7F2E</Color>
+  <Color x:Key="JobSAM">#C25200</Color>
+  <Color x:Key="JobNIN">#C22600</Color>
+  <Color x:Key="JobDRG">#7B2CC0</Color>
+  <Color x:Key="JobSMN">#1E8C5C</Color>
+  <Color x:Key="JobBLU">#2A6BAA</Color>
+  <Color x:Key="JobCOR">#9A4E33</Color>
+  <Color x:Key="JobPUP">#565080</Color>
+
+  <!-- The ring round a chart marker: what a card on Mica comes out as, but
+       solid. The card's own brush is translucent, and a see-through ring
+       would not part a marker from the lines under it. -->
+  <SolidColorBrush x:Key="ChartSurfaceBrush" Color="#FBFBFB"/>
+
+  <!-- The two runs of a comparison, A and B: the first two fallback slots,
+       the pair furthest apart. They say which run a mark belongs to and
+       nothing else; a character's swatch keeps the character's own colour.
+       The ink is for the letter on a run's badge. -->
+  <SolidColorBrush x:Key="RunABrush" Color="{StaticResource Series1}"/>
+  <SolidColorBrush x:Key="RunBBrush" Color="{StaticResource Series2}"/>
+  <SolidColorBrush x:Key="RunInkBrush" Color="#FFFFFF"/>
+
+</ResourceDictionary>
