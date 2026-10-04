@@ -179,13 +179,36 @@ def _from_point(x, y, w, h):
     if _user32.IsIconic(hit):
         return None
 
-    r = _rect(hit)
-    if r is None:
-        return None
-    # Generous: the caller measures its viewport, the OS measures the frame.
-    if abs((r.right - r.left) - w) > 160 or abs((r.bottom - r.top) - h) > 220:
+    if not _size_ok(hit, w, h):
         return None
     return hit
+
+
+def _size_ok(hwnd, w, h):
+    """Is this window about w x h? Generous, because the caller measures its
+    viewport and the OS measures the frame."""
+    r = _rect(hwnd)
+    if r is None:
+        return False
+    return abs((r.right - r.left) - w) <= 160 and abs((r.bottom - r.top) - h) <= 220
+
+
+def _sized(w, h, dpr):
+    """A predicate accepting a window of the caller's size under EITHER reading
+    -- scaled or raw, as in apply() -- or None when no size was sent.
+
+    EVERY MATCH GOES THROUGH THIS, not only the point match. The title and
+    topmost fallbacks used to skip it, and the topmost one is a loose net: the
+    first visible always-on-top window with a Chromium class. An Electron app
+    (Claude's desktop app is one) or a pinned Chrome window passes that, and it
+    was handed the panel's alpha -- the whole screen went see-through while the
+    panel stayed solid. A window the size of the panel cannot be mistaken for
+    one the size of the screen, so the size check is what makes any fallback
+    safe to have."""
+    if w <= 0 or h <= 0:
+        return None
+    return lambda hwnd: (_size_ok(hwnd, round(w * dpr), round(h * dpr))
+                         or _size_ok(hwnd, w, h))
 
 
 def _enum(predicate):
@@ -207,18 +230,22 @@ def _enum(predicate):
     return found[0] if found else None
 
 
-def _by_title(title):
+def _by_title(title, sized=None):
     if not title or len(title) < 8:
         return None
-    return _enum(lambda h: bool(_user32.IsWindowVisible(h)) and title in caption(h))
+    return _enum(lambda h: bool(_user32.IsWindowVisible(h)) and title in caption(h)
+                 and (sized is None or sized(h)))
 
 
-def _topmost_browser():
+def _topmost_browser(sized=None):
     """Last resort: a Document PiP window is always-on-top, and almost nothing
-    else on a desktop is both topmost and a browser widget."""
+    else on a desktop is both topmost and a browser widget -- but "almost" is
+    why it must also be the panel's size (see _sized)."""
 
     def ok(hwnd):
         if not _user32.IsWindowVisible(hwnd):
+            return False
+        if sized is not None and not sized(hwnd):
             return False
         if not _user32.GetWindowLongW(hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST:
             return False
@@ -266,12 +293,13 @@ def apply(title, cx, cy, w, h, dpr, alpha, key):
             hit = _from_point(cx, cy, w, h)
         if hit:
             how = 'point'
+    sized = _sized(w, h, dpr)
     if not hit:
-        hit = _by_title(title)
+        hit = _by_title(title, sized)
         if hit:
             how = 'title'
     if not hit:
-        hit = _topmost_browser()
+        hit = _topmost_browser(sized)
         if hit:
             how = 'topmost'
     if not hit:

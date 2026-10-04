@@ -5,6 +5,11 @@ unresolved target, monster damage on the party, and gaps between fights.
 
     python apps/damage-meter/tools/gen-test-events.py
     python apps/damage-meter/tools/gen-test-events.py --out somewhere/Hasaya_2026.09.04.jsonl
+    python apps/damage-meter/tools/gen-test-events.py --export Test_RunA.json
+    python apps/damage-meter/tools/gen-test-events.py --export Test_RunB.json --seed 7 --date 2026-07-31
+
+`--export` writes an import-ready parse instead -- the file the meter's Export
+button makes -- for Import or either Compare slot, with no server running.
 
 It writes exactly what `addons/VibeXI/vx_emit.lua` writes: one ASCII JSON object
 per line, same field order, same field names, same message ids. If this file and
@@ -603,20 +608,120 @@ def generate(seed=SEED, start=None):
     return w
 
 
+# ---------------------------------------------------------------- export file
+
+OURS = ('player', 'pet')
+NL = chr(10)    # LF, as vx_emit.lua appends
+
+
+def to_export(w, owner, file_name, now_iso):
+    """The generated lines as an EXPORTED PARSE -- what the meter's Export button
+    writes (`source.exportParse` + `stringifyParse`), so the file opens with
+    Import, or in either Compare slot, with no game and no server running.
+
+    The session is what a Start press just before the first swing and a Pause
+    just after the last would have made: the zero is the first event the meter
+    would COUNT (an actor that is ours -- `stats.counted`), and the pause lands
+    five seconds after the last line. Only lines inside it are kept, the same
+    `keep` rule Export applies.
+    """
+    recs = [json.loads(l) for l in w.lines]
+    kinds, jobs = {}, {}
+
+    def note(name, kind):
+        # roster.note: first real answer wins; 'other' never overwrites.
+        if not name or not kind:
+            return
+        if kind == 'other' and name in kinds:
+            return
+        if name not in kinds or kinds[name] == 'other':
+            kinds[name] = kind
+
+    for r in recs:
+        k = r.get('kind')
+        if k == 'meta':
+            continue
+        if k == 'job':
+            note(r['actor'], 'player')
+            jobs[r['actor']] = r            # last write wins
+            continue
+        note(r.get('actor'), r.get('actorKind'))
+        note(r.get('target'), r.get('targetKind'))
+
+    timed = [r for r in recs if r.get('kind') not in ('meta', 'job')]
+    first = min(r['t'] for r in timed if r['kind'] != 'heal' and r['actorKind'] in OURS)
+    last = max(r['t'] for r in timed)
+    started = first * 1000
+    paused = last * 1000 + 5000
+
+    def keep(r):
+        return started <= r['t'] * 1000 < paused
+
+    def job_record(r):
+        out = {'kind': 'job', 'actor': r['actor'], 'main': r['main'],
+               'mainId': r['mainId'], 'mainLvl': r['mainLvl']}
+        if r.get('sub') and r['sub'] != 'NON':
+            out.update(sub=r['sub'], subId=r['subId'], subLvl=r['subLvl'])
+        return out
+
+    head = {
+        'format': 'vibexi-parse',
+        'version': 1,
+        'exported': now_iso,
+        'file': file_name,
+        'owner': owner,
+        'session': {'armedAt': started, 'startedAt': started, 'spans': [], 'pausedAt': paused},
+        'kinds': kinds,
+        'manual': {},
+        'jobs': [job_record(r) for r in jobs.values()],
+    }
+    events = [r for r in timed if r['kind'] != 'heal' and keep(r)]
+    heals = [r for r in timed if r['kind'] == 'heal' and keep(r)]
+
+    # stringifyParse's layout: the head indented, one record per line.
+    def lst(name, rows):
+        body = (',' + NL + '    ').join(json.dumps(r, ensure_ascii=True, separators=(',', ':')) for r in rows)
+        return (',' + NL + '  "%s": [%s]') % (name, NL + '    ' + body + NL + '  ' if rows else '')
+    text = (json.dumps(head, indent=2, ensure_ascii=True)[:-2] + lst('events', events) +
+            lst('heals', heals) + NL + '}' + NL)
+    return text, len(events), len(heals)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--out', default=str(HERE / 'events' / 'Hasaya_2026.07.30.jsonl'))
     ap.add_argument('--seed', type=int, default=SEED)
+    ap.add_argument('--export', metavar='PATH',
+                    help='write an import-ready parse (.json) instead of an event file')
+    ap.add_argument('--date', default='2026-07-30',
+                    help='the day the generated pull starts on, YYYY-MM-DD (default 2026-07-30)')
     args = ap.parse_args(argv)
+
+    y, mo, d = (int(x) for x in args.date.split('-'))
+    start = int(time.mktime((y, mo, d, 14, 2, 0, 0, 0, -1)))
+    w = generate(args.seed, start)
+    file_name = 'Hasaya_%04d.%02d.%02d.jsonl' % (y, mo, d)
+
+    if args.export:
+        out = Path(args.export)
+        if out.suffix.lower() != '.json':
+            ap.error('--export must end in .json: the meter follows *.jsonl, and an export must never look like one')
+        out.parent.mkdir(parents=True, exist_ok=True)
+        stamp = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
+        text, n_ev, n_heal = to_export(w, 'Hasaya', file_name, stamp)
+        with open(out, 'w', encoding='ascii', newline='') as fh:
+            fh.write(text)
+        print('wrote parse -> %s' % out)
+        print('  %d events, %d heal lines' % (n_ev, n_heal))
+        return 0
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    w = generate(args.seed)
     # ASCII and LF, exactly as vx_emit.lua appends.
     with open(out, 'w', encoding='ascii', newline='') as fh:
         for line in w.lines:
-            fh.write(line + '\n')
+            fh.write(line + NL)
 
     print('wrote %d lines -> %s' % (len(w.lines), out))
     print('  events by kind: %s'

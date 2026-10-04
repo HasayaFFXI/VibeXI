@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zerg overlay spike</title>
+<style>
+  :root { color-scheme: dark; --bg: #14141a; --card: #1f1f29; --line: #2e2e3c;
+          --text: #e8e6f0; --muted: #9a98a8; --accent: #d9a441; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text);
+         font: 13px/1.4 "Segoe UI", system-ui, sans-serif; padding: 10px;
+         display: flex; flex-direction: column; gap: 10px; }
+  /* Keyed mode: the page background goes transparent, so between the cards
+     you should see whatever is behind the window -- that is the test. */
+  body.keyed { background: transparent; }
+  .card { background: var(--card); border: 1px solid var(--line);
+          border-radius: 8px; padding: 10px 12px; }
+  h1 { font-size: 14px; margin: 0 0 8px; color: var(--accent); letter-spacing: .02em; }
+  .row { display: grid; grid-template-columns: 70px 1fr 64px; gap: 8px;
+         align-items: center; margin: 5px 0; font-variant-numeric: tabular-nums; }
+  .bar { height: 12px; border-radius: 3px; background: var(--accent);
+         transition: width .25s linear; }
+  .num { text-align: right; }
+  .small { font-size: 11px; color: var(--muted); }
+  .tiny { font-size: 10px; color: var(--muted); }
+  .clock { font: 600 22px/1 "Cascadia Mono", Consolas, monospace; }
+  .controls label { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+  input[type=range] { flex: 1; }
+  button { background: #2c2c3a; color: var(--text); border: 1px solid var(--line);
+           border-radius: 5px; padding: 4px 10px; font: inherit; cursor: pointer; }
+  pre { margin: 0; font: 11px/1.35 Consolas, monospace; color: var(--muted);
+        white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Fake meter &mdash; is it still repainting?</h1>
+  <div class="clock" id="clock">00:00.0</div>
+  <div id="rows"></div>
+  <div class="small">Small muted text: is this readable at 40% over the game?</div>
+  <div class="tiny">Tiny text, 10px: Tachi: Jinpu 1,234 &middot; Skillchain 987</div>
+</div>
+
+<div class="card controls">
+  <h1>Controls</h1>
+  <label>Opacity <input type="range" id="opacity" min="10" max="100" value="100">
+         <span id="opacityVal">100%</span></label>
+  <label><input type="checkbox" id="keyed"> Keyed background (see-through between cards)</label>
+  <label><input type="checkbox" id="frameless"> Frameless (drag by the grey strip)</label>
+  <label><input type="checkbox" id="clickThrough"> Click-through &mdash; <b>Ctrl+Alt+Z</b> turns it off</label>
+  <label><input type="checkbox" id="topmost" checked> Always on top</label>
+  <button id="meter">Open real meter (localhost:8731)</button>
+  <div class="tiny">Right-click the grey strip for the same controls from anywhere.</div>
+</div>
+
+<div class="card">
+  <h1>What the window really is</h1>
+  <pre id="state">waiting for host&hellip;</pre>
+</div>
+
+<script>
+  var wv = window.chrome && window.chrome.webview;
+  function post(o) { if (wv) wv.postMessage(o); }
+  function $(id) { return document.getElementById(id); }
+
+  // Animated content, so a layered window that stops repainting is obvious.
+  var names = ['Hasaya', 'Kirin', 'Paradox', 'Zergling', 'Overlord'];
+  var dmg = names.map(function () { return 0; });
+  $('rows').innerHTML = names.map(function (n, i) {
+    return '<div class="row"><span>' + n + '</span><div><div class="bar" id="b' + i +
+           '" style="width:0"></div></div><span class="num" id="n' + i + '">0</span></div>';
+  }).join('');
+  var t0 = performance.now();
+  setInterval(function () {
+    for (var i = 0; i < dmg.length; i++) dmg[i] += Math.round(Math.random() * 400 * (1 - i * 0.15));
+    var max = Math.max.apply(null, dmg) || 1;
+    for (i = 0; i < dmg.length; i++) {
+      $('b' + i).style.width = (100 * dmg[i] / max).toFixed(1) + '%';
+      $('n' + i).textContent = dmg[i].toLocaleString();
+    }
+  }, 500);
+  setInterval(function () {
+    var s = (performance.now() - t0) / 1000;
+    var m = Math.floor(s / 60);
+    s = s - m * 60;
+    $('clock').textContent = String(m).padStart(2, '0') + ':' + s.toFixed(1).padStart(4, '0');
+  }, 100);
+
+  $('opacity').addEventListener('input', function () {
+    $('opacityVal').textContent = this.value + '%';
+    post({ cmd: 'opacity', value: +this.value });
+  });
+  ['keyed', 'frameless', 'clickThrough', 'topmost'].forEach(function (id) {
+    $(id).addEventListener('change', function () { post({ cmd: id, on: this.checked }); });
+  });
+  $('meter').addEventListener('click', function () { post({ cmd: 'meter' }); });
+
+  if (wv) wv.addEventListener('message', function (e) {
+    var s = e.data;
+    if (!s || s.type !== 'state') return;
+    $('opacity').value = s.opacity;
+    $('opacityVal').textContent = s.opacity + '%';
+    $('keyed').checked = s.keyed;
+    $('frameless').checked = s.frameless;
+    $('clickThrough').checked = s.clickThrough;
+    $('topmost').checked = s.topmost;
+    document.body.classList.toggle('keyed', s.keyed);
+    $('state').textContent =
+      'Form.Opacity   ' + s.formOpacity.toFixed(2) + '\n' +
+      'ex style       ' + s.exStyle + '\n' +
+      '  layered      ' + s.layered + '\n' +
+      '  transparent  ' + s.transparent + '\n' +
+      'topmost        ' + s.topmost + '\n' +
+      'dpi            ' + s.dpi + '\n' +
+      'hotkey         ' + (s.hotkey ? 'Ctrl+Alt+Z registered' : 'NOT registered (taken?)') + '\n' +
+      'webview2       ' + s.runtime;
+  });
+  else $('state').textContent = 'Not inside WebView2 (opened in a browser?)';
+</script>
+</body>
+</html>

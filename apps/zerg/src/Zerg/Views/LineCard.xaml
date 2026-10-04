@@ -1,0 +1,135 @@
+<UserControl x:Class="Zerg.Views.LineCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Zerg.Charts"
+             xmlns:v="clr-namespace:Zerg.Views">
+
+  <!-- Cumulative damage: a line per character, its legend, and the same
+       figures as a table.
+
+       Floating, the chart names every line at its end, so the legend has
+       nothing left to say, and the data table is a page-sized view in a
+       window the size of a postcard: both go, and the chart takes whatever
+       the row with the grouping switch leaves, following the panel when it
+       is dragged larger. -->
+  <Border Style="{StaticResource Card}">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Style="{StaticResource PopOut}" Command="{Binding Panels[line].PopOutCommand}"
+                AutomationProperties.Name="Pop out Cumulative damage"/>
+        <!-- In the card's heading, not the filter bar: it changes this chart
+             and nothing else, and it goes wherever the card goes. -->
+        <ToggleButton DockPanel.Dock="Right" VerticalAlignment="Top" Margin="12,0,0,0"
+                      Style="{StaticResource SmallToggle}" Content="Group under 5%"
+                      IsChecked="{Binding GroupSmallLines}" ToolTip="{Binding GroupTip}"/>
+        <StackPanel>
+          <TextBlock Text="Cumulative damage" Style="{StaticResource CardTitle}"/>
+          <TextBlock Text="Running total per character. Hover for every character at one instant."
+                     Style="{StaticResource CardNote}"/>
+        </StackPanel>
+      </DockPanel>
+
+      <ItemsControl Grid.Row="1" ItemsSource="{Binding Legend}" Margin="0,10,0,0" Focusable="False"
+                    Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <!-- A line that stands for several characters says who on hover;
+                 the line itself cannot. -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,14,4" Background="Transparent" ToolTip="{Binding Tip}">
+              <Grid Width="12" Height="10" VerticalAlignment="Center">
+                <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" HorizontalAlignment="Left"/>
+                <Line X1="0" Y1="5" X2="12" Y2="5" StrokeThickness="2" StrokeDashArray="1.5 1.5"
+                      Stroke="{DynamicResource TextFillColorTertiaryBrush}"
+                      Visibility="{Binding Group, Converter={StaticResource Visible}}"/>
+              </Grid>
+              <TextBlock Text="{Binding Name}" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"/>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <c:LineChart Grid.Row="2" Edge="{Binding Edge}" EmptyText="{Binding EmptyText}"
+                   AutomationProperties.Name="Cumulative damage chart">
+        <c:LineChart.Style>
+          <Style TargetType="c:LineChart">
+            <Setter Property="Height" Value="320"/>
+            <Setter Property="Margin" Value="0,6,0,0"/>
+            <Setter Property="Model" Value="{Binding Line}"/>
+            <Style.Triggers>
+              <!-- A panel's backdrop is dark whatever the theme, so it is
+                   handed the lines in the colours made for that. -->
+              <Trigger Property="v:Float.On" Value="True">
+                <Setter Property="Height" Value="Auto"/>
+                <Setter Property="MinHeight" Value="120"/>
+                <Setter Property="Margin" Value="0,2,0,0"/>
+                <Setter Property="Model" Value="{Binding PanelLine}"/>
+                <Setter Property="Compact" Value="True"/>
+                <Setter Property="EndLabels" Value="True"/>
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </c:LineChart.Style>
+      </c:LineChart>
+
+      <Expander Grid.Row="3" Header="Data table" Margin="0,10,0,0" IsExpanded="{Binding LineTableOpen}"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" v:WheelChain.On="True">
+          <StackPanel>
+            <ItemsControl ItemsSource="{Binding LineHead}" Focusable="False">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Rows="1"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" Style="{StaticResource Head}" MinWidth="92" Margin="0,0,0,6"/>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding LineRows}" Focusable="False">
+              <!-- A row is a list of cells; a screen reader names it by its time. -->
+              <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                  <Setter Property="AutomationProperties.Name" Value="{Binding [0]}"/>
+                </Style>
+              </ItemsControl.ItemContainerStyle>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Style="{StaticResource RowLine}" MinHeight="28">
+                    <ItemsControl ItemsSource="{Binding}" Focusable="False">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Rows="1"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding}" Style="{StaticResource Cell}" MinWidth="92"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </Expander>
+    </Grid>
+  </Border>
+</UserControl>

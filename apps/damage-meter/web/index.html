@@ -14,11 +14,13 @@
 <header class="topbar sticky">
   <div class="brand">
     <h1>Damage <span>Meter</span></h1>
-    <!-- Two sections: the live meter, and Compare, which lines two exported
-         parses up against each other. The meter keeps polling while Compare is
-         on screen, so switching back loses nothing. compare.js owns this. -->
+    <!-- Three sections. Damage and Healing are the live meter seen two ways --
+         one session, one filter bar, one clock -- and Compare lines two
+         exported parses up against each other. The meter keeps polling whatever
+         is on screen, so switching loses nothing. compare.js owns the switch. -->
     <div class="segmented view-switch" role="group" aria-label="Section">
-      <button type="button" id="viewMeter" class="on" aria-pressed="true">Meter</button>
+      <button type="button" id="viewDamage" class="on" aria-pressed="true">Damage</button>
+      <button type="button" id="viewHealing" aria-pressed="false">Healing</button>
       <button type="button" id="viewCompare" aria-pressed="false">Compare</button>
     </div>
     <div class="src" id="srcLine">
@@ -232,6 +234,106 @@
 
 </main>
 
+<!-- HEALING: the Damage section's layout, over heal lines only. Same session,
+     same filter bar, same clock; counted Metrics' way in stats.healing, and no
+     figure here is part of any damage total. Rendered by app.js beside the
+     damage cards on every render. -->
+<main class="wrap stack" id="healView">
+
+  <section class="tiles">
+    <div class="tile hero">
+      <div class="tile-label">Total healing</div>
+      <div class="tile-value hero-value heal-hero" id="hTotal">0</div>
+      <div class="tile-sub" id="hTotalSub">&mdash;</div>
+    </div>
+    <div class="tile tile-clock">
+      <div class="tile-label">Elapsed</div>
+      <div class="tile-value clock-value is-idle" id="hClock">00:00</div>
+      <div class="tile-sub" id="hClockSub">&mdash;</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Party HPS</div>
+      <div class="tile-value" id="hHps">0</div>
+      <div class="tile-sub" id="hHpsSub">&mdash;</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Top healer</div>
+      <div class="tile-value who">
+        <i class="who-dot" id="hTopDot"></i><span class="who-name" id="hTopName">&mdash;</span>
+      </div>
+      <div class="tile-sub" id="hTopSub">&mdash;</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Biggest heal</div>
+      <div class="tile-value" id="hBig">0</div>
+      <div class="tile-sub" id="hBigSub">&mdash;</div>
+    </div>
+  </section>
+
+  <section class="card line-card" data-popout="hline" data-popout-title="Cumulative healing">
+    <div class="card-head">
+      <div>
+        <h2>Cumulative healing</h2>
+        <p class="card-sub">Running total per healer. Hover for every healer at one instant. Pet heals are not included.</p>
+      </div>
+    </div>
+    <div class="legend" id="healLegend"></div>
+    <div class="chart-wrap tall"><canvas id="healLineChart"></canvas></div>
+    <details class="tableview">
+      <summary>Show data table</summary>
+      <div class="scroll-x"><table class="data" id="healLineTable"></table></div>
+    </details>
+  </section>
+
+  <section class="card" data-popout="hbars" data-popout-title="Healing by character">
+    <div class="card-head">
+      <div>
+        <h2>Healing by character</h2>
+        <p class="card-sub">Total healed since the session started. Hover a column heading for how it is counted.</p>
+      </div>
+    </div>
+    <div class="bars-full">
+      <div class="chart-wrap" id="healBarsWrap"><canvas id="healBarsChart"></canvas></div>
+      <div class="scroll-x">
+        <table class="data" id="healActorTable"></table>
+      </div>
+    </div>
+    <div class="meter" id="healMeter" role="list" aria-label="Healing by character"></div>
+  </section>
+
+  <section class="card" data-popout="hactions" data-popout-title="Heals">
+    <div class="card-head">
+      <div>
+        <h2>Heals</h2>
+        <p class="card-sub">Every cure, waltz and pet heal. Select a row to drill down.</p>
+      </div>
+    </div>
+    <div class="scroll-y scroll-x">
+      <table class="data selectable" id="healActionTable"></table>
+    </div>
+  </section>
+
+  <section class="card" id="healDrillCard" data-popout="hdrill" data-popout-title="Heal drill-down" hidden>
+    <div class="card-head">
+      <div>
+        <h2 id="healDrillTitle">Drill-down</h2>
+        <p class="card-sub" id="healDrillSub">&mdash;</p>
+      </div>
+      <button type="button" class="ghost" id="healDrillClose">Close</button>
+    </div>
+    <div class="tiles compact" id="healDrillTiles"></div>
+    <div class="chart-wrap"><canvas id="healHistChart"></canvas></div>
+    <p class="chart-cap" id="healHistCap"></p>
+    <details class="tableview">
+      <summary>Show every cast</summary>
+      <div class="scroll-y max">
+        <table class="data" id="healDrillTable"></table>
+      </div>
+    </details>
+  </section>
+
+</main>
+
 <!-- COMPARE: two exported parses, A against B. A is the baseline and every
      difference on this page reads B against A. Built by compare.js from
      lib/compare.js; nothing here touches the live meter's state. -->
@@ -244,6 +346,11 @@
         <p class="card-sub">Open or drop two exported parses. A is the baseline &mdash; every difference reads B against A.</p>
       </div>
       <div class="card-tools">
+        <span class="filter-label">Show</span>
+        <div class="segmented tight" role="group" aria-label="Show">
+          <button type="button" id="cmpModeDamage" class="on" aria-pressed="true">Damage</button>
+          <button type="button" id="cmpModeHealing" aria-pressed="false">Healing</button>
+        </div>
         <span class="filter-label">Compare by</span>
         <div class="segmented tight" role="group" aria-label="Compare by">
           <button type="button" id="cmpByActor" class="on" aria-pressed="true"
@@ -269,8 +376,8 @@
     <section class="card">
       <div class="card-head">
         <div>
-          <h2>Cumulative damage</h2>
-          <p class="card-sub">Party damage since each run's first hit, on one clock. Hover to read both runs at the same moment.</p>
+          <h2 id="cmpPaceTitle">Cumulative damage</h2>
+          <p class="card-sub" id="cmpPaceSub">Party damage since each run's first hit, on one clock. Hover to read both runs at the same moment.</p>
         </div>
       </div>
       <div class="legend" id="cmpPaceLegend"></div>
@@ -281,7 +388,10 @@
       </details>
     </section>
 
-    <section class="card">
+    <!-- Cards that exist in one mode only. The tiles and the cumulative chart
+         above are shared and redrawn per mode; these swap whole. The mode is a
+         data attribute on #compareView, and the stylesheet picks. -->
+    <section class="card cmp-only-damage">
       <div class="card-head">
         <div>
           <h2 id="cmpRowsTitle">By character</h2>
@@ -293,7 +403,41 @@
       </div>
     </section>
 
-    <div class="two-col">
+    <section class="card cmp-only-healing">
+      <div class="card-head">
+        <div>
+          <h2 id="cmpHealTitle">By healer</h2>
+          <p class="card-sub" id="cmpHealSub">Each figure shows A over B. Select a row to compare its heals.</p>
+        </div>
+      </div>
+      <div class="scroll-x">
+        <table class="data selectable cmp-table" id="cmpHeal"></table>
+      </div>
+      <p class="meter-empty" id="cmpHealEmpty" hidden></p>
+    </section>
+
+    <div class="two-col cmp-only-healing">
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>By heal</h2>
+            <p class="card-sub">Every healer's casts of each spell or ability, combined. Pet heals included.</p>
+          </div>
+        </div>
+        <div class="scroll-y scroll-x"><table class="data cmp-table" id="cmpHealSpells"></table></div>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>By target</h2>
+            <p class="card-sub">Healing each character received, largest first. Pet heals included.</p>
+          </div>
+        </div>
+        <div class="scroll-y scroll-x"><table class="data cmp-table" id="cmpHealTargets"></table></div>
+      </section>
+    </div>
+
+    <div class="two-col cmp-only-damage">
       <section class="card">
         <div class="card-head">
           <div>

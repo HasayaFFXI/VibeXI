@@ -562,6 +562,16 @@
     clearTimeout(p.alphaTimer);
     p.alphaTimer = setTimeout(function () {
       if (!p.win || p.win.closed || !global.fetch) { osAlpha(p, false); return; }
+      // NEVER ASK FOR THE MAIN WINDOW. If the panel reports the page's own
+      // position and size -- it is the page, or a just-opened window has not
+      // been placed yet -- the server would find the main browser window by
+      // that point and make the whole page see-through, which happened. Wait
+      // for real geometry, then concede to the fade.
+      if (p.win === global || geometry(p.win) === geometry(global)) {
+        if (!retry) { setTimeout(function () { applyAlpha(p, true); }, 700); return; }
+        osAlpha(p, false);
+        return;
+      }
       global.fetch('/api/alpha?title=' + encodeURIComponent(p.win.document.title) +
                    '&value=' + p.alpha + geometry(p.win) +
                    (p.keyBg ? '&key=' + KEY : ''), { cache: 'no-store' })

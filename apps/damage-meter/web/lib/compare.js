@@ -95,6 +95,34 @@
 
     var agg = S.aggregate(rows, { duration: secs });
 
+    // Healing, over the same session window, re-keyed by job the same way.
+    // `heals` is absent on a reader from before the addon recorded healing.
+    var hl = S.filterHeals(run.source.heals || [], { session: sn, roster: roster });
+    if (byJob) {
+      hl = hl.map(function (h) {
+        var key = mainJob(roster, h.actor);
+        note(key, h.actor);
+        var c = {}, k;
+        for (k in h) if (Object.prototype.hasOwnProperty.call(h, k)) c[k] = h[k];
+        c.actor = key;
+        return c;
+      });
+    }
+    var heal = S.healing(hl);
+
+    // For Healing mode: the cumulative line (Healing, so no pet heals -- the
+    // same rule as the Healing column), and party healing by spell and by the
+    // character who received it (pet heals included; these say where healing
+    // went, not whose column it counts in).
+    var healEvents = [], healSpells = {}, healTargets = {};
+    for (var q = 0; q < hl.length; q++) {
+      var hh = hl[q];
+      if (!hh.owner) healEvents.push({ t: hh.t, hit: true, dmg: hh.hp });
+      var sp = hh.by ? hh.action.slice(hh.by.length + 2) : hh.action;
+      healSpells[sp] = (healSpells[sp] || 0) + hh.hp;
+      healTargets[hh.target] = (healTargets[hh.target] || 0) + hh.hp;
+    }
+
     // Damage by type and by target, over every landed row. Uncollapsed is right
     // for both: they only sum, and an AoE's damage belongs to each victim.
     var kinds = {}, targets = {};
@@ -143,7 +171,14 @@
       characters: agg.actors.filter(function (a) { return a.total > 0; }).length,
       best: best,
       kinds: kinds,
-      targets: targets
+      targets: targets,
+      heal: heal,
+      healEvents: healEvents,
+      healSpells: healSpells,
+      healTargets: healTargets,
+      // Whether this parse could have healing at all: an export from before
+      // addon 0.3.0 has no heal lines, which is not the same as healing 0.
+      hasHeals: !!(run.source.heals && run.source.heals.length)
     };
   }
 
@@ -197,7 +232,33 @@
       return { key: r.key, a: r.a || 0, b: r.b || 0 };
     }).sort(function (x, y) { return Math.max(y.a, y.b) - Math.max(x.a, x.b); });
 
-    return { rows: rows, kinds: kinds, targets: targets };
+    var heals = pairUp(byName(ma.heal.actors), byName(mb.heal.actors))
+      .filter(function (r) { return healSize(r.a) > 0 || healSize(r.b) > 0; })
+      .sort(function (x, y) {
+        return Math.max(healSize(y.a), healSize(y.b)) - Math.max(healSize(x.a), healSize(x.b));
+      });
+
+    function totals(ma2, mb2) {
+      return pairUp(ma2, mb2).map(function (r) {
+        return { key: r.key, a: r.a || 0, b: r.b || 0 };
+      }).sort(function (x, y) { return Math.max(y.a, y.b) - Math.max(x.a, x.b); });
+    }
+
+    return { rows: rows, kinds: kinds, targets: targets, heals: heals,
+             healSpells: totals(ma.healSpells, mb.healSpells),
+             healTargets: totals(ma.healTargets, mb.healTargets) };
+  }
+
+  /* Everything a healer put out, pet included -- for ordering and the zero test. */
+  function healSize(x) { return x ? x.total + x.petTotal : 0; }
+
+  /* One healer's heals, paired by name, largest first. */
+  function healActions(row) {
+    var la = row.a ? byName(row.a.actionList) : {};
+    var lb = row.b ? byName(row.b.actionList) : {};
+    return pairUp(la, lb).sort(function (x, y) {
+      return Math.max(size(y.a), size(y.b)) - Math.max(size(x.a), size(x.b));
+    });
   }
 
   /*
@@ -229,6 +290,8 @@
    */
   function pace(ma, mb, opts) {
     opts = opts || {};
+    // Which list to draw: the damage events, or (Healing mode) `healEvents`.
+    var field = opts.field || 'events';
     var maxPoints = opts.maxPoints || 400;
     var end = Math.max(ma.duration, mb.duration) * 1000;
     if (end <= 0) end = 1000;
@@ -240,8 +303,9 @@
     function line(m) {
       var v = new Float64Array(n);
       var stop = m.duration * 1000;
-      for (var k = 0; k < m.events.length; k++) {
-        var e = m.events[k];
+      var list = m[field];
+      for (var k = 0; k < list.length; k++) {
+        var e = list[k];
         if (!e.hit || !e.dmg) continue;
         // Into the first sample at or after the hit, so a sample reads the
         // damage done BY that instant, never a hit still to come.
@@ -274,6 +338,7 @@
     measure: measure,
     diff: diff,
     actions: actions,
+    healActions: healActions,
     pace: pace,
     delta: delta
   };

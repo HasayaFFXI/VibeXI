@@ -1,0 +1,121 @@
+<UserControl x:Class="WpfOverlayPoc.OverlayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:WpfOverlayPoc"
+             TextElement.FontFamily="Segoe UI" TextElement.FontSize="13"
+             TextElement.Foreground="{StaticResource Text}"
+             TextOptions.TextFormattingMode="Display">
+
+  <UserControl.Resources>
+    <Style x:Key="Card" TargetType="Border">
+      <Setter Property="Background" Value="{StaticResource Card}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="Margin" Value="0,0,0,10"/>
+    </Style>
+    <Style x:Key="H1" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+      <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+    <Style TargetType="CheckBox">
+      <Setter Property="Foreground" Value="{StaticResource Text}"/>
+      <Setter Property="Margin" Value="0,3"/>
+    </Style>
+  </UserControl.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="14"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <!-- The drag strip. Native, so it works whatever the cards are doing. -->
+    <Border x:Name="Grip" Background="#464656" Cursor="SizeAll"
+            ToolTip="Drag to move. Right-click for the menu.">
+      <Border.ContextMenu>
+        <ContextMenu x:Name="Menu">
+          <MenuItem Header="Opacity" x:Name="OpacityMenu"/>
+          <MenuItem x:Name="MiTransparent" Header="Transparent background" IsCheckable="True"/>
+          <MenuItem x:Name="MiFrameless" Header="Frameless" IsCheckable="True"/>
+          <MenuItem x:Name="MiClick" Header="Click-through" InputGestureText="Ctrl+Alt+Z" IsCheckable="True"/>
+          <MenuItem x:Name="MiTopmost" Header="Always on top" IsCheckable="True"/>
+          <Separator/>
+          <MenuItem x:Name="MiExit" Header="Exit"/>
+        </ContextMenu>
+      </Border.ContextMenu>
+    </Border>
+
+    <StackPanel Grid.Row="1" Margin="10,10,10,0">
+
+      <!-- 1. Fake meter -->
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource H1}" Text="Fake meter — is it still repainting?"/>
+          <TextBlock x:Name="Clock" Text="00:00.0" FontFamily="Cascadia Mono, Consolas"
+                     FontSize="22" FontWeight="SemiBold" Margin="0,0,0,4"/>
+          <ItemsControl x:Name="Rows">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="{x:Type local:MeterRow}">
+                <Grid Margin="0,5">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="64"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                  <Border Grid.Column="1" Height="12" CornerRadius="3" Margin="8,0"
+                          Background="{StaticResource Accent}" RenderTransformOrigin="0,0.5"
+                          local:Anim.ScaleX="{Binding Fraction}">
+                    <Border.RenderTransform><ScaleTransform ScaleX="0"/></Border.RenderTransform>
+                  </Border>
+                  <TextBlock Grid.Column="2" Text="{Binding Damage, StringFormat={}{0:N0}}"
+                             TextAlignment="Right" VerticalAlignment="Center"
+                             Typography.NumeralAlignment="Tabular"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock FontSize="11" Foreground="{StaticResource Muted}" Margin="0,4,0,0"
+                     Text="Small muted text: is this readable at 40% over the game?"/>
+          <TextBlock FontSize="10" Foreground="{StaticResource Muted}"
+                     Text="Tiny text, 10px: Tachi: Jinpu 1,234 · Skillchain 987"/>
+        </StackPanel>
+      </Border>
+
+      <!-- 2. Controls -->
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource H1}" Text="Controls"/>
+          <DockPanel Margin="0,0,0,4">
+            <TextBlock Text="Opacity" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBlock x:Name="OpacityVal" DockPanel.Dock="Right" Width="40" TextAlignment="Right"
+                       VerticalAlignment="Center" Text="100%"/>
+            <Slider x:Name="OpacitySlider" Minimum="10" Maximum="100" Value="100"
+                    IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center"/>
+          </DockPanel>
+          <CheckBox x:Name="CbTransparent" Content="Transparent background (see-through between cards)"/>
+          <CheckBox x:Name="CbFrameless" Content="Frameless (drag by the grey strip)"/>
+          <CheckBox x:Name="CbClick">
+            <TextBlock>Click-through — <Bold>Ctrl+Alt+Z</Bold> turns it off</TextBlock>
+          </CheckBox>
+          <CheckBox x:Name="CbTopmost" Content="Always on top"/>
+          <TextBlock FontSize="10" Foreground="{StaticResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap"
+                     Text="Right-click the grey strip for the same controls. A transparent background needs a frameless window in WPF; toggling the frame recreates the window."/>
+        </StackPanel>
+      </Border>
+
+      <!-- 3. Readout -->
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource H1}" Text="What the window really is"/>
+          <TextBlock x:Name="State" FontFamily="Consolas" FontSize="11" Foreground="{StaticResource Muted}"
+                     TextWrapping="Wrap" Text="starting…"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+</UserControl>

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>Zerg</RootNamespace>
+    <!-- Per-monitor v2 DPI and common controls v6 (for TaskDialogIndirect). -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Built by tools/make-icon.ps1 from assets/icon-source.webp. -->
+    <ApplicationIcon>zerg.ico</ApplicationIcon>
+    <!-- Application.ThemeMode (the Fluent theme) is still marked experimental. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+
+    <Version>0.1.0</Version>
+    <Product>Zerg</Product>
+    <AssemblyTitle>Zerg</AssemblyTitle>
+    <!-- The version string is shown to players; keep the git hash out of it. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <ProjectReference Include="..\Zerg.Core\Zerg.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The window icon, as a WPF resource (ApplicationIcon only covers the exe). -->
+    <Resource Include="zerg.ico" />
+  </ItemGroup>
+
+</Project>

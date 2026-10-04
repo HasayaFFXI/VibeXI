@@ -26,14 +26,18 @@
 
   var VIEW_KEY = 'ffxi_dps_view';
   var BY_KEY = 'ffxi_dps_cmpby';
+  var MODE_KEY = 'ffxi_dps_cmpmode';
+  var VIEWS = { damage: true, healing: true, compare: true };
 
   var cmp = {
-    view: 'meter',
+    view: 'damage',       // 'damage' | 'healing' | 'compare'
+    mode: 'damage',       // what Compare compares: 'damage' | 'healing'
     by: 'actor',          // 'actor' | 'job'
     a: null,              // { run, name, note }
     b: null,
     note: { a: null, b: null },   // the last error per slot
     open: {},             // row key -> true when its actions are expanded
+    healOpen: {},         // the same, for the Healing table
     last: null            // the last { ma, mb, d } drawn, for the console
   };
 
@@ -46,20 +50,37 @@
    * measures zero.
    */
   function setView(v) {
-    cmp.view = v === 'compare' ? 'compare' : 'meter';
-    var on = cmp.view === 'compare';
-    document.body.classList.toggle('view-compare', on);
-    $('viewMeter').classList.toggle('on', !on);
-    $('viewCompare').classList.toggle('on', on);
-    $('viewMeter').setAttribute('aria-pressed', String(!on));
-    $('viewCompare').setAttribute('aria-pressed', String(on));
-    try { localStorage.setItem(VIEW_KEY, cmp.view); } catch (e) { }
-    if (on) render(); else DPS.meter.render();
+    // 'meter' is what this key held before the Healing section existed.
+    if (v === 'meter' || !VIEWS[v]) v = 'damage';
+    cmp.view = v;
+    // app.js reads it to decide whose chips the filter bar lists.
+    DPS.app.view = v;
+    ['damage', 'healing', 'compare'].forEach(function (k) {
+      document.body.classList.toggle('view-' + k, k === v);
+      var b = $('view' + k.charAt(0).toUpperCase() + k.slice(1));
+      b.classList.toggle('on', k === v);
+      b.setAttribute('aria-pressed', String(k === v));
+    });
+    try { localStorage.setItem(VIEW_KEY, v); } catch (e) { }
+    if (v === 'compare') render(); else DPS.meter.render();
+  }
+
+  /* Damage or Healing: which of the two the comparison is about. Everything
+     else -- the slots, Compare by, Swap -- is shared, so this is a re-render. */
+  function setMode(mode) {
+    cmp.mode = mode === 'healing' ? 'healing' : 'damage';
+    $('cmpModeDamage').classList.toggle('on', cmp.mode === 'damage');
+    $('cmpModeHealing').classList.toggle('on', cmp.mode === 'healing');
+    $('cmpModeDamage').setAttribute('aria-pressed', String(cmp.mode === 'damage'));
+    $('cmpModeHealing').setAttribute('aria-pressed', String(cmp.mode === 'healing'));
+    $('compareView').dataset.mode = cmp.mode;
+    try { localStorage.setItem(MODE_KEY, cmp.mode); } catch (e) { }
+    render();
   }
 
   function setBy(by) {
     cmp.by = by === 'job' ? 'job' : 'actor';
-    cmp.open = {};
+    cmp.open = {}; cmp.healOpen = {};
     $('cmpByActor').classList.toggle('on', cmp.by === 'actor');
     $('cmpByJob').classList.toggle('on', cmp.by === 'job');
     $('cmpByActor').setAttribute('aria-pressed', String(cmp.by === 'actor'));
@@ -87,7 +108,7 @@
     catch (e) { cmp.note[slot] = e.message || String(e); render(); return; }
     cmp[slot] = { run: r, name: name.replace(/\.json$/i, ''), skipped: r.skipped };
     cmp.note[slot] = null;
-    cmp.open = {};
+    cmp.open = {}; cmp.healOpen = {};
     render();
   }
 
@@ -234,14 +255,35 @@
     var ma = K.measure(cmp.a.run, opts);
     var mb = K.measure(cmp.b.run, opts);
     var d = K.diff(ma, mb);
-    var ids = identities(d.rows, ma, mb);
+    // One identity pass over damage rows AND healers, so a healer who also
+    // dealt damage carries the same colour and the same hidden-name label in
+    // both tables.
+    var seenKey = {};
+    d.rows.forEach(function (r) { seenKey[r.key] = true; });
+    var ids = identities(d.rows.concat(d.heals.filter(function (r) { return !seenKey[r.key]; })), ma, mb);
     cmp.last = { ma: ma, mb: mb, d: d };
 
-    renderTiles(ma, mb);
-    renderPace(ma, mb);
-    renderRows(d.rows, ids);
-    renderKinds(d.kinds, ma, mb);
-    renderTargets(d.targets);
+    // Only the mode on screen is drawn; the other's cards are hidden by the
+    // stylesheet and a canvas laid out hidden would measure zero anyway.
+    if (cmp.mode === 'healing') {
+      renderHealTiles(ma, mb);
+      renderPace(ma, mb);
+      renderHealing(d.heals, ids, ma, mb);
+      renderTotals('cmpHealSpells', 'Heal', d.healSpells, ma, mb);
+      renderTotals('cmpHealTargets', 'Target', d.healTargets, ma, mb, nameFor(ids));
+    } else {
+      renderTiles(ma, mb);
+      renderPace(ma, mb);
+      renderRows(d.rows, ids);
+      renderKinds(d.kinds, ma, mb);
+      renderTargets(d.targets);
+    }
+  }
+
+  /* A target name as drawn: hidden behind its job like any other character's
+     when Hide names is on and the target is someone in the table. */
+  function nameFor(ids) {
+    return function (n) { return ids[n] ? ids[n].label : n; };
   }
 
   // ---- the two slots
@@ -309,6 +351,10 @@
       { label: 'Skillchain damage', a: ma.scTotal, b: mb.scTotal, fmt: fmtWhole, kind: 'pct', good: 1,
         sub: function (m) { return chainsOn() ? S.fmtInt(m.scCount) + ' chains' : 'switched off'; } }
     ];
+    drawTiles(tiles, ma, mb);
+  }
+
+  function drawTiles(tiles, ma, mb) {
     $('cmpTiles').innerHTML = tiles.map(function (t) {
       function line(m, v, r) {
         return '<div class="cmp-tv"><span class="cmp-tag r' + r + '">' + r.toUpperCase() + '</span>' +
@@ -322,10 +368,41 @@
     }).join('');
   }
 
-  // ---- cumulative damage chart (the "pace" lines: both runs on one clock)
+  /* Healing mode's tiles. A side whose parse has no heal lines at all (made
+     before addon 0.3.0) is unmeasured, not zero, so it prints a dash. */
+  function renderHealTiles(ma, mb) {
+    function v(m, k) { return m.hasHeals ? m.heal[k] : null; }
+    function hps(m) { return m.hasHeals && m.duration > 0 ? m.heal.total / m.duration : null; }
+    var tiles = [
+      { label: 'Total healing', a: v(ma, 'total'), b: v(mb, 'total'), fmt: S.fmtInt, kind: 'pct', good: 1, hero: true,
+        tip: 'Every cure, waltz and healing ability. Pet heals are not included' },
+      { label: 'Length', a: ma.duration, b: mb.duration,
+        fmt: function (s) { return S.fmtStopwatch(s * 1000); }, kind: 'time', good: 0 },
+      { label: 'Party HPS', a: hps(ma), b: hps(mb), fmt: fmtDps, kind: 'pct', good: 1 },
+      { label: 'Casts', a: v(ma, 'casts'), b: v(mb, 'casts'), fmt: S.fmtInt, kind: 'pct', good: 0,
+        tip: 'One per cast, however many people it reached' },
+      { label: 'Avg / cast', a: v(ma, 'avg'), b: v(mb, 'avg'), fmt: fmtWhole, kind: 'pct', good: 1 },
+      { label: 'Biggest heal', a: v(ma, 'max'), b: v(mb, 'max'), fmt: S.fmtInt, kind: 'pct', good: 1,
+        tip: 'The most one target was healed for by one cast. Pet heals not included' },
+    ];
+    drawTiles(tiles, ma, mb);
+  }
+
+  // ---- cumulative chart (the "pace" lines: both runs on one clock)
 
   function renderPace(ma, mb) {
-    var p = K.pace(ma, mb);
+    var heal = cmp.mode === 'healing';
+    $('cmpPaceTitle').textContent = heal ? 'Cumulative healing' : 'Cumulative damage';
+    $('cmpPaceSub').textContent = heal
+      ? 'Party healing since each run’s first hit, on one clock. Pet heals not included. Hover to read both runs at the same moment.'
+      : 'Party damage since each run’s first hit, on one clock. Hover to read both runs at the same moment.';
+    var p = K.pace(ma, mb, { field: heal ? 'healEvents' : 'events' });
+    // An unmeasured side draws no line rather than a flat one at zero.
+    if (heal) {
+      [['a', ma], ['b', mb]].forEach(function (x) {
+        if (!x[1].hasHeals) for (var i = 0; i < p[x[0]].length; i++) p[x[0]][i] = NaN;
+      });
+    }
     var ca = FFXITheme.series(0), cb = FFXITheme.series(1);
     var model = {
       times: p.times,
@@ -433,6 +510,108 @@
       }).join('') + '</tbody></table>';
   }
 
+  // ---- healing
+
+  /*
+   * Healing, A over B, one row per healer (or job). Figures are
+   * `stats.healing`'s -- Metrics' Healing column and its casts --
+   * and pet heals sit in a column of their own as Metrics keeps them. A party
+   * row leads. A parse from before the addon recorded healing says so rather
+   * than reading as a run with no healing in it.
+   */
+  function renderHealing(rows, ids, ma, mb) {
+    var t = $('cmpHeal'), empty = $('cmpHealEmpty');
+    $('cmpHealTitle').textContent = cmp.by === 'job' ? 'By job' : 'By healer';
+    var missing = [];
+    if (!ma.hasHeals) missing.push('A');
+    if (!mb.hasHeals) missing.push('B');
+    var note = missing.length
+      ? (missing.length === 2 ? 'Neither parse has' : 'Parse ' + missing[0] + ' has no') +
+        ' healing lines — healing is recorded by the VibeXI addon 0.3.0 and later' +
+        (missing.length === 2 ? '.' : ', so its side reads as a dash.')
+      : '';
+    if (!rows.length) {
+      t.innerHTML = '';
+      empty.hidden = false;
+      empty.textContent = note || 'No healing in either run.';
+      return;
+    }
+    empty.hidden = !note;
+    empty.textContent = note;
+
+    // A side with no heal lines at all is unmeasured, not zero.
+    function side(m, x, k) {
+      if (!m.hasHeals) return null;
+      return x ? x[k] : 0;
+    }
+    var max = 0;
+    rows.forEach(function (r) {
+      max = Math.max(max, r.a ? r.a.total : 0, r.b ? r.b.total : 0);
+    });
+    var job = cmp.by === 'job';
+
+    function line(cls, label, a, b, key) {
+      var open = key != null && !!cmp.healOpen[key];
+      return '<tr class="' + cls + (open ? ' on' : '') + '"' +
+        (key != null ? ' data-key="' + esc(key) + '" aria-expanded="' + open + '"' : '') + '>' +
+        '<td>' + label + '</td>' +
+        '<td class="cmp-barcol">' + bars(a.total, b.total, max, S.fmtInt) + '</td>' +
+        '<td>' + deltaCell(a.total, b.total, 'pct', S.fmtInt, 1) + '</td>' +
+        '<td>' + ab(fmtWhole(a.casts), fmtWhole(b.casts)) + '</td>' +
+        '<td>' + ab(fmtWhole(a.avg), fmtWhole(b.avg)) + '</td>' +
+        '<td>' + deltaCell(a.avg, b.avg, 'pct', fmtWhole, 1) + '</td>' +
+        '<td>' + ab(fmtWhole(a.max), fmtWhole(b.max)) + '</td>' +
+        '<td>' + ab(fmtWhole(a.petTotal), fmtWhole(b.petTotal)) + '</td>' +
+        '</tr>';
+    }
+    function pick(m, x) {
+      return {
+        total: side(m, x, 'total'), casts: side(m, x, 'casts'),
+        avg: x && m.hasHeals ? x.avg : null, max: side(m, x, 'max'),
+        petTotal: side(m, x, 'petTotal')
+      };
+    }
+
+    var html = '<thead><tr><th>' + (job ? 'Job' : 'Healer') + '</th>' +
+      '<th class="cmp-barcol">Healing</th><th>Δ</th>' +
+      '<th title="One per cast, however many people it reached">Casts</th>' +
+      '<th title="Healing divided by casts">Avg</th><th>Δ</th>' +
+      '<th title="The most one target was healed for by one cast">Biggest</th>' +
+      '<th title="Heals by the character&#39;s pet. Not part of Healing">Pet</th>' +
+      '</tr></thead><tbody>';
+    html += line('group', 'Party', pick(ma, ma.heal), pick(mb, mb.heal), null);
+
+    rows.forEach(function (r) {
+      var id = ids[r.key];
+      var open = !!cmp.healOpen[r.key];
+      html += line('pick',
+        '<span class="cmp-caret">' + (open ? '▾' : '▸') + '</span>' +
+        '<span class="swatch" style="background:' + id.color + '"></span>' + esc(id.label),
+        pick(ma, r.a), pick(mb, r.b), r.key);
+      if (open) html += '<tr class="cmp-detail"><td colspan="8">' + healActionTable(r, ma, mb) + '</td></tr>';
+    });
+    t.innerHTML = html + '</tbody>';
+  }
+
+  function healActionTable(r, ma, mb) {
+    var acts = K.healActions(r);
+    if (!acts.length) return '<p class="muted small">No heals.</p>';
+    function g(m, x, k) { return !m.hasHeals ? null : x ? x[k] : 0; }
+    return '<table class="data cmp-acts"><thead><tr>' +
+      '<th>Heal</th><th>Casts</th><th>Total</th><th>Δ</th><th>Avg</th><th>Δ</th>' +
+      '<th>Max</th></tr></thead><tbody>' +
+      acts.map(function (x) {
+        var avgA = x.a && ma.hasHeals ? x.a.avg : null, avgB = x.b && mb.hasHeals ? x.b.avg : null;
+        return '<tr><td>' + esc(x.key) + '</td>' +
+          '<td>' + ab(fmtWhole(g(ma, x.a, 'casts')), fmtWhole(g(mb, x.b, 'casts'))) + '</td>' +
+          '<td>' + ab(fmtWhole(g(ma, x.a, 'total')), fmtWhole(g(mb, x.b, 'total'))) + '</td>' +
+          '<td>' + deltaCell(g(ma, x.a, 'total'), g(mb, x.b, 'total'), 'pct', S.fmtInt, 1) + '</td>' +
+          '<td>' + ab(fmtWhole(avgA), fmtWhole(avgB)) + '</td>' +
+          '<td>' + deltaCell(avgA, avgB, 'pct', S.fmtInt, 1) + '</td>' +
+          '<td>' + ab(fmtWhole(g(ma, x.a, 'max')), fmtWhole(g(mb, x.b, 'max'))) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
   // ---- damage type and target
 
   function renderKinds(kinds, ma, mb) {
@@ -445,6 +624,22 @@
             '<td class="cmp-barcol">' + bars(k.a, k.b, max, S.fmtInt) + '</td>' +
             '<td>' + deltaCell(k.a, k.b, 'pct', S.fmtInt, 1) + '</td>' +
             '<td>' + ab(fmtPct(ma.total ? k.a / ma.total : null), fmtPct(mb.total ? k.b / mb.total : null)) + '</td></tr>';
+        }).join('') + '</tbody>'
+      : '';
+  }
+
+  /* A two-run totals table -- By heal, and healing By target. A side whose
+     parse has no heal lines prints dashes rather than zeroes. */
+  function renderTotals(tableId, label, rows, ma, mb, nameFn) {
+    var max = 0;
+    rows.forEach(function (k) { max = Math.max(max, k.a, k.b); });
+    $(tableId).innerHTML = rows.length
+      ? '<thead><tr><th>' + label + '</th><th class="cmp-barcol">Healing</th><th>Δ</th></tr></thead><tbody>' +
+        rows.map(function (k) {
+          var a = ma.hasHeals ? k.a : null, b = mb.hasHeals ? k.b : null;
+          return '<tr><td>' + esc((nameFn ? nameFn(k.key) : k.key) || '—') + '</td>' +
+            '<td class="cmp-barcol">' + bars(a, b, max, S.fmtInt) + '</td>' +
+            '<td>' + deltaCell(a, b, 'pct', S.fmtInt, 1) + '</td></tr>';
         }).join('') + '</tbody>'
       : '';
   }
@@ -464,7 +659,10 @@
 
   // ------------------------------------------------------------------ events
 
-  $('viewMeter').addEventListener('click', function () { setView('meter'); });
+  $('viewDamage').addEventListener('click', function () { setView('damage'); });
+  $('viewHealing').addEventListener('click', function () { setView('healing'); });
+  $('cmpModeDamage').addEventListener('click', function () { setMode('damage'); });
+  $('cmpModeHealing').addEventListener('click', function () { setMode('healing'); });
   $('viewCompare').addEventListener('click', function () { setView('compare'); });
   $('cmpByActor').addEventListener('click', function () { setBy('actor'); });
   $('cmpByJob').addEventListener('click', function () { setBy('job'); });
@@ -493,7 +691,7 @@
       var act = btn.dataset.act;
       if (act === 'open') openInto(slot);
       else if (act === 'current') useCurrent(slot);
-      else if (act === 'clear') { cmp[slot] = null; cmp.note[slot] = null; cmp.open = {}; render(); }
+      else if (act === 'clear') { cmp[slot] = null; cmp.note[slot] = null; cmp.open = {}; cmp.healOpen = {}; render(); }
     });
     host.addEventListener('dragover', function (ev) {
       ev.preventDefault();
@@ -509,6 +707,14 @@
       var f = ev.dataTransfer.files && ev.dataTransfer.files[0];
       if (f) f.text().then(function (text) { load(slot, f.name, text); });
     });
+  });
+
+  $('cmpHeal').addEventListener('click', function (ev) {
+    var tr = ev.target.closest('tr.pick');
+    if (!tr) return;
+    var k = tr.dataset.key;
+    if (cmp.healOpen[k]) delete cmp.healOpen[k]; else cmp.healOpen[k] = true;
+    render();
   });
 
   $('cmpTable').addEventListener('click', function (ev) {
@@ -533,9 +739,16 @@
   $('cmpByActor').setAttribute('aria-pressed', String(cmp.by === 'actor'));
   $('cmpByJob').setAttribute('aria-pressed', String(cmp.by === 'job'));
 
-  var saved = 'meter';
+  try { if (localStorage.getItem(MODE_KEY) === 'healing') cmp.mode = 'healing'; } catch (e) { }
+  $('cmpModeDamage').classList.toggle('on', cmp.mode === 'damage');
+  $('cmpModeHealing').classList.toggle('on', cmp.mode === 'healing');
+  $('cmpModeDamage').setAttribute('aria-pressed', String(cmp.mode === 'damage'));
+  $('cmpModeHealing').setAttribute('aria-pressed', String(cmp.mode === 'healing'));
+  $('compareView').dataset.mode = cmp.mode;
+
+  var saved = 'damage';
   try { saved = localStorage.getItem(VIEW_KEY) || 'meter'; } catch (e) { }
   setView(saved);
 
-  DPS.compareView = { render: render, load: load, state: cmp, setView: setView };
+  DPS.compareView = { render: render, load: load, state: cmp, setView: setView, setMode: setMode };
 })();

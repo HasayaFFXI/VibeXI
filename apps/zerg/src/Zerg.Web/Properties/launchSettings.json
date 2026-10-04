@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Zerg (dev, web from disk)": {
+      "commandName": "Project",
+      "commandLineArgs": "--dev"
+    },
+    "Zerg (embedded web)": {
+      "commandName": "Project"
+    }
+  }
+}
