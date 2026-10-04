@@ -38,7 +38,7 @@ public partial class CompareSection : UserControl
 
     static RunSlot? SlotOf(object sender) => (sender as FrameworkElement)?.DataContext as RunSlot;
 
-    static string? FileIn(DragEventArgs e) =>
+    internal static string? FileIn(DragEventArgs e) =>
         e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files
             ? files[0] : null;
 

@@ -40,7 +40,7 @@ public sealed partial class MainViewModel
 
     void DrawHealing(Snapshot c)
     {
-        HealEmptyText = SessionText.Empty(Shown.Session, IsImportedNow, what: "healing");
+        HealEmptyText = SessionText.Empty(Shown.Session, Viewing, what: "healing");
         DrawHealTiles(c);
         DrawHealLine(c);
         DrawHealBars(c);

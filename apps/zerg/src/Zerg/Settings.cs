@@ -19,8 +19,12 @@ public sealed class Settings
     /// <summary>"System" (follow Windows), "Light" or "Dark".</summary>
     public string Theme { get; set; } = "System";
 
-    /// <summary>The section on screen: "Damage", "Healing" or "Compare".</summary>
+    /// <summary>The section on screen: "Damage", "Healing", "View" or "Compare".</summary>
     public string Section { get; set; } = "Damage";
+
+    /// <summary>Which side of its parse the View section shows: "Damage" or
+    /// "Healing". The parse itself is not kept, as Compare's runs are not.</summary>
+    public string ViewMode { get; set; } = "Damage";
 
     /// <summary>What a Compare row is: "Character" or "Job".</summary>
     public string CompareBy { get; set; } = "Character";

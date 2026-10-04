@@ -1,0 +1,93 @@
+<UserControl x:Class="Zerg.Views.ViewCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <UserControl.Resources>
+
+    <!-- A line of small print that is not there when it has nothing to say. -->
+    <Style x:Key="Quiet" TargetType="TextBlock" BasedOn="{StaticResource Label}">
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Style.Triggers>
+        <Trigger Property="Text" Value="">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+  </UserControl.Resources>
+
+  <!-- The whole card takes a dropped file, open or empty. -->
+  <Border AllowDrop="True" DragEnter="OnDrag" DragOver="OnDrag" DragLeave="OnLeave" Drop="OnDrop">
+    <Border.Style>
+      <Style TargetType="Border" BasedOn="{StaticResource Card}">
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding ViewOver}" Value="True">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </Border.Style>
+    <StackPanel>
+
+      <!-- Nothing open: what the section is for, and the place to put a parse. -->
+      <StackPanel Visibility="{Binding HasParse, Converter={StaticResource Hidden}}">
+        <TextBlock Text="View a parse" Style="{StaticResource CardTitle}"/>
+        <TextBlock Text="Open or drop a parse exported from Zerg to look through its damage and its healing. The session goes on being measured underneath, and Damage and Healing return to it."
+                   Style="{StaticResource CardNote}"/>
+        <Grid Margin="0,12,0,0">
+          <!-- Dashed: an outline of where a parse goes. -->
+          <Rectangle RadiusX="6" RadiusY="6" StrokeThickness="1" StrokeDashArray="4 3"
+                     Stroke="{DynamicResource ControlStrongStrokeColorDefaultBrush}" Fill="Transparent"/>
+          <StackPanel Margin="16,18" HorizontalAlignment="Center">
+            <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="13"
+                       HorizontalAlignment="Center"/>
+            <Button Content="Open…" Command="{Binding OpenParseCommand}" Style="{DynamicResource AccentButtonStyle}"
+                    ToolTip="Open an exported parse" HorizontalAlignment="Center" Margin="0,10,0,0"
+                    AutomationProperties.Name="Open a parse to view"/>
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+
+      <!-- A parse: what it is, and which side of it is on screen below. -->
+      <StackPanel Visibility="{Binding HasParse, Converter={StaticResource Visible}}">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Style="{StaticResource SmallButton}" Content="Replace…" Command="{Binding OpenParseCommand}"
+                    ToolTip="Open another parse in this one's place" Margin="6,0,0,0"
+                    AutomationProperties.Name="Open another parse to view"/>
+            <Button Style="{StaticResource SmallButton}" Content="Close" Command="{Binding CloseParseCommand}"
+                    ToolTip="Close this parse and empty the section" Margin="6,0,0,0"
+                    AutomationProperties.Name="Close the viewed parse"/>
+          </StackPanel>
+          <TextBlock Text="{Binding ViewedName}" ToolTip="{Binding ViewedTip}" Style="{StaticResource CardTitle}"
+                     TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Background="Transparent"/>
+        </DockPanel>
+
+        <WrapPanel Margin="0,10,0,0">
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0"
+                      ToolTip="Look through the damage of this parse, or its healing">
+            <TextBlock Text="Show" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <RadioButton Style="{StaticResource Segment}" GroupName="viewMode" Content="Damage"
+                         IsChecked="{Binding ViewMode, Converter={StaticResource Equals}, ConverterParameter=Damage}"
+                         AutomationProperties.Name="View damage"/>
+            <RadioButton Style="{StaticResource Segment}" GroupName="viewMode" Content="Healing" Margin="0"
+                         IsChecked="{Binding ViewMode, Converter={StaticResource Equals}, ConverterParameter=Healing}"
+                         AutomationProperties.Name="View healing"/>
+          </StackPanel>
+          <TextBlock Text="Started" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+          <TextBlock Text="{Binding ViewedStarted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,20,0"
+                     Typography.NumeralAlignment="Tabular"/>
+          <TextBlock Text="Length" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+          <TextBlock Text="{Binding ViewedLength}" FontSize="12" VerticalAlignment="Center" Margin="0,0,20,0"
+                     Typography.NumeralAlignment="Tabular"/>
+          <TextBlock Text="Party" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+          <TextBlock Text="{Binding ViewedParty}" FontSize="12" VerticalAlignment="Center"/>
+        </WrapPanel>
+        <TextBlock Text="{Binding ViewedSkipped}" Style="{StaticResource Quiet}" Margin="0,6,0,0"/>
+      </StackPanel>
+
+      <!-- Why the last file would not open. Whatever was open is still open. -->
+      <TextBlock Text="{Binding ViewError}" Style="{StaticResource Quiet}" Margin="0,8,0,0"
+                 Foreground="{DynamicResource SystemFillColorCriticalBrush}" AutomationProperties.LiveSetting="Polite"/>
+    </StackPanel>
+  </Border>
+</UserControl>

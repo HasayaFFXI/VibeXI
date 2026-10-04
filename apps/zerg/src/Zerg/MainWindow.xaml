@@ -131,6 +131,10 @@
                        IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Healing}"
                        ToolTip="The healing done in the same session"
                        AutomationProperties.Name="Healing section"/>
+          <RadioButton Style="{StaticResource Segment}" GroupName="section" Content="View"
+                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=View}"
+                       ToolTip="One saved parse, opened from a file. The session goes on being measured underneath"
+                       AutomationProperties.Name="View section"/>
           <RadioButton Style="{StaticResource Segment}" GroupName="section" Content="Compare" Margin="0"
                        IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Compare}"
                        ToolTip="Two saved parses side by side. The session goes on being measured underneath"
@@ -147,26 +151,16 @@
                   AutomationProperties.AutomationId="Second"/>
         </StackPanel>
 
-        <!-- A paused parse saved to a file, and one opened in the session's
-             place. Export wakes only while the clock is stopped; Back to
-             live is there only while an import is on screen, and then over
-             every section, since it is what the locked pair points at. -->
-        <!-- Each a piece of its own, so the note arriving, or Back to live,
-             wraps onto the next line by itself and moves no button that was
-             already there. -->
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,6"
-                    Visibility="{Binding IsLive, Converter={StaticResource Visible}}">
-          <Button Content="Export…" Command="{Binding ExportCommand}" ToolTip="{Binding ExportTip}"
-                  ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,6,0"
-                  AutomationProperties.Name="Export"/>
-          <Button Content="Import…" Command="{Binding ImportCommand}" ToolTip="{Binding ImportTip}"
-                  VerticalAlignment="Center" AutomationProperties.Name="Import"/>
-        </StackPanel>
-        <Button Content="Back to live" Command="{Binding BackToLiveCommand}" Style="{DynamicResource AccentButtonStyle}"
-                ToolTip="Leave the imported parse and return to the session being measured"
-                VerticalAlignment="Center" Margin="0,0,6,6"
-                Visibility="{Binding IsImported, Converter={StaticResource Visible}}"/>
-        <!-- What the last Export or Import did. It clears itself. -->
+        <!-- The parse on screen saved to a file: the session's, or the one
+             the View section has open. It wakes only while the clock is
+             stopped. Opening a saved parse is the View section's own. -->
+        <!-- A piece of its own, so the note arriving wraps onto the next
+             line by itself and moves no button that was already there. -->
+        <Button Content="Export…" Command="{Binding ExportCommand}" ToolTip="{Binding ExportTip}"
+                ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,6,6"
+                Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}"
+                AutomationProperties.Name="Export"/>
+        <!-- What the last Export did. It clears itself. -->
         <TextBlock Text="{Binding ParseNote}" ToolTip="{Binding ParseNote}" FontSize="12" MaxWidth="460"
                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0,6,6"
                    Background="Transparent" AutomationProperties.LiveSetting="Polite">
@@ -185,10 +179,10 @@
           </TextBlock.Style>
         </TextBlock>
         <!-- The gap between this group and the toggles after it. -->
-        <Border Width="14" Visibility="{Binding ParseBarOpen, Converter={StaticResource Visible}}"/>
+        <Border Width="14" Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}"/>
 
         <!-- Toggles, not actions: the label is fixed and the pressed look says it is on. -->
-        <!-- Not offered in the Healing section: it moves no healing figure.
+        <!-- Not offered over healing: it moves no healing figure.
              In Compare it is on the Compare card, beside what it changes. -->
         <ToggleButton Content="Include Skillchains" IsChecked="{Binding Skillchains}" ToolTip="{Binding SkillchainsTip}"
                       VerticalAlignment="Center" Margin="0,0,6,6"
@@ -218,8 +212,9 @@
     </DockPanel>
 
     <!-- The characters, on a line of their own: an alliance is eighteen names.
-         Not over Compare: they filter the session, and its runs are files. -->
-    <StackPanel Grid.Row="1" Margin="16,4,16,0" Visibility="{Binding IsLive, Converter={StaticResource Visible}}">
+         Not over Compare: they filter one parse, and it has two. Over the
+         View section they are the characters of the parse open there. -->
+    <StackPanel Grid.Row="1" Margin="16,4,16,0" Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}">
       <WrapPanel>
         <TextBlock Text="{Binding CharactersLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
                    Margin="0,0,10,6" Typography.NumeralAlignment="Tabular"/>
@@ -263,7 +258,12 @@
     </StackPanel>
 
     <ScrollViewer x:Name="Body" Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">
-      <Grid Margin="16,0,16,16">
+      <StackPanel Margin="16,0,16,16">
+      <!-- The View section's head: the place to open one saved parse, and
+           which side of it the tiles and cards below are showing. They are
+           the Damage and Healing sections' own, drawn from the parse. -->
+      <v:ViewCard Margin="0,0,0,6" Visibility="{Binding IsView, Converter={StaticResource Visible}}"/>
+      <Grid>
       <StackPanel Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
 
         <!-- One hero figure, then the clock beside the total it divides. -->
@@ -393,6 +393,7 @@
       <!-- The Compare section: two saved parses side by side. -->
       <v:CompareSection DataContext="{Binding Compare}" Visibility="{Binding Active, Converter={StaticResource Visible}}"/>
       </Grid>
+      </StackPanel>
     </ScrollViewer>
 
     <!-- The status line: which file, how much of it, and the session. -->

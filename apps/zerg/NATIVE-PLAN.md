@@ -1986,6 +1986,42 @@ answers are Decision 15.
     shows a focused control's tooltip.** A tooltip in a grab after
     `drive.cs click` is that, not a fault.
 
+### After N8: the View section (2026-10-04)
+
+Asked for by the user outside the phases: a fourth section, **View**, between
+Healing and Compare, that opens one exported parse and shows it with a
+Damage | Healing switch. It took over N7's import, so wherever N7 above says
+Import… or Back to live, read this instead.
+
+- **Import… and Back to live are gone from the command bar.** Export… stays.
+  A parse is opened from the View card (Open…, Replace…, or a file dropped
+  on it) and closed with Close.
+- **The parse is still a second `Tracker`** (`viewed`, was `import`), drawn
+  by the same tiles and cards as the session. `Shown` is now
+  `Viewing ? viewed : live`, where `Viewing` is "the View section is on
+  screen and holds a parse". So Damage and Healing are always the session,
+  and the parse stays open while another section is on screen.
+- **`IsDamage` / `IsHealing` mean "these tiles and cards are on screen"**:
+  the section of that name, or View showing that side (`ViewMode`, kept in
+  `settings.viewMode`). `ShowsParse` (either) replaced `IsLive` and
+  `ParseBarOpen`; the chips and Export… follow it.
+- **`Views/ViewCard`** is the section's head, over the same two stacks of
+  tiles and cards the Damage and Healing sections use.
+- **Kept from N7:** Start and Pause locked while a parse is viewed (their
+  tooltip now points at Damage or Healing); the viewer's exclusions, Include
+  Skillchains and Hide names apply; a viewed parse can be exported again;
+  the session is fed, not counted, while a parse is on screen.
+- **Changed:** the status line reads "viewing · <file>"; the note under the
+  total reads "saved parse — read only"; a file that will not open says why
+  on the card (as a Compare slot does) and leaves what was open; drill-downs
+  close whenever the session and the parse change places (`Recount`, by
+  `drawn`); Compare's Use current always takes the session.
+- **Floating panels show whatever is counted**, as before: the parse while
+  View is on screen with one open, the session otherwise.
+- `drive.cs`: `"View section"`, `"Open a parse to view"`,
+  `"Open another parse to view"`, `"View damage"`, `"View healing"`,
+  `"Close the viewed parse"`.
+
 ### N9 — sign-off, switch-over and removal
 1. The user signs off the whole checklist in `Zerg.exe`. That includes the
    checks that need the game, which no earlier phase could run (Decision 13):
@@ -2263,9 +2299,10 @@ fixed in `src/Zerg` and that line is run again.
       do what they say and are remembered.
 - [ ] A row of the Actions table opens the drill-down (tiles, histogram, each
       hit); Close shuts it. The same for a skillchain row and for a heal.
-- [ ] Export while paused offers `<Owner>_parse_<date>_<time>.zerg`. Import
-      opens it, locks Start and Pause, and Back to live returns. An older
-      `.json` export imports too
+- [ ] Export while paused offers `<Owner>_parse_<date>_<time>.zerg`. The
+      View section opens it (Open…, or a file dropped on the card), shows
+      its Damage or its Healing, and locks Start and Pause; Damage and
+      Healing return to the session. An older `.json` export opens too
       (`apps/zerg/tools/exports/Paradox_Kirin_4.json`).
 - [ ] Compare: load a parse into A and into B, Use current, Swap, Damage and
       Healing, by Character and by Job. The changes read B − A.
@@ -2282,9 +2319,12 @@ The look (each was my choice, never confirmed):
       over B with the change under a rule; table cells of two lines with a
       tick in each run's colour; a row opening onto a quieter, indented
       surface; the switches on their own line under the heading.
-- [ ] **Import and export**: Export… and Import… as two plain buttons after
-      Start and Pause; Back to live in the accent colour; the small note
-      after them; the status dot amber during an import.
+- [ ] **Export and the View section** (the View section replaced Import…
+      and Back to live on 2026-10-04, see "After N8: the View section"):
+      Export… as a plain button after Start and Pause, with the small note
+      after it; the View card (a dashed box to drop a parse on, then the
+      parse's name, Show Damage | Healing, Started, Length, Party, Replace…
+      and Close); the status dot amber while a parse is viewed.
 - [ ] **The command bar wraps to a second line** at the default width (Panel
       opacity and Click-through go down). Keep it, or have it rearranged?
 - [ ] **N8's**: the small lock on a click-through panel's bar; the
