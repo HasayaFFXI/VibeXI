@@ -88,7 +88,7 @@ public sealed partial class MainViewModel
     void DrawLine(Snapshot c)
     {
         var agg = c.Totals;
-        EmptyText = SessionText.Empty(Shown.Session, IsImportedNow);
+        EmptyText = SessionText.Empty(Shown.Session, Viewing);
 
         // One line per character, and none for anyone at zero: a resisted
         // debuff makes an actor, not a line along the floor.

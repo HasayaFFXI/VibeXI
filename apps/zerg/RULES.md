@@ -244,6 +244,9 @@ filter does, and credits a pet's heal to its owner.
   the skillchain switch and Hide names are the viewer's.
 - **An import is locked** (no Start, no Pause) and takes nothing from the live
   session, which goes on being read and measured underneath.
+- **An import lives in the View section** and is counted only while that
+  section is on screen. Damage and Healing are always the session; leaving
+  View keeps the parse open for the way back.
 - **Exports are `.zerg`, never `.jsonl`** (`ParseFile.CanSaveAs`): the newest
   `*.jsonl` in the events folder is what Zerg follows. Older `.json` exports
   still import; detection is by content.

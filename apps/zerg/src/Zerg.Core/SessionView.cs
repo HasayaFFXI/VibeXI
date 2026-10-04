@@ -38,7 +38,7 @@ public sealed record SessionView(
     {
         if (imported)
         {
-            const string why = "Viewing an imported parse. Press Back to live to measure your own.";
+            const string why = "Viewing a saved parse. Switch to Damage or Healing to measure your own.";
             return new SessionView("Start", why, StartLook.Locked, false,
                                    "Pause", why, SecondLook.Off, false, false, false, SessionLight.Held);
         }
@@ -96,7 +96,7 @@ public static class SessionText
     /// clock in two formats is what that tile exists to avoid.
     /// </summary>
     public static string TotalNote(Session s, bool anyone, bool imported = false, string what = "damage") =>
-        imported ? "imported parse" + Dash + "read only"
+        imported ? "saved parse" + Dash + "read only"
         : s.Armed ? "armed" + Dash + "starts on the first hit"
         : s.StartedAt == null ? "not started" + Dash + "press Start"
         : !anyone ? "no " + what + " yet"

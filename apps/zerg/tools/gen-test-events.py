@@ -9,7 +9,7 @@ unresolved target, monster damage on the party, and gaps between fights.
     python apps/zerg/tools/gen-test-events.py --export Test_RunB.zerg --seed 7 --date 2026-07-31
 
 `--export` writes an import-ready parse instead -- the file Zerg's Export
-button makes -- for Import or either Compare slot, with no game running.
+button makes -- for the View section or either Compare slot, with no game running.
 
 It writes exactly what `addons/VibeXI/vx_emit.lua` writes: one ASCII JSON object
 per line, same field order, same field names, same message ids. If this file and
@@ -616,8 +616,8 @@ NL = chr(10)    # LF, as vx_emit.lua appends
 
 def to_export(w, owner, file_name, now_iso):
     """The generated lines as an EXPORTED PARSE -- what Zerg's Export button
-    writes (`ParseFile.Export` + `ParseFile.Stringify`), so the file opens with
-    Import, or in either Compare slot, with no game running.
+    writes (`ParseFile.Export` + `ParseFile.Stringify`), so the file opens in
+    the View section, or in either Compare slot, with no game running.
 
     The session is what a Start press just before the first swing and a Pause
     just after the last would have made: the zero is the first event Zerg

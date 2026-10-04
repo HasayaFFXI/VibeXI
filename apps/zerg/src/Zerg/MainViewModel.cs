@@ -13,8 +13,9 @@ public enum StatusLight { Idle, Armed, Live, Held, Waiting, Error }
 
 /// <summary>
 /// The main window's state: the session and its two buttons, the filters, and
-/// everything the Damage and Healing sections show. The Compare section has
-/// a view model of its own (<see cref="Compare"/>).
+/// everything the Damage and Healing sections show, of the session or of the
+/// parse opened in the View section. The Compare section has a view model of
+/// its own (<see cref="Compare"/>).
 ///
 /// <para>Two things drive it. A poll that brought new lines, or any change to
 /// a filter or the session, makes a new count and redraws every card from it
@@ -37,6 +38,8 @@ public sealed partial class MainViewModel : ObservableObject
     readonly HashSet<string> excluded;
     /// <summary>The last count, which the clock re-divides between polls.</summary>
     Snapshot? snapshot;
+    /// <summary>What the last count was of: the session, or a saved parse.</summary>
+    Tracker? drawn;
     /// <summary>The characters with a chip right now: what All and None act on.</summary>
     List<string> listed = [];
     string? error;
@@ -52,17 +55,20 @@ public sealed partial class MainViewModel : ObservableObject
     /// floating over the game, and it has to keep up.
     /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(IsCompare), nameof(IsLive), nameof(HideNamesTip),
-                              nameof(ParseBarOpen))]
+    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(IsView), nameof(IsCompare), nameof(ShowsParse),
+                              nameof(HideNamesTip))]
     private string section;
 
-    public const string DamageSection = "Damage", HealingSection = "Healing", CompareSection = "Compare";
+    public const string DamageSection = "Damage", HealingSection = "Healing", ViewSection = "View", CompareSection = "Compare";
 
-    public bool IsDamage => Section == DamageSection;
-    public bool IsHealing => Section == HealingSection;
+    /// <summary>The damage tiles and cards are on screen: the session's, or
+    /// those of the parse the View section has open.</summary>
+    public bool IsDamage => Section == DamageSection || (Viewing && ViewMode == DamageSection);
+    public bool IsHealing => Section == HealingSection || (Viewing && ViewMode == HealingSection);
+    public bool IsView => Section == ViewSection;
     public bool IsCompare => Section == CompareSection;
-    /// <summary>One of the two sections that show the session being measured.</summary>
-    public bool IsLive => !IsCompare;
+    /// <summary>A parse's tiles and cards are on screen, either side of it.</summary>
+    public bool ShowsParse => IsDamage || IsHealing;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SkillchainsTip))]
@@ -85,13 +91,16 @@ public sealed partial class MainViewModel : ObservableObject
         : "Skillchains left out of every total. Click to count them again.";
 
     /// <summary>Over Compare the switch spares nobody: its two runs may be
-    /// two people's, and neither is "you".</summary>
-    public string HideNamesTip => (HideNames, IsCompare) switch
+    /// two people's, and neither is "you". A parse in the View section keeps
+    /// the name of whoever recorded it.</summary>
+    public string HideNamesTip => (HideNames, IsCompare, Viewing) switch
     {
-        (true, false) => "Names hidden: every character but you is drawn as their job. Click to show them again.",
-        (true, true) => "Names hidden: every character in both runs is drawn as their job. Click to show them again.",
-        (false, false) => "Replace every other character's name with their job, for a screenshot or a stream",
-        (false, true) => "Replace every character's name with their job, for a screenshot or a stream",
+        (true, true, _) => "Names hidden: every character in both runs is drawn as their job. Click to show them again.",
+        (true, _, true) => "Names hidden: every character but the one who recorded the parse is drawn as their job. " +
+                           "Click to show them again.",
+        (true, _, _) => "Names hidden: every character but you is drawn as their job. Click to show them again.",
+        (false, true, _) => "Replace every character's name with their job, for a screenshot or a stream",
+        (false, _, _) => "Replace every other character's name with their job, for a screenshot or a stream",
     };
 
     public string GroupTip => GroupSmallLines
@@ -130,7 +139,8 @@ public sealed partial class MainViewModel : ObservableObject
         Panels = new PanelSet(settings);
 
         theme = settings.Theme;
-        section = settings.Section is HealingSection or CompareSection ? settings.Section : DamageSection;
+        section = settings.Section is HealingSection or ViewSection or CompareSection ? settings.Section : DamageSection;
+        viewMode = settings.ViewMode == HealingSection ? HealingSection : DamageSection;
         skillchains = settings.Skillchains;
         hideNames = settings.HideNames;
         groupSmallLines = settings.GroupSmallLines;
@@ -165,6 +175,8 @@ public sealed partial class MainViewModel : ObservableObject
     /// The characters listed follow the section: who dealt damage, or who
     /// healed. So this is a count again, though no figure moves. Compare
     /// lists nobody, and draws whatever changed while it was off screen.
+    /// Into the View section, or out of it, what is counted changes hands
+    /// between the session and the parse open there.
     /// </summary>
     partial void OnSectionChanged(string value)
     {
@@ -192,15 +204,15 @@ public sealed partial class MainViewModel : ObservableObject
             // A new file is a new character or a new day: nothing carries
             // over, and a clock from the old one would measure the wrong session.
             live.Follow(u.File);
-            if (import == null) drill = healDrill = null;
+            if (!Viewing) drill = healDrill = null;
             Log.Write($"following {u.File}");
         }
         live.Feed(u.Lines);
 
-        // An import on screen is not moved by what the addon writes. The
+        // A saved parse on screen is not moved by what the addon writes. The
         // lines are kept for the session, which is counted on the way back:
         // an armed one finds its zero then, at the same hit it would have.
-        if (import == null && (fresh || u.Lines.Count > 0)) Recount();
+        if (!Viewing && (fresh || u.Lines.Count > 0)) Recount();
         else DescribeStatus();
     }
 
@@ -216,8 +228,9 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     void Start()
     {
-        // An import has no file behind it to measure: Back to live first.
-        if (import != null) return;
+        // A saved parse has no file behind it to measure: that is done from
+        // the session's own sections.
+        if (Viewing) return;
         live.Start();
         drill = healDrill = null;
         LogSession("armed");
@@ -228,7 +241,7 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     void Second()
     {
-        if (import != null) return;
+        if (Viewing) return;
         bool armed = live.Session.Armed;
         if (armed) drill = healDrill = null;
         live.Second();
@@ -326,11 +339,18 @@ public sealed partial class MainViewModel : ObservableObject
     void Recount()
     {
         var now = Session.Now();
+        // A drill-down names a character and an action of what was on screen:
+        // it closes when the session and a saved parse change places.
+        if (!ReferenceEquals(drawn, Shown))
+        {
+            drawn = Shown;
+            drill = healDrill = null;
+        }
         var c = snapshot = Shown.Count(excluded, Skillchains, now);
         if (c.Latched) LogSession("started");
-        View = SessionView.Of(Shown.Session, IsImportedNow);
+        View = SessionView.Of(Shown.Session, Viewing);
         DescribeParse();
-        Compare.SessionChanged(Shown.Session.StartedAt != null);
+        Compare.SessionChanged(live.Session.StartedAt != null);
 
         DrawChips(c);
         DrawTiles(c);
@@ -355,7 +375,7 @@ public sealed partial class MainViewModel : ObservableObject
         Light = View.Light;
         ClockText = SessionText.Stopwatch(s, now);
         ClockNote = SessionText.ClockNote(s);
-        TotalNote = SessionText.TotalNote(s, agg is { Actors.Count: > 0 }, IsImportedNow);
+        TotalNote = SessionText.TotalNote(s, agg is { Actors.Count: > 0 }, Viewing);
 
         // The party's figure and every character's move together or not at
         // all: one falling past a column that stood still would be two right
@@ -366,7 +386,7 @@ public sealed partial class MainViewModel : ObservableObject
         // Healing per second is over the same clock, so it falls beside the
         // DPS it is read against.
         var healing = snapshot?.Healing;
-        HealTotalNote = SessionText.TotalNote(s, healing is { Actors.Count: > 0 }, IsImportedNow, what: "healing");
+        HealTotalNote = SessionText.TotalNote(s, healing is { Actors.Count: > 0 }, Viewing, what: "healing");
         HpsText = Format.Num(healing != null && secs > 0 ? healing.Total / secs : 0, 1);
         foreach (var row in Healers) row.Hps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
 
@@ -376,16 +396,16 @@ public sealed partial class MainViewModel : ObservableObject
 
     void DescribeStatus()
     {
-        // An import is what the line is about while one is on screen,
+        // A saved parse is what the line is about while one is on screen,
         // whatever the event folder is doing. It was never read line by
         // line, so it has no line count.
-        if (import != null)
+        if (Viewing)
         {
-            int rows = import.Reader.Events.Count;
+            int rows = viewed!.Reader.Events.Count;
             StatusLight = StatusLight.Held;
-            StatusFile = "imported" + Dot + importName;
+            StatusFile = "viewing" + Dot + viewedFile;
             StatusDetail = Format.Int(rows) + " event" + (rows == 1 ? "" : "s") + Dot +
-                           SessionText.Status(import.Session, imported: true);
+                           SessionText.Status(viewed.Session, imported: true);
             return;
         }
         if (error is not null)
@@ -421,16 +441,15 @@ public sealed partial class MainViewModel : ObservableObject
     // ------------------------------------------------------- for Compare
 
     /// <summary>
-    /// What is on screen, as the text of an exported parse, for Compare's
-    /// Use current; null before its clock has started. A copy: the session
-    /// goes on being measured, and a running clock is frozen in the copy
-    /// alone. An import on screen is taken under its own file's name.
+    /// The session, as the text of an exported parse, for Compare's Use
+    /// current; null before its clock has started. A copy: the session goes
+    /// on being measured, and a running clock is frozen in the copy alone.
     /// </summary>
     internal ParseText? Current()
     {
         var now = Session.Now();
-        return CompareSheet.Snapshot(Shown.Reader, Shown.Session, Shown.File, now) is { } text
-            ? new ParseText(import != null ? importName : "Current session " + Format.Clock(now), text)
+        return CompareSheet.Snapshot(live.Reader, live.Session, live.File, now) is { } text
+            ? new ParseText("Current session " + Format.Clock(now), text)
             : null;
     }
 

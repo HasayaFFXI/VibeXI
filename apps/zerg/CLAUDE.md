@@ -157,14 +157,16 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
   KeyChord.cs              a key with its modifiers, as text ("Ctrl+Alt+Z") and as Windows wants it (N8)
 src/Zerg/                  net10.0-windows WPF exe, Zerg.exe: the native app (NATIVE-PLAN.md)
   App.xaml(.cs)            Fluent theme, startup (single instance first), options, crash dialog
-  MainWindow               command bar (the Damage | Healing | Compare switch first), character
-                           chips (not over Compare), then the section on screen: five tiles and
-                           its cards (or the stand-in for one that is floating), or the Compare
-                           section; status line
+  MainWindow               command bar (the Damage | Healing | View | Compare switch first),
+                           character chips (not over Compare), then the section on screen: five
+                           tiles and its cards (or the stand-in for one that is floating), the
+                           View card over the same tiles and cards, or the Compare section;
+                           status line
   MainViewModel            holds a Tracker; Recount() on new lines or a filter change, Tick() 4x/s.
     (.Damage, .Healing)    One file per section; both sections are drawn on every count
-    (.Parse)               Export, Import, Back to live. `live` is the session and is always fed;
-                           `Shown` is the import while there is one, and is what gets drawn
+    (.Parse)               Export, and the View section's parse. `live` is the session and is
+                           always fed; `viewed` is the parse open in View; `Shown` is `viewed`
+                           while View is on screen with one, else `live`, and is what gets drawn
   CompareViewModel.cs      the Compare section (MainViewModel.Compare): two slots (RunSlot), the
                            switches, and the rows drawn from a CompareSheet. Redraws only on a
                            change, and only while it is on screen
@@ -181,7 +183,8 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe: the native app (NA
                            HealDrillCard), each with a docked and a floating form switched by
                            Float.On; Away (the stand-in for a floating card), Grow (a bar's eased
                            length), Cells (table-row panel), WheelChain, ActionRowTemplates,
-                           HiddenConverter, PresentConverter; CompareSection (the whole Compare
+                           HiddenConverter, PresentConverter; ViewCard (the View section's head:
+                           open or drop one parse, then Damage | Healing); CompareSection (the whole Compare
                            section) and its cells: RunPair (A over B), ChangeText (B - A),
                            RunBars (a bar per run)
   EventFeed.cs             250 ms poll on the dispatcher + FileSystemWatcher to poll early
@@ -403,13 +406,17 @@ Zerg's origin (`https://zerg.vibexi`) differs from the Python meter's
      page, load the same two files into it with
      `DPS.compareView.load('a', name, text)` and compare its text with
      `text`'s (NATIVE-PLAN.md, N6, has what to allow for).
-   - **Import and export** are `click <pid> Import` and `click <pid> Export`
-     (the session must be paused), then the dialog by its `h<hwnd>` from
-     `windows <pid>`. An Open dialog takes `type h<hwnd> "File name:" <path>`
-     and `enter`. **A Save dialog ignores `type`** and saves under the name
-     it offered, in whatever folder it opened in: use
-     `keys h<hwnd> <full path>` and then `enter`. `click <pid> "Back to live"`
-     leaves an import.
+   - **The View section** is `click <pid> "View section"`. A parse is opened
+     with `click <pid> "Open a parse to view"` (`"Open another parse to view"`
+     once one is open), then the Open dialog by its `h<hwnd>` from
+     `windows <pid>`: `type h<hwnd> "File name:" <path>` and `enter`. Its
+     sides are `"View damage"` and `"View healing"`;
+     `"Close the viewed parse"` empties it. The Damage and Healing sections
+     are always the session.
+   - **Export** is `click <pid> Export` (the parse on screen must be paused).
+     **A Save dialog ignores `type`** and saves under the name it offered,
+     in whatever folder it opened in: use `keys h<hwnd> <full path>` and
+     then `enter`.
    - **`where <target> <name>`** prints the middle of an element in a grab's
      own pixels, for `hover`, `press` and `drag`. A drag may end outside the
      window it began in: that is how a file is dropped from an Explorer

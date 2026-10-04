@@ -6,40 +6,130 @@ using Zerg.Core;
 
 namespace Zerg;
 
-// Export and import: a paused parse saved to a file another copy of Zerg can
-// open, and one opened here in the session's place.
+// Export, and the View section: a paused parse saved to a file another copy
+// of Zerg can open, and one opened here to look through, its damage or its
+// healing.
 //
-// Import takes nothing away. The session being followed is left whole, and
-// goes on being fed by every poll while the import is on screen: a clock that
-// was running keeps running, since it is wall time, and Back to live returns
-// to it with everything the addon wrote meanwhile already read. Only what is
-// counted and drawn changes hands.
+// Viewing takes nothing away. The session being followed is left whole, and
+// goes on being fed by every poll while the parse is on screen: a clock that
+// was running keeps running, since it is wall time, and the Damage and
+// Healing sections return to it with everything the addon wrote meanwhile
+// already read. Only what is counted and drawn changes hands, and only while
+// the View section is the one on screen.
 public sealed partial class MainViewModel
 {
-    /// <summary>How long the note about the last Export or Import stays up.</summary>
+    /// <summary>How long the note about the last Export stays up.</summary>
     static readonly TimeSpan NoteFor = TimeSpan.FromSeconds(8);
 
-    /// <summary>The imported parse on screen in the session's place, or null.</summary>
-    Tracker? import;
+    /// <summary>The parse opened in the View section, or null. Kept while
+    /// another section is on screen, so coming back finds it still open.</summary>
+    Tracker? viewed;
     /// <summary>The file it was opened from, by name.</summary>
-    string importName = "";
+    string viewedFile = "";
     DispatcherTimer? noteTimer;
 
+    /// <summary>The View section is on screen with a parse open in it.</summary>
+    bool Viewing => IsView && viewed != null;
+
     /// <summary>
-    /// What is counted and drawn: the import while there is one, otherwise
-    /// the session. Everything that puts a figure, a name or a colour on
-    /// screen reads this, so an import is drawn by the code that draws the
-    /// session, panels included, and the two cannot differ in how they count.
+    /// What is counted and drawn: the parse in the View section while that is
+    /// on screen, otherwise the session. Everything that puts a figure, a
+    /// name or a colour on screen reads this, so a saved parse is drawn by
+    /// the code that draws the session, panels included, and the two cannot
+    /// differ in how they count.
     /// </summary>
-    Tracker Shown => import ?? live;
+    Tracker Shown => Viewing ? viewed! : live;
 
-    bool IsImportedNow => import != null;
+    // ------------------------------------------------------ the View section
 
-    /// <summary>An imported parse is on screen. Both session buttons are held
-    /// off wherever they appear, and Back to live is offered.</summary>
+    /// <summary>A parse is open in the View section, whichever section is on screen.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ImportTip), nameof(ParseBarOpen))]
-    private bool isImported;
+    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(ShowsParse), nameof(HideNamesTip))]
+    private bool hasParse;
+
+    /// <summary>Which side of the parse the View section shows: "Damage" or "Healing".</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing))]
+    private string viewMode;
+
+    /// <summary>The characters listed follow the side on screen, as they
+    /// follow the section.</summary>
+    partial void OnViewModeChanged(string value)
+    {
+        settings.ViewMode = value;
+        settings.Save();
+        if (Viewing) Recount();
+    }
+
+    /// <summary>What the parse is called: its file's name.</summary>
+    [ObservableProperty] private string viewedName = "";
+    /// <summary>The event file the parse was recorded from, where it says.</summary>
+    [ObservableProperty] private string viewedTip = "";
+    [ObservableProperty] private string viewedStarted = "";
+    [ObservableProperty] private string viewedLength = "";
+    [ObservableProperty] private string viewedParty = "";
+    [ObservableProperty] private string viewedSkipped = "";
+    /// <summary>Why the last file would not open. What was open stays open.</summary>
+    [ObservableProperty] private string viewError = "";
+    /// <summary>A file is being held over the section's card.</summary>
+    [ObservableProperty] private bool viewOver;
+
+    /// <summary>Picks a parse off the disk, and picks where to save one
+    /// (given the name to offer). The main window supplies both.</summary>
+    public Func<ParseText?>? Picker { get; set; }
+    public Func<string, string?>? Saver { get; set; }
+
+    /// <summary>Opens an exported parse in the View section. A second one
+    /// replaces the first.</summary>
+    [RelayCommand]
+    void OpenParse() => Read(() => Picker?.Invoke());
+
+    /// <summary>A file dropped on the section's card.</summary>
+    public void Take(string path) => Read(() => ParseDialog.Read(path));
+
+    void Read(Func<ParseText?> source)
+    {
+        try
+        {
+            if (source() is not { } file) return;
+            var parse = ParseFile.Import(file.Text);
+            var info = CompareSheet.Describe(parse);
+            viewed = Tracker.Of(parse);
+            viewedFile = file.Name;
+            ViewedName = ParseDialog.Title(file.Name);
+            ViewedTip = parse.File ?? file.Name;
+            (ViewedStarted, ViewedLength, ViewedParty, ViewedSkipped) = (info.Started, info.Length, info.Party, info.Skipped);
+            ViewError = "";
+            Log.Write($"viewing {file.Name}");
+            // Counted before the cards come on screen, so they arrive drawn.
+            Recount();
+            HasParse = true;
+        }
+        catch (ParseImportException e)
+        {
+            ViewError = e.Message;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            ViewError = "Could not open: " + e.Message;
+        }
+    }
+
+    /// <summary>Empties the View section. The session was never touched.</summary>
+    [RelayCommand]
+    void CloseParse()
+    {
+        if (viewed == null) return;
+        viewed = null;
+        viewedFile = "";
+        ViewedName = ViewedTip = ViewedStarted = ViewedLength = ViewedParty = ViewedSkipped = ViewError = "";
+        Log.Write("closed the viewed parse");
+        HasParse = false;
+        // The panels were showing it too: back to the session.
+        Recount();
+    }
+
+    // ---------------------------------------------------------------- export
 
     /// <summary>The parse on screen is paused, so it can be saved.</summary>
     [ObservableProperty]
@@ -48,25 +138,10 @@ public sealed partial class MainViewModel
 
     [ObservableProperty] private string exportTip = "";
 
-    public string ImportTip => IsImported
-        ? "Open a different exported parse"
-        : "Open a parse exported from another copy of Zerg. What you are measuring now is kept, " +
-          "and Back to live returns to it.";
-
-    /// <summary>Export and Import are for the two sections that show a
-    /// session. Back to live is there wherever an import is, Compare included:
-    /// it is what the locked session buttons point at.</summary>
-    public bool ParseBarOpen => IsLive || IsImported;
-
-    /// <summary>What the last Export or Import did. Clears itself.</summary>
+    /// <summary>What the last Export did. Clears itself.</summary>
     [ObservableProperty] private string parseNote = "";
     /// <summary>The note is about something that went wrong.</summary>
     [ObservableProperty] private bool parseNoteBad;
-
-    /// <summary>Picks a parse off the disk, and picks where to save one
-    /// (given the name to offer). The main window supplies both.</summary>
-    public Func<ParseText?>? Picker { get; set; }
-    public Func<string, string?>? Saver { get; set; }
 
     void Note(string text, bool bad = false)
     {
@@ -78,13 +153,12 @@ public sealed partial class MainViewModel
         if (text.Length > 0) noteTimer.Start();
     }
 
-    /// <summary>Export follows the clock; Back to live follows the import.</summary>
+    /// <summary>Export follows the clock of whatever is on screen.</summary>
     void DescribeParse()
     {
         var s = Shown.Session;
-        IsImported = import != null;
         CanExport = Shown.CanExport;
-        ExportTip = CanExport ? "Save this parse to a file another copy of Zerg can open with Import"
+        ExportTip = CanExport ? "Save this parse to a file another copy of Zerg can open in View or Compare"
             : s.StartedAt != null ? "Pause first — a parse is exported once its clock has stopped"
             : "Nothing to export yet — Start, then Pause, to export a pull";
     }
@@ -116,50 +190,5 @@ public sealed partial class MainViewModel
         {
             Note("Export failed: " + e.Message, bad: true);
         }
-    }
-
-    /// <summary>
-    /// Opens an exported parse in the session's place. Always offered: it
-    /// takes nothing away. A second import replaces the first, and Back to
-    /// live still lands on the session.
-    /// </summary>
-    [RelayCommand]
-    void Import()
-    {
-        try
-        {
-            if (Picker?.Invoke() is not { } file) return;
-            var parse = ParseFile.Import(file.Text);
-            import = Tracker.Of(parse);
-            importName = file.Name;
-            // A drill-down names a character and an action of what was on screen.
-            drill = healDrill = null;
-            Log.Write($"imported {file.Name}");
-            Recount();
-            Note("Imported " + file.Name + (parse.Skipped > 0
-                ? " — " + Format.Int(parse.Skipped) + " unreadable record" + (parse.Skipped == 1 ? "" : "s") + " skipped"
-                : ""));
-        }
-        catch (ParseImportException e)
-        {
-            Note("Import failed: " + e.Message, bad: true);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            Note("Import failed: " + e.Message, bad: true);
-        }
-    }
-
-    /// <summary>Leaves the imported parse for the session, as it now stands.</summary>
-    [RelayCommand]
-    void BackToLive()
-    {
-        if (import == null) return;
-        import = null;
-        importName = "";
-        drill = healDrill = null;
-        Log.Write("back to live");
-        Note("");
-        Recount();
     }
 }

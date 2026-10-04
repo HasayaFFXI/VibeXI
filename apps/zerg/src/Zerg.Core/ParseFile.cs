@@ -269,7 +269,7 @@ public static class ParseFile
 
     const string NotParse = "That file is not a Zerg parse export.";
     const string EventFileMessage = "That is an addon event file (.jsonl), not an exported parse. " +
-                                    "Import opens a file made with Export.";
+                                    "Open a file made with Export.";
 
     /// <summary>
     /// Text → the parse it holds, or a <see cref="ParseImportException"/> whose

@@ -39,7 +39,7 @@ static class ParseDialog
 
     /// <summary>Where the player chose to save a parse, offered under
     /// <paramref name="name"/>; null if they cancelled. In the folder parses
-    /// were last opened from or saved to, so Import opens where exports went.</summary>
+    /// were last opened from or saved to, so Open starts where exports went.</summary>
     public static string? Save(Window owner, string name)
     {
         var dialog = new SaveFileDialog

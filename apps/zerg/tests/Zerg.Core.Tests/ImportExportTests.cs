@@ -175,8 +175,8 @@ public class ImportExportTests
         Assert.False(view.StartEnabled);
         Assert.False(view.SecondEnabled);
         Assert.Equal(StartLook.Locked, view.StartLook);
-        Assert.Contains("Back to live", view.StartTip);
-        Assert.Equal("imported parse — read only", SessionText.TotalNote(shown.Session, anyone: true, imported: true));
+        Assert.Contains("Switch to Damage or Healing", view.StartTip);
+        Assert.Equal("saved parse — read only",SessionText.TotalNote(shown.Session, anyone: true, imported: true));
         Assert.Equal("Nothing to show in this parse", SessionText.Empty(shown.Session, imported: true));
     }
 }
