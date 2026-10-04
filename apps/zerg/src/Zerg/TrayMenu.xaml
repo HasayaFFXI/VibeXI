@@ -66,5 +66,6 @@
   </MenuItem>
   <MenuItem Header="Dock all panels" Command="{Binding Panels.DockAllCommand}"/>
   <Separator/>
+  <MenuItem Header="Settings…" Click="OnSettings"/>
   <MenuItem Header="Exit" Click="OnExit"/>
 </ContextMenu>

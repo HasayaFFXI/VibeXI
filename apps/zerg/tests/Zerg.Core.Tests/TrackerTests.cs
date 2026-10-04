@@ -328,6 +328,24 @@ public class TrackerTests
     }
 
     [Fact]
+    public void Another_folder_leaves_no_file_and_no_session()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(21, "Hasaya", 100)]);
+        t.Count(Nobody, true, 30_000);
+
+        t.Unfollow();
+        Assert.Null(t.File);
+        Assert.Null(t.Session.ArmedAt);
+        Assert.Null(t.Session.StartedAt);
+        Assert.Empty(t.Reader.Events);
+        Assert.Empty(t.Cast.Slots);
+        Assert.Equal(0, t.Lines);
+        Assert.Equal(0, t.Count(Nobody, true, 31_000).Totals.Total);
+    }
+
+    [Fact]
     public void The_biggest_hit_names_who_and_what()
     {
         var t = Following();

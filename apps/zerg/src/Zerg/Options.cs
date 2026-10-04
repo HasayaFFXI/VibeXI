@@ -3,18 +3,22 @@ using System.IO;
 namespace Zerg;
 
 /// <summary>
-/// Command-line options. A player never passes any; these exist for development
-/// and for the odd machine where the addon writes somewhere unusual.
+/// Command-line options. A player never passes any: these exist for
+/// development. A machine where the addon writes somewhere unusual is what the
+/// Settings page is for.
 /// </summary>
-sealed record Options(string EventsDir)
+/// <param name="EventsDir">The folder to follow for this run, over the one in
+/// the settings and without changing it; null when not given.</param>
+sealed record Options(string? EventsDir)
 {
     public const string Usage =
         "Zerg.exe [--events-dir <dir>]\n\n" +
-        "  --events-dir  where the VibeXI addon writes (default %LOCALAPPDATA%\\VibeXI\\events)";
+        "  --events-dir  where the VibeXI addon writes, for this run only\n" +
+        "                (default: the folder on the Settings page)";
 
     public static Options Parse(string[] args)
     {
-        string eventsDir = AppInfo.DefaultEventsDir;
+        string? eventsDir = null;
 
         for (int i = 0; i < args.Length; i++)
         {

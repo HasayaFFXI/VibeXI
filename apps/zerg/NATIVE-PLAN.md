@@ -275,7 +275,7 @@ and a tray icon. Opening a `.zerg` file by double-click was not picked.
   Show Zerg, Start and Pause (worded and enabled as in the main window),
   Click-through panels (ticked while on, with the hot key beside it), a
   Panels submenu (each of the eight cards, ticked while floating), Dock all
-  panels, and Exit.
+  panels, and Exit. (Settings… was added above Exit with the Settings page.)
 
 ## The feature checklist (the definition of "everything kept")
 
@@ -2022,6 +2022,44 @@ Import… or Back to live, read this instead.
   `"Open another parse to view"`, `"View damage"`, `"View healing"`,
   `"Close the viewed parse"`.
 
+### After N8: the Settings page (2026-10-04)
+
+Asked for by the user outside the phases: a settings screen holding the
+folder the event files are looked for in and the click-through hot key. The
+user's three answers that day: a gear on the command bar opening a page in
+the main window; a folder change asks first when a session would be lost;
+the theme switch moves onto the page.
+
+- **The page is a `Section` value, `"Settings"`, that is never saved**
+  (`MainViewModel.Settings.cs`, `Views/SettingsPage`). `IsSettings` opens it
+  over the section on screen and goes back to that one. The gear is a toggle
+  at the right end of the bar, where Light | Dark | System was; the section
+  switch and the page's Done also leave. The tray menu has `Settings…`
+  above Exit. The session is measured underneath, as under View and Compare.
+- **The events folder** is `settings.eventsDir`; null is the addon's own.
+  `--events-dir` still wins for one run and is not saved (`Options.EventsDir`
+  is null when not given); the page then says so. Browse… is Windows' folder
+  dialog; Use default goes back. Changing folder is `EventFeed.Watch` (a new
+  `EventTail`; a poll of the old folder still in flight is dropped) and
+  `Tracker.Unfollow` (nothing carries over, as with a new file), at once and
+  with no restart. **With a session armed or started it asks first**
+  (`TaskDialog.Ask`, OK / Cancel). The card says how many event files the
+  folder holds and which is newest.
+- **The hot key** is read off the keyboard: press the button showing the
+  keys, then the new chord. While it waits the chord in use is let go of
+  (or pressing it would switch click-through instead of being read). Esc, or
+  the keyboard going elsewhere, leaves it as it was. Only what
+  `KeyChord.Parse` reads is taken (`KeyChord.Of`). **A chord another program
+  holds is refused**: the old one is taken back and stays the setting, and
+  the card says so. Use default is Ctrl+Alt+Z. This replaces "changed only
+  in `settings.json`" below.
+- **How it looks. Not yet confirmed by the user:** the gear, the page's
+  three cards (Events folder, Click-through hot key, Theme) and its heading
+  with Done.
+- `drive.cs`: `Settings`, `"Close settings"`, `"Choose the events folder"`,
+  `"Use the default events folder"`, `"Change the click-through hot key"`,
+  `"Use the default hot key"`, and the theme names as before.
+
 ### N9 — sign-off, switch-over and removal
 1. The user signs off the whole checklist in `Zerg.exe`. That includes the
    checks that need the game, which no earlier phase could run (Decision 13):
@@ -2102,7 +2140,8 @@ first is what makes the deletion reversible.
     5%, the rows of an actions list, Close), though they cannot be pressed.
     Only the bar was slimmed.
   - The hot key is changed in `settings.json` (`clickThroughKey`), with no
-    control for it in the window.
+    control for it in the window. (Since changed: it is on the Settings
+    page, "After N8: the Settings page".)
 - **How the user wants to run the sign-off**: together in one sitting, or
   by themselves with a list. Either way, write the list out for them from
   the feature checklist and step 1, as things to do and what to see.
@@ -2114,8 +2153,8 @@ first is what makes the deletion reversible.
   and N8's two. All are listed under step 1.
 - If the game reads the keyboard below the level Windows' hot keys work at,
   it may also see Z when Ctrl+Alt+Z is pressed, though Zerg gets the hot
-  key. If that types or triggers something in game, another chord goes in
-  `clickThroughKey`; Decision 15 then wants updating.
+  key. If that types or triggers something in game, another chord is chosen
+  on the Settings page; Decision 15 then wants updating.
 - For "the live clock past an hour" nothing has to be watched for an hour:
   start a session, leave it, read the tile at `1:00:00`.
 - A fault found in sign-off is fixed in `src/Zerg` and checked again; the

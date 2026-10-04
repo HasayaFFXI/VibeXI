@@ -62,4 +62,27 @@ public class KeyChordTests
     [Fact]
     public void A_setting_that_is_a_chord_is_kept() =>
         Assert.Equal("Ctrl+Alt+X", KeyChord.OrDefault("ctrl+alt+x").ToString());
+
+    [Theory]
+    [InlineData(true, true, false, false, 0x5A, "Ctrl+Alt+Z")]
+    [InlineData(false, true, true, false, 0x7B, "Alt+Shift+F12")]
+    [InlineData(false, false, false, true, 0x37, "Win+7")]
+    [InlineData(true, false, false, false, 0x87, "Ctrl+F24")]
+    public void A_chord_pressed_reads_back_as_itself(bool ctrl, bool alt, bool shift, bool win, int key, string written)
+    {
+        var c = KeyChord.Of(ctrl, alt, shift, win, key);
+        Assert.Equal(written, c?.ToString());
+        Assert.Equal(c, KeyChord.Parse(written));
+    }
+
+    [Theory]
+    [InlineData(false, false, false, false, 0x5A)]  // a bare Z
+    [InlineData(false, false, true, false, 0x5A)]   // only Shift
+    [InlineData(false, false, false, false, 0x7B)]  // a bare F12
+    [InlineData(true, true, false, false, 0x20)]    // Space
+    [InlineData(true, true, false, false, 0x1B)]    // Escape
+    [InlineData(true, true, false, false, 0x88)]    // past F24
+    [InlineData(true, true, false, false, 0x60)]    // numpad 0
+    public void A_chord_pressed_that_the_file_could_not_hold_is_refused(bool ctrl, bool alt, bool shift, bool win, int key) =>
+        Assert.Null(KeyChord.Of(ctrl, alt, shift, win, key));
 }

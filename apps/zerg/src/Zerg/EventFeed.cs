@@ -15,7 +15,7 @@ public sealed class EventFeed : IDisposable
 {
     public static readonly TimeSpan Interval = TimeSpan.FromMilliseconds(250);
 
-    readonly EventTail tail;
+    EventTail tail;
     readonly Dispatcher dispatcher;
     readonly DispatcherTimer timer;
     readonly object gate = new();
@@ -48,6 +48,18 @@ public sealed class EventFeed : IDisposable
         Poll();
     }
 
+    /// <summary>
+    /// Follows another folder from now on, starting with nothing read: the
+    /// next update is the newest file there from its top (or no file). A
+    /// poll of the old folder still being read is dropped when it lands.
+    /// </summary>
+    public void Watch(string directory)
+    {
+        tail = new EventTail(directory);
+        DropWatcher();
+        Poll();
+    }
+
     async void Poll()
     {
         if (disposed) return;
@@ -59,15 +71,17 @@ public sealed class EventFeed : IDisposable
         }
         polling = true;
         Polls++;
+        // What this poll reads, which Watch may replace before it is back.
+        var followed = tail;
         try
         {
             EnsureWatcher();
-            var update = await Task.Run(tail.Poll);
-            if (!disposed) Updated?.Invoke(update);
+            var update = await Task.Run(followed.Poll);
+            if (!disposed && followed == tail) Updated?.Invoke(update);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            if (!disposed) Failed?.Invoke(e);
+            if (!disposed && followed == tail) Failed?.Invoke(e);
         }
         finally
         {

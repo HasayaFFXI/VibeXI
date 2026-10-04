@@ -49,6 +49,18 @@ public sealed record KeyChord(bool Ctrl, bool Alt, bool Shift, bool Win, int Key
     /// <summary>The chord in a setting, or the default when the setting is not one.</summary>
     public static KeyChord OrDefault(string? text) => Parse(text) ?? Parse(Default)!;
 
+    /// <summary>
+    /// A chord as it was pressed: the modifiers held, and the virtual-key
+    /// code of the key that went down with them. Null for what
+    /// <see cref="Parse"/> would not read back, so a chord taken from the
+    /// keyboard is always one the settings file can hold.
+    /// </summary>
+    public static KeyChord? Of(bool ctrl, bool alt, bool shift, bool win, int key)
+    {
+        bool known = key is (>= 'A' and <= 'Z') or (>= '0' and <= '9') or (>= 0x70 and <= 0x87);
+        return known && (ctrl || alt || win) ? new KeyChord(ctrl, alt, shift, win, key) : null;
+    }
+
     static int? KeyOf(string part)
     {
         // Letters and digits have their own character as their code.

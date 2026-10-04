@@ -1,8 +1,10 @@
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using Zerg.Core;
 using Zerg.Native;
 
@@ -49,13 +51,16 @@ public partial class MainWindow : Window
         // The same goes for a dialog.
         model.Compare.Picker = model.Picker = () => ParseDialog.Open(this);
         model.Saver = name => ParseDialog.Save(this, name);
+        model.FolderPicker = PickFolder;
+        model.Asker = (headline, content) => TaskDialog.Ask(headline, content, TaskDialog.Icon.Warning, this);
+        model.Binder = Bind;
 
         // Once it has been laid out: the card is not there to scroll to until then.
         model.DrillOpened += () => Dispatcher.BeginInvoke(Drill.BringIntoView, DispatcherPriority.Loaded);
         model.HealDrillOpened += () => Dispatcher.BeginInvoke(HealDrill.BringIntoView, DispatcherPriority.Loaded);
         Body.SizeChanged += (_, _) => FitTiles();
 
-        menu = new TrayMenu(model, ComeForward, Close);
+        menu = new TrayMenu(model, ComeForward, ShowSettings, Close);
         SourceInitialized += (_, _) => Attach();
     }
 
@@ -79,15 +84,36 @@ public partial class MainWindow : Window
         tray.MenuAsked += ShowMenu;
         if (!tray.Shown) Log.Write("tray icon: not shown; minimizing will not hide Zerg");
 
-        // Settled before anything is asked of Windows: a setting that is no
-        // chord is the default chord, not no hot key.
-        var chord = KeyChord.OrDefault(settings.ClickThroughKey);
-        if (KeyChord.Parse(settings.ClickThroughKey) is null)
-            Log.Write($"settings: clickThroughKey \"{settings.ClickThroughKey}\" is not a key chord; using {chord}");
-        hotKey = HotKey.Register(this, chord, () => model.Panels.ToggleClickThroughCommand.Execute(null));
-        model.Panels.HotKey = hotKey != null ? chord.ToString() : null;
-        Log.Write(hotKey != null ? $"hot key {chord}: click-through panels"
-                                 : $"hot key {chord}: taken by another program; click-through is on the tray menu");
+        model.BindHotKey();
+    }
+
+    /// <summary>
+    /// Asks Windows for a chord in place of the one held, and says whether
+    /// it was given. Null only lets go of the one held, which the Settings
+    /// page does while it reads a new chord off the keyboard.
+    /// </summary>
+    bool Bind(KeyChord? chord)
+    {
+        hotKey?.Dispose();
+        hotKey = chord is null ? null
+            : HotKey.Register(this, chord, () => model.Panels.ToggleClickThroughCommand.Execute(null));
+        return hotKey != null;
+    }
+
+    /// <summary>The folder the player picked, or null if they cancelled. The
+    /// dialog opens at the one in use, when it is there to open at.</summary>
+    string? PickFolder(string from)
+    {
+        var dialog = new OpenFolderDialog { Title = "The folder VibeXI writes its event files to" };
+        if (Directory.Exists(from)) dialog.InitialDirectory = from;
+        return dialog.ShowDialog(this) == true ? dialog.FolderName : null;
+    }
+
+    /// <summary>The Settings page, with the window brought forward to show it.</summary>
+    void ShowSettings()
+    {
+        ComeForward();
+        model.IsSettings = true;
     }
 
     /// <summary>The panels that were out when Zerg was last closed. Once this window is on screen.</summary>
