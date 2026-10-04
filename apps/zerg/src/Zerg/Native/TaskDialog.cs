@@ -16,14 +16,22 @@ static class TaskDialog
     /// <summary>Shows the dialog and waits. Owned by <paramref name="owner"/> when
     /// it has a window, so it opens over it rather than wherever Windows likes.</summary>
     public static void Show(string headline, string content, Icon icon,
-                            string? details = null, string? footer = null, Window? owner = null)
+                            string? details = null, string? footer = null, Window? owner = null) =>
+        Open(headline, content, icon, details, footer, owner, ask: false);
+
+    /// <summary>The same dialog with OK and Cancel, for something that cannot
+    /// be taken back. True only for OK: Esc and the X are Cancel.</summary>
+    public static bool Ask(string headline, string content, Icon icon, Window? owner = null) =>
+        Open(headline, content, icon, null, null, owner, ask: true);
+
+    static bool Open(string headline, string content, Icon icon, string? details, string? footer, Window? owner, bool ask)
     {
         var config = new Config
         {
             cbSize = (uint)Marshal.SizeOf<Config>(),
             hwndParent = owner is null ? 0 : new WindowInteropHelper(owner).Handle,
             dwFlags = AllowCancel | ExpandFooterArea | (owner is null ? 0 : PositionRelativeToWindow),
-            dwCommonButtons = OkButton,
+            dwCommonButtons = ask ? OkButton | CancelButton : OkButton,
             pszWindowTitle = AppInfo.Name,
             hMainIcon = icon switch { Icon.Error => ErrorIcon, Icon.Warning => WarningIcon, _ => InformationIcon },
             pszMainInstruction = headline,
@@ -35,8 +43,8 @@ static class TaskDialog
         };
         try
         {
-            int hr = TaskDialogIndirect(ref config, out _, out _, out _);
-            if (hr >= 0) return;
+            int hr = TaskDialogIndirect(ref config, out int pressed, out _, out _);
+            if (hr >= 0) return pressed == IdOk;
         }
         // Only if the manifest didn't take (common controls v5 has no task
         // dialog): a plain message box still tells the player what happened.
@@ -44,8 +52,9 @@ static class TaskDialog
 
         var text = headline + "\n\n" + content + (footer is null ? "" : "\n\n" + footer);
         var image = icon switch { Icon.Error => MessageBoxImage.Error, Icon.Warning => MessageBoxImage.Warning, _ => MessageBoxImage.Information };
-        if (owner is null) MessageBox.Show(text, AppInfo.Name, MessageBoxButton.OK, image);
-        else MessageBox.Show(owner, text, AppInfo.Name, MessageBoxButton.OK, image);
+        var buttons = ask ? MessageBoxButton.OKCancel : MessageBoxButton.OK;
+        return (owner is null ? MessageBox.Show(text, AppInfo.Name, buttons, image)
+                              : MessageBox.Show(owner, text, AppInfo.Name, buttons, image)) == MessageBoxResult.OK;
     }
 
     // ------------------------------------------------------------- interop
@@ -54,6 +63,8 @@ static class TaskDialog
     const uint ExpandFooterArea = 0x0040;          // TDF_EXPAND_FOOTER_AREA: details open below, not mid-dialog
     const uint PositionRelativeToWindow = 0x1000;  // TDF_POSITION_RELATIVE_TO_WINDOW
     const uint OkButton = 0x0001;                  // TDCBF_OK_BUTTON
+    const uint CancelButton = 0x0008;              // TDCBF_CANCEL_BUTTON
+    const int IdOk = 1;                            // IDOK
 
     // MAKEINTRESOURCEW(-1/-2/-3): TD_WARNING_ICON, TD_ERROR_ICON, TD_INFORMATION_ICON.
     const nint WarningIcon = 0xFFFF;

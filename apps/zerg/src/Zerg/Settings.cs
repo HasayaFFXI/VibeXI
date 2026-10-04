@@ -63,9 +63,15 @@ public sealed class Settings
     public List<string> OpenPanels { get; set; } = [];
 
     /// <summary>The keys that switch the floating panels between click-through
-    /// and clickable, from any application. Changed here, in the file: a chord
+    /// and clickable, from any application. Chosen on the Settings page: a chord
     /// another program already holds cannot be had, and this is the way round it.</summary>
     public string ClickThroughKey { get; set; } = Core.KeyChord.Default;
+
+    /// <summary>The folder the addon's event files are looked for in, chosen
+    /// on the Settings page. Null is the addon's own
+    /// (<see cref="AppInfo.DefaultEventsDir"/>), so a default that moves in
+    /// a later build moves for everyone who never chose.</summary>
+    public string? EventsDir { get; set; }
 
     /// <summary>Window placement by name: "main", and "panel:" plus its key
     /// for each floating panel.</summary>
@@ -92,8 +98,8 @@ public sealed class Settings
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        // The file is for a person to read and, for the hot key, to edit:
-        // "Ctrl+Alt+Z" is written as that, not with its plus signs escaped.
+        // The file is for a person to read: "Ctrl+Alt+Z" is written as
+        // that, not with its plus signs escaped.
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 

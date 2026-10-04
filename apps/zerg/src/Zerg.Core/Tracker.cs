@@ -132,6 +132,19 @@ public sealed class Tracker
         Lines = 0;
     }
 
+    /// <summary>No file is being followed any more: the folder they are
+    /// looked for in has changed. As a tracker starts, session included,
+    /// until a file is found in the new one.</summary>
+    public void Unfollow()
+    {
+        if (Imported) return;
+        File = null;
+        Reader = new EventReader();
+        Cast = new Cast();
+        Session = Session.Idle();
+        Lines = 0;
+    }
+
     public void Feed(IReadOnlyList<string> lines)
     {
         if (Imported) return;

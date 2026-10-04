@@ -121,7 +121,9 @@ dotnet publish apps/zerg/src/Zerg.Web -c Release -r win-x64 --self-contained fal
 ```
 
 `ZergWeb.exe` options: `--events-dir <dir>`, `--web-root <dir>`, `--dev`
-(`src/Zerg.Web/Options.cs`). The native `Zerg.exe` takes `--events-dir <dir>`.
+(`src/Zerg.Web/Options.cs`). The native `Zerg.exe` takes `--events-dir <dir>`,
+which is followed for that run only, over the folder chosen on the Settings
+page (`settings.eventsDir`) and without changing it.
 
 After scripted builds run `dotnet build-server shutdown`: a lingering MSBuild
 node has held directory locks here. A running `Zerg.exe` or `ZergWeb.exe`
@@ -154,19 +156,25 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
   Cast.cs, Shades.cs       colour slots (owner in slot 0), shades for a shared job, hidden-name labels
   SessionView.cs           the two session buttons and the session's wording, as data
   PanelOpacities.cs        how see-through each floating panel is: a default, and a panel's own value (N4)
-  KeyChord.cs              a key with its modifiers, as text ("Ctrl+Alt+Z") and as Windows wants it (N8)
+  KeyChord.cs              a key with its modifiers, as text ("Ctrl+Alt+Z"), as Windows wants it (N8),
+                           and as pressed on the Settings page (Of)
 src/Zerg/                  net10.0-windows WPF exe, Zerg.exe: the native app (NATIVE-PLAN.md)
   App.xaml(.cs)            Fluent theme, startup (single instance first), options, crash dialog
-  MainWindow               command bar (the Damage | Healing | View | Compare switch first),
-                           character chips (not over Compare), then the section on screen: five
-                           tiles and its cards (or the stand-in for one that is floating), the
-                           View card over the same tiles and cards, or the Compare section;
-                           status line
+  MainWindow               command bar (the Damage | Healing | View | Compare switch first, the
+                           gear for the Settings page last), character chips (not over Compare),
+                           then the section on screen: five tiles and its cards (or the stand-in
+                           for one that is floating), the View card over the same tiles and
+                           cards, the Compare section, or the Settings page; status line.
+                           Registers the hot key (Bind) and opens the folder dialog (PickFolder)
   MainViewModel            holds a Tracker; Recount() on new lines or a filter change, Tick() 4x/s.
     (.Damage, .Healing)    One file per section; both sections are drawn on every count
     (.Parse)               Export, and the View section's parse. `live` is the session and is
                            always fed; `viewed` is the parse open in View; `Shown` is `viewed`
                            while View is on screen with one, else `live`, and is what gets drawn
+    (.Settings)            the Settings page: `IsSettings` (the page is a `Section` value that is
+                           never saved), the events folder (`Watch`: asks first when a session
+                           would be lost, then `EventFeed.Watch` + `Tracker.Unfollow`), and the
+                           hot key (`BeginHotKey` / `TakeHotKey` / `CancelHotKey`, `Use`)
   CompareViewModel.cs      the Compare section (MainViewModel.Compare): two slots (RunSlot), the
                            switches, and the rows drawn from a CompareSheet. Redraws only on a
                            change, and only while it is on screen
@@ -186,8 +194,10 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe: the native app (NA
                            HiddenConverter, PresentConverter; ViewCard (the View section's head:
                            open or drop one parse, then Damage | Healing); CompareSection (the whole Compare
                            section) and its cells: RunPair (A over B), ChangeText (B - A),
-                           RunBars (a bar per run)
-  EventFeed.cs             250 ms poll on the dispatcher + FileSystemWatcher to poll early
+                           RunBars (a bar per run); SettingsPage (events folder, hot key, theme;
+                           its code reads a key chord off the keyboard)
+  EventFeed.cs             250 ms poll on the dispatcher + FileSystemWatcher to poll early;
+                           Watch(dir) follows another folder from then on
   Settings.cs              %LOCALAPPDATA%\VibeXI\zerg\settings.json
   AppTheme.cs              light or dark: sets the Fluent theme, merges Themes/Light|Dark.xaml;
                            after a switch, makes a screen reader look at every list again
@@ -300,7 +310,7 @@ don't overlap:
 | | |
 |---|---|
 | `logs\zerg.log` | **native app** log: startup, settings and theme changes, file switches, crashes |
-| `settings.json` | **native app** settings (NATIVE-PLAN.md Decision 7): filters, theme, panel opacity, placement under `windows` (`main`, and `panel:<key>` for each floating panel), `openPanels` (the panels to bring back at the next start) and `clickThroughKey` (the hot key, "Ctrl+Alt+Z") |
+| `settings.json` | **native app** settings (NATIVE-PLAN.md Decision 7): filters, theme, panel opacity, placement under `windows` (`main`, and `panel:<key>` for each floating panel), `openPanels` (the panels to bring back at the next start), `clickThroughKey` (the hot key, "Ctrl+Alt+Z") and `eventsDir` (the folder the event files are looked for in; absent or null is the addon's own). The last two are set on the Settings page |
 | `zerg.log` | startup steps, crashes; in Debug builds every non-poll request and every alpha call. The first thing to read when something is wrong |
 | `windows.json` | main and per-panel placement. Off-screen positions are never saved: Windows parks hidden windows at ~(−32000, −32000) |
 | `WebView2\` | the browser profile, so the page's `localStorage` (theme, opacity default, exclusions…). These keys are listed in `../damage-meter/CLAUDE.md` |
@@ -413,6 +423,16 @@ Zerg's origin (`https://zerg.vibexi`) differs from the Python meter's
      sides are `"View damage"` and `"View healing"`;
      `"Close the viewed parse"` empties it. The Damage and Healing sections
      are always the session.
+   - **The Settings page** is `click <pid> Settings` (the gear; again, or
+     `"Close settings"`, or any section, to leave). The theme is there now:
+     `"Light theme"`, `"Dark theme"`, `"System theme"`. The folder is
+     `"Choose the events folder"` (a folder dialog, by its `h<hwnd>`) and
+     `"Use the default events folder"`; with a session armed or started a
+     task dialog asks first. The hot key is
+     `"Change the click-through hot key"`, then `front <pid>` and
+     `chord <keys>` while Zerg has the keyboard, and
+     `"Use the default hot key"`. `settings.json` and `logs\zerg.log`
+     (`events dir …`, `hot key …`) say what was taken.
    - **Export** is `click <pid> Export` (the parse on screen must be paused).
      **A Save dialog ignores `type`** and saves under the name it offered,
      in whatever folder it opened in: use `keys h<hwnd> <full path>` and

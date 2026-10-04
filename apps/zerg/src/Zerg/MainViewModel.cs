@@ -56,7 +56,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(IsView), nameof(IsCompare), nameof(ShowsParse),
-                              nameof(HideNamesTip))]
+                              nameof(HideNamesTip), nameof(IsSettings))]
     private string section;
 
     public const string DamageSection = "Damage", HealingSection = "Healing", ViewSection = "View", CompareSection = "Compare";
@@ -145,6 +145,9 @@ public sealed partial class MainViewModel : ObservableObject
         hideNames = settings.HideNames;
         groupSmallLines = settings.GroupSmallLines;
         charactersOpen = settings.CharactersOpen;
+        chord = KeyChord.OrDefault(settings.ClickThroughKey);
+        hotKeyText = chord.ToString();
+        DescribeFolder();
         view = SessionView.Of(live.Session);
         Compare = new CompareViewModel(settings, this) { Active = IsCompare };
 
@@ -176,12 +179,23 @@ public sealed partial class MainViewModel : ObservableObject
     /// healed. So this is a count again, though no figure moves. Compare
     /// lists nobody, and draws whatever changed while it was off screen.
     /// Into the View section, or out of it, what is counted changes hands
-    /// between the session and the parse open there.
+    /// between the session and the parse open there. The Settings page is
+    /// not saved as the section: the next start opens on the one it was
+    /// opened over.
     /// </summary>
     partial void OnSectionChanged(string value)
     {
-        settings.Section = value;
-        settings.Save();
+        if (value == SettingsSection)
+        {
+            // What is in the folder may have changed since the page was last open.
+            DescribeFolder();
+        }
+        else
+        {
+            CancelHotKey();
+            settings.Section = value;
+            settings.Save();
+        }
         Compare.Active = IsCompare;
         Recount();
     }
@@ -206,6 +220,8 @@ public sealed partial class MainViewModel : ObservableObject
             live.Follow(u.File);
             if (!Viewing) drill = healDrill = null;
             Log.Write($"following {u.File}");
+            // The Settings page says which file is newest in the folder.
+            if (IsSettings) DescribeFolder();
         }
         live.Feed(u.Lines);
 

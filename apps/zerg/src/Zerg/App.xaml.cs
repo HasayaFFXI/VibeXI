@@ -48,9 +48,10 @@ public partial class App : Application
         var settings = Settings.Load();
         AppTheme.Apply(settings.ThemeMode);
 
-        Log.Write($"events dir {options.EventsDir}; theme {settings.Theme}");
+        var eventsDir = options.EventsDir ?? MainViewModel.FolderIn(settings);
+        Log.Write($"events dir {eventsDir}{(options.EventsDir != null ? " (--events-dir)" : "")}; theme {settings.Theme}");
 
-        feed = new EventFeed(options.EventsDir);
+        feed = new EventFeed(eventsDir);
         var window = new MainWindow(new MainViewModel(settings, feed), settings);
         MainWindow = window;
         window.Show();

@@ -91,33 +91,15 @@
     <!-- The command bar: what is measured (the session), then what is counted
          and how it is shown. -->
     <DockPanel Grid.Row="0" Margin="16,12,16,0">
-      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0"
-                  ToolTip="Light, dark, or whatever Windows is set to">
-        <RadioButton Style="{StaticResource Segment}" GroupName="theme"
-                     IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=Light}"
-                     AutomationProperties.Name="Light theme">
-          <StackPanel Orientation="Horizontal">
-            <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE706;" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <TextBlock Text="Light"/>
-          </StackPanel>
-        </RadioButton>
-        <RadioButton Style="{StaticResource Segment}" GroupName="theme"
-                     IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=Dark}"
-                     AutomationProperties.Name="Dark theme">
-          <StackPanel Orientation="Horizontal">
-            <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE708;" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <TextBlock Text="Dark"/>
-          </StackPanel>
-        </RadioButton>
-        <RadioButton Style="{StaticResource Segment}" GroupName="theme" Margin="0"
-                     IsChecked="{Binding Theme, Converter={StaticResource Equals}, ConverterParameter=System}"
-                     AutomationProperties.Name="System theme">
-          <StackPanel Orientation="Horizontal">
-            <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE7F4;" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <TextBlock Text="System"/>
-          </StackPanel>
-        </RadioButton>
-      </StackPanel>
+      <!-- The way into the Settings page, and back out of it: pressed while
+           the page is on screen. What is set once and left alone is in there
+           (the events folder, the hot key, the theme), off the bar. -->
+      <ToggleButton DockPanel.Dock="Right" VerticalAlignment="Top" Margin="16,0,0,0" Padding="9,7"
+                    IsChecked="{Binding IsSettings}"
+                    ToolTip="Settings: the events folder, the click-through hot key and the theme"
+                    AutomationProperties.Name="Settings">
+        <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE713;" FontSize="16"/>
+      </ToggleButton>
 
       <WrapPanel VerticalAlignment="Center">
         <!-- Which side of the fight is on screen. First on the bar, because
@@ -392,6 +374,9 @@
 
       <!-- The Compare section: two saved parses side by side. -->
       <v:CompareSection DataContext="{Binding Compare}" Visibility="{Binding Active, Converter={StaticResource Visible}}"/>
+
+      <!-- The Settings page, in the place of whichever section it was opened over. -->
+      <v:SettingsPage Visibility="{Binding IsSettings, Converter={StaticResource Visible}}"/>
       </Grid>
       </StackPanel>
     </ScrollViewer>
