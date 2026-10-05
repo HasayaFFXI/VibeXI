@@ -16,7 +16,7 @@ public partial class MainWindow : Window
 
     readonly MainViewModel model;
     readonly Settings settings;
-    readonly DispatcherTimer clock;
+    readonly Metronome draw;
     readonly TrayMenu menu;
     TrayIcon? tray;
     HotKey? hotKey;
@@ -41,9 +41,16 @@ public partial class MainWindow : Window
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
         }
 
-        // The same 4x a second as the poll, never per frame: these monitors
-        // refresh at 120 Hz, and per-frame work would keep WPF rendering at that.
-        clock = new DispatcherTimer(EventFeed.Interval, DispatcherPriority.Normal, (_, _) => model.Tick(), Dispatcher);
+        // Everything the clock moves is redrawn on one beat, as often as the
+        // Settings page says: faster than a dispatcher timer can keep time,
+        // and never per frame. These monitors refresh at 120 Hz, and per-frame
+        // work would keep WPF rendering at that.
+        draw = new Metronome(model.DrawFrequency, model.Tick, Dispatcher);
+        model.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.DrawFrequency)) draw.PerSecond = model.DrawFrequency;
+        };
+        IsVisibleChanged += (_, _) => Look();
 
         // A panel is a window, and this is where windows are made; the view
         // model only says which cards are out.
@@ -155,12 +162,24 @@ public partial class MainWindow : Window
             Hide();
             Log.Write("minimized to the tray");
         }
+        Look();
         base.OnStateChanged(e);
+    }
+
+    /// <summary>Tells the view model whether this window can be seen, so the
+    /// beat does not rewrite figures nobody is looking at. Back in view, they
+    /// are brought up to date at once and not at the next beat.</summary>
+    void Look()
+    {
+        bool seen = IsVisible && WindowState != WindowState.Minimized;
+        if (seen == model.Seen) return;
+        model.Seen = seen;
+        if (seen) model.Tick();
     }
 
     protected override void OnClosing(CancelEventArgs e)
     {
-        clock.Stop();
+        draw.Dispose();
         // First, so each panel saves its frame as it closes, into the same
         // settings this window's placement is about to be written to.
         model.Panels.Leave();

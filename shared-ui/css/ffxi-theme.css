@@ -7,8 +7,7 @@
 
    Consumed by:
      apps/ws-calculator  pages/*.html    <link href="../../../shared-ui/css/ffxi-theme.css">
-     apps/damage-meter   web/index.html  <link href="/shared/css/ffxi-theme.css">
-                 (damage-meter.py maps the /shared/ URL prefix onto this directory)
+     apps/penta-calculator  pages/*.html  the same path
 
    Each app then links its OWN stylesheet after this one for rules nothing else
    needs. Anything a second app could plausibly want belongs here instead.
@@ -18,7 +17,7 @@
    is double-clicked off disk.
 
    Dark is the default -- ws-calculator never sets data-theme at all. Light is an
-   opt-in override for apps with a toggle (damage-meter), and is the same identity
+   opt-in override for apps with a toggle, and is the same identity
    re-stepped for a pale surface, not an inversion.
    ============================================================================= */
 
@@ -71,7 +70,7 @@
      blade/brass identity.
 
      1-8 are the reference eight and are NOT to be re-stepped. 9-18 are the
-     extension tier: an FFXI alliance is 18 characters, and the damage meter
+     extension tier: an FFXI alliance is 18 characters, and a chart of one
      gives every one of them their own line rather than folding the tail into a
      single muted "Other". They were solved for, not picked -- a max-min search
      over OKLCH (dark band L 0.50-0.67, C 0.10-0.175, contrast >= 3:1 vs the
@@ -799,7 +798,7 @@ table.data .swatch {
 .chart-tip b { color: var(--blade); }
 /* Manually positioned tips (ws-calculator) anchor above the cursor. */
 .chart-tip.anchor-above { transform: translate(-50%, -100%); }
-/* Tips toggled by opacity (damage-meter) stay laid out so their size can be read. */
+/* Tips toggled by opacity stay laid out so their size can be read. */
 .chart-tip.fade {
   display: block;
   min-width: 118px;

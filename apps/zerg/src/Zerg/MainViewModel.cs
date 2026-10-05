@@ -19,9 +19,10 @@ public enum StatusLight { Idle, Armed, Live, Held, Waiting, Error }
 ///
 /// <para>Two things drive it. A poll that brought new lines, or any change to
 /// a filter or the session, makes a new count and redraws every card from it
-/// (<see cref="Recount"/>). The clock, four times a second, rewrites only the
-/// figures that move with nothing happening: the elapsed time, and every DPS,
-/// which falls as the time under it grows (<see cref="Tick"/>).</para>
+/// (<see cref="Recount"/>). The draw beat, at the draw frequency set on the
+/// Settings page, rewrites only what moves with nothing happening: the
+/// elapsed time, every DPS, which falls as the time under it grows, and the
+/// live edge of the cumulative charts (<see cref="Tick"/>).</para>
 ///
 /// <para><b>An idle poll redraws nothing.</b> Every property raises a change
 /// only when its value changes, and the lists keep their rows from one count
@@ -145,6 +146,7 @@ public sealed partial class MainViewModel : ObservableObject
         hideNames = settings.HideNames;
         groupSmallLines = settings.GroupSmallLines;
         charactersOpen = settings.CharactersOpen;
+        drawFrequency = DrawRate.Clamp(settings.DrawFrequency);
         chord = KeyChord.OrDefault(settings.ClickThroughKey);
         hotKeyText = chord.ToString();
         DescribeFolder();
@@ -375,14 +377,32 @@ public sealed partial class MainViewModel : ObservableObject
         DrawActions(c);
         DrawDrill(c);
         DrawHealing(c);
-        Tick(now);
+        Tick(now, rates: true);
         DescribeStatus();
     }
 
-    /// <summary>4× a second: the clock, and everything divided by it.</summary>
-    public void Tick() => Tick(Session.Now());
+    /// <summary>
+    /// The main window is where it can be seen: not minimized, and not put
+    /// away in the tray. The main window says so. DPS and HPS are printed
+    /// nowhere else (a floating panel shows the clock and a total), so while
+    /// this is false the beat leaves them alone.
+    /// </summary>
+    public bool Seen { get; set; } = true;
 
-    void Tick(double now)
+    /// <summary>
+    /// At the draw frequency: the clock, everything divided by it, and the
+    /// cumulative charts' live edge. Everything on screen that time alone
+    /// moves, and nothing an event moves: that is a count's.
+    ///
+    /// <para>The rates are rewritten only while the tiles and tables that
+    /// print them are on screen. WPF lays out text it is not showing, and
+    /// thirty times a second that was 8% of a core for a window in the
+    /// tray. A count rewrites them whatever is on screen, so they are never
+    /// stale by more than the time since the last event.</para>
+    /// </summary>
+    public void Tick() => Tick(Session.Now(), rates: Seen && ShowsParse);
+
+    void Tick(double now, bool rates)
     {
         var s = Shown.Session;
         double ms = s.Elapsed(now), secs = ms / 1000;
@@ -392,21 +412,25 @@ public sealed partial class MainViewModel : ObservableObject
         ClockText = SessionText.Stopwatch(s, now);
         ClockNote = SessionText.ClockNote(s);
         TotalNote = SessionText.TotalNote(s, agg is { Actors.Count: > 0 }, Viewing);
-
-        // The party's figure and every character's move together or not at
-        // all: one falling past a column that stood still would be two right
-        // numbers from two different moments.
-        DpsText = Format.Num(agg != null && secs > 0 ? agg.Total / secs : 0, 1);
-        foreach (var row in Actors) row.Dps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
-
-        // Healing per second is over the same clock, so it falls beside the
-        // DPS it is read against.
         var healing = snapshot?.Healing;
         HealTotalNote = SessionText.TotalNote(s, healing is { Actors.Count: > 0 }, Viewing, what: "healing");
-        HpsText = Format.Num(healing != null && secs > 0 ? healing.Total / secs : 0, 1);
-        foreach (var row in Healers) row.Hps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
 
-        // The chart's live edge follows the clock; held, it stays where it is.
+        if (rates)
+        {
+            // The party's figure and every character's move together or not
+            // at all: one falling past a column that stood still would be
+            // two right numbers from two different moments.
+            DpsText = Format.Num(agg != null && secs > 0 ? agg.Total / secs : 0, 1);
+            foreach (var row in Actors) row.Dps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
+
+            // Healing per second is over the same clock, so it falls beside
+            // the DPS it is read against.
+            HpsText = Format.Num(healing != null && secs > 0 ? healing.Total / secs : 0, 1);
+            foreach (var row in Healers) row.Hps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
+        }
+
+        // The chart's live edge follows the clock; held, it stays where it
+        // is. A chart that is not on screen does not redraw for it.
         if (s.Running) Edge = ms;
     }
 

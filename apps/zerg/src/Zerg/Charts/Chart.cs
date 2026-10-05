@@ -62,6 +62,12 @@ public abstract class Chart : FrameworkElement
         SetResourceReference(CardStrokeProperty, "SurfaceStrokeColorDefaultBrush");
         UseLayoutRounding = true;
         Cursor = Cursors.Cross;
+        // A chart that is not on screen may have skipped a redraw (the live
+        // edge's): it is drawn as it stands when it comes back.
+        IsVisibleChanged += (_, e) =>
+        {
+            if ((bool)e.NewValue) InvalidateVisual();
+        };
     }
 
     // ----------------------------------------------------------- properties

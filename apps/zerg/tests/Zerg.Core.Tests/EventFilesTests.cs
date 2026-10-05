@@ -118,7 +118,7 @@ public class EventFilesTests
     [Fact]
     public void A_negative_offset_is_treated_as_a_shrink_rather_than_an_error()
     {
-        // Deliberate divergence: Python raises on the seek and answers 500.
+        // Starting over is safer than throwing in the middle of a poll.
         using var t = new TempDir();
         var p = t.Write("x.jsonl", "abc\n");
         var tail = EventFiles.ReadTail(p, -5);
@@ -175,8 +175,8 @@ public class EventFilesTests
     [Fact]
     public void The_file_can_be_deleted_while_it_is_open_for_reading()
     {
-        // The share mode Python's open() lacks, and the reason damage-meter.py
-        // goes through CreateFileW.
+        // FileShare.Delete: the addon may rotate or remove the file while it
+        // is open here.
         using var t = new TempDir();
         var p = t.Write("x.jsonl", "a\n");
         using var reader = EventFiles.OpenShared(p);

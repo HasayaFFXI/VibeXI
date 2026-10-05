@@ -79,7 +79,7 @@ public partial class App : Application
     }
 
     /// <summary>An exception on the UI thread is logged and shown, and Zerg
-    /// carries on: most are one bad poll or one bad click, and a meter that
+    /// carries on: most are one bad poll or one bad click, and an app that
     /// quits mid-fight loses the fight's numbers.</summary>
     void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
@@ -90,8 +90,8 @@ public partial class App : Application
     void Crash(Exception? e, bool fatal)
     {
         Log.Write((fatal ? "FATAL " : "UNHANDLED ") + e);
-        // A fault in something that runs 4x a second would otherwise stack a
-        // dialog on every tick while the first one is still open.
+        // A fault in something that runs many times a second would otherwise
+        // stack a dialog on every tick while the first one is still open.
         if (showingCrash || e is null) return;
         showingCrash = true;
         try

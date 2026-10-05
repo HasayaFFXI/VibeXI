@@ -2,41 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "damage-meter",
-      "runtimeExecutable": "python",
-      "runtimeArgs": [
-        "apps/damage-meter/damage-meter.py",
-        "--port",
-        "8731",
-        "--no-browser"
-      ],
-      "port": 8731
-    },
-    {
-      "name": "damage-meter-fixture",
-      "runtimeExecutable": "python",
-      "runtimeArgs": [
-        "apps/damage-meter/damage-meter.py",
-        "--port",
-        "8732",
-        "--no-browser",
-        "--events-dir",
-        "apps/damage-meter/tools/events"
-      ],
-      "port": 8732
-    },
-    {
-      "name": "damage-meter-live",
-      "runtimeExecutable": "python",
-      "runtimeArgs": [
-        "apps/damage-meter/damage-meter.py",
-        "--port",
-        "8831",
-        "--no-browser"
-      ],
-      "port": 8831
-    },
-    {
       "name": "calc-static",
       "runtimeExecutable": "python",
       "runtimeArgs": [

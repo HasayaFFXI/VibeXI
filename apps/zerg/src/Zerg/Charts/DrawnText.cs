@@ -7,7 +7,7 @@ namespace Zerg.Charts;
 
 /// <summary>
 /// One line of text, measured and ready to draw, with tabular figures: every
-/// digit the same width, so a number that changes four times a second doesn't
+/// digit the same width, so a number that changes many times a second doesn't
 /// shuffle sideways. WPF's FormattedText can't ask a font for those, so this
 /// goes to the text formatter underneath it.
 /// </summary>

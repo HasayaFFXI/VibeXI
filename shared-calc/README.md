@@ -24,8 +24,8 @@ position is load-bearing: both calculator pages reach it by relative path,
 both pages silently.
 
 `shared-ui/` is the *design system*; `shared-calc/` is the *math and components*.
-They are separate because the damage meter wants the first and has no use for the
-second.
+They are separate because the first does not depend on the second: an app that
+is not a calculator can load the design system alone.
 
 ## Source of truth
 

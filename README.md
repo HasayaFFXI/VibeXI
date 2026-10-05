@@ -1,14 +1,15 @@
 # VibeXI
 
-Browser-based FFXI tooling. Three apps and the two shared layers they build on.
+FFXI tooling for HorizonXI: two browser calculators and the shared layers they
+build on, and Zerg, a native Windows app fed by an in-game addon.
 
 ```
 apps/
   ws-calculator/    Tachi: Jinpu weaponskill Monte-Carlo sim — open pages/ from disk
   penta-calculator/ the same engine aimed at Penta Thrust, plus PentaThrustDamageCalc.md
-  damage-meter/     live damage meter over the addon's events — run Damage-Meter.cmd, open the served page
+  zerg/             Zerg: live damage and healing over the addon's events — a native Windows app (C#, WPF)
 addons/VibeXI/      Ashita addon: reads the game's action packets, writes one JSON line per event
-shared-ui/          THE design system every app loads: css/ffxi-theme.css + js/theme.js
+shared-ui/          THE design system both calculators load: css/ffxi-theme.css + js/theme.js
 shared-calc/        THE calculation layer both calculators load: engine, server data, components
 addon-dev/          the addon's plan, API allowlist, checkers and generators — never shipped
 .githooks/          pre-commit hook running addon-dev/check-apis.py
@@ -19,7 +20,7 @@ copied verbatim into Ashita, so nothing else may live in it. `VibeXI` is the
 name the addon was approved under, and Ashita takes the addon name from the
 folder.
 
-The addon is the meter's only data source. It replaced a chat-log parser, which
+The addon is Zerg's only data source. It replaced a chat-log parser, which
 could not say who was a player, could not group an area attack, could not tell a
 weaponskill from a job ability at the announcement, and could not flag a crit;
 all of that is stated outright in the action packet.
@@ -27,33 +28,33 @@ all of that is stated outright in the action packet.
 It is a read-only Lua addon that must never send anything to the game server.
 That constraint is enforced by an API allowlist rather than by convention — see
 `addon-dev/PLAN.md` — and the bridge is one-way by construction: the addon
-appends to a local file and the server reads it, so nothing downstream can reach
+appends to a local file and Zerg reads it, so nothing downstream can reach
 back into the game whatever happens to it.
 
 ```
-FFXI process                    disk                        served page
-[VibeXI addon] ──write──▶ events/<Char>_<date>.jsonl ──read──▶ [damage-meter.py] ──▶ [browser]
+FFXI process                    disk                         desktop
+[VibeXI addon] ──write──▶ events/<Char>_<date>.jsonl ──read──▶ [Zerg.exe]
 ```
 
-No build step, no bundler, no Node. Calculator pages are opened directly over
-`file://`; `damage-meter` serves itself from a stdlib-only Python script (3.8+,
-nothing to pip install). Each app has its own `README.md` (human overview) and
-`CLAUDE.md` (operational detail), and so does each shared layer.
+The calculators have no build step, no bundler and no Node: their pages are
+opened directly over `file://`. Zerg is C# on .NET 10, run with
+`dotnet run --project apps/zerg/src/Zerg`. Each calculator and each shared
+layer has its own `README.md` (human overview) and `CLAUDE.md` (operational
+detail); Zerg has `CLAUDE.md`, and `RULES.md` for the event contract and the
+reason behind every number it prints.
 
 ## Layout is load-bearing
 
 `shared-ui/` and `shared-calc/` stay at the repo root, siblings of `apps/` rather
 than members of it. Neither is an app: one is the design system, the other the
 calculation layer. Both are reached by relative path —
-`../../../shared-ui/...` and `../../../shared-calc/...` from `apps/<app>/pages/`,
-and `SHARED_ROOT = HERE.parent.parent / 'shared-ui'` in `damage-meter.py`, which
-mounts it at `/shared/`. Moving or renaming an app, or either shared directory,
-breaks things silently: styling just stops (no console error on the calculators,
-one yellow warning line on the meter), and a moved `shared-calc` takes the damage
-engine with it.
+`../../../shared-ui/...` and `../../../shared-calc/...` from `apps/<app>/pages/`.
+Moving or renaming a calculator, or either shared directory, breaks things
+silently: styling just stops, with no console error, and a moved `shared-calc`
+takes the damage engine with it. Zerg uses neither.
 
-They are two directories rather than one because `damage-meter` wants the design
-system and has no use for the damage engine.
+They are two directories rather than one because the design system does not
+depend on the damage engine, and can be loaded without it.
 
 ## Not in this repo
 

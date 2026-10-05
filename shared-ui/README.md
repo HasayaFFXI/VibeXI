@@ -1,6 +1,6 @@
 # shared-ui
 
-The design system both FFXI apps render with. One palette, one set of primitives,
+The design system both FFXI calculators render with. One palette, one set of primitives,
 one place to change them.
 
 ```
@@ -9,34 +9,22 @@ js/theme.js          window.FFXITheme -- the same tokens, for <canvas>
 ```
 
 This lives at the repo root, a sibling of `apps/` rather than inside it: it is
-not an app, and both apps under `apps/` reach it by relative path, so its
+not an app, and both calculators under `apps/` reach it by relative path, so its
 position is load-bearing. See the paths below.
 
 The look is [`../apps/ws-calculator`](../apps/ws-calculator)'s: dark ink field, bone text, blade-red
 and brass accents, Shippori Mincho headings, JetBrains Mono for anything numeric.
-[`../apps/damage-meter`](../apps/damage-meter) was brought onto it rather than the other way round.
 
 ## How each app loads it
 
-**apps/ws-calculator** — plain relative paths, because pages are opened straight
-off disk; three levels up from `pages/`:
+**apps/ws-calculator** and **apps/penta-calculator** — plain relative paths,
+because pages are opened straight off disk; three levels up from `pages/`:
 
 ```html
 <link rel="stylesheet" href="../../../shared-ui/css/ffxi-theme.css">
 <link rel="stylesheet" href="../shared/css/theme.css">
 ...
 <script src="../../../shared-ui/js/theme.js"></script>
-```
-
-**apps/damage-meter** — `damage-meter.py` resolves this directory as
-`HERE.parent.parent / 'shared-ui'` and mounts it at the `/shared/` URL prefix, so
-nothing has to be copied into `web/`:
-
-```html
-<link rel="stylesheet" href="/shared/css/ffxi-theme.css">
-<link rel="stylesheet" href="style.css">
-...
-<script src="/shared/js/theme.js"></script>
 ```
 
 The shared sheet always loads **first**; the app's own sheet loads after it and
@@ -46,7 +34,7 @@ holds only what no other app would want.
 
 If a rule could plausibly be wanted by a second app, it belongs in
 `css/ffxi-theme.css`. If it names a concept only one app has — the mob-derivation
-grid, the log-source indicator — it belongs in that app's own sheet. When an
+grid — it belongs in that app's own sheet. When an
 app-specific rule starts looking generally useful, **move it up here** rather than
 copying it into the next app.
 
@@ -55,7 +43,8 @@ copying it into the next app.
 Chrome colors, spacing and type are all custom properties on `:root`. Dark is the
 default and needs no attribute; light is opt-in via `data-theme="light"` on
 `<html>` and is the same identity re-stepped for a pale surface, not an inversion.
-ws-calculator never sets the attribute; damage-meter has a toggle.
+Neither calculator sets the attribute; the light tier and `FFXITheme.bind` are
+there for an app with a toggle.
 
 Three families of color, kept apart on purpose:
 
@@ -122,7 +111,7 @@ any state class, and silently wins them.
 
 `.chart-wrap` (`.short` 170 / default 210 / `.mid` 220 / `.tall` 320) `.chart-cap`
 `.chart-tip` `.legend` — charts. **The height lives in CSS**, not in the drawing
-code: both apps' `setupCanvas` reads the laid-out height.
+code: each app's `setupCanvas` reads the laid-out height.
 
 `details.tableview`, `code`, `pre.raw`, `footer`.
 

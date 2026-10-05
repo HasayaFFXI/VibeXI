@@ -59,6 +59,11 @@ public sealed class Settings
     /// Their value outranks the default.</summary>
     public Dictionary<string, int> PanelOpacities { get; set; } = [];
 
+    /// <summary>The draw frequency: how many times a second everything the
+    /// clock moves (the elapsed time, every DPS and HPS, a cumulative chart's
+    /// live edge) is redrawn, 1 to 60. Set on the Settings page.</summary>
+    public int DrawFrequency { get; set; } = Core.DrawRate.Initial;
+
     /// <summary>The panels that were floating when Zerg was last closed, by
     /// panel key. They come back at the next start, each where it was.</summary>
     public List<string> OpenPanels { get; set; } = [];

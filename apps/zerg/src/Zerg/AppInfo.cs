@@ -19,9 +19,7 @@ static class AppInfo
     public static readonly string DataDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VibeXI", "zerg");
 
-    /// <summary>In a folder of its own: the WebView2 build that came before
-    /// writes zerg.log at the top of DataDir, and the two may run side by side
-    /// while one is checked against the other.</summary>
+    /// <summary>In a folder of its own, beside settings.json.</summary>
     public static readonly string LogDir = Path.Combine(DataDir, "logs");
 
     /// <summary>Where the addon writes; must agree with vx_emit.lua's ensure_dir.</summary>

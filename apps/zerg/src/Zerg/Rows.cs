@@ -7,7 +7,7 @@ namespace Zerg;
 // The rows the lists in both sections are made of. Each is kept from one
 // count to the next and only told what changed, so a new total rewrites one
 // cell: a list that was rebuilt on every poll would lose the keyboard focus
-// and the scroll position four times a second.
+// and the scroll position several times a second.
 
 /// <summary>A row that lasts across counts. <see cref="Key"/> says which row
 /// it is; it never changes, whatever the row is drawn as.</summary>

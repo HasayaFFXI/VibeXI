@@ -83,7 +83,7 @@ using System.Windows.Media.Imaging;
 
 SetProcessDpiAwarenessContext(-4); // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
 // A minus sign, a dash and a delta are not in the console's own code page,
-// and `text` is compared with the reference character for character.
+// and `text` is read by scripts character for character.
 Console.OutputEncoding = new System.Text.UTF8Encoding(false);
 if (args.Length > 0 && args[0] == "fg")
 {
