@@ -121,6 +121,11 @@ public sealed partial class ActionRow(string key, string actor, string? action) 
     [ObservableProperty] private string share = "";
     /// <summary>The drill-down is open on this action.</summary>
     [ObservableProperty] private bool selected;
+    /// <summary>On a heading: the character's actions are showing under it.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Caret))]
+    private bool open;
+    public string Caret => Open ? "▾" : "▸";
     /// <summary>What a screen reader, or a script, calls the row.</summary>
     [ObservableProperty] private string label = "";
 
@@ -199,6 +204,11 @@ public sealed partial class HealRow(string key, string actor, string? action) : 
     [ObservableProperty] private string share = "";
     /// <summary>The drill-down is open on this heal.</summary>
     [ObservableProperty] private bool selected;
+    /// <summary>On a heading: the character's heals are showing under it.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Caret))]
+    private bool open;
+    public string Caret => Open ? "▾" : "▸";
     /// <summary>What a screen reader, or a script, calls the row.</summary>
     [ObservableProperty] private string label = "";
 

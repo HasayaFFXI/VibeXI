@@ -86,9 +86,6 @@ public sealed partial class MainViewModel
     /// <summary>What an empty healing chart says.</summary>
     [ObservableProperty] private string healEmptyText = "";
     public ObservableCollection<LegendRow> HealLegend { get; } = [];
-    [ObservableProperty] private bool healLineTableOpen;
-    [ObservableProperty] private IReadOnlyList<string> healLineHead = [];
-    [ObservableProperty] private IReadOnlyList<IReadOnlyList<string>> healLineRows = [];
 
     void DrawHealLine(Snapshot c)
     {
@@ -117,13 +114,7 @@ public sealed partial class MainViewModel
             row.Job = JobBadge(l.Real!);
             row.Swatch = Solid(l.Series.Color);
         });
-
-        DrawHealLineTable();
     }
-
-    partial void OnHealLineTableOpenChanged(bool value) => DrawHealLineTable();
-
-    void DrawHealLineTable() => (HealLineHead, HealLineRows) = TableOf(HealLineTableOpen ? HealLine : null);
 
     // -------------------------------------------------- healing by character
 
@@ -195,6 +186,21 @@ public sealed partial class MainViewModel
 
     public ObservableCollection<HealRow> Heals { get; } = [];
     [ObservableProperty] private bool hasHeals;
+    /// <summary>The characters whose heals are showing under their heading,
+    /// by real name. Everyone starts as a heading alone, as in the actions
+    /// table.</summary>
+    readonly HashSet<string> openHeals = new(StringComparer.Ordinal);
+
+    /// <summary>Selecting a character shows their heals under the heading;
+    /// selecting them again puts the heals away.</summary>
+    [RelayCommand]
+    void ToggleHeals(HealRow row)
+    {
+        if (!row.IsHeading) return;
+        if (!openHeals.Remove(row.Actor)) openHeals.Add(row.Actor);
+        // Nothing is counted again: the last count, with more or fewer of its lines.
+        if (snapshot is { } c) DrawHeals(c);
+    }
 
     void DrawHeals(Snapshot c)
     {
@@ -202,6 +208,7 @@ public sealed partial class MainViewModel
         foreach (var a in c.Healing.Actors)
         {
             items.Add((a, null));
+            if (!openHeals.Contains(a.Name)) continue;
             foreach (var act in a.ActionList) items.Add((a, act));
         }
         HasHeals = items.Count > 0;
@@ -220,6 +227,8 @@ public sealed partial class MainViewModel
                 row.Job = JobBadge(a.Name);
                 row.Total = Format.Int(a.Total);
                 row.Pet = a.PetTotal != 0 ? "+ " + Format.Int(a.PetTotal) + " pet" : "";
+                row.Open = openHeals.Contains(a.Name);
+                row.Label = "Heals of " + NameOf(a.Name);
                 return;
             }
             // Out of everything under this heading, the pet's heals too:

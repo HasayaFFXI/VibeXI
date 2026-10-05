@@ -4,21 +4,18 @@
              xmlns:c="clr-namespace:Zerg.Charts"
              xmlns:v="clr-namespace:Zerg.Views">
 
-  <!-- Cumulative damage: a line per character, its legend, and the same
-       figures as a table.
+  <!-- Cumulative damage: a line per character, and its legend.
 
        Floating, the chart names every line at its end, so the legend has
-       nothing left to say, and the data table is a page-sized view in a
-       window the size of a postcard: both go, and the chart takes whatever
-       the row with the grouping switch leaves, following the panel when it
-       is dragged larger. -->
+       nothing left to say: it goes, and the chart takes whatever the row
+       with the grouping switch leaves, following the panel when it is
+       dragged larger. -->
   <Border Style="{StaticResource Card}">
     <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
 
       <DockPanel>
@@ -83,53 +80,6 @@
           </Style>
         </c:LineChart.Style>
       </c:LineChart>
-
-      <Expander Grid.Row="3" Header="Data table" Margin="0,10,0,0" IsExpanded="{Binding LineTableOpen}"
-                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" v:WheelChain.On="True">
-          <StackPanel>
-            <ItemsControl ItemsSource="{Binding LineHead}" Focusable="False">
-              <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <UniformGrid Rows="1"/>
-                </ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding}" Style="{StaticResource Head}" MinWidth="92" Margin="0,0,0,6"/>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <ItemsControl ItemsSource="{Binding LineRows}" Focusable="False">
-              <!-- A row is a list of cells; a screen reader names it by its time. -->
-              <ItemsControl.ItemContainerStyle>
-                <Style TargetType="ContentPresenter">
-                  <Setter Property="AutomationProperties.Name" Value="{Binding [0]}"/>
-                </Style>
-              </ItemsControl.ItemContainerStyle>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Border Style="{StaticResource RowLine}" MinHeight="28">
-                    <ItemsControl ItemsSource="{Binding}" Focusable="False">
-                      <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                          <UniformGrid Rows="1"/>
-                        </ItemsPanelTemplate>
-                      </ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                          <TextBlock Text="{Binding}" Style="{StaticResource Cell}" MinWidth="92"/>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </ScrollViewer>
-      </Expander>
     </Grid>
   </Border>
 </UserControl>

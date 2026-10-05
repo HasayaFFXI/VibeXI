@@ -44,7 +44,8 @@ public sealed partial class MainViewModel
 
     /// <summary>A parse is open in the View section, whichever section is on screen.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(ShowsParse), nameof(HideNamesTip))]
+    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(ShowsParse), nameof(HideNamesTip),
+                              nameof(ImportTip))]
     private bool hasParse;
 
     /// <summary>Which side of the parse the View section shows: "Damage" or "Healing".</summary>
@@ -62,7 +63,9 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>What the parse is called: its file's name.</summary>
-    [ObservableProperty] private string viewedName = "";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ImportTip))]
+    private string viewedName = "";
     /// <summary>The event file the parse was recorded from, where it says.</summary>
     [ObservableProperty] private string viewedTip = "";
     [ObservableProperty] private string viewedStarted = "";
@@ -84,14 +87,33 @@ public sealed partial class MainViewModel
     [RelayCommand]
     void OpenParse() => Read(() => Picker?.Invoke());
 
+    /// <summary>
+    /// Import, on the command bar: the way into the View section. It opens a
+    /// parse and shows it. A parse left open while another section was on
+    /// screen is gone back to, not asked for again; the section's own card
+    /// replaces or closes it.
+    /// </summary>
+    [RelayCommand]
+    void Import()
+    {
+        if (HasParse && !IsView || Read(() => Picker?.Invoke())) Section = ViewSection;
+    }
+
+    public string ImportTip => HasParse && !IsView
+        ? $"Back to {ViewedName}, the parse open here. The session goes on being measured underneath"
+        : "Open a parse exported from Zerg, to look through its damage and its healing. " +
+          "The session goes on being measured underneath";
+
     /// <summary>A file dropped on the section's card.</summary>
     public void Take(string path) => Read(() => ParseDialog.Read(path));
 
-    void Read(Func<ParseText?> source)
+    /// <summary>False when no file was chosen. A file that would not open
+    /// is still an answer: the section's card says why.</summary>
+    bool Read(Func<ParseText?> source)
     {
         try
         {
-            if (source() is not { } file) return;
+            if (source() is not { } file) return false;
             var parse = ParseFile.Import(file.Text);
             var info = CompareSheet.Describe(parse);
             viewed = Tracker.Of(parse);
@@ -113,6 +135,7 @@ public sealed partial class MainViewModel
         {
             ViewError = "Could not open: " + e.Message;
         }
+        return true;
     }
 
     /// <summary>Empties the View section. The session was never touched.</summary>
@@ -158,7 +181,7 @@ public sealed partial class MainViewModel
     {
         var s = Shown.Session;
         CanExport = Shown.CanExport;
-        ExportTip = CanExport ? "Save this parse to a file another copy of Zerg can open in View or Compare"
+        ExportTip = CanExport ? "Save this parse to a file another copy of Zerg can open with Import or in Compare"
             : s.StartedAt != null ? "Pause first — a parse is exported once its clock has stopped"
             : "Nothing to export yet — Start, then Pause, to export a pull";
     }

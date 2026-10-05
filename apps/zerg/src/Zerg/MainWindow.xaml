@@ -89,8 +89,8 @@
     </Grid.RowDefinitions>
 
     <!-- The command bar: what is measured (the session) at the left end, then
-         what is counted and how it is shown. Which section is on screen is on
-         the line under it. -->
+         a parse out to a file and one in from a file. Which section is on
+         screen, and the toggles, are on the line under it. -->
     <DockPanel Grid.Row="0" Margin="16,12,16,0">
       <!-- The way into the Settings page, and back out of it: pressed while
            the page is on screen. What is set once and left alone is in there
@@ -115,13 +115,18 @@
 
         <!-- The parse on screen saved to a file: the session's, or the one
              the View section has open. It wakes only while the clock is
-             stopped. Opening a saved parse is the View section's own. -->
+             stopped. -->
         <!-- A piece of its own, so the note arriving wraps onto the next
              line by itself and moves no button that was already there. -->
         <Button Content="Export…" Command="{Binding ExportCommand}" ToolTip="{Binding ExportTip}"
                 ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,6,6"
                 Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}"
                 AutomationProperties.Name="Export"/>
+        <!-- The way into the View section: opens a saved parse and shows it,
+             or goes back to the one left open there. -->
+        <Button Content="Import…" Command="{Binding ImportCommand}" ToolTip="{Binding ImportTip}"
+                VerticalAlignment="Center" Margin="0,0,6,6"
+                AutomationProperties.Name="Import"/>
         <!-- What the last Export did. It clears itself. -->
         <TextBlock Text="{Binding ParseNote}" ToolTip="{Binding ParseNote}" FontSize="12" MaxWidth="460"
                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0,6,6"
@@ -140,32 +145,15 @@
             </Style>
           </TextBlock.Style>
         </TextBlock>
-        <!-- The gap between the session's group and the toggles after it,
-             there with or without Export. -->
-        <Border Width="14"/>
-
-        <!-- Toggles, not actions: the label is fixed and the pressed look says it is on. -->
-        <!-- Not offered over healing: it moves no healing figure.
-             In Compare it is on the Compare card, beside what it changes. -->
-        <ToggleButton Content="Include Skillchains" IsChecked="{Binding Skillchains}" ToolTip="{Binding SkillchainsTip}"
-                      VerticalAlignment="Center" Margin="0,0,6,6"
-                      Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
-        <ToggleButton Content="Hide names" IsChecked="{Binding HideNames}" ToolTip="{Binding HideNamesTip}"
-                      VerticalAlignment="Center" Margin="0,0,20,6"/>
-
-        <!-- About every panel at once. The hot key does the same from inside
-             the game, and this is where a player finds out which keys those
-             are. -->
-        <ToggleButton Content="Click-through" IsChecked="{Binding Panels.ClickThrough}"
-                      ToolTip="{Binding Panels.ClickThroughTip}" VerticalAlignment="Center" Margin="0,0,6,6"
-                      AutomationProperties.Name="Click-through panels"/>
       </WrapPanel>
     </DockPanel>
 
     <StackPanel Grid.Row="1" Margin="16,4,16,0">
     <!-- Which side of the fight is on screen: a line of its own, in the small
          print of the characters' line under it, because everything below
-         changes with it. -->
+         changes with it. The View section has no segment here: Import, on
+         the command bar, is the way into it. The toggles follow on the same
+         line. -->
     <WrapPanel>
       <TextBlock Text="Section" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,6"/>
       <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Damage"
@@ -176,14 +164,31 @@
                    IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Healing}"
                    ToolTip="The healing done in the same session"
                    AutomationProperties.Name="Healing section"/>
-      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="View"
-                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=View}"
-                   ToolTip="One saved parse, opened from a file. The session goes on being measured underneath"
-                   AutomationProperties.Name="View section"/>
       <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Compare"
                    IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Compare}"
                    ToolTip="Two saved parses side by side. The session goes on being measured underneath"
                    AutomationProperties.Name="Compare section"/>
+      <!-- The gap between the two groups. -->
+      <Border Width="20"/>
+
+      <!-- Toggles, not actions: the label is fixed and the pressed look says it is on.
+           One piece, so a narrow window wraps the group and never parts it. -->
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Text="Toggles" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,6"/>
+        <!-- Not offered over healing: it moves no healing figure.
+             In Compare it is on the Compare card, beside what it changes. -->
+        <ToggleButton Style="{StaticResource SmallToggle}" Content="Include Skillchains" IsChecked="{Binding Skillchains}"
+                      ToolTip="{Binding SkillchainsTip}" Margin="0,0,4,6"
+                      Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
+        <ToggleButton Style="{StaticResource SmallToggle}" Content="Hide names" IsChecked="{Binding HideNames}"
+                      ToolTip="{Binding HideNamesTip}" Margin="0,0,4,6"/>
+        <!-- About every panel at once. The hot key does the same from inside
+             the game, and this is where a player finds out which keys those
+             are. -->
+        <ToggleButton Style="{StaticResource SmallToggle}" Content="Click-through" IsChecked="{Binding Panels.ClickThrough}"
+                      ToolTip="{Binding Panels.ClickThroughTip}" Margin="0,0,4,6"
+                      AutomationProperties.Name="Click-through panels"/>
+      </StackPanel>
     </WrapPanel>
 
     <!-- The characters, on a line of their own: an alliance is eighteen names.

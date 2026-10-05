@@ -137,10 +137,11 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
 src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   App.xaml(.cs)            Fluent theme, shared styles, startup (single instance first), options,
                            crash dialog
-  MainWindow               command bar (Start and Pause first, Export… after them, the toggles,
-                           the gear for the Settings page last), the Damage | Healing | View |
-                           Compare switch on the line under it, character chips (not over
-                           Compare), then the section on screen: five tiles and its cards (or
+  MainWindow               command bar (Start and Pause first, Export… and Import… after them,
+                           the gear for the Settings page last), the Damage | Healing |
+                           Compare switch on the line under it with the Toggles beside it
+                           (Include Skillchains, Hide names, Click-through), character chips
+                           (not over Compare), then the section on screen: five tiles and its cards (or
                            the stand-in for one that is floating), the View card over the same
                            tiles and cards, the Compare section, or the Settings page; status
                            line. Registers the hot key (Bind), opens the folder dialog
@@ -148,7 +149,8 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   MainViewModel            holds a Tracker; Recount() on new lines or a filter change, Tick() at
                            the draw frequency.
     (.Damage, .Healing)    One file per section; both sections are drawn on every count
-    (.Parse)               Export, and the View section's parse. `live` is the session and is
+    (.Parse)               Export, Import (the way into the View section: `ImportCommand`), and
+                           the View section's parse. `live` is the session and is
                            always fed; `viewed` is the parse open in View; `Shown` is `viewed`
                            while View is on screen with one, else `live`, and is what gets drawn
     (.Settings)            the Settings page: `IsSettings` (the page is a `Section` value that is
@@ -233,6 +235,11 @@ tools/make-icon.ps1        the icon, from assets/
 - **Lists.** Rows are objects kept across counts and updated in place
   (`Rows.Sync`, keyed by the character's real name even while names are
   hidden), so a new total rewrites one cell.
+- **The Actions and Heals tables start folded**: a heading per character,
+  and a character's actions or heals only once their heading is picked
+  (`MainViewModel.openActions` and `openHeals`, by real name, kept for the
+  run and not saved). A docked card and its pop-out share it; the two
+  tables do not.
 - **Charts.** `Zerg.Core/Charts` decides where every mark goes from numbers
   and a text-width function; `src/Zerg/Charts` paints it. A chart is given an
   immutable model: build a new one for each draw. Series colours are the
@@ -291,8 +298,11 @@ Zerg replaced; nothing reads them.
    `tools/drive.cs` then reads and drives the window: `front <pid>`,
    `snap <pid> <png>`, `text <pid>` (every piece of text on screen, table
    cells included, one per line), `names <pid>` (controls only, and only
-   what is shown), `click <pid> <name>` (buttons, toggles, chips, action
-   rows as `<character>, <action>`, expanders), `set <pid> <slider> <value>`,
+   what is shown), `click <pid> <name>` (buttons, toggles, chips, a
+   character's heading in the Actions table as `Actions of <character>`
+   and in the Heals table as `Heals of <character>`, which shows or hides
+   the rows under it, those rows as `<character>, <action>`, expanders),
+   `set <pid> <slider> <value>`,
    `scroll <pid> <percent>`, `hover <pid> <x> <y>` (moves the real mouse
    pointer to a point in a grab's own pixels, for hover cards and tooltips;
    it takes the pointer from the user), and
@@ -302,7 +312,8 @@ Zerg replaced; nothing reads them.
    - Placement and theme live in `settings.json`: edit it between runs to
      test restore (a narrow window, the second monitor, maximized, -32000).
    - **The section** is switched with `click <pid> "Healing section"`,
-     `"Damage section"`, `"View section"` or `"Compare section"`.
+     `"Damage section"` or `"Compare section"`. The View section has no
+     segment: `Import` is its way in (below).
      `replay.py --extras` also writes three pet heals, so the Pet Healing
      column and a healer with no healing of their own have something in
      them.
@@ -313,9 +324,12 @@ Zerg replaced; nothing reads them.
      `"Compare by character"`, `"Compare by job"`, `"Swap A and B"`,
      `"Use current for A"`, `"Clear A"`; a row opens by its name; the
      chart's table is `"Data table of both runs"`.
-   - **The View section.** A parse is opened with
-     `click <pid> "Open a parse to view"` (`"Open another parse to view"`
-     once one is open), then the Open dialog as above. Its sides are
+   - **The View section.** `click <pid> Import` (on the command bar) opens
+     the Open dialog, as above, and shows the section once a file is
+     chosen; with a parse left open under another section it goes back to
+     that parse and opens no dialog. A start never opens on this section.
+     On its card, `"Open a parse to view"` (`"Open another parse to view"`
+     once one is open) opens the same dialog. Its sides are
      `"View damage"` and `"View healing"`; `"Close the viewed parse"`
      empties it.
    - **The Settings page** is `click <pid> Settings` (the gear; again, or
@@ -483,10 +497,10 @@ Zerg replaced; nothing reads them.
 - **Hidden and collapsed elements are still read out** by `text` (a hidden
   section's last contents, a hidden copy of a table). `names` lists only
   what is shown.
-- **Three expanders are called "Data table"**; Compare's is
-  "Data table of both runs". **`Include Skillchains` is on the command bar
-  and on the Compare card**; `click` finds the bar's first, and either flips
-  the one setting.
+- **The one "Data table" expander is Compare's**, and `click` knows it as
+  "Data table of both runs". **`Include Skillchains` is among the Toggles
+  and on the Compare card**; `click` finds the Toggles' first, and either
+  flips the one setting.
 - **Panels are topmost and cover each other.** A scripted press lands on
   whichever is on top: move them apart first.
 - **`tray <h> menu` is for reading only**: that menu cannot take the
