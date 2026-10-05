@@ -21,6 +21,9 @@ public sealed class Measurement
     public string By { get; set; } = "actor";
     /// <summary>The counted rows, on the run's clock.</summary>
     public List<CombatEvent> Events { get; set; } = [];
+    /// <summary>The same rows under the name their table row has: by job, each
+    /// is its character's main job. What <see cref="Agg"/> was counted from.</summary>
+    public List<CombatEvent> Rows { get; set; } = [];
     public Aggregate Agg { get; set; } = new();
     public OrderedDictionary<string, Members> Members { get; set; } = new(StringComparer.Ordinal);
     /// <summary>The run's clock, frozen at its Pause, in seconds.</summary>
@@ -44,6 +47,9 @@ public sealed class Measurement
     public HealTotals Heal { get; set; } = new();
     /// <summary>Healing as time/amount points for the cumulative line (no pet heals).</summary>
     public List<CombatEvent> HealEvents { get; set; } = [];
+    /// <summary>Every heal the run counts, pet heals included, under the name
+    /// its table row has: by job, each is its healer's main job.</summary>
+    public List<HealEvent> HealRows { get; set; } = [];
     /// <summary>Party healing by spell, pet heals included.</summary>
     public OrderedDictionary<string, double> HealSpells { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Party healing by who received it, pet heals included.</summary>
@@ -84,6 +90,23 @@ public sealed class Pace
     public double Step { get; set; }
     public double[] A { get; set; } = [];
     public double[] B { get; set; } = [];
+}
+
+/// <summary>A histogram bin both runs share, [Lo, Hi): how many of each run's
+/// hits fell in it.</summary>
+public sealed record PairBin(double Lo, double Hi)
+{
+    public int A { get; set; }
+    public int B { get; set; }
+}
+
+/// <summary>One action of one row in both runs: each run's own hits, and the
+/// two on one set of bins. A side is null where the run had no use of it.</summary>
+public sealed class Spread
+{
+    public Distribution? A { get; set; }
+    public Distribution? B { get; set; }
+    public List<PairBin> Bins { get; set; } = [];
 }
 
 /// <summary>B against A: the difference, and that over A (null when A is zero
@@ -236,6 +259,7 @@ public static class Compare
             Run = run,
             By = byJob ? "job" : "actor",
             Events = scoped,
+            Rows = rows,
             Agg = agg,
             Members = members,
             Duration = secs,
@@ -254,6 +278,7 @@ public static class Compare
             Targets = targets,
             Heal = heal,
             HealEvents = healEvents,
+            HealRows = hl,
             HealSpells = healSpells,
             HealTargets = healTargets,
             HasHeals = run.Source.Heals.Count > 0,
@@ -347,6 +372,78 @@ public static class Compare
         var list = Pairs(la, lb).Where(x => Size(x.A) > 0 || Size(x.B) > 0).ToList();
         Js.StableSort(list, (x, y) => Math.Max(Size(y.A), Size(y.B)) - Math.Max(Size(x.A), Size(x.B)));
         return list;
+    }
+
+    /// <summary>
+    /// One action of one row, as each run hit with it, on bins the two share so
+    /// a column of A's stands beside the column of B's for the same damage.
+    /// Each run's hits are <see cref="Counting.Distribution"/>'s, so its figures
+    /// are the ones that file's own drill-down prints.
+    ///
+    /// <para>The bins run from the smallest hit of either run to the largest.
+    /// Their width is the finer of the two runs' own Freedman–Diaconis widths:
+    /// the wider would flatten the tighter run into a column or two. Clamped to
+    /// 6..<paramref name="maxBins"/>, fewer than a single histogram's, because
+    /// every bin holds two columns.</para>
+    /// </summary>
+    public static Spread Spread(Measurement ma, Measurement mb, string key, string action, int maxBins = 0)
+    {
+        static Distribution? Of(Measurement m, string key, string action)
+        {
+            var d = Counting.Distribution(m.Rows, key, action);
+            return d.Swings > 0 ? d : null;
+        }
+        return Binned(Of(ma, key, action), Of(mb, key, action), maxBins);
+    }
+
+    /// <summary>
+    /// The same for one heal of one healer: what each cast healed, summed over
+    /// everyone it reached, so a Curaga on five is one figure, as it is in a
+    /// file's own heal drill-down. A pet's heals are under the pet's name. A
+    /// cure on a full target is a cast that healed 0, in the first bin.
+    /// </summary>
+    public static Spread HealSpread(Measurement ma, Measurement mb, string key, string action, int maxBins = 0)
+    {
+        static Distribution? Of(Measurement m, string key, string action)
+        {
+            var d = Counting.Distribution(Healing.AsEvents(m.HealRows), key, action);
+            return d.Swings > 0 ? d : null;
+        }
+        return Binned(Of(ma, key, action), Of(mb, key, action), maxBins);
+    }
+
+    static Spread Binned(Distribution? a, Distribution? b, int maxBins)
+    {
+        if (maxBins == 0) maxBins = 20;
+        var spread = new Spread { A = a, B = b };
+
+        double min = double.PositiveInfinity, max = double.NegativeInfinity, width = 0;
+        int most = 0;
+        foreach (var d in new[] { a, b })
+        {
+            if (d == null || d.Count == 0) continue;
+            (min, max, most) = (Math.Min(min, d.Min), Math.Max(max, d.Max), Math.Max(most, d.Count));
+            var w = Counting.BinWidth(d.Q1, d.Q3, d.Count);
+            if (w > 0 && (width == 0 || w < width)) width = w;
+        }
+        if (most == 0) return spread;
+
+        if (max > min)
+        {
+            var raw = width > 0 ? Math.Ceiling((max - min) / width) : Math.Ceiling(Math.Sqrt(most));
+            var count = (int)Math.Max(6, Math.Min(maxBins, raw is 0 || double.IsNaN(raw) ? 6 : raw));
+            var bw = (max - min) / count;
+            for (int i = 0; i < count; i++) spread.Bins.Add(new PairBin(min + i * bw, min + (i + 1) * bw));
+            int At(double v) => (int)Math.Min(count - 1, Math.Floor((v - min) / bw));
+            if (a != null) foreach (var v in a.Sorted) spread.Bins[At(v)].A++;
+            if (b != null) foreach (var v in b.Sorted) spread.Bins[At(v)].B++;
+        }
+        else
+        {
+            // Every hit of both runs identical.
+            spread.Bins.Add(new PairBin(min, min) { A = a?.Count ?? 0, B = b?.Count ?? 0 });
+        }
+        return spread;
     }
 
     /// <summary>One healer's heals, paired by name, largest first.</summary>

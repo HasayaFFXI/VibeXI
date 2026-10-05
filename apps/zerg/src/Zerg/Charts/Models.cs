@@ -41,3 +41,15 @@ public sealed record HistogramModel(IReadOnlyList<Bin> Bins, double Avg, int Cou
 {
     public static HistogramModel From(Distribution d) => new(d.Bins, d.Avg, d.Count);
 }
+
+/// <summary>
+/// A histogram of two runs on the bins they share: for each run the mean to
+/// mark (null with no hit to average) and how many hits its columns are
+/// shares of, and what one of them is called ("hit", "cast"). The runs'
+/// colours are the theme's, not the caller's.
+/// </summary>
+public sealed record PairedHistogramModel(IReadOnlyList<PairBin> Bins, double? AvgA, double? AvgB, int CountA, int CountB,
+                                          string Unit = "hit")
+{
+    public static PairedHistogramModel From(ActionSpread s) => new(s.Bins, s.AvgA, s.AvgB, s.HitsA, s.HitsB, s.Unit);
+}

@@ -71,7 +71,7 @@ appends to a file, Zerg reads it. Zerg uses nothing else in the repository
 ## Commands
 
 ```bash
-# all tests (196, under a second once built)
+# all tests (209, under a second once built)
 dotnet test apps/zerg/Zerg.slnx
 
 # run it: follows %LOCALAPPDATA%\VibeXI\events, or the folder set on the Settings page
@@ -113,16 +113,20 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
   EventReader.cs, Roster.cs, Events.cs   lines → damage rows, heals, roster
   Session.cs               the session clock: arm, latch, pause, At/Elapsed
   Counting.cs, Totals.cs   filter, credit, collapse, connects, aggregate, cumulative, distribution
-  Healing.cs, Compare.cs   heal totals; A/B measure, diff, pace
+  Healing.cs, Compare.cs   heal totals; A/B measure, diff, pace, and one action's hits
+                           (Spread) or one heal's casts (HealSpread) in both runs on shared bins
   CompareSheet.cs          everything the Compare section prints for two runs, as text and bar
                            lengths: tiles, both cumulative lines, every table, who each row is,
-                           a change (B - A) with its sign and tone; the session as a parse
+                           a change (B - A) with its sign and tone; the session as a parse;
+                           one action's or heal's spread (Spread, HealSpread), worked out
+                           only when it is opened
   ParseFile.cs             export / import of a paused parse; the name an export is offered under
   Format.cs                numbers and clocks, spelled as a browser spells them for en-US
   Js.cs                    the conventions the numbers and the export text depend on
                            (coercion, stable sort, key order, JSON text)
   Charts/                  where a chart puts things, no drawing: Ticks, LineLayout, BarsLayout,
-                           HistogramLayout, Shapes, SmallLines, Sampling
+                           HistogramLayout, PairedHistogramLayout (two runs, a column
+                           each per bin), Shapes, SmallLines, Sampling
   Tracker.cs               the live session: file followed, rows, clock, Start / Pause / Cancel,
                            and Count(), the whole pipeline in one call, damage and healing.
                            Also an opened parse, read only (Tracker.Of), and Export()
@@ -160,7 +164,9 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
                            the draw frequency (`DrawFrequency`)
   CompareViewModel.cs      the Compare section (MainViewModel.Compare): two slots (RunSlot), the
                            switches, and the rows drawn from a CompareSheet. Redraws only on a
-                           change, and only while it is on screen
+                           change, and only while it is on screen. A row opens onto its
+                           actions or heals, and each of those (CompareSpreadRow) onto how
+                           its hits or casts are spread in each run
   ParseDialog.cs           the Open dialog for an exported parse (*.zerg and older *.json), and
                            the Save dialog for an export
   Rows.cs                  the list rows, kept and updated in place (Rows.Sync)
@@ -189,7 +195,8 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   Themes/                  Zerg's own colours per theme: the 18 fallback slots, the job colours,
                            the chart surface, the two runs of a comparison
   Charts/                  the chart elements, which only paint: Chart (base), LineChart, BarChart,
-                           HistogramChart, Models (their inputs), DrawnText (tabular figures)
+                           HistogramChart, PairedHistogramChart (Compare's, in the runs'
+                           colours), Models (their inputs), DrawnText (tabular figures)
   Native/                  TaskDialog (TaskDialogIndirect), WindowPlacement (Get/SetWindowPlacement,
                            and a panel's frame in screen pixels), Overlay (tool-window and
                            no-activate styles; a move or resize followed by hand; click-through),
@@ -199,7 +206,7 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   Log.cs, Options.cs, AppInfo.cs, EqualsConverter.cs
   app.manifest             PerMonitorV2 + common controls v6
   zerg.ico                 built by tools/make-icon.ps1 from assets/icon-source.webp
-tests/Zerg.Core.Tests/     xUnit v2, 196 tests of Zerg.Core: the tail, the tracker (sessions,
+tests/Zerg.Core.Tests/     xUnit v2, 209 tests of Zerg.Core: the tail, the tracker (sessions,
                            counting, healing), chart layout, Compare's sheet, export / import,
                            number formatting, key chords, panel opacities, the draw rate
 tools/drive.cs             drive the windows: screen grabs, UI Automation, the real mouse (move,
@@ -277,7 +284,7 @@ Zerg replaced; nothing reads them.
 
 ## Verifying a change
 
-1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 196 tests. They cover
+1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 209 tests. They cover
    `Zerg.Core` only. There is no second implementation to compare the
    counting with any more: a change to a counting rule needs its own test,
    and its reason in `RULES.md`.
@@ -322,7 +329,8 @@ Zerg replaced; nothing reads them.
      `h<hwnd>`, then `type h<hwnd> "File name:" <path>` and `enter h<hwnd>`.
      The switches are `"Compare damage"`, `"Compare healing"`,
      `"Compare by character"`, `"Compare by job"`, `"Swap A and B"`,
-     `"Use current for A"`, `"Clear A"`; a row opens by its name; the
+     `"Use current for A"`, `"Clear A"`; a row opens by its name, and
+     an action or heal under it as `<row>, <action>`, onto its distribution; the
      chart's table is `"Data table of both runs"`.
    - **The View section.** `click <pid> Import` (on the command bar) opens
      the Open dialog, as above, and shows the section once a file is

@@ -78,6 +78,18 @@ public sealed record PaceLine(string Time, string A, string B, string Difference
 public sealed record ActionLine(string Name, AB Uses, AB Accuracy, Change AccuracyChange, AB Avg, Change AvgChange,
                                 AB Max, AB Total, Change TotalChange);
 
+/// <summary>One figure of an action's hits, both runs: the least, the median.</summary>
+public sealed record SpreadLine(string Label, string? Tip, string A, string B, Change Change);
+
+/// <summary>
+/// How one action's hits are spread in each run: the bins the chart draws, and
+/// the figures beside it. A run's average is null where it has no hit to mark.
+/// </summary>
+/// <param name="HitsA">How many hits (of a heal, casts) A's columns are shares of.</param>
+/// <param name="Unit">What one of them is called: "hit", or "cast".</param>
+public sealed record ActionSpread(IReadOnlyList<PairBin> Bins, int HitsA, int HitsB, double? AvgA, double? AvgB,
+                                  IReadOnlyList<SpreadLine> Lines, string Caption, string Unit);
+
 /// <summary>One character (or job), both runs. A side is absent when the
 /// character was not in that run.</summary>
 public sealed record ActorLine(string Key, bool InA, bool InB, BarPair Damage, Change DamageChange, AB Dps, Change DpsChange,
@@ -130,6 +142,7 @@ public sealed record RunSummary(string Started, string Length, string Party, str
 public sealed class CompareSheet
 {
     public const string Dash = "—";
+    const string Dot = " · ";
 
     public Measurement A { get; private init; } = null!;
     public Measurement B { get; private init; } = null!;
@@ -306,6 +319,81 @@ public sealed class CompareSheet
             new AB(Whole(a?.Max), Whole(b?.Max)),
             new AB(Whole(a?.Total), Whole(b?.Total)),
             Change.Of(a?.Total ?? 0, b?.Total ?? 0, ChangeKind.Percent, Format.Int, 1));
+    }
+
+    /// <summary>
+    /// One action of one row of the damage table, as each run hit with it.
+    /// Worked out when it is asked for, not with the sheet: it reads every
+    /// row of both runs, and a sheet has a few hundred actions nobody opens.
+    ///
+    /// <para>A run that never used the action is dashes throughout. One that
+    /// used it and never hit has 0 hits, and nothing else to state.</para>
+    /// </summary>
+    /// <param name="key">The row's key: a character, or by job a main job.</param>
+    public ActionSpread Spread(string key, string action)
+    {
+        var s = Compare.Spread(A, B, key, action);
+        // Neutral, like the length of a run: more hits is a longer fight as often as a better one.
+        return Worded(s, new SpreadLine("Hits", "Uses that dealt damage", Whole(s.A?.Count), Whole(s.B?.Count),
+                                        Change.Of(s.A?.Count, s.B?.Count, ChangeKind.Percent, Format.Int, 0)),
+                      "Damage distribution", "hit");
+    }
+
+    /// <summary>
+    /// One heal of one row of the healing table, as each run cast it: what a
+    /// cast healed, over everyone it reached. Worked out when asked for, as
+    /// <see cref="Spread"/> is.
+    ///
+    /// <para>A parse with no heal lines is dashes throughout. In one that has
+    /// them, a heal nobody cast was cast 0 times, as the table over it says.</para>
+    /// </summary>
+    public ActionSpread HealSpread(string key, string action)
+    {
+        var s = Compare.HealSpread(A, B, key, action);
+        static double? Casts(Measurement m, Distribution? d) => m.HasHeals ? d?.Count ?? 0 : null;
+        double? x = Casts(A, s.A), y = Casts(B, s.B);
+        // Neutral: more casts is not better healing.
+        return Worded(s, new SpreadLine("Casts", "One per cast, however many people it reached", Whole(x), Whole(y),
+                                        Change.Of(x, y, ChangeKind.Percent, Format.Int, 0)),
+                      "Healed per cast", "cast");
+    }
+
+    /// <param name="count">The line that leads the figures: how many there were.</param>
+    /// <param name="title">What the chart is of, to open its caption.</param>
+    /// <param name="unit">What one of the things counted is called.</param>
+    static ActionSpread Worded(Spread s, SpreadLine count, string title, string unit)
+    {
+        var (a, b) = (s.A, s.B);
+        static double? Of(Distribution? d, Func<Distribution, double> pick) => d != null && d.Count != 0 ? pick(d) : null;
+        SpreadLine Line(string label, Func<Distribution, double> pick, int good, string? tip = null)
+        {
+            double? x = Of(a, pick), y = Of(b, pick);
+            return new SpreadLine(label, tip, Whole(x), Whole(y), Change.Of(x, y, ChangeKind.Percent, Format.Int, good));
+        }
+
+        var lines = new List<SpreadLine>
+        {
+            count,
+            Line("Min", d => d.Min, 1),
+            Line("Median", d => d.Median, 1, "Half the " + unit + "s were under this, half over"),
+            Line("Average", d => d.Avg, 1),
+            Line("90th pct", d => d.P90, 1, "Nine " + unit + "s in ten were under this"),
+            Line("Max", d => d.Max, 1),
+            // Neutral: a tighter spread is steadier, not stronger.
+            Line("Std dev", d => d.Stdev, 0, "How far a " + unit + " typically falls from the average"),
+        };
+        if ((a?.Crits ?? 0) != 0 || (b?.Crits ?? 0) != 0)
+        {
+            double? x = Of(a, d => d.CritRate), y = Of(b, d => d.CritRate);
+            lines.Add(new SpreadLine("Crit rate", "Hits that were critical", Percent(x), Percent(y),
+                                     Change.Of(x, y, ChangeKind.Points, v => Percent(v), 1)));
+        }
+
+        var caption = s.Bins.Count == 0 ? "" :
+            title + Dot + s.Bins.Count.ToString(CultureInfo.InvariantCulture) +
+            (s.Bins.Count == 1 ? " bin" : " bins") + Dot + "a column is its share of that run’s " + unit + "s";
+        return new ActionSpread(s.Bins, a?.Count ?? 0, b?.Count ?? 0, Of(a, d => d.Avg), Of(b, d => d.Avg), lines, caption,
+                                unit);
     }
 
     static List<KindLine> KindsOf(CompareRows d, Measurement ma, Measurement mb)

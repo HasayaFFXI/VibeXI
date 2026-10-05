@@ -378,6 +378,11 @@ public static class Counting
         return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
     }
 
+    /// <summary>The Freedman–Diaconis bin width for <paramref name="n"/> values
+    /// with these quartiles, or 0 when they have no spread to take one from.</summary>
+    public static double BinWidth(double q1, double q3, int n) =>
+        q3 - q1 > 0 && n > 0 ? 2 * (q3 - q1) / Math.Pow(n, 1.0 / 3) : 0;
+
     /// <summary>
     /// Every hit of one character's action (<paramref name="action"/> null: all
     /// of them), with summary figures and a histogram. Folded first, so an AoE
@@ -426,8 +431,7 @@ public static class Counting
         var bins = new List<Bin>();
         if (n > 0 && max > min)
         {
-            var iqr = q3 - q1;
-            var width = iqr > 0 ? 2 * iqr / Math.Pow(n, 1.0 / 3) : 0;
+            var width = BinWidth(q1, q3, n);
             var raw = width > 0 ? Math.Ceiling((max - min) / width) : Math.Ceiling(Math.Sqrt(n));
             // A NaN or zero count means "the default", 6.
             var count = (int)Math.Max(6, Math.Min(maxBins, raw is 0 || double.IsNaN(raw) ? 6 : raw));

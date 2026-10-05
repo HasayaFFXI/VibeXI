@@ -11,6 +11,7 @@
          bars is the widest: it holds two bars and the figure after each. -->
     <sys:String x:Key="ActorColumns">1.7*,1.3*,3*,1.1*,*,1.1*,*,1.1*,*,1.1*,*</sys:String>
     <sys:String x:Key="ActionColumns">2.2*,*,*,*,*,*,*,*,*</sys:String>
+    <sys:String x:Key="SpreadColumns">1.5*,*,*,1.3*</sys:String>
     <sys:String x:Key="HealerColumns">1.7*,3*,1.1*,*,*,1.1*,*,*</sys:String>
     <sys:String x:Key="HealColumns">2.2*,*,*,*,*,*,*</sys:String>
     <sys:String x:Key="KindColumns">2*,3*,1.1*,1.1*</sys:String>
@@ -194,13 +195,75 @@
       </Border>
     </DataTemplate>
 
-    <!-- A row's actions, paired: what a change of gear or job did. -->
+    <!-- An action's hits, or a heal's casts, both runs: how they are spread,
+         on bins the runs share, and the figures of each beside it. -->
+    <DataTemplate x:Key="SpreadDetail">
+      <Border Style="{StaticResource Under}" Padding="22,12,14,12">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="340"/>
+          </Grid.ColumnDefinitions>
+          <!-- The chart is as tall as the figures beside it, which are a row
+               longer when either run has a crit. -->
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding Spread.Caption}" Style="{StaticResource Quiet}"
+                       Margin="0,6,0,0" HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
+            <c:PairedHistogramChart MinHeight="250" Model="{Binding Histogram}"
+                                    AutomationProperties.Name="Distribution chart of both runs"/>
+          </DockPanel>
+          <StackPanel Grid.Column="1" Margin="18,0,0,0" VerticalAlignment="Top">
+            <v:Cells Widths="{StaticResource SpreadColumns}" Margin="0,0,0,4">
+              <!-- The rows name themselves; there is nothing a heading would add. -->
+              <TextBlock/>
+              <Control Style="{StaticResource SmallTag}" Template="{StaticResource TagA}" HorizontalAlignment="Right"
+                       Margin="0,0,8,0"/>
+              <Control Style="{StaticResource SmallTag}" Template="{StaticResource TagB}" HorizontalAlignment="Right"
+                       Margin="0,0,8,0"/>
+              <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
+            </v:Cells>
+            <ItemsControl ItemsSource="{Binding Spread.Lines}" Focusable="False">
+              <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                  <Setter Property="AutomationProperties.Name" Value="{Binding Label}"/>
+                </Style>
+              </ItemsControl.ItemContainerStyle>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Style="{StaticResource RowLine}" MinHeight="34" Background="Transparent" ToolTip="{Binding Tip}">
+                    <v:Cells Widths="{StaticResource SpreadColumns}">
+                      <TextBlock Text="{Binding Label}" Style="{StaticResource CellText}"
+                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                      <TextBlock Text="{Binding A}" Style="{StaticResource Cell}"/>
+                      <TextBlock Text="{Binding B}" Style="{StaticResource Cell}"/>
+                      <v:ChangeText Value="{Binding Change}"/>
+                    </v:Cells>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Grid>
+      </Border>
+    </DataTemplate>
+    <Style x:Key="UnderSpread" TargetType="ContentControl">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="ContentTemplate" Value="{StaticResource Nothing}"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Open}" Value="True">
+          <Setter Property="ContentTemplate" Value="{StaticResource SpreadDetail}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- A row's actions, paired: what a change of gear or job did. Each
+         opens in its turn, onto how its hits are spread. -->
     <DataTemplate x:Key="ActorDetail">
       <Border Style="{StaticResource Under}">
         <StackPanel>
           <StackPanel>
             <v:Cells Widths="{StaticResource ActionColumns}" Margin="0,2,0,4">
-              <TextBlock Text="Action" Style="{StaticResource HeadText}"/>
+              <TextBlock Text="Action" Style="{StaticResource HeadText}" Padding="22,0,8,0"/>
               <TextBlock Text="Uses" Style="{StaticResource Head}"/>
               <TextBlock Text="Accuracy" Style="{StaticResource Head}"/>
               <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
@@ -210,23 +273,34 @@
               <TextBlock Text="Total" Style="{StaticResource Head}"/>
               <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
             </v:Cells>
-            <ItemsControl ItemsSource="{Binding Actions}" Focusable="False"
-                          ItemContainerStyle="{StaticResource ByName}">
+            <ItemsControl ItemsSource="{Binding Actions}" Focusable="False">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border Style="{StaticResource PairRow}" MinHeight="40">
-                    <v:Cells Widths="{StaticResource ActionColumns}">
-                      <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}"/>
-                      <v:RunPair Value="{Binding Uses}"/>
-                      <v:RunPair Value="{Binding Accuracy}"/>
-                      <v:ChangeText Value="{Binding AccuracyChange}"/>
-                      <v:RunPair Value="{Binding Avg}"/>
-                      <v:ChangeText Value="{Binding AvgChange}"/>
-                      <v:RunPair Value="{Binding Max}"/>
-                      <v:RunPair Value="{Binding Total}"/>
-                      <v:ChangeText Value="{Binding TotalChange}"/>
-                    </v:Cells>
-                  </Border>
+                  <StackPanel>
+                    <Border Style="{StaticResource PairRow}" MinHeight="40">
+                      <Button Style="{StaticResource RowButton}" Command="{Binding ToggleCommand}"
+                              AutomationProperties.Name="{Binding Label}"
+                              ToolTip="Compare how this action's hits are spread">
+                        <v:Cells Widths="{StaticResource ActionColumns}">
+                          <DockPanel Margin="8,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"/>
+                          </DockPanel>
+                          <v:RunPair Value="{Binding Line.Uses}"/>
+                          <v:RunPair Value="{Binding Line.Accuracy}"/>
+                          <v:ChangeText Value="{Binding Line.AccuracyChange}"/>
+                          <v:RunPair Value="{Binding Line.Avg}"/>
+                          <v:ChangeText Value="{Binding Line.AvgChange}"/>
+                          <v:RunPair Value="{Binding Line.Max}"/>
+                          <v:RunPair Value="{Binding Line.Total}"/>
+                          <v:ChangeText Value="{Binding Line.TotalChange}"/>
+                        </v:Cells>
+                      </Button>
+                    </Border>
+                    <ContentControl Content="{Binding}" Style="{StaticResource UnderSpread}"/>
+                  </StackPanel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -248,13 +322,13 @@
       </Style.Triggers>
     </Style>
 
-    <!-- A healer's heals, paired. -->
+    <!-- A healer's heals, paired. Each opens in its turn, onto how its casts are spread. -->
     <DataTemplate x:Key="HealerDetail">
       <Border Style="{StaticResource Under}">
         <StackPanel>
           <StackPanel>
             <v:Cells Widths="{StaticResource HealColumns}" Margin="0,2,0,4">
-              <TextBlock Text="Heal" Style="{StaticResource HeadText}"/>
+              <TextBlock Text="Heal" Style="{StaticResource HeadText}" Padding="22,0,8,0"/>
               <TextBlock Text="Casts" Style="{StaticResource Head}"/>
               <TextBlock Text="Total" Style="{StaticResource Head}"/>
               <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
@@ -262,20 +336,32 @@
               <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
               <TextBlock Text="Max" Style="{StaticResource Head}"/>
             </v:Cells>
-            <ItemsControl ItemsSource="{Binding Heals}" Focusable="False" ItemContainerStyle="{StaticResource ByName}">
+            <ItemsControl ItemsSource="{Binding Heals}" Focusable="False">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border Style="{StaticResource PairRow}" MinHeight="40">
-                    <v:Cells Widths="{StaticResource HealColumns}">
-                      <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}"/>
-                      <v:RunPair Value="{Binding Casts}"/>
-                      <v:RunPair Value="{Binding Total}"/>
-                      <v:ChangeText Value="{Binding TotalChange}"/>
-                      <v:RunPair Value="{Binding Avg}"/>
-                      <v:ChangeText Value="{Binding AvgChange}"/>
-                      <v:RunPair Value="{Binding Max}"/>
-                    </v:Cells>
-                  </Border>
+                  <StackPanel>
+                    <Border Style="{StaticResource PairRow}" MinHeight="40">
+                      <Button Style="{StaticResource RowButton}" Command="{Binding ToggleCommand}"
+                              AutomationProperties.Name="{Binding Label}"
+                              ToolTip="Compare how this heal's casts are spread">
+                        <v:Cells Widths="{StaticResource HealColumns}">
+                          <DockPanel Margin="8,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"/>
+                          </DockPanel>
+                          <v:RunPair Value="{Binding Line.Casts}"/>
+                          <v:RunPair Value="{Binding Line.Total}"/>
+                          <v:ChangeText Value="{Binding Line.TotalChange}"/>
+                          <v:RunPair Value="{Binding Line.Avg}"/>
+                          <v:ChangeText Value="{Binding Line.AvgChange}"/>
+                          <v:RunPair Value="{Binding Line.Max}"/>
+                        </v:Cells>
+                      </Button>
+                    </Border>
+                    <ContentControl Content="{Binding}" Style="{StaticResource UnderSpread}"/>
+                  </StackPanel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -634,7 +720,7 @@
         <Border Style="{StaticResource Card}" Margin="0,12,0,0">
           <StackPanel>
             <TextBlock Text="{Binding HealTitle}" Style="{StaticResource CardTitle}"/>
-            <TextBlock Text="Each figure shows A over B. Select a row to compare its heals." Style="{StaticResource CardNote}"/>
+            <TextBlock Text="Each figure shows A over B. Select a row to compare its heals, and a heal to compare how its casts are spread." Style="{StaticResource CardNote}"/>
             <ScrollViewer x:Name="HealerScroller" Margin="0,10,0,0" HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Disabled" v:WheelChain.On="True"
                           Visibility="{Binding Healers.Count, Converter={StaticResource Present}}">
