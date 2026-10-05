@@ -4,8 +4,8 @@ namespace Zerg.Core;
 /// <param name="File">The newest event file's name (no folder), or null while
 /// there is none.</param>
 /// <param name="Reset">True when everything read before must be dropped and the
-/// file replayed from the top: a different file is newest now (a new day, a
-/// character switch), or the file shrank under us.</param>
+/// file replayed from the top: a different file is newest now (the addon was
+/// loaded again, a character switch), or the file shrank under us.</param>
 /// <param name="Lines">Whole lines new since the last poll.</param>
 /// <param name="Size">The file's length in bytes when it was read.</param>
 /// <param name="Modified">When the file was last written (UTC), as found

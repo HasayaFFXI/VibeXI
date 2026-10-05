@@ -651,8 +651,11 @@ end
 -- ---------------------------------------------------------------- events
 
 ashita.events.register('load', 'vibexi_load', function()
+    -- Only once the character is known: the file is named for them, and named
+    -- once per load. Loaded from the character select screen, the first packet
+    -- after login opens it instead (see packet_in).
     S.owner = Entity.me()
-    Emit.open(S.owner)
+    if S.owner then Emit.open(S.owner) end
 end)
 
 ashita.events.register('unload', 'vibexi_unload', function()
@@ -693,8 +696,8 @@ ashita.events.register('packet_in', 'vibexi_packet_in', function(p)
         local now = os.time()
 
         -- Lazily (re)open: the character is not known at load time when the
-        -- addon is loaded from the character select screen, and the file rolls
-        -- over at midnight.
+        -- addon is loaded from the character select screen, and a failed write
+        -- drops the handle. Either way it is this load's one file.
         if not Emit.is_open() then
             S.owner = Entity.me() or S.owner
             if S.owner then Emit.open(S.owner) end

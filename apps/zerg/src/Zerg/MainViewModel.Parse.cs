@@ -202,7 +202,7 @@ public sealed partial class MainViewModel
             if (!ParseFile.CanSaveAs(path))
             {
                 Note("Not exported: .jsonl is the addon's own file type, and the newest one in its folder " +
-                     "is taken for today's events. Save the parse as " + ParseFile.Extension + ".", bad: true);
+                     "is taken for the live events. Save the parse as " + ParseFile.Extension + ".", bad: true);
                 return;
             }
             File.WriteAllText(path, text);

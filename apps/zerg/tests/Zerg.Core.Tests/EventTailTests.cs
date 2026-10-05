@@ -64,6 +64,22 @@ public class EventTailTests
     }
 
     [Fact]
+    public void A_second_load_of_the_addon_is_followed()
+    {
+        using var t = new TempDir();
+        var first = t.Write("Hasaya-20261002213045.jsonl", "old\n");
+        File.SetLastWriteTimeUtc(first, DateTime.UtcNow.AddMinutes(-5));
+        var tail = new EventTail(t.Dir);
+        Assert.Equal("Hasaya-20261002213045.jsonl", tail.Poll().File);
+
+        t.Write("Hasaya-20261002214510.jsonl", "new\n");
+        var u = tail.Poll();
+        Assert.Equal("Hasaya-20261002214510.jsonl", u.File);
+        Assert.True(u.Reset);
+        Assert.Equal(["new"], u.Lines);
+    }
+
+    [Fact]
     public void A_file_that_shrank_resets()
     {
         using var t = new TempDir();

@@ -327,6 +327,29 @@ public class TrackerTests
         Assert.Equal(0, t.Lines);
     }
 
+    [Theory]
+    [InlineData("Rhyllis-20260731213045.jsonl", "Rhyllis")]      // one per load: what the addon writes
+    [InlineData("Rhyllis-20260731000000.JSONL", "Rhyllis")]
+    [InlineData("Rhyllis_2026.07.31.jsonl", "Rhyllis")]          // one per day: what it wrote before
+    [InlineData("Rhyllis-20260731213045 (2).jsonl", "Rhyllis")]  // a copy still says whose it is
+    [InlineData("-20260731213045.jsonl", null)]
+    [InlineData("20260731213045.jsonl", null)]
+    public void The_owner_is_read_from_the_file_name(string file, string? owner)
+    {
+        var t = Following();
+        t.Follow(file);
+        Assert.Equal(owner, t.Reader.Roster.Owner);
+        Assert.Equal(owner, EventReader.ParseFilename(file).Owner);
+    }
+
+    [Fact]
+    public void The_date_is_read_from_the_file_name()
+    {
+        Assert.Equal(new DateOnly(2026, 7, 31), EventReader.ParseFilename("Rhyllis-20260731213045.jsonl").Date);
+        Assert.Equal(new DateOnly(2026, 7, 31), EventReader.ParseFilename("Rhyllis_2026.07.31.jsonl").Date);
+        Assert.Null(EventReader.ParseFilename("Rhyllis-213045.jsonl").Date);
+    }
+
     [Fact]
     public void Another_folder_leaves_no_file_and_no_session()
     {

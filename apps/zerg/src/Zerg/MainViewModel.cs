@@ -218,7 +218,7 @@ public sealed partial class MainViewModel : ObservableObject
         bool fresh = u.Reset;
         if (fresh)
         {
-            // A new file is a new character or a new day: nothing carries
+            // A new file is a new load of the addon or a new character: nothing carries
             // over, and a clock from the old one would measure the wrong session.
             live.Follow(u.File);
             if (!Viewing) drill = healDrill = null;
