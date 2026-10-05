@@ -13,7 +13,7 @@ that never take the keyboard.
 ## Where it sits
 
 ```
-FFXI ─▶ addons/VibeXI (Lua, in-game) ─writes─▶ %LOCALAPPDATA%\VibeXI\events\<Char>_<date>.jsonl
+FFXI ─▶ addons/VibeXI (Lua, in-game) ─writes─▶ %LOCALAPPDATA%\VibeXI\events\<Char>-<YYYYMMDDHHMMSS>.jsonl
                                                             │ tails
                                                       apps/zerg (this)
 ```
@@ -71,7 +71,7 @@ appends to a file, Zerg reads it. Zerg uses nothing else in the repository
 ## Commands
 
 ```bash
-# all tests (209, under a second once built)
+# all tests (217, under a second once built)
 dotnet test apps/zerg/Zerg.slnx
 
 # run it: follows %LOCALAPPDATA%\VibeXI\events, or the folder set on the Settings page
@@ -206,7 +206,7 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   Log.cs, Options.cs, AppInfo.cs, EqualsConverter.cs
   app.manifest             PerMonitorV2 + common controls v6
   zerg.ico                 built by tools/make-icon.ps1 from assets/icon-source.webp
-tests/Zerg.Core.Tests/     xUnit v2, 209 tests of Zerg.Core: the tail, the tracker (sessions,
+tests/Zerg.Core.Tests/     xUnit v2, 217 tests of Zerg.Core: the tail, the tracker (sessions,
                            counting, healing), chart layout, Compare's sheet, export / import,
                            number formatting, key chords, panel opacities, the draw rate
 tools/drive.cs             drive the windows: screen grabs, UI Automation, the real mouse (move,
@@ -290,7 +290,7 @@ Zerg replaced; nothing reads them.
 
 ## Verifying a change
 
-1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 209 tests. They cover
+1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 217 tests. They cover
    `Zerg.Core` only. There is no second implementation to compare the
    counting with any more: a change to a counting rule needs its own test,
    and its reason in `RULES.md`.

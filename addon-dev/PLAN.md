@@ -339,7 +339,8 @@ Source is in `addons/VibeXI/`:
 | `vx_enums.lua` | packet ids, categories, spawn flags, message ids |
 | `vx_ws_names.lua` | generated; `addon-dev/gen-ws-names.py` rebuilds it |
 
-**Output path — `%LOCALAPPDATA%\VibeXI\events\<Character>_<YYYY.MM.DD>.jsonl`.**
+**Output path — `%LOCALAPPDATA%\VibeXI\events\<Character>-<YYYYMMDDHHMMSS>.jsonl`**, a
+new file each time the addon is loaded.
 Deliberately not `%TEMP%` (Storage Sense deletes it, and this file *is* the
 persistence layer), not `%APPDATA%`/Roaming (profile sync on a hot file), not
 anywhere under OneDrive (continuous cloud sync on a file appended several times

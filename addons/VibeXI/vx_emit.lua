@@ -6,7 +6,10 @@
 --
 -- WHERE THE FILE GOES, and why it is not %TEMP%:
 --
---   %LOCALAPPDATA%\VibeXI\events\<Character>_<YYYY.MM.DD>.jsonl
+--   %LOCALAPPDATA%\VibeXI\events\<Character>-<YYYYMMDDHHMMSS>.jsonl
+--
+--   One file per load of the addon: the stamp is the local date and time the
+--   file was named.
 --
 --   * NOT %TEMP%. Tempting, but wrong: Storage Sense and Disk Cleanup delete
 --     files there on their own schedule, and this file is not scratch -- it is
@@ -36,6 +39,7 @@ M.path      = nil
 M.stats     = { written = 0, failed = 0, opened = 0 }
 local handle = nil
 local open_failed_for = nil    -- path we already failed on; stop retrying it
+local session_path = nil       -- this load's file, named once; a reopen appends to it
 
 -- ---------------------------------------------------------------- JSON
 
@@ -203,16 +207,19 @@ local function ensure_dir()
     return dir
 end
 
---- Open (or reopen) the output file for the given character. Append mode, so a
---- reload or a zone never truncates the session.
+--- Open (or reopen) the output file for the given character. The file is named
+--- on the first call after the addon loads and that name is kept until it
+--- unloads: append mode, so a reopen after a failed write never truncates the
+--- session, and never starts a second file for it either.
 function M.open(character)
     M.close()
 
     local dir = ensure_dir()
     if not dir then return false end
 
-    local name = (character or 'Unknown') .. '_' .. os.date('%Y.%m.%d') .. '.jsonl'
-    local path = dir .. '\\' .. name
+    session_path = session_path or
+        (dir .. '\\' .. (character or 'Unknown') .. '-' .. os.date('%Y%m%d%H%M%S') .. '.jsonl')
+    local path = session_path
 
     if open_failed_for == path then return false end
 

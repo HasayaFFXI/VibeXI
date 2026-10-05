@@ -195,11 +195,18 @@ public sealed class EventReader
     static readonly Regex DailyName = new(
         @"^([^\n\r\p{Zl}\p{Zp}]*?)_([0-9]{4})\.([0-9]{2})\.([0-9]{2})\.jsonl$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    // What the addon writes now: one file per load, named for the local date
+    // and time it was loaded (YYYYMMDDHHMMSS).
+    static readonly Regex LoadName = new(
+        @"^([^\n\r\p{Zl}\p{Zp}]*?)-([0-9]{4})([0-9]{2})([0-9]{2})[0-9]{6}\.jsonl$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     static readonly Regex AnyDate = new(@"([0-9]{4})[.\-_]([0-9]{2})[.\-_]([0-9]{2})", RegexOptions.CultureInvariant);
-    static readonly Regex LeadingName = new(@"^([A-Za-z]+)_", RegexOptions.CultureInvariant);
+    static readonly Regex LeadingName = new(@"^([A-Za-z]+)[_\-]", RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// "Hasaya_2026.07.30.jsonl" → ("Hasaya", 2026-07-30). Any other name is
+    /// "Hasaya-20260730213045.jsonl" → ("Hasaya", 2026-07-30): the addon's
+    /// file, one per load. "Hasaya_2026.07.30.jsonl" → the same: the file it
+    /// wrote before, one per day, still read. Any other name is
     /// searched for a date and a leading name separately; either may be null.
     /// An out-of-range month or day rolls over into the next (month 13 is
     /// January of the next year), and a two-digit year is in the 1900s.
@@ -208,6 +215,10 @@ public sealed class EventReader
     {
         if (string.IsNullOrEmpty(name)) return (null, null);
         var m = DailyName.Match(name);
+        if (m.Success)
+            return (m.Groups[1].Value.Length > 0 ? m.Groups[1].Value : null,
+                    MakeDate(m.Groups[2].Value, m.Groups[3].Value, m.Groups[4].Value));
+        m = LoadName.Match(name);
         if (m.Success)
             return (m.Groups[1].Value.Length > 0 ? m.Groups[1].Value : null,
                     MakeDate(m.Groups[2].Value, m.Groups[3].Value, m.Groups[4].Value));

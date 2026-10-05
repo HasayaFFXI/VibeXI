@@ -48,7 +48,7 @@ public sealed record ImportedParse(EventReader Source, Session Session, int Skip
 ///
 /// <para>Never saved as <c>.jsonl</c>: Zerg follows the newest <c>*.jsonl</c> in
 /// the events folder, and an export saved there must not be mistaken for
-/// today's file.</para>
+/// the addon's live file.</para>
 /// </summary>
 public static class ParseFile
 {
@@ -64,8 +64,7 @@ public static class ParseFile
 
     /// <summary>
     /// The name an export is offered under: whose parse, and when the pull
-    /// began, in local time. "Hasaya_parse_2026.07.30_2130.zerg" reads as a
-    /// sibling of the addon's Name_YYYY.MM.DD.jsonl.
+    /// began, in local time: "Hasaya_parse_2026.07.30_2130.zerg".
     /// </summary>
     public static string SuggestedName(string? owner, double startedAt)
     {
@@ -78,7 +77,7 @@ public static class ParseFile
     /// <summary>
     /// Whether an export may be saved under this name. Never as
     /// <c>.jsonl</c>: Zerg follows the newest file of that type in the
-    /// events folder, and a parse saved there would be taken for today's
+    /// events folder, and a parse saved there would be taken for the live
     /// event file.
     /// </summary>
     public static bool CanSaveAs(string path) => !path.TrimEnd().EndsWith(".jsonl", StringComparison.OrdinalIgnoreCase);
