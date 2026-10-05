@@ -7,31 +7,40 @@
     <sys:String x:Key="Columns">2.4*,*,*,*,*,*,*</sys:String>
 
     <!-- A character's heading: who, what they healed in all, and what their
-         pet healed on top of it, said apart because it is not in the first. -->
+         pet healed on top of it, said apart because it is not in the first.
+         Picking it shows their heals under it; picking it again puts them
+         away. -->
     <DataTemplate x:Key="Heading">
       <Border Style="{StaticResource RowLine}" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
-        <StackPanel Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
-          <Rectangle Margin="0,0,8,0">
-            <Rectangle.Style>
-              <Style TargetType="Rectangle" BasedOn="{StaticResource Swatch}">
-                <Setter Property="Fill" Value="{Binding Swatch}"/>
-                <Style.Triggers>
-                  <Trigger Property="v:Float.On" Value="True">
-                    <Setter Property="Fill" Value="{Binding PanelSwatch}"/>
-                  </Trigger>
-                </Style.Triggers>
-              </Style>
-            </Rectangle.Style>
-          </Rectangle>
-          <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
-          <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"/>
-          <TextBlock Text="—" FontSize="13" Margin="8,0" VerticalAlignment="Center"
-                     Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-          <TextBlock Text="{Binding Total}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
-                     Typography.NumeralAlignment="Tabular"/>
-          <TextBlock Text="{Binding Pet}" Style="{StaticResource Badge}" FontSize="13" Margin="8,0,0,0"
-                     Typography.NumeralAlignment="Tabular"/>
-        </StackPanel>
+        <Button Style="{StaticResource RowButton}"
+                Command="{Binding DataContext.ToggleHealsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                CommandParameter="{Binding}" AutomationProperties.Name="{Binding Label}"
+                ToolTip="Show or hide this character's heals">
+          <StackPanel Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            <Rectangle Margin="0,0,8,0">
+              <Rectangle.Style>
+                <Style TargetType="Rectangle" BasedOn="{StaticResource Swatch}">
+                  <Setter Property="Fill" Value="{Binding Swatch}"/>
+                  <Style.Triggers>
+                    <Trigger Property="v:Float.On" Value="True">
+                      <Setter Property="Fill" Value="{Binding PanelSwatch}"/>
+                    </Trigger>
+                  </Style.Triggers>
+                </Style>
+              </Rectangle.Style>
+            </Rectangle>
+            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"/>
+            <TextBlock Text="—" FontSize="13" Margin="8,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+            <TextBlock Text="{Binding Total}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                       Typography.NumeralAlignment="Tabular"/>
+            <TextBlock Text="{Binding Pet}" Style="{StaticResource Badge}" FontSize="13" Margin="8,0,0,0"
+                       Typography.NumeralAlignment="Tabular"/>
+          </StackPanel>
+        </Button>
       </Border>
     </DataTemplate>
 
@@ -53,7 +62,7 @@
                   Background="{DynamicResource AccentFillColorDefaultBrush}"
                   Visibility="{Binding Selected, Converter={StaticResource Visible}}"/>
           <v:Cells Widths="{StaticResource Columns}">
-            <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" Padding="26,0,8,0"/>
+            <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" Padding="40,0,8,0"/>
             <TextBlock Text="{Binding Casts}" Style="{StaticResource Cell}"/>
             <TextBlock Text="{Binding Total}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding Avg}" Style="{StaticResource Cell}"/>
@@ -68,8 +77,9 @@
     <v:ActionRowTemplates x:Key="Templates" Heading="{StaticResource Heading}" Action="{StaticResource Action}"/>
   </UserControl.Resources>
 
-  <!-- Every cure, waltz and pet heal, under the character it belongs to. In a
-       floating panel the list takes the panel's height. -->
+  <!-- Every cure, waltz and pet heal, under the character it belongs to,
+       once that character's heading is opened. In a floating panel the list
+       takes the panel's height. -->
   <Border Style="{StaticResource Card}">
     <DockPanel>
       <DockPanel DockPanel.Dock="Top">
@@ -78,7 +88,8 @@
         <StackPanel>
           <TextBlock Text="Heals" Style="{StaticResource CardTitle}"/>
           <!-- The gap above the table goes with the note when a panel drops it. -->
-          <TextBlock Text="Every cure, waltz and pet heal. Select a row to drill down." Style="{StaticResource CardNote}"
+          <TextBlock Text="Every cure, waltz and pet heal. Select a character to show theirs, and a heal to drill down."
+                     Style="{StaticResource CardNote}"
                      Margin="0,2,0,10"/>
         </StackPanel>
       </DockPanel>

@@ -57,7 +57,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(IsView), nameof(IsCompare), nameof(ShowsParse),
-                              nameof(HideNamesTip), nameof(IsSettings))]
+                              nameof(HideNamesTip), nameof(IsSettings), nameof(ImportTip))]
     private string section;
 
     public const string DamageSection = "Damage", HealingSection = "Healing", ViewSection = "View", CompareSection = "Compare";
@@ -140,7 +140,8 @@ public sealed partial class MainViewModel : ObservableObject
         Panels = new PanelSet(settings);
 
         theme = settings.Theme;
-        section = settings.Section is HealingSection or ViewSection or CompareSection ? settings.Section : DamageSection;
+        // Not the View section: no parse is open yet, and Import is its way in.
+        section = settings.Section is HealingSection or CompareSection ? settings.Section : DamageSection;
         viewMode = settings.ViewMode == HealingSection ? HealingSection : DamageSection;
         skillchains = settings.Skillchains;
         hideNames = settings.HideNames;

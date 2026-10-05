@@ -77,9 +77,6 @@ public sealed partial class MainViewModel
     /// <summary>What an empty chart says: why there is nothing to draw.</summary>
     [ObservableProperty] private string emptyText = "";
     public ObservableCollection<LegendRow> Legend { get; } = [];
-    [ObservableProperty] private bool lineTableOpen;
-    [ObservableProperty] private IReadOnlyList<string> lineHead = [];
-    [ObservableProperty] private IReadOnlyList<IReadOnlyList<string>> lineRows = [];
 
     /// <summary>One line as it is drawn, with the real name it is keyed by
     /// (null for the line that stands for several) and who is in it.</summary>
@@ -130,26 +127,6 @@ public sealed partial class MainViewModel
             row.Swatch = l.Series.Group ? null : Solid(l.Series.Color);
             row.Tip = l.Members;
         });
-
-        DrawLineTable();
-    }
-
-    partial void OnLineTableOpenChanged(bool value) => DrawLineTable();
-
-    /// <summary>The chart as a table, for anyone who cannot read it off the
-    /// lines. Only worked out while it is open.</summary>
-    void DrawLineTable() => (LineHead, LineRows) = TableOf(LineTableOpen ? Line : null);
-
-    /// <summary>A cumulative chart's lines as a table: a column each, leader
-    /// first, and about sixteen of its times.</summary>
-    static (IReadOnlyList<string> Head, IReadOnlyList<IReadOnlyList<string>> Rows) TableOf(LineModel? m)
-    {
-        if (m is null || m.Times.Length == 0) return ([], []);
-        var columns = m.Series.Reverse().ToList();
-        return (["Time", .. columns.Select(s => s.Name)],
-                Sampling.Rows(m.Times.Length)
-                    .Select(k => (IReadOnlyList<string>)[Format.Elapsed(m.Times[k]), .. columns.Select(s => Format.Int(s.Values[k]))])
-                    .ToList());
     }
 
     // --------------------------------------------------- damage by character
@@ -245,6 +222,21 @@ public sealed partial class MainViewModel
 
     public ObservableCollection<ActionRow> Actions { get; } = [];
     [ObservableProperty] private bool hasActions;
+    /// <summary>The characters whose actions are showing under their heading,
+    /// by real name. Everyone starts as a heading alone: an alliance is
+    /// eighteen characters, and a few hundred lines with all of them open.</summary>
+    readonly HashSet<string> openActions = new(StringComparer.Ordinal);
+
+    /// <summary>Selecting a character shows their actions under the heading;
+    /// selecting them again puts the actions away.</summary>
+    [RelayCommand]
+    void ToggleActions(ActionRow row)
+    {
+        if (!row.IsHeading) return;
+        if (!openActions.Remove(row.Actor)) openActions.Add(row.Actor);
+        // Nothing is counted again: the last count, with more or fewer of its lines.
+        if (snapshot is { } c) DrawActions(c);
+    }
 
     void DrawActions(Snapshot c)
     {
@@ -252,6 +244,7 @@ public sealed partial class MainViewModel
         foreach (var a in c.Totals.Actors)
         {
             items.Add((a, null));
+            if (!openActions.Contains(a.Name)) continue;
             foreach (var act in a.ActionList) items.Add((a, act));
         }
         HasActions = items.Count > 0;
@@ -269,6 +262,8 @@ public sealed partial class MainViewModel
                 row.PanelSwatch = Solid(PanelColorOf(a.Name));
                 row.Job = JobBadge(a.Name);
                 row.Total = Format.Int(a.Total);
+                row.Open = openActions.Contains(a.Name);
+                row.Label = "Actions of " + NameOf(a.Name);
                 return;
             }
             row.Name = act.Name;
