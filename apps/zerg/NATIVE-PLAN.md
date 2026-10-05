@@ -839,7 +839,7 @@ keyboard while the panel is clicked and dragged.
 
   | File | What it is |
   |---|---|
-  | `Zerg.Core/PanelOpacities.cs` | the opacity rules: 15 to 100, a default of 85, a panel's own value, and setting the default forgetting every own value. 19 unit tests |
+  | `Zerg.Core/PanelOpacities.cs` | the opacity rules: 15 to 100, a default of 85, a panel's own value, and setting the default forgetting every own value (since changed: an own value outranks the default, "The pop-outs' default opacity moves onto the page"). 19 unit tests |
   | `src/Zerg/Panels.cs` | `PanelSet` (on the view model as `Panels`): the cards that can float, the open windows, the opacity values and their saving. `PanelInfo`: one card's `IsOut`, `Opacity`, `PopOutCommand`, `DockCommand`. XAML reaches one as `Panels[line]` |
   | `src/Zerg/PanelWindow.xaml(.cs)` | the window: the tint, the bar, the card, opening sizes, placement, move and resize |
   | `src/Zerg/Native/Overlay.cs` | the window styles, and `Overlay.Drag`, a move or resize followed by hand |
@@ -2059,6 +2059,24 @@ the theme switch moves onto the page.
 - `drive.cs`: `Settings`, `"Close settings"`, `"Choose the events folder"`,
   `"Use the default events folder"`, `"Change the click-through hot key"`,
   `"Use the default hot key"`, and the theme names as before.
+
+#### The pop-outs' default opacity moves onto the page (2026-10-05)
+
+Asked for by the user, with three answers that day: the command bar's
+"Panel opacity" slider is removed; the page gets a "Default pop-out opacity"
+card with a slider (15 to 100, by 1; a dropdown was asked for first, then a
+slider to match the one on a pop-out's bar); and **a pop-out's own value now
+outranks the default and outlasts it**. This replaces N4's rule that setting
+the default forgets every own value, here and wherever the plan says it.
+
+- `PanelOpacities.SetDefault` no longer clears `Own`; `PanelSet` then sets
+  each panel to `Of(key)`, so only panels with no value of their own move.
+- Nothing puts a pop-out back under the default once its slider has been
+  moved (short of removing its key from `panelOpacities` in `settings.json`).
+  The user was offered a reset button and chose not to have one.
+- The Click-through toggle now follows Hide names on the command bar.
+- `drive.cs`: `set <pid> "Default pop-out opacity" <value>` on the page;
+  a pop-out's own is still `set h<hwnd> "Panel opacity" <value>`.
 
 ### N9 — sign-off, switch-over and removal
 1. The user signs off the whole checklist in `Zerg.exe`. That includes the

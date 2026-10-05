@@ -6,7 +6,8 @@ using Zerg.Core;
 namespace Zerg;
 
 // The Settings page: the folder the event files are looked for in, the keys
-// that switch click-through, and the theme. It takes the place of the section
+// that switch click-through, the pop-outs' default opacity (which is in
+// Panels) and the theme. It takes the place of the section
 // on screen, as View and Compare do, with the session still measured
 // underneath. It is somewhere to go and come back from: the next start opens
 // on the section that was left for it, not on the page.

@@ -78,9 +78,8 @@ public sealed partial class PanelSet : ObservableObject
     /// anyone asked: the list of what was out is left as it is.</summary>
     bool keeping;
 
-    /// <summary>What a panel opens at, and what every panel goes back to when
-    /// this is moved: the one opacity control that can be reached with no
-    /// panel open.</summary>
+    /// <summary>What a panel is drawn at until its own slider is moved: the
+    /// Settings page's slider, which can be reached with no panel open.</summary>
     [ObservableProperty] private int defaultOpacity;
 
     public PanelSet(Settings settings)
@@ -231,7 +230,7 @@ public sealed partial class PanelSet : ObservableObject
         int v = opacities.SetDefault(value);
         syncing = true;
         DefaultOpacity = v;
-        foreach (var p in panels.Values) p.Opacity = v;
+        foreach (var p in panels.Values) p.Opacity = opacities.Of(p.Key);
         syncing = false;
         saver.Stop();
         saver.Start();

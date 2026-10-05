@@ -6,14 +6,12 @@ namespace Zerg.Core;
 ///
 /// <para>There is one default, and a panel may have a value of its own. A
 /// panel with none follows the default, so "nothing of its own" means "what
-/// the main window says" everywhere at once.</para>
+/// the Settings page says" everywhere at once.</para>
 ///
-/// <para><b>Setting the default forgets every panel's own value.</b> A value
-/// set once, sessions ago, on a panel that is not open to show what it is
-/// doing would otherwise outrank the default quietly, and the default would
-/// look broken on exactly the panel being watched. One control, one meaning:
-/// the default says what panels are, and a panel's own slider adjusts that
-/// panel from there until the default is next touched.</para>
+/// <para><b>A panel's own value outranks the default, and outlasts it.</b>
+/// Moving a panel's slider is the player saying what that panel should be;
+/// setting the default afterwards moves only the panels nobody has said
+/// anything about.</para>
 /// </summary>
 public sealed class PanelOpacities
 {
@@ -44,13 +42,8 @@ public sealed class PanelOpacities
     /// <summary>Gives one panel its own value and returns what it came to.</summary>
     public int Set(string key, double value) => own[key] = Clamp(value, Default);
 
-    /// <summary>Sets the default, which every panel then takes.</summary>
-    public int SetDefault(double value)
-    {
-        Default = Clamp(value, Default);
-        own.Clear();
-        return Default;
-    }
+    /// <summary>Sets the default, which every panel with no value of its own then takes.</summary>
+    public int SetDefault(double value) => Default = Clamp(value, Default);
 
     /// <summary>A whole percentage within range. Nothing usable (zero, or not
     /// a number: what a damaged settings file reads as) is the fallback, never

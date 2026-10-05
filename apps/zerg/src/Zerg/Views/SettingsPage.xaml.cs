@@ -6,9 +6,11 @@ using Zerg.Core;
 namespace Zerg.Views;
 
 /// <summary>
-/// The Settings page: the events folder, the click-through hot key and the
-/// theme. Its data context is the <see cref="MainViewModel"/>, which holds
-/// all three; the one thing done here is reading a key chord off the keyboard.
+/// The Settings page: the events folder, the click-through hot key, the
+/// pop-outs' default opacity and the theme. Its data context is the
+/// <see cref="MainViewModel"/>, which holds them all (the opacity in its
+/// <see cref="PanelSet"/>); the one thing done here is reading a key chord
+/// off the keyboard.
 /// </summary>
 public partial class SettingsPage : UserControl
 {
