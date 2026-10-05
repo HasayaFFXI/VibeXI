@@ -26,8 +26,16 @@ public sealed class LineChart : Chart
         typeof(LineChart), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public static readonly DependencyProperty EdgeProperty = DependencyProperty.Register(nameof(Edge), typeof(double),
-        typeof(LineChart), new FrameworkPropertyMetadata(double.NaN, FrameworkPropertyMetadataOptions.AffectsRender,
-            (d, e) => ((LineChart)d).edge = (double)e.NewValue));
+        typeof(LineChart), new FrameworkPropertyMetadata(double.NaN, (d, e) =>
+        {
+            // Not AffectsRender: that redraws a chart nobody can see (its
+            // section is off screen, the window is in the tray), and at the
+            // draw frequency that cost as much as drawing the one on screen.
+            // A chart is drawn again when it comes back into view.
+            var chart = (LineChart)d;
+            chart.edge = (double)e.NewValue;
+            if (chart.IsVisible) chart.InvalidateVisual();
+        }));
 
     readonly DrawingVisual lines = new() { CacheMode = new BitmapCache { SnapsToDevicePixels = true } };
     readonly DrawingVisual furniture = new(), crosshair = new();
@@ -47,9 +55,9 @@ public sealed class LineChart : Chart
     /// The live edge: the session clock, in milliseconds. Setting it moves a
     /// live model's last grid time there and redraws, so the lines run flat
     /// through a quiet stretch instead of standing still and then lurching.
-    /// Step it with the clock, four times a second, never per frame. It is
-    /// ignored for a model that is not live, and forgotten when the model
-    /// changes.
+    /// Step it at the draw frequency (<see cref="DrawRate"/>), never per
+    /// frame. It is ignored for a model that is not live, and forgotten when
+    /// the model changes.
     /// </summary>
     public double Edge { get => (double)GetValue(EdgeProperty); set => SetValue(EdgeProperty, value); }
 

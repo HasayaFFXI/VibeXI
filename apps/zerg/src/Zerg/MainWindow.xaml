@@ -88,8 +88,9 @@
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <!-- The command bar: what is measured (the session), then what is counted
-         and how it is shown. -->
+    <!-- The command bar: what is measured (the session) at the left end, then
+         what is counted and how it is shown. Which section is on screen is on
+         the line under it. -->
     <DockPanel Grid.Row="0" Margin="16,12,16,0">
       <!-- The way into the Settings page, and back out of it: pressed while
            the page is on screen. What is set once and left alone is in there
@@ -102,29 +103,8 @@
       </ToggleButton>
 
       <WrapPanel VerticalAlignment="Center">
-        <!-- Which side of the fight is on screen. First on the bar, because
-             everything under the bar changes with it. -->
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,6">
-          <RadioButton Style="{StaticResource Segment}" GroupName="section" Content="Damage"
-                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Damage}"
-                       ToolTip="The damage dealt in the session being measured"
-                       AutomationProperties.Name="Damage section"/>
-          <RadioButton Style="{StaticResource Segment}" GroupName="section" Content="Healing"
-                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Healing}"
-                       ToolTip="The healing done in the same session"
-                       AutomationProperties.Name="Healing section"/>
-          <RadioButton Style="{StaticResource Segment}" GroupName="section" Content="View"
-                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=View}"
-                       ToolTip="One saved parse, opened from a file. The session goes on being measured underneath"
-                       AutomationProperties.Name="View section"/>
-          <RadioButton Style="{StaticResource Segment}" GroupName="section" Content="Compare" Margin="0"
-                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Compare}"
-                       ToolTip="Two saved parses side by side. The session goes on being measured underneath"
-                       AutomationProperties.Name="Compare section"/>
-        </StackPanel>
-
         <!-- One piece, so a narrow window wraps the pair and never parts it. -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,20,6">
+        <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
           <Button Style="{StaticResource StartButton}" Command="{Binding StartCommand}" Content="{Binding View.StartText}"
                   ToolTip="{Binding View.StartTip}" IsEnabled="{Binding View.StartEnabled}" Margin="0,0,6,0"
                   AutomationProperties.AutomationId="Start"/>
@@ -160,8 +140,9 @@
             </Style>
           </TextBlock.Style>
         </TextBlock>
-        <!-- The gap between this group and the toggles after it. -->
-        <Border Width="14" Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}"/>
+        <!-- The gap between the session's group and the toggles after it,
+             there with or without Export. -->
+        <Border Width="14"/>
 
         <!-- Toggles, not actions: the label is fixed and the pressed look says it is on. -->
         <!-- Not offered over healing: it moves no healing figure.
@@ -181,10 +162,34 @@
       </WrapPanel>
     </DockPanel>
 
+    <StackPanel Grid.Row="1" Margin="16,4,16,0">
+    <!-- Which side of the fight is on screen: a line of its own, in the small
+         print of the characters' line under it, because everything below
+         changes with it. -->
+    <WrapPanel>
+      <TextBlock Text="Section" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,6"/>
+      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Damage"
+                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Damage}"
+                   ToolTip="The damage dealt in the session being measured"
+                   AutomationProperties.Name="Damage section"/>
+      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Healing"
+                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Healing}"
+                   ToolTip="The healing done in the same session"
+                   AutomationProperties.Name="Healing section"/>
+      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="View"
+                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=View}"
+                   ToolTip="One saved parse, opened from a file. The session goes on being measured underneath"
+                   AutomationProperties.Name="View section"/>
+      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Compare"
+                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Compare}"
+                   ToolTip="Two saved parses side by side. The session goes on being measured underneath"
+                   AutomationProperties.Name="Compare section"/>
+    </WrapPanel>
+
     <!-- The characters, on a line of their own: an alliance is eighteen names.
          Not over Compare: they filter one parse, and it has two. Over the
          View section they are the characters of the parse open there. -->
-    <StackPanel Grid.Row="1" Margin="16,4,16,0" Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}">
+    <StackPanel Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}">
       <WrapPanel>
         <TextBlock Text="{Binding CharactersLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
                    Margin="0,0,10,6" Typography.NumeralAlignment="Tabular"/>
@@ -225,6 +230,7 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
       </ScrollViewer>
+    </StackPanel>
     </StackPanel>
 
     <ScrollViewer x:Name="Body" Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">

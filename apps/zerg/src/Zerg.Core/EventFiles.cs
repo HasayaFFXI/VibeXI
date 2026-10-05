@@ -6,13 +6,10 @@ namespace Zerg.Core;
 public sealed record Tail(IReadOnlyList<string> Lines, long NextOffset, long Size, bool Truncated);
 
 /// <summary>
-/// Finds and tails the event files the VibeXI addon writes. A port of
-/// <c>newest_events</c>, <c>_open_shared</c> and <c>read_tail</c> in
-/// <c>apps/damage-meter/damage-meter.py</c>, which remains the reference: the
-/// parity tests run that file's own code against the same bytes on disk.
+/// Finds and tails the event files the VibeXI addon writes.
 ///
-/// This class stays dumb on purpose, like the Python server. It returns raw
-/// lines; interpreting them is <c>web/lib/source.js</c>'s job.
+/// This class stays dumb on purpose. It returns raw lines; interpreting them
+/// is <see cref="EventReader"/>'s job.
 /// </summary>
 public static class EventFiles
 {
@@ -28,13 +25,11 @@ public static class EventFiles
         {
             // Filtered by hand rather than with a "*.jsonl" search pattern, so
             // there is no question of Win32 pattern quirks: exactly the files
-            // whose name ends in .jsonl, compared without regard to case, as
-            // Python's glob does on Windows.
+            // whose name ends in .jsonl, compared without regard to case.
             foreach (var f in new DirectoryInfo(directory).EnumerateFiles())
             {
                 if (!f.Name.EndsWith(".jsonl", StringComparison.OrdinalIgnoreCase)) continue;
-                // Strictly greater: on a tie the first in directory order wins,
-                // which is what Python's max() does too.
+                // Strictly greater: on a tie the first in directory order wins.
                 if (best is null || f.LastWriteTimeUtc > best.LastWriteTimeUtc) best = f;
             }
         }
@@ -48,8 +43,8 @@ public static class EventFiles
     /// <summary>
     /// Opens for reading while sharing Read, Write AND Delete. The addon appends
     /// to this file from inside the game process, on the game's thread, and must
-    /// never be blocked by this tool. In .NET this is just a FileShare flag; the
-    /// Python server has to go through CreateFileW to get the same thing.
+    /// never be blocked by this tool: sharing Delete as well is what lets the
+    /// addon rotate or remove the file while it is open here.
     /// </summary>
     public static FileStream OpenShared(string path) =>
         new(path, FileMode.Open, FileAccess.Read,
@@ -68,9 +63,8 @@ public static class EventFiles
         bool truncated = false;
 
         // File shrank -> it was rotated or rewritten under us; restart from zero.
-        // A negative offset is treated the same way. Python raises on the seek
-        // instead and answers 500 -- the page never sends one, so this is a
-        // deliberate divergence, not a parity bug.
+        // A negative offset is treated the same way: no caller sends one, and
+        // starting over is safer than throwing in the middle of a poll.
         if (offset > length || offset < 0)
         {
             offset = 0;
@@ -89,8 +83,7 @@ public static class EventFiles
         if (last < 0) return new Tail([], offset, length, truncated);
 
         // The addon escapes every non-ASCII byte as \uXXXX, so this is ASCII in
-        // practice; UTF-8 with replacement is the safe superset, and matches
-        // Python's decode('utf-8', errors='replace') sequence for sequence.
+        // practice; UTF-8 with replacement is the safe superset.
         var text = Encoding.UTF8.GetString(span[..(last + 1)]);
         var lines = text.Replace("\r\n", "\n").Split('\n').ToList();
         // Split leaves a trailing empty element after the final newline.

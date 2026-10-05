@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Zerg.Core;
@@ -7,8 +8,8 @@ namespace Zerg;
 
 // The Settings page: the folder the event files are looked for in, the keys
 // that switch click-through, the pop-outs' default opacity (which is in
-// Panels) and the theme. It takes the place of the section
-// on screen, as View and Compare do, with the session still measured
+// Panels), the draw frequency and the theme. It takes the place of the
+// section on screen, as View and Compare do, with the session still measured
 // underneath. It is somewhere to go and come back from: the next start opens
 // on the section that was left for it, not on the page.
 public sealed partial class MainViewModel
@@ -257,4 +258,32 @@ public sealed partial class MainViewModel
 
     const string NoKey = " Click-through has no hot key until another is chosen; the Click-through button and the " +
                          "tray menu still switch it.";
+
+    // ------------------------------------------------------ the draw frequency
+
+    DispatcherTimer? drawSaver;
+
+    /// <summary>How many times a second <see cref="Tick"/> is called: the
+    /// main window keeps that beat, and takes up a change at once.</summary>
+    [ObservableProperty] private int drawFrequency = DrawRate.Initial;
+
+    partial void OnDrawFrequencyChanged(int value)
+    {
+        int v = DrawRate.Clamp(value, settings.DrawFrequency);
+        if (v != value)
+        {
+            DrawFrequency = v;
+            return;
+        }
+        settings.DrawFrequency = v;
+        // A slider reports every step of a drag; the file is written once it settles.
+        drawSaver ??= new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) =>
+        {
+            drawSaver!.Stop();
+            settings.Save();
+            Log.Write($"draw frequency {settings.DrawFrequency}/s");
+        }, Dispatcher.CurrentDispatcher);
+        drawSaver.Stop();
+        drawSaver.Start();
+    }
 }

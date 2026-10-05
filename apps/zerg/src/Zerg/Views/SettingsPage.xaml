@@ -15,7 +15,7 @@
 
   </UserControl.Resources>
 
-  <!-- Capped and to the left: four short cards stretched across a wide
+  <!-- Capped and to the left: five short cards stretched across a wide
        window would put each button a long way from what it changes. -->
   <StackPanel MaxWidth="860" HorizontalAlignment="Left">
 
@@ -109,6 +109,23 @@
                   AutomationProperties.Name="Default pop-out opacity"/>
           <TextBlock Text="{Binding Panels.DefaultOpacity, StringFormat={}{0}%}" Style="{StaticResource Label}"
                      VerticalAlignment="Center" MinWidth="40" TextAlignment="Right"
+                     Typography.NumeralAlignment="Tabular"/>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- How often everything the clock moves is redrawn. -->
+    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+      <StackPanel>
+        <TextBlock Text="Draw frequency" Style="{StaticResource CardTitle}"/>
+        <TextBlock Text="How many times a second everything that moves with the clock is redrawn: the elapsed time, every DPS and HPS figure, and the right-hand edge of the Cumulative damage and Cumulative healing charts. Whatever an event changes is redrawn as soon as the event arrives. Higher is smoother and uses more processor time."
+                   Style="{StaticResource CardNote}"/>
+        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+          <Slider Width="240" Minimum="1" Maximum="60" SmallChange="1" LargeChange="10" VerticalAlignment="Center"
+                  IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding DrawFrequency}"
+                  AutomationProperties.Name="Draw frequency"/>
+          <TextBlock Text="{Binding DrawFrequency, StringFormat={}{0} a second}" Style="{StaticResource Label}"
+                     VerticalAlignment="Center" MinWidth="84" TextAlignment="Right"
                      Typography.NumeralAlignment="Tabular"/>
         </StackPanel>
       </StackPanel>

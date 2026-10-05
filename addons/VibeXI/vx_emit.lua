@@ -23,8 +23,8 @@
 --   %LOCALAPPDATA% is the documented Windows location for per-user,
 --   machine-local application data that should not roam. That is exactly this.
 --
--- ASCII-ONLY OUTPUT is deliberate: ASCII bytes pass through the server's CP932
--- decode untouched, so `damage-meter.py` needs no encoding change at all.
+-- ASCII-ONLY OUTPUT is deliberate: ASCII bytes read the same whatever a reader
+-- decodes the file as, so nothing that reads it has an encoding to get wrong.
 --
 -- NOTHING IN HERE MAY THROW. It runs inside the packet callback, on the game's
 -- thread. Every failure is swallowed and counted; a broken emitter must degrade

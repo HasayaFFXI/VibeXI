@@ -195,7 +195,7 @@ E.Attempt = {
 -- says spike trailer. Whichever is right, an absorbed hit is a swing that dealt
 -- nothing, so Tier 2 is the answer both ways: if it never arrives here the entry
 -- is inert, and if it does the swing lands in the accuracy denominator exactly
--- as Metrics counts it. apps/damage-meter/CLAUDE.md already says absorbs read as
+-- as Metrics counts it. apps/zerg/RULES.md already says absorbs read as
 -- misses, so this also keeps the two sources telling the same story.
 
 -- Deliberately in NEITHER table, so they drop. Recorded here so the next person

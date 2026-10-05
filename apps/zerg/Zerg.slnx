@@ -2,7 +2,6 @@
   <Folder Name="/src/">
     <Project Path="src/Zerg.Core/Zerg.Core.csproj" />
     <Project Path="src/Zerg/Zerg.csproj" />
-    <Project Path="src/Zerg.Web/Zerg.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Zerg.Core.Tests/Zerg.Core.Tests.csproj" />

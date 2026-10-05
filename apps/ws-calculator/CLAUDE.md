@@ -52,7 +52,7 @@ is deliberately not vendored here. Formula reference lives in the
   `derive()` for the host to call. Anything that writes a field programmatically
   must either fire a bubbling event or call `scheduleRecalc()` itself.
 - **The design system lives in `../../shared-ui/`, not here.** `../../shared-calc/css/calc.css`
-  loads *after* it and holds only what damage-meter would never want. Before adding a
+  loads *after* it and holds only what an app that is not a calculator would never want. Before adding a
   rule, check whether the shared sheet already has the primitive — `.card`,
   `.field`, `table.data`, `.chart-wrap`, `.chart-tip`, `.tile`, `.stat`,
   `button.primary` — and if a rule here starts looking generally useful, move it

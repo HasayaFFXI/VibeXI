@@ -1,10 +1,18 @@
-# Damage Meter — packet/memory addon
+# VibeXI addon — packet/memory event recorder
 
 Branch: `DamageMeter-Addon`. Nothing is built yet; this file is the whole plan.
 
+> **2026-10-05.** The reader this plan was written against (a Python server
+> and a browser page, in `apps/damage-meter/`) has been replaced by **Zerg**
+> (`apps/zerg`), a native Windows app that reads the same event files. Where
+> the plan says "the Python server", "the page" or names a `.js` file, read
+> it as history: Phases 2 and 3 record how that pair was brought onto the
+> addon's events. What a reader must do with an event is now in
+> `apps/zerg/RULES.md`. Nothing about the addon itself changed.
+
 ## Why
 
-`apps/damage-meter/` used to read the FFXI chat log as text. That worked, but the
+The first reader, `apps/damage-meter/`, read the FFXI chat log as text. That worked, but the
 ceiling was a hard one: the log did not say who was a player, did not say who
 owned a pet, did not flag crits reliably, could not distinguish a weaponskill
 from a job ability at the announcement, and wrote one damage line per AoE victim
@@ -64,8 +72,8 @@ localhost — that would put network capability back in the process for a
 convenience we do not need.
 
 ```
-FFXI process             disk                     existing stack
-[addon] ──write──▶ events.jsonl ──read──▶ [damage-meter.py] ──▶ [browser]
+FFXI process             disk                     outside the game
+[addon] ──write──▶ events.jsonl ──read──▶ [the reader: Zerg today]
 ```
 
 Nothing downstream can send anything back into the game regardless of what
@@ -403,8 +411,8 @@ one.
    Anything else points straight at the assumption it belongs to.
 5. Kill one mob. Compare the JSONL totals against the chat log for the same
    fight — **if every number is exactly double, it is the `chunk_data` dedup**.
-6. Point the server at it — or just run it, since that path is the default:
-   `python apps/damage-meter/damage-meter.py --events-dir %LOCALAPPDATA%\VibeXI\events`
+6. Point the reader at it — or just run it, since that path is the default:
+   `dotnet run --project apps/zerg/src/Zerg -- --events-dir %LOCALAPPDATA%\VibeXI\events`
 
 ### Phase 2 — server serves it — **DONE**
 
@@ -419,7 +427,7 @@ flush-per-event safe — half a JSON object is not parseable.
 
 ### Phase 3 — client reads it — **DONE**
 
-- `apps/damage-meter/web/lib/source.js` replaces `parser.js`, which is deleted along
+- `web/lib/source.js` replaces `parser.js`, which is deleted along
   with `tools/gen-test-log.py` and the CP932 fixture
 - `roster` is a lookup over `actorKind`/`targetKind`; the article heuristic and
   the fixed point are gone, the manual override is kept
@@ -454,7 +462,7 @@ Also worth revisiting from the earlier Metrics comparison: active-time duration
    Confirm against how Metrics is registered.
 2. **Output directory.** Ashita's `config/addons/<name>/` via
    `AshitaCore:GetInstallPath()` + `ashita.fs.create_dir`, matching what
-   `file.lua` does. Needs to be somewhere `damage-meter.py` can be pointed at.
+   `file.lua` does. Needs to be somewhere the reader can be pointed at.
    Phase 1 as written chose `%LOCALAPPDATA%\VibeXI\events\` instead, for the
    reasons listed there; this question is really "does the server care where an
    approved addon writes", and the answer so far is no.
@@ -558,8 +566,9 @@ io.open  -- "a" mode only, local path under the Ashita config dir
 | What | Where |
 |---|---|
 | event shape, `use` id minting | `addons/VibeXI/vibexi.lua` (`record`) |
-| reading it back | `apps/damage-meter/web/lib/source.js` |
-| `collapse`, aggregation | `apps/damage-meter/web/lib/stats.js` |
-| file tailer, `/api/events` | `apps/damage-meter/damage-meter.py` |
-| operational detail, gotchas | `apps/damage-meter/CLAUDE.md` |
-| test-event generator | `apps/damage-meter/tools/gen-test-events.py` |
+| reading it back | `apps/zerg/src/Zerg.Core/EventReader.cs`, `Roster.cs` |
+| `collapse`, aggregation | `apps/zerg/src/Zerg.Core/Counting.cs` |
+| file tailer | `apps/zerg/src/Zerg.Core/EventFiles.cs`, `EventTail.cs` |
+| the event contract, and why each rule | `apps/zerg/RULES.md` |
+| operational detail, gotchas | `apps/zerg/CLAUDE.md` |
+| test-event generator | `apps/zerg/tools/gen-test-events.py` |

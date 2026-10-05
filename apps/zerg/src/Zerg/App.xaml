@@ -154,6 +154,13 @@
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="MinHeight" Value="0"/>
     </Style>
+    <!-- A segment at that size, for a line that wraps. -->
+    <Style x:Key="SmallSegment" TargetType="RadioButton" BasedOn="{StaticResource Segment}">
+      <Setter Property="Padding" Value="10,3,10,4"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="Margin" Value="0,0,4,6"/>
+    </Style>
 
     <!-- Sends a card out to float over the game. Not on the card once it is
          out there: the panel's bar has Dock. -->
