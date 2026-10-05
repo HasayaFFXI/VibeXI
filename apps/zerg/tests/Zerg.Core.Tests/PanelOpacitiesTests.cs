@@ -31,18 +31,20 @@ public class PanelOpacitiesTests
     }
 
     [Fact]
-    public void Setting_the_default_forgets_every_panels_own_value()
+    public void Setting_the_default_moves_only_the_panels_with_no_value_of_their_own()
     {
-        var o = new PanelOpacities(60, new Dictionary<string, int> { ["line"] = 30, ["bars"] = 40 });
+        var o = new PanelOpacities(60, new Dictionary<string, int> { ["line"] = 30 });
         Assert.Equal(70, o.SetDefault(70));
-        Assert.Empty(o.Own);
-        Assert.Equal(70, o.Of("line"));
+        Assert.Equal(30, o.Of("line"));
         Assert.Equal(70, o.Of("bars"));
+        Assert.Equal(["line"], o.Own.Keys);
 
-        // And a panel's own slider adjusts that panel from there on.
-        o.Set("line", 50);
-        Assert.Equal(50, o.Of("line"));
-        Assert.Equal(70, o.Of("bars"));
+        // A panel's own slider takes it out of the default's reach from then on.
+        o.Set("bars", 50);
+        Assert.Equal(40, o.SetDefault(40));
+        Assert.Equal(30, o.Of("line"));
+        Assert.Equal(50, o.Of("bars"));
+        Assert.Equal(40, o.Of("drill"));
     }
 
     [Theory]

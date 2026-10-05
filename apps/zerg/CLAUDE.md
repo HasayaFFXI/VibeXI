@@ -155,7 +155,8 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
                            Also an imported parse, read only (Tracker.Of), and Export() (N7)
   Cast.cs, Shades.cs       colour slots (owner in slot 0), shades for a shared job, hidden-name labels
   SessionView.cs           the two session buttons and the session's wording, as data
-  PanelOpacities.cs        how see-through each floating panel is: a default, and a panel's own value (N4)
+  PanelOpacities.cs        how see-through each floating panel is: a default, and a panel's own value,
+                           which outranks the default once its slider has been moved (N4)
   KeyChord.cs              a key with its modifiers, as text ("Ctrl+Alt+Z"), as Windows wants it (N8),
                            and as pressed on the Settings page (Of)
 src/Zerg/                  net10.0-windows WPF exe, Zerg.exe: the native app (NATIVE-PLAN.md)
@@ -194,8 +195,9 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe: the native app (NA
                            HiddenConverter, PresentConverter; ViewCard (the View section's head:
                            open or drop one parse, then Damage | Healing); CompareSection (the whole Compare
                            section) and its cells: RunPair (A over B), ChangeText (B - A),
-                           RunBars (a bar per run); SettingsPage (events folder, hot key, theme;
-                           its code reads a key chord off the keyboard)
+                           RunBars (a bar per run); SettingsPage (events folder, hot key, the
+                           pop-outs' default opacity, theme; its code reads a key chord off
+                           the keyboard)
   EventFeed.cs             250 ms poll on the dispatcher + FileSystemWatcher to poll early;
                            Watch(dir) follows another folder from then on
   Settings.cs              %LOCALAPPDATA%\VibeXI\zerg\settings.json
@@ -310,7 +312,7 @@ don't overlap:
 | | |
 |---|---|
 | `logs\zerg.log` | **native app** log: startup, settings and theme changes, file switches, crashes |
-| `settings.json` | **native app** settings (NATIVE-PLAN.md Decision 7): filters, theme, panel opacity, placement under `windows` (`main`, and `panel:<key>` for each floating panel), `openPanels` (the panels to bring back at the next start), `clickThroughKey` (the hot key, "Ctrl+Alt+Z") and `eventsDir` (the folder the event files are looked for in; absent or null is the addon's own). The last two are set on the Settings page |
+| `settings.json` | **native app** settings (NATIVE-PLAN.md Decision 7): filters, theme, panel opacity (`panelOpacity`, the default, set on the Settings page; `panelOpacities`, each panel whose own slider has been moved), placement under `windows` (`main`, and `panel:<key>` for each floating panel), `openPanels` (the panels to bring back at the next start), `clickThroughKey` (the hot key, "Ctrl+Alt+Z") and `eventsDir` (the folder the event files are looked for in; absent or null is the addon's own). The last two are set on the Settings page |
 | `zerg.log` | startup steps, crashes; in Debug builds every non-poll request and every alpha call. The first thing to read when something is wrong |
 | `windows.json` | main and per-panel placement. Off-screen positions are never saved: Windows parks hidden windows at ~(−32000, −32000) |
 | `WebView2\` | the browser profile, so the page's `localStorage` (theme, opacity default, exclusions…). These keys are listed in `../damage-meter/CLAUDE.md` |
@@ -431,8 +433,11 @@ Zerg's origin (`https://zerg.vibexi`) differs from the Python meter's
      task dialog asks first. The hot key is
      `"Change the click-through hot key"`, then `front <pid>` and
      `chord <keys>` while Zerg has the keyboard, and
-     `"Use the default hot key"`. `settings.json` and `logs\zerg.log`
-     (`events dir …`, `hot key …`) say what was taken.
+     `"Use the default hot key"`. The pop-outs' default opacity is
+     `set <pid> "Default pop-out opacity" <value>`; a pop-out's own is
+     `set h<hwnd> "Panel opacity" <value>`, and from then on the default
+     leaves that pop-out alone. `settings.json` and `logs\zerg.log`
+     (`events dir …`, `hot key …`, `panel opacity …`) say what was taken.
    - **Export** is `click <pid> Export` (the parse on screen must be paused).
      **A Save dialog ignores `type`** and saves under the name it offered,
      in whatever folder it opened in: use `keys h<hwnd> <full path>` and

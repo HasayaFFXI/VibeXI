@@ -51,11 +51,12 @@ public sealed class Settings
     /// <summary>The character list in the filter bar is shown, not folded away.</summary>
     public bool CharactersOpen { get; set; } = true;
 
-    /// <summary>What a floating panel's backdrop opens at, 15 to 100 percent.</summary>
+    /// <summary>What a floating panel's backdrop is drawn at until its own
+    /// slider is moved, 15 to 100 percent. Set on the Settings page.</summary>
     public int PanelOpacity { get; set; } = Core.PanelOpacities.Initial;
 
-    /// <summary>The panels whose own slider has been moved since the default
-    /// was last set, by panel key.</summary>
+    /// <summary>The panels whose own slider has been moved, by panel key.
+    /// Their value outranks the default.</summary>
     public Dictionary<string, int> PanelOpacities { get; set; } = [];
 
     /// <summary>The panels that were floating when Zerg was last closed, by

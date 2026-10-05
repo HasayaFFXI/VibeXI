@@ -172,23 +172,11 @@
         <ToggleButton Content="Hide names" IsChecked="{Binding HideNames}" ToolTip="{Binding HideNamesTip}"
                       VerticalAlignment="Center" Margin="0,0,20,6"/>
 
-        <!-- Here, not only on a panel's own bar: that slider is inside the
-             panel, the one place someone who has not opened one cannot look. -->
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,6" Background="Transparent"
-                    ToolTip="How solid the dark backdrop of a floating panel is; its text and bars stay solid. Moving this sets every panel to it. A panel's own slider then adjusts that one panel.">
-          <TextBlock Text="Panel opacity" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-          <Slider Width="120" Minimum="15" Maximum="100" SmallChange="1" LargeChange="10" VerticalAlignment="Center"
-                  IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Panels.DefaultOpacity}"
-                  AutomationProperties.Name="Default panel opacity"/>
-          <TextBlock Text="{Binding Panels.DefaultOpacity, StringFormat={}{0}%}" Style="{StaticResource Label}"
-                     VerticalAlignment="Center" MinWidth="34" TextAlignment="Right"
-                     Typography.NumeralAlignment="Tabular"/>
-        </StackPanel>
-        <!-- Beside the other thing that is about every panel at once. The
-             hot key does the same from inside the game, and this is where
-             a player finds out which keys those are. -->
+        <!-- About every panel at once. The hot key does the same from inside
+             the game, and this is where a player finds out which keys those
+             are. -->
         <ToggleButton Content="Click-through" IsChecked="{Binding Panels.ClickThrough}"
-                      ToolTip="{Binding Panels.ClickThroughTip}" VerticalAlignment="Center" Margin="14,0,6,6"
+                      ToolTip="{Binding Panels.ClickThroughTip}" VerticalAlignment="Center" Margin="0,0,6,6"
                       AutomationProperties.Name="Click-through panels"/>
       </WrapPanel>
     </DockPanel>
