@@ -10,19 +10,18 @@
   </UserControl.Resources>
 
   <!-- One heal of one character: its figures, how its casts are spread, and
-       every cast. Only there while a heal is picked. -->
+       every cast. Only there while a heal is picked. It has no panel of its
+       own: docked it is a card under the Heals card, and in the Heals panel
+       it sits under the heal's row. -->
   <Border Style="{StaticResource Card}">
     <StackPanel>
-      <DockPanel>
-        <!-- Close travels with the card: it has to work from a panel too. -->
+      <!-- Docked only. Under its row in a panel, the row already says which
+           heal, how many casts and how much, and picking it again closes it. -->
+      <DockPanel Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
         <Button DockPanel.Dock="Right" VerticalAlignment="Top" Margin="8,0,0,0" Style="{StaticResource SmallButton}"
                 Content="Close" Command="{Binding CloseHealDrillCommand}" AutomationProperties.Name="Close heal drill-down"/>
-        <Button DockPanel.Dock="Right" Style="{StaticResource PopOut}" Command="{Binding Panels[hdrill].PopOutCommand}"
-                AutomationProperties.Name="Pop out Heal drill-down"/>
         <StackPanel>
           <TextBlock Text="{Binding HealDrillTitle}" Style="{StaticResource CardTitle}" TextTrimming="CharacterEllipsis"/>
-          <!-- Kept in a floating panel, unlike the other cards' notes: this
-               one is figures (who, how many casts, how much), not an explanation. -->
           <TextBlock Text="{Binding HealDrillNote}" Style="{StaticResource Label}" Margin="0,2,0,0" TextWrapping="Wrap"
                      Typography.NumeralAlignment="Tabular"/>
         </StackPanel>
@@ -47,13 +46,16 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
-      <c:HistogramChart Height="210" Margin="0,12,0,0" Model="{Binding HealHistogram}"
+      <!-- Shorter in a panel, as the damage drill-down's is. -->
+      <c:HistogramChart Margin="0,12,0,0" Model="{Binding HealHistogram}"
                         EmptyText="No casts recorded" AutomationProperties.Name="Healing distribution chart">
         <c:HistogramChart.Style>
           <Style TargetType="c:HistogramChart">
+            <Setter Property="Height" Value="210"/>
             <Setter Property="Fill" Value="{Binding HealHistogramFill}"/>
             <Style.Triggers>
               <Trigger Property="v:Float.On" Value="True">
+                <Setter Property="Height" Value="160"/>
                 <Setter Property="Fill" Value="{Binding PanelHealHistogramFill}"/>
               </Trigger>
             </Style.Triggers>

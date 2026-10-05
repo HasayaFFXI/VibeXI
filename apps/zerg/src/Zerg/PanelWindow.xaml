@@ -110,12 +110,7 @@
         </DockPanel>
       </Border>
 
-      <Grid Margin="6,4,6,8">
-        <!-- A card that hides itself must not leave a blank panel. -->
-        <TextBlock x:Name="Nothing" Visibility="Collapsed" FontSize="13" TextWrapping="Wrap" Margin="4,2"
-                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-        <ContentControl x:Name="Body" v:Float.On="True" Focusable="False"/>
-      </Grid>
+      <ContentControl x:Name="Body" Margin="6,4,6,8" v:Float.On="True" Focusable="False"/>
 
     </DockPanel>
   </Border>

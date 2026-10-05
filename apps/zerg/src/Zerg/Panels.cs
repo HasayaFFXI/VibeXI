@@ -58,12 +58,14 @@ public sealed partial class PanelInfo(PanelSet set, string key, string title) : 
 /// </summary>
 public sealed partial class PanelSet : ObservableObject
 {
-    public const string Line = "line", Bars = "bars", Actions = "actions", Drill = "drill";
-    /// <summary>The Healing section's four, each the twin of the one above it.</summary>
-    public const string HealLine = "hline", HealBars = "hbars", HealActions = "hactions", HealDrill = "hdrill";
+    // No drill-down among them: that goes with its table, as a card under
+    // it in the main window and under the action's row in the table's panel.
+    public const string Line = "line", Bars = "bars", Actions = "actions";
+    /// <summary>The Healing section's three, each the twin of the one above it.</summary>
+    public const string HealLine = "hline", HealBars = "hbars", HealActions = "hactions";
 
     /// <summary>Whether a panel holds one of the Healing section's cards.</summary>
-    public static bool IsHealing(string key) => key is HealLine or HealBars or HealActions or HealDrill;
+    public static bool IsHealing(string key) => key is HealLine or HealBars or HealActions;
 
     readonly Settings settings;
     readonly PanelOpacities opacities;
@@ -91,11 +93,9 @@ public sealed partial class PanelSet : ObservableObject
         Add(Line, "Cumulative damage");
         Add(Bars, "Damage by character");
         Add(Actions, "Actions");
-        Add(Drill, "Drill-down");
         Add(HealLine, "Cumulative healing");
         Add(HealBars, "Healing by character");
         Add(HealActions, "Heals");
-        Add(HealDrill, "Heal drill-down");
 
         // A slider reports every step of a drag; the file is written once it settles.
         saver = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(400) };

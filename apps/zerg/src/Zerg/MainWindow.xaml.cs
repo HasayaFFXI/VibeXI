@@ -62,9 +62,17 @@ public partial class MainWindow : Window
         model.Asker = (headline, content) => TaskDialog.Ask(headline, content, TaskDialog.Icon.Warning, this);
         model.Binder = Bind;
 
-        // Once it has been laid out: the card is not there to scroll to until then.
-        model.DrillOpened += () => Dispatcher.BeginInvoke(Drill.BringIntoView, DispatcherPriority.Loaded);
-        model.HealDrillOpened += () => Dispatcher.BeginInvoke(HealDrill.BringIntoView, DispatcherPriority.Loaded);
+        // Once it has been laid out: the card is not there to scroll to until
+        // then. Not while the table it belongs to floats: the drill-down is
+        // in that panel, and there is nothing here to scroll to.
+        model.DrillOpened += () =>
+        {
+            if (!model.Panels[PanelSet.Actions].IsOut) Dispatcher.BeginInvoke(Drill.BringIntoView, DispatcherPriority.Loaded);
+        };
+        model.HealDrillOpened += () =>
+        {
+            if (!model.Panels[PanelSet.HealActions].IsOut) Dispatcher.BeginInvoke(HealDrill.BringIntoView, DispatcherPriority.Loaded);
+        };
         Body.SizeChanged += (_, _) => FitTiles();
 
         menu = new TrayMenu(model, ComeForward, ShowSettings, Close);
