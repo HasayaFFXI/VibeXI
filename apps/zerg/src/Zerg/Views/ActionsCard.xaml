@@ -40,35 +40,62 @@
       </Border>
     </DataTemplate>
 
+    <!-- In a floating panel the drill-down opens under the action it is
+         about, since the panel is all there is to look at: the main window's
+         own card may be behind the game. Made when the action is picked and
+         thrown away when it is not, so only one is ever there. Its data
+         context is the view model, as the docked card's is. -->
+    <DataTemplate x:Key="Nothing"/>
+    <DataTemplate x:Key="Detail">
+      <v:DrillCard Margin="40,0,0,12" Loaded="OnDetailLoaded"/>
+    </DataTemplate>
+    <Style x:Key="Under" TargetType="ContentControl">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="ContentTemplate" Value="{StaticResource Nothing}"/>
+      <Style.Triggers>
+        <MultiDataTrigger>
+          <MultiDataTrigger.Conditions>
+            <Condition Binding="{Binding Selected}" Value="True"/>
+            <Condition Binding="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}}" Value="True"/>
+          </MultiDataTrigger.Conditions>
+          <Setter Property="ContentTemplate" Value="{StaticResource Detail}"/>
+        </MultiDataTrigger>
+      </Style.Triggers>
+    </Style>
+
     <!-- One action. Picking it opens the drill-down; picking it again closes it. -->
     <DataTemplate x:Key="Action">
-      <Button Command="{Binding DataContext.DrillCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-              CommandParameter="{Binding}" AutomationProperties.Name="{Binding Label}" ToolTip="Show every hit">
-        <Button.Style>
-          <Style TargetType="Button" BasedOn="{StaticResource RowButton}">
-            <Style.Triggers>
-              <DataTrigger Binding="{Binding Selected}" Value="True">
-                <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
-              </DataTrigger>
-            </Style.Triggers>
-          </Style>
-        </Button.Style>
-        <Grid>
-          <Border Width="3" CornerRadius="1.5" HorizontalAlignment="Left" Margin="0,5"
-                  Background="{DynamicResource AccentFillColorDefaultBrush}"
-                  Visibility="{Binding Selected, Converter={StaticResource Visible}}"/>
-          <v:Cells Widths="{StaticResource Columns}">
-            <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" Padding="40,0,8,0"/>
-            <TextBlock Text="{Binding Hits}" Style="{StaticResource Cell}"/>
-            <TextBlock Text="{Binding Misses}" Style="{StaticResource Cell}"/>
-            <TextBlock Text="{Binding Total}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
-            <TextBlock Text="{Binding Avg}" Style="{StaticResource Cell}"/>
-            <TextBlock Text="{Binding Min}" Style="{StaticResource Cell}"/>
-            <TextBlock Text="{Binding Max}" Style="{StaticResource Cell}"/>
-            <TextBlock Text="{Binding Share}" Style="{StaticResource Cell}"/>
-          </v:Cells>
-        </Grid>
-      </Button>
+      <StackPanel>
+        <Button Command="{Binding DataContext.DrillCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                CommandParameter="{Binding}" AutomationProperties.Name="{Binding Label}" ToolTip="Show every hit">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource RowButton}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Selected}" Value="True">
+                  <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
+          <Grid>
+            <Border Width="3" CornerRadius="1.5" HorizontalAlignment="Left" Margin="0,5"
+                    Background="{DynamicResource AccentFillColorDefaultBrush}"
+                    Visibility="{Binding Selected, Converter={StaticResource Visible}}"/>
+            <v:Cells Widths="{StaticResource Columns}">
+              <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" Padding="40,0,8,0"/>
+              <TextBlock Text="{Binding Hits}" Style="{StaticResource Cell}"/>
+              <TextBlock Text="{Binding Misses}" Style="{StaticResource Cell}"/>
+              <TextBlock Text="{Binding Total}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding Avg}" Style="{StaticResource Cell}"/>
+              <TextBlock Text="{Binding Min}" Style="{StaticResource Cell}"/>
+              <TextBlock Text="{Binding Max}" Style="{StaticResource Cell}"/>
+              <TextBlock Text="{Binding Share}" Style="{StaticResource Cell}"/>
+            </v:Cells>
+          </Grid>
+        </Button>
+        <ContentControl Content="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                        Style="{StaticResource Under}"/>
+      </StackPanel>
     </DataTemplate>
 
     <v:ActionRowTemplates x:Key="Templates" Heading="{StaticResource Heading}" Action="{StaticResource Action}"/>
@@ -131,7 +158,7 @@
             </Grid.Style>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                           v:WheelChain.On="True">
-              <ItemsControl ItemsSource="{Binding Actions}" ItemTemplateSelector="{StaticResource Templates}"
+              <ItemsControl x:Name="List" ItemsSource="{Binding Actions}" ItemTemplateSelector="{StaticResource Templates}"
                             Focusable="False" Margin="0,0,14,0"/>
             </ScrollViewer>
           </Grid>

@@ -49,19 +49,20 @@ public partial class PanelWindow : Window
         Tools.DataContext = info;
         Title = info.Title + " · " + AppInfo.Name;
 
+        // The bar shows the card's heading, since the card's own is not drawn here.
+        BarTitle.Text = info.Title;
+
         // The cumulative chart and the actions list take whatever height the
-        // panel has; the strip and the drill-down are as tall as they are,
-        // and scroll when the panel is shorter.
+        // panel has; the strip is as tall as it is, and scrolls when the
+        // panel is shorter.
         Body.Content = info.Key switch
         {
             PanelSet.Line => new LineCard(),
             PanelSet.Actions => new ActionsCard(),
             PanelSet.Bars => Scrolling(new BarsCard()),
-            PanelSet.Drill => Scrolling(new DrillCard()),
             PanelSet.HealLine => new HealLineCard(),
             PanelSet.HealActions => new HealActionsCard(),
-            PanelSet.HealBars => Scrolling(new HealBarsCard()),
-            _ => Scrolling(new HealDrillCard()),
+            _ => Scrolling(new HealBarsCard()),
         };
 
         // The bar's total is the total of the side of the fight the card
@@ -90,9 +91,9 @@ public partial class PanelWindow : Window
             // A heal panel starts a little right of its damage twin's place.
             else if (WindowPlacement.CaptureFrame(main) is { } at)
             {
-                int i = Array.IndexOf([PanelSet.Line, PanelSet.Bars, PanelSet.Actions, PanelSet.Drill,
-                                       PanelSet.HealLine, PanelSet.HealBars, PanelSet.HealActions, PanelSet.HealDrill], info.Key);
-                int step = 36 * (i % 4), across = 48 * (i / 4);
+                int i = Array.IndexOf([PanelSet.Line, PanelSet.Bars, PanelSet.Actions,
+                                       PanelSet.HealLine, PanelSet.HealBars, PanelSet.HealActions], info.Key);
+                int step = 36 * (i % 3), across = 48 * (i / 3);
                 WindowPlacement.MoveFrame(this, at.X + 60 + step + across, at.Y + 140 + step);
             }
         };
@@ -107,10 +108,8 @@ public partial class PanelWindow : Window
         Frame.MouseLeave += (_, _) => Tools.Opacity = BarTitle.Opacity = Resting;
 
         info.PropertyChanged += OnPanelChanged;
-        model.PropertyChanged += OnModelChanged;
         model.Panels.PropertyChanged += OnSetChanged;
         Tint();
-        Describe();
     }
 
     static ScrollViewer Scrolling(FrameworkElement card)
@@ -228,8 +227,8 @@ public partial class PanelWindow : Window
         // pixel short of its rows would open with a scroll bar.
         PanelSet.Bars => (500, StripHeight(model.Strip.Count)),
         PanelSet.HealBars => (500, StripHeight(model.HealStrip.Count)),
-        PanelSet.Actions or PanelSet.HealActions => (660, 420),
-        _ => (600, 520),
+        // Room for a few rows and the drill-down that opens under one.
+        _ => (660, 520),
     };
 
     static double StripHeight(int rows) => Chrome + 16 + 4 + 21.5 * Math.Max(rows, 3);
@@ -240,26 +239,6 @@ public partial class PanelWindow : Window
         var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(info.Opacity * 2.55), 0, 0, 0));
         brush.Freeze();
         Frame.Background = brush;
-    }
-
-    /// <summary>
-    /// The bar shows the card's heading, since the card's own is not drawn
-    /// here. A drill-down's is the action it is open on, and with none
-    /// picked the card hides itself, so the panel says why it is empty.
-    /// </summary>
-    void Describe()
-    {
-        var (drill, open, title) = info.Key switch
-        {
-            PanelSet.Drill => (true, model.DrillOpen, model.DrillTitle),
-            PanelSet.HealDrill => (true, model.HealDrillOpen, model.HealDrillTitle),
-            _ => (false, false, ""),
-        };
-        BarTitle.Text = drill && open ? title : info.Title;
-        Nothing.Text = info.Key == PanelSet.HealDrill
-            ? "Nothing to show yet. Select a heal in the Healing section to drill into it here."
-            : "Nothing to show yet. Select an action in the main window to drill into it here.";
-        Nothing.Visibility = drill && !open ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>
@@ -296,12 +275,6 @@ public partial class PanelWindow : Window
         if (e.PropertyName == nameof(PanelSet.ClickThrough)) Through();
     }
 
-    void OnModelChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(MainViewModel.DrillOpen) or nameof(MainViewModel.DrillTitle)
-                           or nameof(MainViewModel.HealDrillOpen) or nameof(MainViewModel.HealDrillTitle)) Describe();
-    }
-
     protected override void OnClosing(CancelEventArgs e)
     {
         if (WindowPlacement.CaptureFrame(this) is { } frame)
@@ -316,7 +289,6 @@ public partial class PanelWindow : Window
     {
         // The view model outlives the panel and would keep it alive.
         info.PropertyChanged -= OnPanelChanged;
-        model.PropertyChanged -= OnModelChanged;
         model.Panels.PropertyChanged -= OnSetChanged;
         base.OnClosed(e);
     }

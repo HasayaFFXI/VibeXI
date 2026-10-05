@@ -301,11 +301,11 @@
         <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[bars]}"/>
         <v:ActionsCard Margin="0,12,0,0" Visibility="{Binding Panels[actions].IsOut, Converter={StaticResource Hidden}}"/>
         <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[actions]}"/>
-        <!-- Only there while an action is picked, and so is its stand-in: a
-             card with nothing to show leaves no box behind. -->
-        <StackPanel x:Name="Drill" Margin="0,12,0,0" Visibility="{Binding DrillOpen, Converter={StaticResource Visible}}">
-          <v:DrillCard Visibility="{Binding Panels[drill].IsOut, Converter={StaticResource Hidden}}"/>
-          <v:Away DataContext="{Binding Panels[drill]}"/>
+        <!-- Only there while an action is picked (the card hides itself). It
+             goes where the Actions card goes: while that floats, its panel
+             shows the drill-down under the action, and nothing is left here. -->
+        <StackPanel x:Name="Drill" Visibility="{Binding Panels[actions].IsOut, Converter={StaticResource Hidden}}">
+          <v:DrillCard Margin="0,12,0,0"/>
         </StackPanel>
 
       </StackPanel>
@@ -363,10 +363,8 @@
         <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[hbars]}"/>
         <v:HealActionsCard Margin="0,12,0,0" Visibility="{Binding Panels[hactions].IsOut, Converter={StaticResource Hidden}}"/>
         <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[hactions]}"/>
-        <StackPanel x:Name="HealDrill" Margin="0,12,0,0"
-                    Visibility="{Binding HealDrillOpen, Converter={StaticResource Visible}}">
-          <v:HealDrillCard Visibility="{Binding Panels[hdrill].IsOut, Converter={StaticResource Hidden}}"/>
-          <v:Away DataContext="{Binding Panels[hdrill]}"/>
+        <StackPanel x:Name="HealDrill" Visibility="{Binding Panels[hactions].IsOut, Converter={StaticResource Hidden}}">
+          <v:HealDrillCard Margin="0,12,0,0"/>
         </StackPanel>
 
       </StackPanel>

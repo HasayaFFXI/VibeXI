@@ -247,6 +247,12 @@ tools/make-icon.ps1        the icon, from assets/
   (`MainViewModel.openActions` and `openHeals`, by real name, kept for the
   run and not saved). A docked card and its pop-out share it; the two
   tables do not.
+- **A drill-down goes where its table goes**, and has no panel of its own.
+  With the Actions (or Heals) card docked, it is the card under it,
+  `DrillCard` (`HealDrillCard`). With the table floating, the main window
+  shows no drill-down, and the panel makes one under the picked action's
+  row (`Under` in `ActionsCard.xaml`: only while `Selected` and `Float.On`),
+  without its heading and with a shorter chart.
 - **Charts.** `Zerg.Core/Charts` decides where every mark goes from numbers
   and a text-width function; `src/Zerg/Charts` paints it. A chart is given an
   immutable model: build a new one for each draw. Series colours are the
@@ -370,8 +376,10 @@ Zerg replaced; nothing reads them.
      (`tool noactivate topmost layered` for a panel); use that `h<hwnd>` as
      the target of any other command. Panels are opened with
      `click <pid> "Pop out Cumulative damage"` (or `Damage by character`,
-     `Actions`, `Drill-down`, `Cumulative healing`, `Healing by character`,
-     `Heals`, `Heal drill-down`) and closed with `click h<hwnd> Dock`.
+     `Actions`, `Cumulative healing`, `Healing by character`, `Heals`) and
+     closed with `click h<hwnd> Dock`. A drill-down has no panel of its
+     own: in the Actions or Heals panel, `click h<hwnd> "<character>, <action>"`
+     opens it under that row.
    - **Click-through** is `chord Ctrl+Alt+Z` (the real keys, to whatever has
      the keyboard: run `fg` first so they never land in the game),
      `click <pid> "Click-through panels"` in the main window, or the tray

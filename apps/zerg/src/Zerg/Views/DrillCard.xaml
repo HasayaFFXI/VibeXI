@@ -10,19 +10,18 @@
   </UserControl.Resources>
 
   <!-- One action of one character: its figures, how its hits are spread, and
-       every hit. Only there while an action is picked. -->
+       every hit. Only there while an action is picked. It has no panel of
+       its own: docked it is a card under the Actions card, and in the
+       Actions panel it sits under the action's row. -->
   <Border Style="{StaticResource Card}">
     <StackPanel>
-      <DockPanel>
-        <!-- Close travels with the card: it has to work from a panel too. -->
+      <!-- Docked only. Under its row in a panel, the row already says which
+           action, how many hits and how much, and picking it again closes it. -->
+      <DockPanel Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
         <Button DockPanel.Dock="Right" VerticalAlignment="Top" Margin="8,0,0,0" Style="{StaticResource SmallButton}"
                 Content="Close" Command="{Binding CloseDrillCommand}" AutomationProperties.Name="Close drill-down"/>
-        <Button DockPanel.Dock="Right" Style="{StaticResource PopOut}" Command="{Binding Panels[drill].PopOutCommand}"
-                AutomationProperties.Name="Pop out Drill-down"/>
         <StackPanel>
           <TextBlock Text="{Binding DrillTitle}" Style="{StaticResource CardTitle}" TextTrimming="CharacterEllipsis"/>
-          <!-- Kept in a floating panel, unlike the other cards' notes: this
-               one is figures (who, how many hits, how much), not an explanation. -->
           <TextBlock Text="{Binding DrillNote}" Style="{StaticResource Label}" Margin="0,2,0,0" TextWrapping="Wrap"
                      Typography.NumeralAlignment="Tabular"/>
         </StackPanel>
@@ -47,13 +46,17 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
 
-      <c:HistogramChart Height="210" Margin="0,12,0,0" Model="{Binding Histogram}"
+      <!-- Shorter in a panel, so the row, the figures and the chart fit a
+           panel of the height the actions list opens at. -->
+      <c:HistogramChart Margin="0,12,0,0" Model="{Binding Histogram}"
                         AutomationProperties.Name="Damage distribution chart">
         <c:HistogramChart.Style>
           <Style TargetType="c:HistogramChart">
+            <Setter Property="Height" Value="210"/>
             <Setter Property="Fill" Value="{Binding HistogramFill}"/>
             <Style.Triggers>
               <Trigger Property="v:Float.On" Value="True">
+                <Setter Property="Height" Value="160"/>
                 <Setter Property="Fill" Value="{Binding PanelHistogramFill}"/>
               </Trigger>
             </Style.Triggers>
