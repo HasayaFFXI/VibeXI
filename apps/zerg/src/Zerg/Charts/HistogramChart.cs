@@ -82,25 +82,6 @@ public sealed class HistogramChart : Chart
         }
     }
 
-    /// <summary>A column: square at the foot, rounded at the top.</summary>
-    static StreamGeometry RoundedTop(double x, double y, double w, double h, double radius)
-    {
-        double r = Math.Max(0, Math.Min(radius, Math.Min(w / 2, h / 2)));
-        var size = new Size(r, r);
-        var g = new StreamGeometry();
-        using (var ctx = g.Open())
-        {
-            ctx.BeginFigure(new Point(x, y + h), true, true);
-            ctx.LineTo(new Point(x, y + r), false, false);
-            ctx.ArcTo(new Point(x + r, y), size, 0, false, SweepDirection.Clockwise, false, false);
-            ctx.LineTo(new Point(x + w - r, y), false, false);
-            ctx.ArcTo(new Point(x + w, y + r), size, 0, false, SweepDirection.Clockwise, false, false);
-            ctx.LineTo(new Point(x + w, y + h), false, false);
-        }
-        g.Freeze();
-        return g;
-    }
-
     protected override Readout? ReadoutAt(Point p)
     {
         if (layout?.Hover(p.X, p.Y) is not { } h) return null;

@@ -218,6 +218,146 @@ public class CompareSheetTests
         Assert.Equal("new", s.Targets[1].Change.Main);
     }
 
+    // ------------------------------------------------------------- spread
+
+    [Fact]
+    public void An_actions_hits_are_binned_together_across_the_runs()
+    {
+        var a = Run(60, Lines.Hit(10, "Hasaya", 100), Lines.Hit(11, "Hasaya", 110), Lines.Hit(12, "Hasaya", 120),
+                        Lines.Hit(13, "Hasaya", 130));
+        var b = Run(60, Lines.Hit(10, "Hasaya", 200), Lines.Hit(11, "Hasaya", 220), Lines.Hit(12, "Hasaya", 240),
+                        Lines.Hit(13, "Hasaya", 0, hit: false));
+        var s = Sheet(a, b).Spread("Hasaya", "Attack");
+
+        // One range, the least hit of either run to the greatest, cut by the
+        // finer of the two runs' own widths (A's, about 19).
+        Assert.Equal((100d, 240d, 8), (s.Bins[0].Lo, s.Bins[^1].Hi, s.Bins.Count));
+        Assert.Equal([2, 2, 0, 0, 0, 0, 0, 0], s.Bins.Select(x => x.A));
+        Assert.Equal([0, 0, 0, 0, 0, 1, 1, 1], s.Bins.Select(x => x.B));
+        // A miss is not a hit of no damage: it is in no bin.
+        Assert.Equal((4, 3, 115d, 220d), (s.HitsA, s.HitsB, s.AvgA, s.AvgB));
+
+        Assert.Equal(["Hits", "Min", "Median", "Average", "90th pct", "Max", "Std dev"], s.Lines.Select(x => x.Label));
+        SpreadLine Of(string label) => s.Lines.Single(x => x.Label == label);
+        // Fewer hits is not worse news, nor a wider spread.
+        Assert.Equal(("4", "3", new Change("−25.0%", "−1", ChangeTone.Flat)), (Of("Hits").A, Of("Hits").B, Of("Hits").Change));
+        Assert.Equal(("100", "200", "+100.0%"), (Of("Min").A, Of("Min").B, Of("Min").Change.Main));
+        Assert.Equal(("115", "220"), (Of("Median").A, Of("Median").B));
+        Assert.Equal(("115", "220", new Change("+91.3%", "+105", ChangeTone.Better)),
+                     (Of("Average").A, Of("Average").B, Of("Average").Change));
+        Assert.Equal(("127", "236"), (Of("90th pct").A, Of("90th pct").B));
+        Assert.Equal(("130", "240"), (Of("Max").A, Of("Max").B));
+        Assert.Equal(("13", "20", ChangeTone.Flat), (Of("Std dev").A, Of("Std dev").B, Of("Std dev").Change.Tone));
+        Assert.Equal("Damage distribution · 8 bins · a column is its share of that run’s hits", s.Caption);
+    }
+
+    [Fact]
+    public void A_run_without_the_action_is_dashes_and_one_that_never_hit_with_it_has_no_hits()
+    {
+        var a = Run(30, Lines.Hit(10, "Hasaya", 0, hit: false));
+        var b = Run(30, Lines.Hit(10, "Hasaya", 300), Lines.Hit(12, "Hasaya", 900, kind: "ws", action: "Tachi: Gekko"));
+        var sheet = Sheet(a, b);
+
+        var ws = sheet.Spread("Hasaya", "Tachi: Gekko");
+        Assert.Equal(("—", "1", Change.Nothing), (ws.Lines[0].A, ws.Lines[0].B, ws.Lines[0].Change));
+        Assert.All(ws.Lines.Skip(1), x => Assert.Equal(("—", Change.Nothing), (x.A, x.Change)));
+        Assert.Equal((0, 1, null, 900d), (ws.HitsA, ws.HitsB, ws.AvgA, ws.AvgB));
+        // One hit has no range to cut: a single bin.
+        var bin = Assert.Single(ws.Bins);
+        Assert.Equal((900d, 900d, 0, 1), (bin.Lo, bin.Hi, bin.A, bin.B));
+        Assert.Equal("Damage distribution · 1 bin · a column is its share of that run’s hits", ws.Caption);
+
+        // Used and never landed: no hits, which is a figure, and nothing else to state.
+        var attack = sheet.Spread("Hasaya", "Attack");
+        Assert.Equal(("0", "1"), (attack.Lines[0].A, attack.Lines[0].B));
+        Assert.Equal(("—", "300"), (attack.Lines[1].A, attack.Lines[1].B));
+        Assert.Null(attack.AvgA);
+
+        // Nothing either run hit with: no bins, and nothing to say about them.
+        var none = Sheet(a, a).Spread("Hasaya", "Attack");
+        Assert.Empty(none.Bins);
+        Assert.Equal("", none.Caption);
+    }
+
+    [Fact]
+    public void The_crit_rate_is_there_once_either_run_has_a_crit()
+    {
+        var a = Run(30, Lines.Hit(10, "Hasaya", 100), Lines.Hit(11, "Hasaya", 200, crit: true));
+        var b = Run(30, Lines.Hit(10, "Hasaya", 100), Lines.Hit(11, "Hasaya", 100));
+        var crit = Sheet(a, b).Spread("Hasaya", "Attack").Lines[^1];
+        Assert.Equal(("Crit rate", "50.0%", "0.0%", new Change("−50.0 pt", "", ChangeTone.Worse)),
+                     (crit.Label, crit.A, crit.B, crit.Change));
+        Assert.DoesNotContain(Sheet(b, b).Spread("Hasaya", "Attack").Lines, x => x.Label == "Crit rate");
+    }
+
+    [Fact]
+    public void By_job_an_actions_hits_are_everyones_on_the_job()
+    {
+        var a = Run(30, Lines.Job("Hasaya", "SAM", "WAR"), Lines.Job("Other", "SAM", "NIN"),
+                        Lines.Hit(10, "Hasaya", 100), Lines.Hit(11, "Other", 300));
+        var b = Run(30, Lines.Job("Hasaya", "SAM", "WAR"), Lines.Hit(10, "Hasaya", 200));
+        var s = Sheet(a, b, byJob: true).Spread("SAM", "Attack");
+
+        Assert.Equal((2, 1), (s.HitsA, s.HitsB));
+        Assert.Equal(("100", "200"), (s.Lines[1].A, s.Lines[1].B));
+        Assert.Equal(("300", "200"), (s.Lines[5].A, s.Lines[5].B));
+        // By character the same two runs keep them apart.
+        Assert.Equal((1, 1), (Sheet(a, b).Spread("Hasaya", "Attack").HitsA, Sheet(a, b).Spread("Other", "Attack").HitsA));
+    }
+
+    [Fact]
+    public void A_heals_casts_are_binned_together_across_the_runs()
+    {
+        var a = Run(60, Lines.Hit(10, "Hasaya", 100), Lines.Heal(12, "Mage", 300), Lines.Heal(13, "Mage", 100),
+                        Lines.Heal(14, "Mage", 200, action: "Curaga", target: "Hasaya", use: 9900),
+                        Lines.Heal(14, "Mage", 250, action: "Curaga", target: "Tank", use: 9900));
+        // A cure on a full target healed 0: a cast, not a miss.
+        var b = Run(60, Lines.Hit(10, "Hasaya", 100), Lines.Heal(12, "Mage", 400), Lines.Heal(13, "Mage", 0));
+        var sheet = Sheet(a, b);
+
+        var cure = sheet.HealSpread("Mage", "Cure IV");
+        Assert.Equal("cast", cure.Unit);
+        Assert.Equal(["Casts", "Min", "Median", "Average", "90th pct", "Max", "Std dev"], cure.Lines.Select(x => x.Label));
+        Assert.Equal(("2", "2", ChangeTone.Flat), (cure.Lines[0].A, cure.Lines[0].B, cure.Lines[0].Change.Tone));
+        Assert.Equal(("100", "0"), (cure.Lines[1].A, cure.Lines[1].B));
+        Assert.Equal(("200", "200", "±0.0%"), (cure.Lines[3].A, cure.Lines[3].B, cure.Lines[3].Change.Main));
+        Assert.Equal(("300", "400", ChangeTone.Better), (cure.Lines[5].A, cure.Lines[5].B, cure.Lines[5].Change.Tone));
+        Assert.Equal((0d, 400d), (cure.Bins[0].Lo, cure.Bins[^1].Hi));
+        Assert.Equal([0, 1, 0, 0, 1, 0], cure.Bins.Select(x => x.A));
+        Assert.Equal([1, 0, 0, 0, 0, 1], cure.Bins.Select(x => x.B));
+        Assert.Equal("Healed per cast · 6 bins · a column is its share of that run’s casts", cure.Caption);
+
+        // A cast is one figure, over everyone it reached. B has heal lines and
+        // never cast it: 0 casts, as the table over it says, and no more.
+        var curaga = sheet.HealSpread("Mage", "Curaga");
+        Assert.Equal((1, 0, 450d, null), (curaga.HitsA, curaga.HitsB, curaga.AvgA, curaga.AvgB));
+        Assert.Equal(("1", "0"), (curaga.Lines[0].A, curaga.Lines[0].B));
+        Assert.Equal(("450", "—", Change.Nothing), (curaga.Lines[1].A, curaga.Lines[1].B, curaga.Lines[1].Change));
+    }
+
+    [Fact]
+    public void A_parse_with_no_heal_lines_has_no_casts_to_count()
+    {
+        var a = Run(30, Lines.Hit(10, "Hasaya", 100));
+        var b = Run(30, Lines.Hit(10, "Hasaya", 100), Lines.Heal(12, "Mage", 300), Lines.Heal(13, "Mage", 500));
+        var s = Sheet(a, b).HealSpread("Mage", "Cure IV");
+
+        Assert.Equal(("—", "2", Change.Nothing), (s.Lines[0].A, s.Lines[0].B, s.Lines[0].Change));
+        Assert.All(s.Lines, x => Assert.Equal("—", x.A));
+        Assert.Equal((0, 2), (s.HitsA, s.HitsB));
+        Assert.Equal([0, 0, 0, 0, 0, 0], s.Bins.Select(x => x.A));
+    }
+
+    [Fact]
+    public void By_job_a_heals_casts_are_everyones_on_the_job()
+    {
+        var a = Run(30, Lines.Job("Mage", "WHM"), Lines.Job("Priest", "WHM"), Lines.Hit(10, "Hasaya", 100),
+                        Lines.Heal(12, "Mage", 300), Lines.Heal(13, "Priest", 500));
+        var s = Sheet(a, a, byJob: true).HealSpread("WHM", "Cure IV");
+        Assert.Equal((2, 2), (s.HitsA, s.HitsB));
+        Assert.Equal(("300", "500"), (s.Lines[1].A, s.Lines[5].A));
+    }
+
     // -------------------------------------------------------------- names
 
     [Fact]

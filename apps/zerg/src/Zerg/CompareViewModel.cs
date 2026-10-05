@@ -112,12 +112,69 @@ public abstract partial class CompareRow(string key, Action<string, bool> flippe
     void Toggle() => Open = !Open;
 }
 
+/// <summary>
+/// A row under a row: one action of a character (or job), or one heal of a
+/// healer. It opens onto how its hits, or its casts, are spread in each run.
+/// </summary>
+/// <param name="key">The action under its row's key: an action's name alone is not one.</param>
+/// <param name="label">Whose it is, for a screen reader: "Hasaya, Tachi: Gekko".</param>
+/// <param name="measure">Works the spread out. Only called once the row is opened.</param>
+public abstract partial class CompareSpreadRow(string key, string name, string label, Action<string, bool> flipped,
+                                               Func<ActionSpread> measure) : CompareRow(key, flipped)
+{
+    public string Name { get; } = name;
+    public string Label { get; } = label;
+    public override string ToString() => Label;
+
+    [ObservableProperty] private ActionSpread? spread;
+    [ObservableProperty] private PairedHistogramModel? histogram;
+
+    protected override void Unfold()
+    {
+        Spread = Open ? measure() : null;
+        Histogram = Spread is { } s ? PairedHistogramModel.From(s) : null;
+    }
+}
+
+/// <summary>One action under a character (or job) of the damage table.</summary>
+public sealed class CompareActionRow : CompareSpreadRow
+{
+    public CompareActionRow(ActionLine line, string key, string label, bool open, Action<string, bool> flipped,
+                            Func<ActionSpread> measure)
+        : base(key, line.Name, label, flipped, measure)
+    {
+        Line = line;
+        Open = open;
+    }
+
+    public ActionLine Line { get; }
+}
+
+/// <summary>One heal under a healer (or job) of the healing table.</summary>
+public sealed class CompareHealRow : CompareSpreadRow
+{
+    public CompareHealRow(HealLine line, string key, string label, bool open, Action<string, bool> flipped,
+                          Func<ActionSpread> measure)
+        : base(key, line.Name, label, flipped, measure)
+    {
+        Line = line;
+        Open = open;
+    }
+
+    public HealLine Line { get; }
+}
+
 /// <summary>One character, or one job, in the damage table.</summary>
 public sealed partial class CompareActorRow : CompareRow
 {
-    public CompareActorRow(ActorLine line, Identity id, Brush swatch, bool byJob, bool open, Action<string, bool> flipped)
+    readonly Func<ActionLine, CompareActionRow> action;
+
+    /// <param name="action">Makes the row of one of this row's actions.</param>
+    public CompareActorRow(ActorLine line, Identity id, Brush swatch, bool byJob, bool open, Action<string, bool> flipped,
+                           Func<ActionLine, CompareActionRow> action)
         : base(line.Key, flipped)
     {
+        this.action = action;
         (Line, Name, Swatch) = (line, id.Label, swatch);
         // A character not in a run has no job there; one who was, and whose
         // job the party table never reported, has a question mark. Beside a
@@ -142,12 +199,12 @@ public sealed partial class CompareActorRow : CompareRow
     public string? JobsTip => Unreported ? "?: in that run, but their job was never reported" : null;
     bool Unreported { get; }
 
-    [ObservableProperty] private IReadOnlyList<ActionLine> actions = [];
+    [ObservableProperty] private IReadOnlyList<CompareActionRow> actions = [];
     [ObservableProperty] private bool noActions;
 
     protected override void Unfold()
     {
-        Actions = Open ? Line.Actions : [];
+        Actions = Open ? Line.Actions.Select(action).ToList() : [];
         NoActions = Open && Line.Actions.Count == 0;
     }
 }
@@ -155,9 +212,14 @@ public sealed partial class CompareActorRow : CompareRow
 /// <summary>One healer, or one job, in the healing table; or the party, which leads it.</summary>
 public sealed partial class CompareHealerRow : CompareRow, IGroupedRow
 {
-    public CompareHealerRow(HealerLine line, string name, Brush? swatch, bool open, Action<string, bool> flipped)
+    readonly Func<HealLine, CompareHealRow>? heal;
+
+    /// <param name="heal">Makes the row of one of this healer's heals. The party has none to make.</param>
+    public CompareHealerRow(HealerLine line, string name, Brush? swatch, bool open, Action<string, bool> flipped,
+                            Func<HealLine, CompareHealRow>? heal = null)
         : base(line.Key ?? "", flipped)
     {
+        this.heal = heal;
         (Line, Name, Swatch) = (line, name, swatch);
         Open = open && line.Key != null;
     }
@@ -169,12 +231,12 @@ public sealed partial class CompareHealerRow : CompareRow, IGroupedRow
     /// <summary>The party's row: a heading over the healers, with nothing under it to open.</summary>
     public bool IsHeading => Line.Key == null;
 
-    [ObservableProperty] private IReadOnlyList<HealLine> heals = [];
+    [ObservableProperty] private IReadOnlyList<CompareHealRow> heals = [];
     [ObservableProperty] private bool noHeals;
 
     protected override void Unfold()
     {
-        Heals = Open ? Line.Heals : [];
+        Heals = Open && heal != null ? Line.Heals.Select(heal).ToList() : [];
         NoHeals = Open && Line.Heals.Count == 0;
     }
 }
@@ -204,8 +266,11 @@ public sealed partial class CompareViewModel : ObservableObject
     readonly MainViewModel host;
     /// <summary>The rows opened onto their actions, and onto their heals, by
     /// key. Kept across a redraw, dropped when the rows change meaning: a new
-    /// file in a slot, or Character | Job.</summary>
-    readonly HashSet<string> open = new(StringComparer.Ordinal), healOpen = new(StringComparer.Ordinal);
+    /// file in a slot, or Character | Job. An action opened onto its hits, or
+    /// a heal onto its casts, is kept the same way, under its row's key and
+    /// its own name, and stays kept while its row is closed.</summary>
+    readonly HashSet<string> open = new(StringComparer.Ordinal), healOpen = new(StringComparer.Ordinal),
+                             spreadOpen = new(StringComparer.Ordinal), healSpreadOpen = new(StringComparer.Ordinal);
     CompareSheet? sheet;
     /// <summary>Something changed while another section was on screen.</summary>
     bool stale = true;
@@ -263,8 +328,7 @@ public sealed partial class CompareViewModel : ObservableObject
     {
         settings.CompareBy = value;
         settings.Save();
-        open.Clear();
-        healOpen.Clear();
+        Forget();
         Redraw();
     }
 
@@ -312,6 +376,15 @@ public sealed partial class CompareViewModel : ObservableObject
         B.Refresh();
     }
 
+    /// <summary>The rows are about to change meaning: nothing that was opened is the same thing any more.</summary>
+    void Forget()
+    {
+        open.Clear();
+        healOpen.Clear();
+        spreadOpen.Clear();
+        healSpreadOpen.Clear();
+    }
+
     internal void OpenInto(RunSlot slot) => Read(slot, () => Picker?.Invoke());
 
     /// <summary>The session as it stands, by way of the export format, so it
@@ -324,8 +397,7 @@ public sealed partial class CompareViewModel : ObservableObject
         {
             if (source() is not { } file) return;
             slot.Show(ParseFile.Import(file.Text), ParseDialog.Title(file.Name));
-            open.Clear();
-            healOpen.Clear();
+            Forget();
         }
         catch (ParseImportException e)
         {
@@ -341,8 +413,7 @@ public sealed partial class CompareViewModel : ObservableObject
     internal void Clear(RunSlot slot)
     {
         slot.Empty();
-        open.Clear();
-        healOpen.Clear();
+        Forget();
         Redraw();
     }
 
@@ -436,13 +507,14 @@ public sealed partial class CompareViewModel : ObservableObject
         NameHead = job ? "Job" : "Character";
         JobHead = job ? "Characters" : "Job";
         RowsTitle = job ? "By job" : "By character";
-        RowsNote = job
+        RowsNote = (job
             ? "Every character on a main job, combined. A character whose job was not reported falls under Unknown job. " +
-              "Each figure shows A over B; select a row to compare its actions."
-            : "Matched by name. Each figure shows A over B; a dash is a character who was not in that run. " +
-              "Select a row to compare its actions.";
+              "Each figure shows A over B. "
+            : "Matched by name. Each figure shows A over B; a dash is a character who was not in that run. ") +
+            "Select a row to compare its actions, and an action to compare how its hits are spread.";
         Actors = heal ? [] : s.Actors.Select(r => new CompareActorRow(r, s.Ids[r.Key], SwatchOf(s.Ids[r.Key]), job,
-                                                                      open.Contains(r.Key), (k, on) => Flip(open, k, on))).ToList();
+                                                                      open.Contains(r.Key), (k, on) => Flip(open, k, on),
+                                                                      x => ActionOf(s, r.Key, x))).ToList();
         Kinds = heal ? [] : s.Kinds;
         Targets = heal ? [] : s.Targets;
 
@@ -454,10 +526,29 @@ public sealed partial class CompareViewModel : ObservableObject
         [
             new CompareHealerRow(s.Party, "Party", null, false, (_, _) => { }),
             .. s.Healers.Select(r => new CompareHealerRow(r, s.Ids[r.Key!].Label, SwatchOf(s.Ids[r.Key!]),
-                                                          healOpen.Contains(r.Key!), (k, on) => Flip(healOpen, k, on))),
+                                                          healOpen.Contains(r.Key!), (k, on) => Flip(healOpen, k, on),
+                                                          x => HealOf(s, r.Key!, x))),
         ];
         HealSpells = heal ? s.HealSpells : [];
         HealTargets = heal ? s.HealTargets : [];
+    }
+
+    /// <summary>One action's row, under the row of <paramref name="key"/>. Its
+    /// hits are measured on the sheet it was drawn from, and only once it is opened.</summary>
+    CompareActionRow ActionOf(CompareSheet s, string key, ActionLine line)
+    {
+        // No name holds a line break, so this cannot be another row's action.
+        var id = key + "\n" + line.Name;
+        return new CompareActionRow(line, id, s.Ids[key].Label + ", " + line.Name, spreadOpen.Contains(id),
+                                    (k, on) => Flip(spreadOpen, k, on), () => s.Spread(key, line.Name));
+    }
+
+    /// <summary>One heal's row, under the healer of <paramref name="key"/>, measured the same way.</summary>
+    CompareHealRow HealOf(CompareSheet s, string key, HealLine line)
+    {
+        var id = key + "\n" + line.Name;
+        return new CompareHealRow(line, id, s.Ids[key].Label + ", " + line.Name, healSpreadOpen.Contains(id),
+                                  (k, on) => Flip(healSpreadOpen, k, on), () => s.HealSpread(key, line.Name));
     }
 
     static void Flip(HashSet<string> set, string key, bool on)

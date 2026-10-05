@@ -11,13 +11,13 @@ static class Lines
     /// <summary>A damage row. <paramref name="t"/> is in seconds, as the file's is.</summary>
     public static string Hit(double t, string actor, double dmg, string kind = "melee", string action = "Attack",
                              string actorKind = "player", string target = "Goblin", bool hit = true,
-                             string? owner = null, string targetKind = "mob")
+                             string? owner = null, string targetKind = "mob", bool crit = false)
     {
         var pet = owner != null ? $",\"owner\":\"{owner}\",\"pet\":\"{actor}\"" : "";
         return string.Create(CultureInfo.InvariantCulture,
             $"{{\"t\":{t},\"seq\":1,\"use\":{++use},\"kind\":\"{kind}\",\"actor\":\"{actor}\",\"actorKind\":\"{actorKind}\"," +
             $"\"action\":\"{action}\",\"actionId\":1,\"target\":\"{target}\",\"targetKind\":\"{targetKind}\",\"dmg\":{dmg}," +
-            $"\"hit\":{(hit ? "true" : "false")},\"crit\":false,\"burst\":false,\"msg\":1{pet}}}");
+            $"\"hit\":{(hit ? "true" : "false")},\"crit\":{(crit ? "true" : "false")},\"burst\":false,\"msg\":1{pet}}}");
     }
 
     /// <summary>One target of a heal. A pet's names its <paramref name="owner"/>.</summary>

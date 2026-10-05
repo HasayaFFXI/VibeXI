@@ -261,6 +261,18 @@ filter does, and credits a pet's heal to its owner.
 - **The shorter run's line ends where the run ends.** Carried flat it would
   claim it was still being measured.
 - A parse with no heal lines at all prints dashes in Healing mode, not zeroes.
+- **An action's two distributions share one set of bins** (`Compare.Spread`;
+  a heal's, `Compare.HealSpread`), from the least hit of either run to the greatest, so a column of A's stands
+  beside the column of B's for the same damage. The width is the finer of the
+  two runs' own Freedman–Diaconis widths (the wider would flatten the tighter
+  run), and there are at most 20, since each bin holds two columns.
+- **A column there is a share of that run's hits, not a count.** Two runs are
+  seldom the same length; by count the longer dwarfs the other whatever their
+  shapes. The counts are in the hover card. Each run's figures are
+  `Counting.Distribution`'s, the ones that file's own drill-down prints.
+- **A heal's distribution is of casts**, each what it healed over everyone it
+  reached, pet heals under the pet's name. A parse with no heal lines is
+  dashes; one that has them and never cast the heal cast it 0 times.
 
 ## Colours and names
 

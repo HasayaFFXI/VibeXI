@@ -301,4 +301,101 @@ public class ChartLayoutTests
         Assert.True(HistogramLayout.Compute(462, 210, [], 0, 0).Empty);
         Assert.True(HistogramLayout.Compute(462, 210, null, 0, 0).Empty);
     }
+
+    // ----------------------------------------------------- paired histogram
+
+    static List<PairBin> Pairs(double lo, double width, params (int A, int B)[] counts) =>
+        counts.Select((c, i) => new PairBin(lo + i * width, lo + (i + 1) * width) { A = c.A, B = c.B }).ToList();
+
+    [Fact]
+    public void A_bin_holds_a_column_for_each_run_as_a_share_of_that_runs_hits()
+    {
+        // A's four hits are all in the first bin; B's four are one and three.
+        var l = PairedHistogramLayout.Compute(462, 210, Pairs(0, 100, (4, 1), (0, 3)), null, null, 4, 4, Width);
+        Assert.Equal(200, l.Slot);
+        Assert.Equal([(0, 0), (0, 1), (1, 1)], l.Columns.Select(c => (c.Bin, c.Run)));
+        Assert.All(l.Columns, c => Assert.Equal(97.5, c.W));
+        // A beside B, a pixel apart, inside the bin.
+        Assert.Equal((48, 146.5, 346.5), (l.Columns[0].X, l.Columns[1].X, l.Columns[2].X));
+        // By share, not by count: A's one column is all of A and reaches the top.
+        Assert.Equal(l.Plot.Y, l.Columns[0].Y, 9);
+        Assert.Equal(l.Plot.H * 0.25, l.Columns[1].H, 9);
+        Assert.Equal(l.Plot.H * 0.75, l.Columns[2].H, 9);
+        Assert.Equal(["0%", "50%", "100%"], l.YTicks.Select(t => t.Label));
+        Assert.Empty(l.Means);
+    }
+
+    [Fact]
+    public void A_longer_run_does_not_dwarf_a_shorter_one()
+    {
+        // Thirty hits against three, spread alike: the columns are the same height.
+        var l = PairedHistogramLayout.Compute(462, 210, Pairs(0, 100, (10, 1), (20, 2)), null, null, 30, 3, Width);
+        Assert.Equal(l.Columns[0].H, l.Columns[1].H, 9);
+        Assert.Equal(l.Columns[2].H, l.Columns[3].H, 9);
+    }
+
+    [Fact]
+    public void The_two_means_labels_turn_their_backs_on_each_other()
+    {
+        var l = PairedHistogramLayout.Compute(462, 210, Pairs(0, 100, (1, 1), (1, 1)), 100, 150, 2, 2, Width);
+        Assert.Equal([0, 1], l.Means.Select(m => m.Run));
+        var (a, b) = (l.Means[0].Rule, l.Means[1].Rule);
+        Assert.Equal(("A avg 100", 246.5, LabelAlign.Right, 242.5), (a.Label, a.X, a.Align, a.LabelX));
+        Assert.Equal(("B avg 150", 346.5, LabelAlign.Left, 350.5), (b.Label, b.X, b.Align, b.LabelX));
+        Assert.Equal(22, l.Plot.Y);
+        Assert.Equal((16, 16), (a.Top, b.Top));
+
+        // Whichever run is the lower reads to the left.
+        var swapped = PairedHistogramLayout.Compute(462, 210, Pairs(0, 100, (1, 1), (1, 1)), 150, 100, 2, 2, Width);
+        Assert.Equal((LabelAlign.Left, LabelAlign.Right), (swapped.Means[0].Rule.Align, swapped.Means[1].Rule.Align));
+    }
+
+    [Fact]
+    public void A_label_with_no_room_on_its_own_side_is_turned_round_and_lifted_clear()
+    {
+        // Both means near the left edge: A's label cannot go left, and to the
+        // right it would run across B's rule.
+        var l = PairedHistogramLayout.Compute(462, 210, Pairs(0, 100, (1, 1), (1, 1)), 10, 20, 2, 2, Width);
+        var (a, b) = (l.Means[0].Rule, l.Means[1].Rule);
+        Assert.Equal((LabelAlign.Left, LabelAlign.Left), (a.Align, b.Align));
+        // The plot gives up a line for it.
+        Assert.Equal(38, l.Plot.Y);
+        Assert.Equal((16, 32), (a.Top, b.Top));
+        Assert.Equal(l.Plot.Bottom, a.Bottom);
+    }
+
+    [Fact]
+    public void A_run_with_no_hits_has_no_mean_and_no_share()
+    {
+        var l = PairedHistogramLayout.Compute(462, 210, Pairs(1000, 250, (4, 0), (0, 0), (8, 0), (2, 0)), 1500, null, 14, 0, Width);
+        Assert.Equal([0], l.Means.Select(m => m.Run));
+        Assert.Equal(LabelAlign.Left, l.Means[0].Rule.Align);
+        Assert.All(l.Columns, c => Assert.Equal(0, c.Run));
+        var h = l.Hover(46 + 250, 100)!;
+        Assert.Equal([("A", "8 hits · 57.1%", 0), ("B", "—", 1)], h.Rows.Select(r => (r.Label, r.Value, r.Series)));
+
+        // Alone near the right edge, the label flips as a single histogram's does.
+        var right = PairedHistogramLayout.Compute(462, 210, Pairs(0, 100, (1, 0), (1, 0)), 195, null, 2, 0, Width);
+        Assert.Equal(LabelAlign.Right, Assert.Single(right.Means).Rule.Align);
+    }
+
+    [Fact]
+    public void The_pointer_reads_both_runs_of_a_bin()
+    {
+        var l = PairedHistogramLayout.Compute(462, 210, Pairs(1000, 250, (4, 1), (0, 1), (8, 1), (2, 1)), 1500, 1500, 14, 4, Width);
+        var h = l.Hover(46 + 250, 100)!;
+        Assert.Equal(2, h.Bin);
+        Assert.Equal("1,500 " + (char)0x2013 + " 1,750", h.Head);
+        Assert.Equal([("A", "8 hits · 57.1%"), ("B", "1 hit · 25.0%")], h.Rows.Select(r => (r.Label, r.Value)));
+        Assert.Null(l.Hover(45, 100));
+
+        // A heal's are casts.
+        var heals = PairedHistogramLayout.Compute(462, 210, Pairs(1000, 250, (4, 1), (0, 1), (8, 1), (2, 1)), 1500, 1500, 14, 4,
+                                                  Width, "cast");
+        Assert.Equal(["8 casts · 57.1%", "1 cast · 25.0%"], heals.Hover(46 + 250, 100)!.Rows.Select(r => r.Value));
+
+        Assert.True(PairedHistogramLayout.Compute(462, 210, [], null, null, 0, 0, Width).Empty);
+        Assert.True(PairedHistogramLayout.Compute(462, 210, null, null, null, 0, 0, Width).Empty);
+        Assert.True(PairedHistogramLayout.Compute(462, 210, Pairs(0, 100, (0, 0)), null, null, 0, 0, Width).Empty);
+    }
 }

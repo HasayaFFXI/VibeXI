@@ -87,16 +87,7 @@ public sealed class HistogramLayout
 
         l.BaselineY = Js.Round(plot.Y + plot.H) + 0.5;
 
-        // Round values across the range; both ends are always shown, and a
-        // round value that would collide with an end is dropped.
-        foreach (var v in Ticks.Nice(lo, hi, Math.Max(2, Math.Floor(plot.W / 110))))
-        {
-            var tx = Bx(v);
-            if (tx - plot.X < 34 || plot.X + plot.W - tx < 34) continue;
-            l.XLabels.Add(new HistogramLabel(Format.Int(v), tx, LabelAlign.Centre));
-        }
-        l.XLabels.Add(new HistogramLabel(Format.Int(lo), plot.X, LabelAlign.Left));
-        l.XLabels.Add(new HistogramLabel(Format.Int(hi), plot.X + plot.W, LabelAlign.Right));
+        l.XLabels.AddRange(ValueLabels(plot, lo, hi));
 
         var mx = Js.Round(Bx(avg)) + 0.5;
         if (mx >= plot.X && mx <= plot.X + plot.W)
@@ -107,6 +98,23 @@ public sealed class HistogramLayout
                                   mx + (flip ? -4 : 4), flip ? LabelAlign.Right : LabelAlign.Left);
         }
         return l;
+    }
+
+    /// <summary>The labels under a histogram's baseline: round values across
+    /// the range; both ends are always shown, and a round value that would
+    /// collide with an end is dropped.</summary>
+    internal static List<HistogramLabel> ValueLabels(Box plot, double lo, double hi)
+    {
+        var labels = new List<HistogramLabel>();
+        foreach (var v in Ticks.Nice(lo, hi, Math.Max(2, Math.Floor(plot.W / 110))))
+        {
+            var tx = plot.X + (v - lo) / (hi - lo) * plot.W;
+            if (tx - plot.X < 34 || plot.X + plot.W - tx < 34) continue;
+            labels.Add(new HistogramLabel(Format.Int(v), tx, LabelAlign.Centre));
+        }
+        labels.Add(new HistogramLabel(Format.Int(lo), plot.X, LabelAlign.Left));
+        labels.Add(new HistogramLabel(Format.Int(hi), plot.X + plot.W, LabelAlign.Right));
+        return labels;
     }
 
     /// <summary>What the pointer reads at (<paramref name="mx"/>,
