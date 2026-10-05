@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="700" viewBox="0 0 1100 700">
+<style>text{font-family:'Segoe UI Variable Text','Segoe UI Variable','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:pre}.d{font-family:'Segoe UI Variable Display','Segoe UI Variable','Segoe UI',sans-serif}.s{font-family:'Segoe UI Variable Small','Segoe UI Variable','Segoe UI',sans-serif}.m{font-family:'Cascadia Mono','Consolas',monospace}.i{font-family:'Segoe Fluent Icons','Segoe MDL2 Assets'}.halo text{paint-order:stroke;stroke:#000;stroke-opacity:.6;stroke-width:2.4px;stroke-linejoin:round}.halo .nh,.halo text[fill='#191004'],.halo text[fill='#1B0508'],.halo text[fill='#07130D']{stroke:none}</style>
+<defs><clipPath id="k5"><rect x="0" y="0" width="1100" height="700" rx="8"/></clipPath><linearGradient id="pv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3E6A78"/><stop offset=".55" stop-color="#C58B5A"/><stop offset="1" stop-color="#2F4127"/></linearGradient></defs>
+<rect width="1100" height="700" fill="#050608"/>
+<rect x="0" y="0" width="1100" height="700" rx="8" fill="#0A0C10"/>
+<g clip-path="url(#k5)">
+<rect x="0" y="0" width="1100" height="36" fill="#0A0C10"/>
+<rect x="12" y="9" width="18" height="18" rx="4" fill="#07080C"/>
+<rect x="12.5" y="9.5" width="17" height="17" rx="3.5" fill="none" stroke="#3D4656" stroke-width="1"/>
+<path d="M17 14 L25 14 L25 16.2 L20.3 20 L25 20 L25 22.2 L17 22.2 L17 20 L21.7 16.2 L17 16.2 Z" fill="#F2A33A" stroke="#F2A33A" stroke-width="0.8" stroke-linejoin="round"/>
+<text x="38" y="22.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Zerg</text>
+<line x1="82.5" y1="10" x2="82.5" y2="26" stroke="#2A313D" stroke-width="1"/>
+<text x="104" y="22.44" font-size="12.5" fill="#A6AFBF">Damage</text>
+<text x="175.06" y="22.44" font-size="12.5" fill="#A6AFBF">Healing</text>
+<text x="242.14" y="22.44" font-size="12.5" fill="#A6AFBF">Compare</text>
+<text x="985" y="23" font-size="10" fill="#A6AFBF" text-anchor="middle" class="i"></text>
+<text x="1031" y="23" font-size="10" fill="#A6AFBF" text-anchor="middle" class="i"></text>
+<text x="1077" y="23" font-size="10" fill="#A6AFBF" text-anchor="middle" class="i"></text>
+<rect x="922" y="5" width="30" height="26" rx="4" fill="#1C222C"/>
+<rect x="922.5" y="5.5" width="29" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="937" y="25" font-size="14" fill="#E9ECF2" text-anchor="middle" class="i"></text>
+<line x1="0" y1="35.5" x2="1100" y2="35.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="0" y="36" width="1100" height="40" fill="#0F1217"/>
+<line x1="0" y1="75.5" x2="1100" y2="75.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="12" y="43" width="92" height="26" rx="4" fill="#1C222C"/>
+<rect x="12.5" y="43.5" width="91" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="35.3" y="61.5" font-size="11" fill="#E9ECF2" text-anchor="middle" class="i"></text>
+<text x="46.3" y="60.26" font-size="12" fill="#E9ECF2" font-weight="600">Restart</text>
+<rect x="110" y="43" width="92" height="26" rx="4" fill="#1C222C"/>
+<rect x="110.5" y="43.5" width="91" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="136.49" y="61.5" font-size="11" fill="#E9ECF2" text-anchor="middle" class="i"></text>
+<text x="147.49" y="60.26" font-size="12" fill="#E9ECF2" font-weight="600">Pause</text>
+<line x1="214.5" y1="46" x2="214.5" y2="66" stroke="#2A313D" stroke-width="1"/>
+<rect x="226.5" y="43.5" width="69" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="261" y="60.26" font-size="12" fill="#A6AFBF" text-anchor="middle">Import…</text>
+<line x1="308.5" y1="46" x2="308.5" y2="66" stroke="#2A313D" stroke-width="1"/>
+<rect x="320.5" y="44.5" width="95" height="23" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="328.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<text x="346" y="60.08" font-size="11.5" fill="#A6AFBF" font-weight="500">Hide names</text>
+<rect x="422.5" y="44.5" width="179" height="23" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="430.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<text x="448" y="60.08" font-size="11.5" fill="#A6AFBF" font-weight="500">Click-through</text>
+<rect x="525.59" y="48" width="71" height="16" rx="3" fill="#0F1217"/>
+<rect x="526.09" y="48.5" width="70" height="15" rx="2.5" fill="none" stroke="#3D4656" stroke-width="1"/>
+<line x1="527.59" y1="63.5" x2="594.59" y2="63.5" stroke="#3D4656" stroke-width="1"/>
+<text x="561.09" y="59.05" font-size="10" fill="#A6AFBF" text-anchor="middle" class="m">Ctrl+Alt+Z</text>
+<rect x="1058.5" y="43.5" width="29" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="1066.5" y="50.5" width="13" height="11" rx="1.5" fill="none" stroke="#A6AFBF" stroke-width="1"/>
+<line x1="1072.5" y1="51" x2="1072.5" y2="61" stroke="#A6AFBF" stroke-width="1"/>
+<line x1="1073" y1="56.5" x2="1079" y2="56.5" stroke="#A6AFBF" stroke-width="1"/>
+<rect x="0" y="76" width="1100" height="600" fill="#0F1217"/>
+<text x="24" y="108.39" font-size="18" fill="#E9ECF2" font-weight="600" class="d">Settings</text>
+<text x="104.13" y="107.91" font-size="11" fill="#78829A">Set once and left alone. The session goes on being measured underneath.</text>
+<rect x="1012" y="89" width="64" height="26" rx="4" fill="#1C222C"/>
+<rect x="1012.5" y="89.5" width="63" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="1044" y="106.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="middle">Done</text>
+<line x1="0" y1="127.5" x2="1100" y2="127.5" stroke="#2A313D" stroke-width="1"/>
+<text x="24" y="155.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Events folder</text>
+<text x="24" y="175.41" font-size="11" fill="#78829A">Where Zerg looks for the event files (.jsonl) the VibeXI addon writes. It follows</text>
+<text x="24" y="190.41" font-size="11" fill="#78829A">the newest one in the folder. Change this only if the addon writes somewhere</text>
+<text x="24" y="205.41" font-size="11" fill="#78829A">else.</text>
+<rect x="470" y="144" width="410" height="28" rx="4" fill="#0A0C10"/>
+<rect x="470.5" y="144.5" width="409" height="27" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="485" y="164" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
+<text x="500" y="162.08" font-size="11.5" fill="#E9ECF2" class="m">C:\Users\Hasaya\AppData\Local\VibeXI\events</text>
+<rect x="888" y="145" width="84" height="26" rx="4" fill="#1C222C"/>
+<rect x="888.5" y="145.5" width="83" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="930" y="162.26" font-size="12" fill="#E9ECF2" text-anchor="middle">Browse…</text>
+<rect x="978" y="145" width="98" height="26" rx="4" fill="#151921"/>
+<rect x="978.5" y="145.5" width="97" height="25" rx="3.5" fill="none" stroke="#1B2029" stroke-width="1"/>
+<text x="1027" y="162.26" font-size="12" fill="#515A6B" text-anchor="middle">Use default</text>
+<text x="470" y="189.91" font-size="11" fill="#78829A">3 event files in this folder; the newest is Hasaya-20261005203112.jsonl.</text>
+<line x1="24" y1="223.5" x2="1076" y2="223.5" stroke="#1B2029" stroke-width="1"/>
+<text x="24" y="251.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Click-through hot key</text>
+<text x="24" y="271.4" font-size="11" fill="#78829A">The keys that switch every floating panel between click-through and clickable,</text>
+<text x="24" y="286.4" font-size="11" fill="#78829A">from any application, the game included. Click the keys, then press the new</text>
+<text x="24" y="301.4" font-size="11" fill="#78829A">ones: Ctrl, Alt or Win held with a letter, a digit or F1 to F24.</text>
+<rect x="470" y="240" width="190" height="28" rx="4" fill="#1C222C"/>
+<rect x="470.5" y="240.5" width="189" height="27" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="518" y="245" width="35" height="18" rx="3" fill="#0F1217"/>
+<rect x="518.5" y="245.5" width="34" height="17" rx="2.5" fill="none" stroke="#3D4656" stroke-width="1"/>
+<line x1="520" y1="262.5" x2="551" y2="262.5" stroke="#3D4656" stroke-width="1"/>
+<text x="535.5" y="257.05" font-size="10" fill="#A6AFBF" text-anchor="middle" class="m">Ctrl</text>
+<text x="558" y="257.9" font-size="11" fill="#78829A" text-anchor="middle">+</text>
+<rect x="564" y="245" width="30" height="18" rx="3" fill="#0F1217"/>
+<rect x="564.5" y="245.5" width="29" height="17" rx="2.5" fill="none" stroke="#3D4656" stroke-width="1"/>
+<line x1="566" y1="262.5" x2="592" y2="262.5" stroke="#3D4656" stroke-width="1"/>
+<text x="579" y="257.05" font-size="10" fill="#A6AFBF" text-anchor="middle" class="m">Alt</text>
+<text x="599" y="257.9" font-size="11" fill="#78829A" text-anchor="middle">+</text>
+<rect x="605" y="245" width="18" height="18" rx="3" fill="#0F1217"/>
+<rect x="605.5" y="245.5" width="17" height="17" rx="2.5" fill="none" stroke="#3D4656" stroke-width="1"/>
+<line x1="607" y1="262.5" x2="621" y2="262.5" stroke="#3D4656" stroke-width="1"/>
+<text x="614" y="257.05" font-size="10" fill="#A6AFBF" text-anchor="middle" class="m">Z</text>
+<rect x="668" y="241" width="98" height="26" rx="4" fill="#151921"/>
+<rect x="668.5" y="241.5" width="97" height="25" rx="3.5" fill="none" stroke="#1B2029" stroke-width="1"/>
+<text x="717" y="258.26" font-size="12" fill="#515A6B" text-anchor="middle">Use default</text>
+<rect x="790" y="240" width="190" height="28" rx="4" fill="#0F1217"/>
+<rect x="790.5" y="240.5" width="189" height="27" rx="3.5" fill="none" stroke="#F2A33A" stroke-width="1"/>
+<text x="885" y="258.26" font-size="12" fill="#F2A33A" text-anchor="middle">Press the new keys…</text>
+<text x="790" y="285.9" font-size="11" fill="#78829A">Waiting for the new keys. Esc cancels.</text>
+<text x="988" y="257.73" font-size="10.5" fill="#515A6B">← while it listens</text>
+<line x1="24" y1="320.5" x2="1076" y2="320.5" stroke="#1B2029" stroke-width="1"/>
+<text x="24" y="348.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Default pop-out opacity</text>
+<text x="24" y="368.4" font-size="11" fill="#78829A">How solid the dark backdrop of a pop-out is; its text and bars stay solid. Every</text>
+<text x="24" y="383.4" font-size="11" fill="#78829A">pop-out follows this until the slider on its own bar is moved. From then on that</text>
+<text x="24" y="398.4" font-size="11" fill="#78829A">pop-out keeps its own opacity, whatever is set here.</text>
+<rect x="474" y="349" width="240" height="4" rx="2" fill="#262D3A"/>
+<rect x="474" y="349" width="155.29" height="4" rx="2" fill="#F2A33A"/>
+<circle cx="629.29" cy="351" r="7" fill="#0F1217" stroke="#F2A33A" stroke-width="2"/>
+<circle cx="629.29" cy="351" r="2.5" fill="#F2A33A"/>
+<text x="732" y="355.26" font-size="12" fill="#E9ECF2" font-weight="600">70%</text>
+<text x="474" y="374.55" font-size="10" fill="#515A6B">15%</text>
+<text x="714" y="374.55" font-size="10" fill="#515A6B" text-anchor="end">100%</text>
+<rect x="800" y="335" width="216" height="62" rx="5" fill="url(#pv)"/>
+<rect x="810" y="344" width="196" height="44" rx="5" fill="#06080C" opacity="0.7"/>
+<rect x="810.5" y="344.5" width="195" height="43" rx="5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+<rect x="814" y="350" width="188" height="15" rx="2" fill="#FC6E03" opacity="0.3"/>
+<rect x="814" y="350" width="3" height="15" rx="1.5" fill="#FC6E03"/>
+<text x="822" y="361.23" font-size="10.5" fill="#E9ECF2">Hasaya</text>
+<text x="998" y="361.23" font-size="10.5" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
+<rect x="814" y="367" width="146.64" height="15" rx="2" fill="#F5C403" opacity="0.3"/>
+<rect x="814" y="367" width="3" height="15" rx="1.5" fill="#F5C403"/>
+<text x="822" y="378.23" font-size="10.5" fill="#E9ECF2">Brannoch</text>
+<text x="998" y="378.23" font-size="10.5" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
+<text x="1026" y="369.73" font-size="10.5" fill="#515A6B">preview</text>
+<line x1="24" y1="416.5" x2="1076" y2="416.5" stroke="#1B2029" stroke-width="1"/>
+<text x="24" y="444.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Draw frequency</text>
+<text x="24" y="464.4" font-size="11" fill="#78829A">How many times a second everything that moves with the clock is redrawn: the</text>
+<text x="24" y="479.4" font-size="11" fill="#78829A">elapsed time, every DPS and HPS figure, and the right-hand edge of the</text>
+<text x="24" y="494.4" font-size="11" fill="#78829A">Cumulative damage and Cumulative healing charts. Whatever an event changes</text>
+<text x="24" y="509.4" font-size="11" fill="#78829A">is redrawn as soon as the event arrives. Higher is smoother and uses more</text>
+<text x="24" y="524.4" font-size="11" fill="#78829A">processor time.</text>
+<rect x="474" y="445" width="240" height="4" rx="2" fill="#262D3A"/>
+<rect x="474" y="445" width="117.97" height="4" rx="2" fill="#F2A33A"/>
+<circle cx="591.97" cy="447" r="7" fill="#0F1217" stroke="#F2A33A" stroke-width="2"/>
+<circle cx="591.97" cy="447" r="2.5" fill="#F2A33A"/>
+<text x="732" y="451.26" font-size="12" fill="#E9ECF2" font-weight="600">30 a second</text>
+<text x="474" y="470.55" font-size="10" fill="#515A6B">1</text>
+<text x="714" y="470.55" font-size="10" fill="#515A6B" text-anchor="end">60</text>
+<line x1="24" y1="542.5" x2="1076" y2="542.5" stroke="#1B2029" stroke-width="1"/>
+<text x="24" y="570.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Theme</text>
+<text x="24" y="590.4" font-size="11" fill="#78829A">Light, dark, or whatever Windows is set to.</text>
+<rect x="470" y="560" width="208" height="26" rx="4" fill="#0F1217"/>
+<rect x="470.5" y="560.5" width="207" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<text x="485" y="578.5" font-size="11" fill="#78829A" text-anchor="middle" class="i"></text>
+<text x="511" y="577.26" font-size="12" fill="#A6AFBF" text-anchor="middle">Light</text>
+<rect x="538" y="562" width="60" height="22" rx="3" fill="#262D3A"/>
+<text x="551" y="578.5" font-size="11" fill="#E9ECF2" text-anchor="middle" class="i"></text>
+<text x="576" y="577.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="middle">Dark</text>
+<text x="615" y="578.5" font-size="11" fill="#78829A" text-anchor="middle" class="i"></text>
+<text x="647" y="577.26" font-size="12" fill="#A6AFBF" text-anchor="middle">System</text>
+<line x1="24" y1="609.5" x2="1076" y2="609.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="0" y="676" width="1100" height="24" fill="#0A0C10"/>
+<line x1="0" y1="676.5" x2="1100" y2="676.5" stroke="#2A313D" stroke-width="1"/>
+<circle cx="16" cy="688" r="4" fill="#3DD68C"/>
+<text x="30" y="691.9" font-size="11" fill="#A6AFBF" class="m">Hasaya-20261005203112.jsonl</text>
+<text x="214.04" y="691.9" font-size="11" fill="#78829A">2,944 events · 3,436 lines · started 20:31:12</text>
+</g>
+<rect x="0.5" y="0.5" width="1099" height="699" rx="8" fill="none" stroke="#3D4656" stroke-width="1"/>
+</svg>

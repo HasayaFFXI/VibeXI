@@ -71,7 +71,7 @@ appends to a file, Zerg reads it. Zerg uses nothing else in the repository
 ## Commands
 
 ```bash
-# all tests (217, under a second once built)
+# all tests (227, under a second once built)
 dotnet test apps/zerg/Zerg.slnx
 
 # run it: follows %LOCALAPPDATA%\VibeXI\events, or the folder set on the Settings page
@@ -111,7 +111,8 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
   EventFiles.cs            newest *.jsonl; open shared R|W|Delete; read whole lines from a byte offset
   EventTail.cs             follows the newest file: offset carried, reset on a file switch or shrink
   EventReader.cs, Roster.cs, Events.cs   lines → damage rows, heals, roster
-  Session.cs               the session clock: arm, latch, pause, At/Elapsed
+  Session.cs               the session clock: arm, latch, pause, At/Elapsed, and where a
+                           paused clock ends (Snap)
   Counting.cs, Totals.cs   filter, credit, collapse, connects, aggregate, cumulative, distribution
   Healing.cs, Compare.cs   heal totals; A/B measure, diff, pace, and one action's hits
                            (Spread) or one heal's casts (HealSpread) in both runs on shared bins
@@ -127,7 +128,9 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
   Charts/                  where a chart puts things, no drawing: Ticks, LineLayout, BarsLayout,
                            HistogramLayout, PairedHistogramLayout (two runs, a column
                            each per bin), Shapes, SmallLines, Sampling
-  Tracker.cs               the live session: file followed, rows, clock, Start / Pause / Cancel,
+  Tracker.cs               the live session: file followed, rows, clock, Start / Pause / Cancel
+                           (First and Second are the two buttons: over a started session the
+                           first press of Start only asks, and the pair is Confirm / Cancel),
                            and Count(), the whole pipeline in one call, damage and healing.
                            Also an opened parse, read only (Tracker.Of), and Export()
   Cast.cs, Shades.cs       colour slots (owner in slot 0), shades for a shared job, hidden-name labels
@@ -206,7 +209,7 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   Log.cs, Options.cs, AppInfo.cs, EqualsConverter.cs
   app.manifest             PerMonitorV2 + common controls v6
   zerg.ico                 built by tools/make-icon.ps1 from assets/icon-source.webp
-tests/Zerg.Core.Tests/     xUnit v2, 217 tests of Zerg.Core: the tail, the tracker (sessions,
+tests/Zerg.Core.Tests/     xUnit v2, 227 tests of Zerg.Core: the tail, the tracker (sessions,
                            counting, healing), chart layout, Compare's sheet, export / import,
                            number formatting, key chords, panel opacities, the draw rate
 tools/drive.cs             drive the windows: screen grabs, UI Automation, the real mouse (move,
@@ -290,7 +293,7 @@ Zerg replaced; nothing reads them.
 
 ## Verifying a change
 
-1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 217 tests. They cover
+1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 227 tests. They cover
    `Zerg.Core` only. There is no second implementation to compare the
    counting with any more: a change to a counting rule needs its own test,
    and its reason in `RULES.md`.
@@ -321,7 +324,13 @@ Zerg replaced; nothing reads them.
    it takes the pointer from the user), and
    `zoom <png> <x> <y> <w> <h> <times> <out>`.
    - The exact session times are in `logs\zerg.log` (`session paused: armed
-     …, zero …, paused …`).
+     …, zero …, paused …, ended …`: the press, and the end of the last
+     swing's second, which is where the paused clock is read).
+   - **Restart asks first** once the clock has started: `click <pid> Restart`
+     turns the pair into `Confirm` and `Cancel` (on every panel bar and in
+     the tray menu too, which stays open for the answer), and it goes back
+     by itself after 5 seconds. The log says `restart asked`, then `armed`,
+     `restart called off` or `restart not confirmed`.
    - Placement and theme live in `settings.json`: edit it between runs to
      test restore (a narrow window, the second monitor, maximized, -32000).
    - **The section** is switched with `click <pid> "Healing section"`,

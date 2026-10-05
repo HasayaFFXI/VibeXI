@@ -199,11 +199,46 @@ Every number is measured from the session's zero, and there is no other clock
   skipped: two swings either side of a three-minute pause come out three
   minutes closer. Reading goes on during a pause; rows are dropped by their
   own timestamps, so poll latency cannot move one across the boundary.
-- **The second button is Pause or Cancel, never both.** Cancel exists only
-  while armed: it calls off a measurement that has not begun. A session with
-  damage in it is ended by Start.
+- **A paused clock ends at the last party damage row**, not at the press
+  (`Session.Snap`, `Counting.LastCounted`). Pause is pressed some time after
+  the last swing, never on it, and that wait would be in every DPS the parse
+  is remembered by. The end is the end of the second that row landed in: the
+  wire clock is whole seconds, so the row fell somewhere inside it, which is
+  the reason arming rounds down. A pull of one swing is a second long.
+  - **What ends it is what starts it**: a miss does, a monster's swing and a
+    heal do not. A heal after the last damage row is outside the session,
+    and is not drawn or exported.
+  - **But without the viewer's switches.** Any party row ends it, excluded
+    character and skillchain included. The zero is latched once and stays; an
+    end worked out from the chips would move with each one, and an exported
+    file carries no filters to work it out from again.
+  - **Never later than the clock really stopped**: the press, or an earlier
+    pause that began inside that second. Paused, resumed and paused again
+    with nothing swung, the end is still the last row, before both pauses.
+  - **The press and the pauses are kept as they happened**, and the end is
+    worked out from the rows' own times on each read, so a row written
+    before the press and polled after it moves the end. Resume puts the
+    whole wait back on the clock: the session was not over after all.
+  - **Screen, file and Compare read the one end.** An export is written as a
+    session paused there, in the shape older files have. An import from
+    before this is shown with the clock it was saved with, and is snapped
+    when exported again.
+- **The second button is Pause or Cancel, never both.** Cancel calls off
+  what has not happened yet: an arming, or a restart still being asked
+  about. It never drops a measurement. A session with damage in it is ended
+  by Start.
 - **Start during a session re-arms**, and drops the rows read so far while
   keeping the read offset, the roster, the colour slots and the filters.
+- **Over a started session, Start asks first**, in the pair itself and in no
+  window: Start reads Confirm and the second button Cancel, on the main bar,
+  every panel bar and the tray menu at once (`Tracker.First`). Start sits
+  beside Pause, and reaching for one and pressing the other would drop the
+  fight; the press that follows that slip lands on the second button, which
+  is Cancel. The session is measured as before while the question is up.
+  Unanswered for 5 seconds, the pull is kept and the pair is itself again,
+  so Pause is never out of reach for long. A second press within half a
+  second of the first is no answer: a double-click is one gesture. Idle or
+  armed there is nothing to lose, and Start acts at once.
 - **One denominator.** `Counting.Aggregate` divides the party's DPS and each
   character's by the session clock, so the column adds up to the party figure.
 - **DPS decays between polls**: the total holds and the clock grows, so the

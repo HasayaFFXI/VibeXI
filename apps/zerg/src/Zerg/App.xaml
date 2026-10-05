@@ -215,11 +215,16 @@
 
     <!-- Start is the thing to press until it has been pressed; while it
          waits for the first hit it wears the waiting colour; once the clock
-         runs it steps back, because Restart is a re-do. Bound to the view
-         model's session, wherever the button is: the main window's bar and
-         every floating panel's carry the same pair. -->
+         runs it steps back, because Restart is a re-do; and pressed then,
+         it is Confirm in the colour of something lost, until it is answered.
+         Bound to the view model's session, wherever the button is: the main
+         window's bar and every floating panel's carry the same pair. -->
     <Style x:Key="StartButton" TargetType="Button" BasedOn="{StaticResource SessionButton}">
       <Style.Triggers>
+        <DataTrigger Binding="{Binding View.StartLook}" Value="Confirm">
+          <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+        </DataTrigger>
         <DataTrigger Binding="{Binding View.StartLook}" Value="Idle">
           <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
           <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>

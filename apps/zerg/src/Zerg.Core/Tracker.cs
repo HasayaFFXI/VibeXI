@@ -81,6 +81,13 @@ public sealed record Snapshot(IReadOnlyList<CombatEvent> Events, Aggregate Total
 /// keeps each count proportional to the rows since Start rather than to the
 /// whole evening. The place in the file is not moved: nothing is re-read.</para>
 ///
+/// <para><b>Over a measurement the button asks first</b> (<see cref="First"/>).
+/// Start sits beside Pause, and reaching for one and pressing the other at
+/// the end of a fight would drop the fight. So the first press only asks,
+/// and the pair of buttons is the question's two answers: Start is Confirm
+/// and the second button is Cancel. Nothing opens: the pair is pressed from
+/// a panel over the game, where a dialog would take the keyboard from it.</para>
+///
 /// <para>What a restart keeps: the colour slots (a character changing hue
 /// between pulls is worse than a stale slot) and the whole roster (monsters
 /// stay monsters, and jobs are only written when they change).</para>
@@ -121,6 +128,21 @@ public sealed class Tracker
     /// <summary>Lines read from the file, whatever they held.</summary>
     public long Lines { get; private set; }
 
+    /// <summary>
+    /// How soon after the asking press another one is no answer, in
+    /// milliseconds: Windows' own double-click time, unless changed. Two
+    /// presses that close together are one gesture, and a question a
+    /// double-click answers protects nothing.
+    /// </summary>
+    public const double Settle = 500;
+
+    /// <summary>When Start was pressed over a measurement and has not been
+    /// answered yet; null otherwise.</summary>
+    public double? AskedAt { get; private set; }
+
+    /// <summary>The two buttons are Confirm and Cancel: a restart is waiting for its answer.</summary>
+    public bool Asking => AskedAt != null;
+
     /// <summary>A different file is being followed, or the same one from its top.</summary>
     public void Follow(string file)
     {
@@ -130,6 +152,7 @@ public sealed class Tracker
         Cast = new Cast();
         Session = Session.Idle();
         Lines = 0;
+        AskedAt = null;
     }
 
     /// <summary>No file is being followed any more: the folder they are
@@ -143,6 +166,7 @@ public sealed class Tracker
         Cast = new Cast();
         Session = Session.Idle();
         Lines = 0;
+        AskedAt = null;
     }
 
     public void Feed(IReadOnlyList<string> lines)
@@ -150,21 +174,58 @@ public sealed class Tracker
         if (Imported) return;
         foreach (var line in lines) Reader.Feed(line);
         Lines += lines.Count;
+        // A row from before the press can be read after it: the end is
+        // worked out from the rows' own times, like everything else.
+        if (Session.PausedAt != null) Snap(Session);
     }
 
-    /// <summary>Arms the session; during one, re-arms it for the next pull.</summary>
+    /// <summary>Arms the session; during one, re-arms it for the next pull.
+    /// The act itself, with no question: <see cref="First"/> is the button.</summary>
     public void Start(double? now = null)
     {
         if (Imported) return;
         Reader.Reset();
         Cast.Rewind();
         Session = Session.Arm(now);
+        AskedAt = null;
     }
 
-    /// <summary>The second button: Cancel while armed, otherwise Pause or Resume.</summary>
+    /// <summary>
+    /// The first button: Start, and over a measurement a question before it.
+    /// Idle or armed there is nothing to lose, so it arms at once. Once the
+    /// clock has started the first press only asks, and the next one is the
+    /// answer, unless it comes within <see cref="Settle"/> of the first.
+    /// The session is measured as before while the question is up.
+    /// </summary>
+    /// <returns>True when the session was armed; false when the press only
+    /// asked, or came too soon to be an answer.</returns>
+    public bool First(double? now = null)
+    {
+        if (Imported) return false;
+        double t = now ?? Session.Now();
+        if (AskedAt is double asked)
+        {
+            if (t - asked < Settle) return false;
+        }
+        else if (Session.StartedAt != null)
+        {
+            AskedAt = t;
+            return false;
+        }
+        Start(now);
+        return true;
+    }
+
+    /// <summary>The question is taken back, and the measurement kept: Cancel
+    /// was pressed, or nobody answered.</summary>
+    public void Withdraw() => AskedAt = null;
+
+    /// <summary>The second button: Cancel while a restart is being asked
+    /// about or the session is armed, otherwise Pause or Resume.</summary>
     public void Second(double? now = null)
     {
-        if (Session.Armed) Cancel();
+        if (Asking) Withdraw();
+        else if (Session.Armed) Cancel();
         else TogglePause(now);
     }
 
@@ -187,12 +248,30 @@ public sealed class Tracker
     /// a wipe, a frozen clock over a running total as a record. Reading does
     /// not stop: rows that land during a pause are kept and left out by their
     /// own times. Nothing to do before the clock has started.
+    ///
+    /// <para><b>A paused clock is read at the last thing it measured</b>
+    /// (<see cref="Snap"/>), not at the press. Pause is pressed some time
+    /// after the last swing, never on it, and that wait would otherwise be
+    /// in every DPS the parse is remembered by. Resume puts it back.</para>
     /// </summary>
     public void TogglePause(double? now = null)
     {
         if (Imported || Session.StartedAt == null) return;
-        if (Session.Running) Session.Pause(now);
+        if (Session.Running) Snap(Session.Pause(now));
         else Session.Resume(now);
+    }
+
+    /// <summary>
+    /// Ends a paused session at the end of the second its last party damage
+    /// row landed in. Whose row is not asked, nor whether it was a
+    /// skillchain: the end belongs to the session, as its zero does, so the
+    /// screen, the exported file and a compared run all divide by one clock
+    /// whatever filters each is seen through.
+    /// </summary>
+    Session Snap(Session s)
+    {
+        s.EndedAt = null;   // or a row behind the old end would not be seen
+        return s.Snap(Counting.LastCounted(Reader.Events, s, new FilterOptions { Roster = Reader.Roster }));
     }
 
     /// <summary>
@@ -212,10 +291,19 @@ public sealed class Tracker
     /// file is the parse, not whatever happened to have been read. The
     /// filters are not in it: exclusions, skillchains and hidden names are
     /// the viewer's, and the reader's own apply.
+    ///
+    /// <para>The file ends where the parse does: at its last party damage
+    /// row, not at the press (<see cref="Snap"/>). The session on screen
+    /// already does. A parse imported from a file that predates this is
+    /// shown with the clock it was saved with, and exported again it is
+    /// snapped like any other.</para>
     /// </summary>
-    public string? Export(double? now = null) => CanExport
-        ? ParseFile.Stringify(ParseFile.Export(Reader, Session, t => Session.At(t) != null, File, now))
-        : null;
+    public string? Export(double? now = null)
+    {
+        if (!CanExport) return null;
+        var ended = Snap(Session.Clone());
+        return ParseFile.Stringify(ParseFile.Export(Reader, ended, t => ended.At(t) != null, File, now));
+    }
 
     /// <summary>
     /// Counts the session as it stands at <paramref name="now"/>.

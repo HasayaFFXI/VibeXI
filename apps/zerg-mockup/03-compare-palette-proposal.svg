@@ -1,0 +1,921 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="990" viewBox="0 0 1440 990">
+<style>text{font-family:'Segoe UI Variable Text','Segoe UI Variable','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:pre}.d{font-family:'Segoe UI Variable Display','Segoe UI Variable','Segoe UI',sans-serif}.s{font-family:'Segoe UI Variable Small','Segoe UI Variable','Segoe UI',sans-serif}.m{font-family:'Cascadia Mono','Consolas',monospace}.i{font-family:'Segoe Fluent Icons','Segoe MDL2 Assets'}</style>
+<rect x="0" y="0" width="1440" height="990" fill="#0F1217"/>
+<text x="24" y="36.39" font-size="18" fill="#E9ECF2" font-weight="600" class="d">Compare</text>
+<text x="110" y="36.39" font-size="18" fill="#A6AFBF" font-weight="400" class="d">run colours proposal</text>
+<text x="290" y="36.08" font-size="11.5" fill="#78829A">One slice of Compare drawn three times: slots, tiles, By character, a distribution, the shared clock. Change text is today’s red and green unless a strip says otherwise.</text>
+<text x="24" y="67.55" font-size="10" fill="#F2A33A" font-weight="700" class="s" letter-spacing="0.8">CURRENT: BLUE AND VERMILION</text>
+<line x1="24" y1="74.5" x2="464" y2="74.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="24" y="83" width="14" height="12" rx="2" fill="#3987E5"/>
+<text x="43" y="92.8" font-size="10" fill="#E9ECF2" class="m">A #3987E5</text>
+<rect x="112" y="83" width="14" height="12" rx="2" fill="#D95926"/>
+<text x="131" y="92.8" font-size="10" fill="#E9ECF2" class="m">B #D95926</text>
+<text x="464" y="92.8" font-size="10" fill="#78829A" text-anchor="end" class="m">bands 26% / 26%, badge ink #101010</text>
+<rect x="24" y="102" width="216" height="46" rx="5" fill="#151921"/>
+<rect x="24.5" y="102.5" width="215" height="45" rx="4.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="25" y="103" width="3" height="44" rx="1.5" fill="#3987E5"/>
+<rect x="37" y="109" width="16" height="16" rx="3" fill="#3987E5"/>
+<text x="45" y="120.86" font-size="10.88" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="61" y="120.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">BASELINE</text>
+<text x="37" y="140.4" font-size="11" fill="#E9ECF2" font-weight="600">Hasaya_parse_2026.09.27_2114</text>
+<rect x="248" y="102" width="216" height="46" rx="5" fill="#151921"/>
+<rect x="248.5" y="102.5" width="215" height="45" rx="4.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="249" y="103" width="3" height="44" rx="1.5" fill="#D95926"/>
+<rect x="261" y="109" width="16" height="16" rx="3" fill="#D95926"/>
+<text x="269" y="120.86" font-size="10.88" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="285" y="120.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">COMPARED</text>
+<text x="261" y="140.4" font-size="11" fill="#E9ECF2" font-weight="600">Hasaya_parse_2026.10.04_2108</text>
+<rect x="24" y="156" width="440" height="72" fill="#0A0C10"/>
+<line x1="24" y1="156.5" x2="464" y2="156.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="24" y1="227.5" x2="464" y2="227.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="244.5" y1="166" x2="244.5" y2="218" stroke="#2A313D" stroke-width="1"/>
+<text x="38" y="173.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">TOTAL DAMAGE</text>
+<rect x="38" y="184.5" width="13" height="13" rx="3" fill="#3987E5"/>
+<text x="44.5" y="194.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="58" y="196.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">246,211</text>
+<rect x="38" y="205.5" width="13" height="13" rx="3" fill="#D95926"/>
+<text x="44.5" y="215.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="58" y="217.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">260,153</text>
+<text x="230" y="195.62" font-size="13" fill="#3DD68C" font-weight="600" text-anchor="end">+5.7%</text>
+<text x="230" y="215.73" font-size="10.5" fill="#78829A" text-anchor="end">+13,942</text>
+<text x="258" y="173.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">WS DAMAGE</text>
+<rect x="258" y="184.5" width="13" height="13" rx="3" fill="#3987E5"/>
+<text x="264.5" y="194.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="278" y="196.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">94,278</text>
+<rect x="258" y="205.5" width="13" height="13" rx="3" fill="#D95926"/>
+<text x="264.5" y="215.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="278" y="217.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">91,938</text>
+<text x="450" y="195.62" font-size="13" fill="#F26D78" font-weight="600" text-anchor="end">−2.5%</text>
+<text x="450" y="215.73" font-size="10.5" fill="#78829A" text-anchor="end">−2,340</text>
+<text x="50" y="245.9" font-size="11" fill="#78829A" font-weight="500">Character</text>
+<text x="160" y="245.9" font-size="11" fill="#78829A" font-weight="500">Job</text>
+<text x="286" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
+<text x="346" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ</text>
+<text x="404" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Accuracy</text>
+<text x="458" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ</text>
+<line x1="24" y1="253.5" x2="464" y2="253.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="24" y="254" width="440" height="36" fill="#151921"/>
+<rect x="24" y="254" width="409" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="24" y="272" width="440" height="17" fill="#D95926" opacity="0.26"/>
+<rect x="36" y="268" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="50" y="276.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
+<rect x="148" y="264" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="278" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="268.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="160" y="282.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="286" y="269.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">41,739</text>
+<text x="286" y="283.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">44,882</text>
+<text x="346" y="269.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+7.5%</text>
+<text x="346" y="282.55" font-size="10" fill="#A6AFBF" text-anchor="end">+3,143</text>
+<text x="404" y="269.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.8%</text>
+<text x="404" y="283.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">85.5%</text>
+<text x="458" y="276.08" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−2.3 pt</text>
+<line x1="24" y1="289.5" x2="464" y2="289.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="290" width="385" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="24" y="308" width="367" height="17" fill="#D95926" opacity="0.26"/>
+<rect x="36" y="304" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="50" y="312.26" font-size="12" fill="#E9ECF2">Brannoch</text>
+<rect x="148" y="300" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="314" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="304.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="160" y="318.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="286" y="305.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">39,308</text>
+<text x="286" y="319.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">37,474</text>
+<text x="346" y="305.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−4.7%</text>
+<text x="346" y="318.55" font-size="10" fill="#A6AFBF" text-anchor="end">−1,834</text>
+<text x="404" y="305.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">89.0%</text>
+<text x="404" y="319.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">90.9%</text>
+<text x="458" y="312.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+1.8 pt</text>
+<line x1="24" y1="325.5" x2="464" y2="325.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="326" width="345" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="24" y="344" width="344" height="17" fill="#D95926" opacity="0.26"/>
+<rect x="36" y="340" width="8" height="8" rx="2" fill="#CCBA78"/>
+<text x="50" y="348.26" font-size="12" fill="#E9ECF2">Parabellum</text>
+<rect x="148" y="336" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="350" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="340.73" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
+<text x="160" y="354.73" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
+<text x="286" y="341.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">35,170</text>
+<text x="286" y="355.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">35,125</text>
+<text x="346" y="341.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−0.1%</text>
+<text x="346" y="354.55" font-size="10" fill="#A6AFBF" text-anchor="end">−45</text>
+<text x="404" y="341.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">83.7%</text>
+<text x="404" y="355.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.9%</text>
+<text x="458" y="348.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+4.2 pt</text>
+<line x1="24" y1="361.5" x2="464" y2="361.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="362" width="297" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="24" y="380" width="288" height="17" fill="#D95926" opacity="0.26"/>
+<rect x="36" y="376" width="8" height="8" rx="2" fill="#6EC459"/>
+<text x="50" y="384.26" font-size="12" fill="#E9ECF2">Xatsh</text>
+<rect x="148" y="372" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="386" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="376.73" font-size="10.5" fill="#A6AFBF">RNG/NIN</text>
+<text x="160" y="390.73" font-size="10.5" fill="#A6AFBF">RNG/NIN</text>
+<text x="286" y="377.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">30,315</text>
+<text x="286" y="391.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">29,405</text>
+<text x="346" y="377.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−3.0%</text>
+<text x="346" y="390.55" font-size="10" fill="#A6AFBF" text-anchor="end">−910</text>
+<text x="404" y="377.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">84.3%</text>
+<text x="404" y="391.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">86.3%</text>
+<text x="458" y="384.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+1.9 pt</text>
+<line x1="24" y1="397.5" x2="464" y2="397.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="398" width="264" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="24" y="416" width="264" height="17" fill="#D95926" opacity="0.26"/>
+<rect x="36" y="412" width="8" height="8" rx="2" fill="#E600FF"/>
+<text x="50" y="420.26" font-size="12" fill="#E9ECF2">Thorgald</text>
+<rect x="148" y="408" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="422" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="412.73" font-size="10.5" fill="#A6AFBF">DRK/WAR</text>
+<text x="160" y="426.73" font-size="10.5" fill="#A6AFBF">DRK/SAM</text>
+<text x="286" y="413.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">26,966</text>
+<text x="286" y="427.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">26,898</text>
+<text x="346" y="413.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−0.3%</text>
+<text x="346" y="426.55" font-size="10" fill="#A6AFBF" text-anchor="end">−68</text>
+<text x="404" y="413.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">83.2%</text>
+<text x="404" y="427.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.1%</text>
+<text x="458" y="420.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+3.8 pt</text>
+<line x1="24" y1="433.5" x2="464" y2="433.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="434" width="250" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="24" y="452" width="223" height="17" fill="#D95926" opacity="0.26"/>
+<rect x="36" y="448" width="8" height="8" rx="2" fill="#A685BD"/>
+<text x="50" y="456.26" font-size="12" fill="#E9ECF2">Gillette</text>
+<rect x="148" y="444" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="458" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="448.73" font-size="10.5" fill="#A6AFBF">BLM/WHM</text>
+<text x="160" y="462.73" font-size="10.5" fill="#A6AFBF">BLM/WHM</text>
+<text x="286" y="449.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">25,490</text>
+<text x="286" y="463.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">22,745</text>
+<text x="346" y="449.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−10.8%</text>
+<text x="346" y="462.55" font-size="10" fill="#A6AFBF" text-anchor="end">−2,745</text>
+<text x="404" y="449.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="404" y="463.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="458" y="456.08" font-size="11.5" fill="#515A6B" text-anchor="end">—</text>
+<line x1="24" y1="469.5" x2="464" y2="469.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="488" width="187" height="17" fill="#D95926" opacity="0.26"/>
+<rect x="36" y="484" width="8" height="8" rx="2" fill="#C4AED3"/>
+<text x="50" y="492.26" font-size="12" fill="#E9ECF2">Ysolde</text>
+<rect x="148" y="480" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="494" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="484.73" font-size="10.5" fill="#8F98AC">—</text>
+<text x="160" y="498.73" font-size="10.5" fill="#A6AFBF">BLM/RDM</text>
+<text x="286" y="485.08" font-size="11.5" fill="#8F98AC" font-weight="600" text-anchor="end">—</text>
+<text x="286" y="499.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">19,037</text>
+<text x="346" y="485.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">new</text>
+<text x="346" y="498.55" font-size="10" fill="#A6AFBF" text-anchor="end">+19,037</text>
+<text x="404" y="485.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="404" y="499.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="458" y="492.08" font-size="11.5" fill="#515A6B" text-anchor="end">—</text>
+<line x1="24" y1="505.5" x2="464" y2="505.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="516" width="440" height="132" rx="4" fill="#0F1217"/>
+<rect x="24.5" y="516.5" width="439" height="131" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<line x1="54" y1="626.5" x2="270" y2="626.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="54" y1="586.5" x2="270" y2="586.5" stroke="#1B2029" stroke-width="1"/>
+<line x1="54" y1="546.5" x2="270" y2="546.5" stroke="#1B2029" stroke-width="1"/>
+<text x="48" y="629.5" font-size="10" fill="#78829A" text-anchor="end">0%</text>
+<text x="48" y="549.5" font-size="10" fill="#78829A" text-anchor="end">40%</text>
+<path d="M54.5 626 L54.5 615.09 Q54.5 613.09 56.5 613.09 L69.5 613.09 Q71.5 613.09 71.5 615.09 L71.5 626 Z" fill="#3987E5"/>
+<path d="M72 626 L72 613.06 Q72 611.06 74 611.06 L87 611.06 Q89 611.06 89 613.06 L89 626 Z" fill="#D95926"/>
+<path d="M90.5 626 L90.5 586.62 Q90.5 584.62 92.5 584.62 L105.5 584.62 Q107.5 584.62 107.5 586.62 L107.5 626 Z" fill="#3987E5"/>
+<path d="M108 626 L108 613.06 Q108 611.06 110 611.06 L123 611.06 Q125 611.06 125 613.06 L125 626 Z" fill="#D95926"/>
+<path d="M126.5 626 L126.5 543.93 Q126.5 541.93 128.5 541.93 L141.5 541.93 Q143.5 541.93 143.5 543.93 L143.5 626 Z" fill="#3987E5"/>
+<path d="M144 626 L144 613.06 Q144 611.06 146 611.06 L159 611.06 Q161 611.06 161 613.06 L161 626 Z" fill="#D95926"/>
+<path d="M162.5 626 L162.5 572.39 Q162.5 570.39 164.5 570.39 L177.5 570.39 Q179.5 570.39 179.5 572.39 L179.5 626 Z" fill="#3987E5"/>
+<path d="M180 626 L180 564.26 Q180 562.26 182 562.26 L195 562.26 Q197 562.26 197 564.26 L197 626 Z" fill="#D95926"/>
+<path d="M198.5 626 L198.5 600.86 Q198.5 598.86 200.5 598.86 L213.5 598.86 Q215.5 598.86 215.5 600.86 L215.5 626 Z" fill="#3987E5"/>
+<path d="M216 626 L216 548 Q216 546 218 546 L231 546 Q233 546 233 548 L233 626 Z" fill="#D95926"/>
+<path d="M252 626 L252 596.79 Q252 594.79 254 594.79 L267 594.79 Q269 594.79 269 596.79 L269 626 Z" fill="#D95926"/>
+<line x1="151.5" y1="532" x2="151.5" y2="626" stroke="#A6AFBF" stroke-width="1"/>
+<rect x="95.5" y="524" width="8" height="8" rx="2" fill="#3987E5"/>
+<text x="107.5" y="531.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 717</text>
+<line x1="185.5" y1="532" x2="185.5" y2="626" stroke="#A6AFBF" stroke-width="1"/>
+<rect x="190.5" y="524" width="8" height="8" rx="2" fill="#D95926"/>
+<text x="202.5" y="531.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 818</text>
+<text x="54" y="641.5" font-size="10" fill="#78829A">426</text>
+<text x="270" y="641.5" font-size="10" fill="#78829A" text-anchor="end">1,072</text>
+<text x="162" y="641.5" font-size="10" fill="#78829A" text-anchor="middle">Tachi: Gekko, share of hits</text>
+<line x1="279.5" y1="524" x2="279.5" y2="640" stroke="#1B2029" stroke-width="1"/>
+<rect x="350" y="525.5" width="13" height="13" rx="3" fill="#3987E5"/>
+<text x="356.5" y="535.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<rect x="392" y="525.5" width="13" height="13" rx="3" fill="#D95926"/>
+<text x="398.5" y="535.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="456" y="535.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ %</text>
+<line x1="286" y1="543.5" x2="456" y2="543.5" stroke="#2A313D" stroke-width="1"/>
+<text x="286" y="559.58" font-size="11.5" fill="#A6AFBF">Min</text>
+<text x="363" y="559.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">533</text>
+<text x="405" y="559.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">426</text>
+<text x="456" y="559.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−20.1%</text>
+<line x1="286" y1="566.5" x2="456" y2="566.5" stroke="#1B2029" stroke-width="1"/>
+<text x="286" y="582.58" font-size="11.5" fill="#A6AFBF">Median</text>
+<text x="363" y="582.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">723</text>
+<text x="405" y="582.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">850</text>
+<text x="456" y="582.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+17.6%</text>
+<line x1="286" y1="589.5" x2="456" y2="589.5" stroke="#1B2029" stroke-width="1"/>
+<text x="286" y="605.58" font-size="11.5" fill="#A6AFBF">Average</text>
+<text x="363" y="605.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">717</text>
+<text x="405" y="605.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">818</text>
+<text x="456" y="605.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+14.0%</text>
+<line x1="286" y1="612.5" x2="456" y2="612.5" stroke="#1B2029" stroke-width="1"/>
+<text x="286" y="628.58" font-size="11.5" fill="#A6AFBF">Max</text>
+<text x="363" y="628.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">961</text>
+<text x="405" y="628.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">1,072</text>
+<text x="456" y="628.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+11.6%</text>
+<rect x="24" y="660" width="440" height="76" fill="#0F1217"/>
+<line x1="54" y1="726.5" x2="456" y2="726.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="54" y1="696.5" x2="456" y2="696.5" stroke="#1B2029" stroke-width="1"/>
+<line x1="54" y1="666.5" x2="456" y2="666.5" stroke="#1B2029" stroke-width="1"/>
+<text x="48" y="670" font-size="10" fill="#78829A" text-anchor="end">300K</text>
+<text x="48" y="730" font-size="10" fill="#78829A" text-anchor="end">0</text>
+<path d="M54 726 L70.75 723.44 L87.5 722.26 L104.25 720.26 L121 717.32 L137.75 715.45 L154.5 714.24 L171.25 711.79 L188 709 L204.75 707.53 L221.5 706.07 L238.25 703.29 L255 700.83 L271.75 699.62 L288.5 697.75 L305.25 694.81 L322 692.8 L338.75 691.63 L355.5 689.31 L372.25 686.45 L389 684.87 L405.75 683.51 L422.5 680.8 L439.25 678.24 L456 676.76" fill="none" stroke="#3987E5" stroke-width="1.5"/>
+<path d="M54 726 L68.79 724.21 L83.58 722.1 L98.38 719 L113.17 717.01 L127.96 715.73 L142.75 713.15 L157.54 710.2 L172.33 708.65 L187.12 707.1 L201.92 704.16 L216.71 701.57 L231.5 700.28 L246.29 698.31 L261.08 695.21 L275.88 693.09 L290.67 691.84 L305.46 689.39 L320.25 686.37 L335.04 684.7 L349.83 683.26 L364.62 680.4 L379.42 677.69 L394.21 676.35 L409 673.96" fill="none" stroke="#D95926" stroke-width="1.5"/>
+<circle cx="456" cy="676.76" r="3" fill="#3987E5" stroke="#0F1217" stroke-width="1.5"/>
+<circle cx="409" cy="673.96" r="3" fill="#D95926" stroke="#0F1217" stroke-width="1.5"/>
+<rect x="62" y="670" width="8" height="8" rx="2" fill="#3987E5"/>
+<text x="75" y="677.73" font-size="10.5" fill="#A6AFBF">A · Hasaya_parse_2026.09.27_2114</text>
+<rect x="62" y="684" width="8" height="8" rx="2" fill="#D95926"/>
+<text x="75" y="691.73" font-size="10.5" fill="#A6AFBF">B · Hasaya_parse_2026.10.04_2108</text>
+<text x="24" y="755.4" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">WITH THE PROPOSED RED AND GREEN</text>
+<text x="464" y="755.2" font-size="10" fill="#78829A" text-anchor="end" class="m">#FF5063 #00DF85, bands 20% / 20%</text>
+<line x1="24" y1="761.5" x2="464" y2="761.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="24" y="762" width="440" height="36" fill="#151921"/>
+<rect x="24" y="762" width="409" height="18" fill="#3987E5" opacity="0.2"/>
+<rect x="24" y="780" width="440" height="17" fill="#D95926" opacity="0.2"/>
+<rect x="36" y="776" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="50" y="784.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
+<rect x="148" y="772" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="786" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="776.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="160" y="790.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="286" y="777.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">41,739</text>
+<text x="286" y="791.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">44,882</text>
+<text x="346" y="777.58" font-size="11.5" fill="#00DF85" font-weight="600" text-anchor="end">+7.5%</text>
+<text x="346" y="790.55" font-size="10" fill="#A6AFBF" text-anchor="end">+3,143</text>
+<text x="404" y="777.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.8%</text>
+<text x="404" y="791.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">85.5%</text>
+<text x="458" y="784.08" font-size="11.5" fill="#FF5063" font-weight="600" text-anchor="end">−2.3 pt</text>
+<line x1="24" y1="797.5" x2="464" y2="797.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="24" y="798" width="385" height="18" fill="#3987E5" opacity="0.2"/>
+<rect x="24" y="816" width="367" height="17" fill="#D95926" opacity="0.2"/>
+<rect x="36" y="812" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="50" y="820.26" font-size="12" fill="#E9ECF2">Brannoch</text>
+<rect x="148" y="808" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="148" y="822" width="6" height="2" rx="1" fill="#D95926"/>
+<text x="160" y="812.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="160" y="826.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="286" y="813.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">39,308</text>
+<text x="286" y="827.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">37,474</text>
+<text x="346" y="813.58" font-size="11.5" fill="#FF5063" font-weight="600" text-anchor="end">−4.7%</text>
+<text x="346" y="826.55" font-size="10" fill="#A6AFBF" text-anchor="end">−1,834</text>
+<text x="404" y="813.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">89.0%</text>
+<text x="404" y="827.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">90.9%</text>
+<text x="458" y="820.08" font-size="11.5" fill="#00DF85" font-weight="600" text-anchor="end">+1.8 pt</text>
+<line x1="24" y1="833.5" x2="464" y2="833.5" stroke="#1B2029" stroke-width="1"/>
+<text x="24" y="853.4" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">JOB SWATCHES ON THE BANDS</text>
+<rect x="24" y="860" width="440" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="24" y="878" width="440" height="17" fill="#D95926" opacity="0.26"/>
+<text x="32" y="872.5" font-size="10" fill="#A6AFBF" font-weight="600">A</text>
+<text x="32" y="890.5" font-size="10" fill="#A6AFBF" font-weight="600">B</text>
+<rect x="58" y="865" width="8" height="8" rx="2" fill="#FC6E03"/>
+<rect x="58" y="882" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="62" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">SAM</text>
+<rect x="99" y="865" width="8" height="8" rx="2" fill="#F53000"/>
+<rect x="99" y="882" width="8" height="8" rx="2" fill="#F53000"/>
+<text x="103" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">NIN</text>
+<rect x="140" y="865" width="8" height="8" rx="2" fill="#E60000"/>
+<rect x="140" y="882" width="8" height="8" rx="2" fill="#E60000"/>
+<text x="144" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">WAR</text>
+<rect x="181" y="865" width="8" height="8" rx="2" fill="#E86366"/>
+<rect x="181" y="882" width="8" height="8" rx="2" fill="#E86366"/>
+<text x="185" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">RDM</text>
+<rect x="222" y="865" width="8" height="8" rx="2" fill="#C97557"/>
+<rect x="222" y="882" width="8" height="8" rx="2" fill="#C97557"/>
+<text x="226" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">COR</text>
+<rect x="263" y="865" width="8" height="8" rx="2" fill="#F5C403"/>
+<rect x="263" y="882" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="267" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">MNK</text>
+<rect x="304" y="865" width="8" height="8" rx="2" fill="#4C8FD4"/>
+<rect x="304" y="882" width="8" height="8" rx="2" fill="#4C8FD4"/>
+<text x="308" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">BLU</text>
+<rect x="345" y="865" width="8" height="8" rx="2" fill="#827AAB"/>
+<rect x="345" y="882" width="8" height="8" rx="2" fill="#827AAB"/>
+<text x="349" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">PUP</text>
+<rect x="386" y="865" width="8" height="8" rx="2" fill="#A685BD"/>
+<rect x="386" y="882" width="8" height="8" rx="2" fill="#A685BD"/>
+<text x="390" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">BLM</text>
+<rect x="427" y="865" width="8" height="8" rx="2" fill="#FFFFFF"/>
+<rect x="427" y="882" width="8" height="8" rx="2" fill="#FFFFFF"/>
+<text x="431" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">WHM</text>
+<rect x="462" y="860" width="2" height="35" fill="#F2A33A"/>
+<text x="24" y="928.73" font-size="10.5" fill="#A6AFBF">Bands part by 0.105 (0.094 deutan). Red on band A 4.60, on band B 4.78.</text>
+<text x="24" y="943.73" font-size="10.5" fill="#78829A">B is 0.10 from the red, 0.09 from SAM, 0.06 from COR and NIN; it reads as a red.</text>
+<text x="24" y="958.73" font-size="10.5" fill="#78829A">To a deuteranope B is 0.07 from the proposed red. A is 0.04 from BLU.</text>
+<text x="500" y="67.55" font-size="10" fill="#F2A33A" font-weight="700" class="s" letter-spacing="0.8">RECOMMENDED: THE BASELINE IN INK, THE COMPARED RUN IN ONE HUE</text>
+<line x1="500" y1="74.5" x2="940" y2="74.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="500" y="83" width="14" height="12" rx="2" fill="#909AAF"/>
+<text x="519" y="92.8" font-size="10" fill="#E9ECF2" class="m">A #909AAF</text>
+<rect x="588" y="83" width="14" height="12" rx="2" fill="#3A84F2"/>
+<text x="607" y="92.8" font-size="10" fill="#E9ECF2" class="m">B #3A84F2</text>
+<text x="940" y="92.8" font-size="10" fill="#78829A" text-anchor="end" class="m">bands 10% / 26%, badge ink #101010</text>
+<rect x="500" y="102" width="216" height="46" rx="5" fill="#151921"/>
+<rect x="500.5" y="102.5" width="215" height="45" rx="4.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="501" y="103" width="3" height="44" rx="1.5" fill="#909AAF"/>
+<rect x="513" y="109" width="16" height="16" rx="3" fill="#909AAF"/>
+<text x="521" y="120.86" font-size="10.88" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="537" y="120.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">BASELINE</text>
+<text x="513" y="140.4" font-size="11" fill="#E9ECF2" font-weight="600">Hasaya_parse_2026.09.27_2114</text>
+<rect x="724" y="102" width="216" height="46" rx="5" fill="#151921"/>
+<rect x="724.5" y="102.5" width="215" height="45" rx="4.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="725" y="103" width="3" height="44" rx="1.5" fill="#3A84F2"/>
+<rect x="737" y="109" width="16" height="16" rx="3" fill="#3A84F2"/>
+<text x="745" y="120.86" font-size="10.88" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="761" y="120.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">COMPARED</text>
+<text x="737" y="140.4" font-size="11" fill="#E9ECF2" font-weight="600">Hasaya_parse_2026.10.04_2108</text>
+<rect x="500" y="156" width="440" height="72" fill="#0A0C10"/>
+<line x1="500" y1="156.5" x2="940" y2="156.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="500" y1="227.5" x2="940" y2="227.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="720.5" y1="166" x2="720.5" y2="218" stroke="#2A313D" stroke-width="1"/>
+<text x="514" y="173.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">TOTAL DAMAGE</text>
+<rect x="514" y="184.5" width="13" height="13" rx="3" fill="#909AAF"/>
+<text x="520.5" y="194.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="534" y="196.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">246,211</text>
+<rect x="514" y="205.5" width="13" height="13" rx="3" fill="#3A84F2"/>
+<text x="520.5" y="215.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="534" y="217.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">260,153</text>
+<text x="706" y="195.62" font-size="13" fill="#3DD68C" font-weight="600" text-anchor="end">+5.7%</text>
+<text x="706" y="215.73" font-size="10.5" fill="#78829A" text-anchor="end">+13,942</text>
+<text x="734" y="173.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">WS DAMAGE</text>
+<rect x="734" y="184.5" width="13" height="13" rx="3" fill="#909AAF"/>
+<text x="740.5" y="194.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="754" y="196.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">94,278</text>
+<rect x="734" y="205.5" width="13" height="13" rx="3" fill="#3A84F2"/>
+<text x="740.5" y="215.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="754" y="217.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">91,938</text>
+<text x="926" y="195.62" font-size="13" fill="#F26D78" font-weight="600" text-anchor="end">−2.5%</text>
+<text x="926" y="215.73" font-size="10.5" fill="#78829A" text-anchor="end">−2,340</text>
+<text x="526" y="245.9" font-size="11" fill="#78829A" font-weight="500">Character</text>
+<text x="636" y="245.9" font-size="11" fill="#78829A" font-weight="500">Job</text>
+<text x="762" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
+<text x="822" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ</text>
+<text x="880" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Accuracy</text>
+<text x="934" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ</text>
+<line x1="500" y1="253.5" x2="940" y2="253.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="500" y="254" width="440" height="36" fill="#151921"/>
+<rect x="500" y="254" width="409" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="272" width="440" height="17" fill="#3A84F2" opacity="0.26"/>
+<rect x="512" y="268" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="526" y="276.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
+<rect x="624" y="264" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="278" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="268.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="636" y="282.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="762" y="269.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">41,739</text>
+<text x="762" y="283.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">44,882</text>
+<text x="822" y="269.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+7.5%</text>
+<text x="822" y="282.55" font-size="10" fill="#A6AFBF" text-anchor="end">+3,143</text>
+<text x="880" y="269.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.8%</text>
+<text x="880" y="283.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">85.5%</text>
+<text x="934" y="276.08" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−2.3 pt</text>
+<line x1="500" y1="289.5" x2="940" y2="289.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="290" width="385" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="308" width="367" height="17" fill="#3A84F2" opacity="0.26"/>
+<rect x="512" y="304" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="526" y="312.26" font-size="12" fill="#E9ECF2">Brannoch</text>
+<rect x="624" y="300" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="314" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="304.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="636" y="318.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="762" y="305.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">39,308</text>
+<text x="762" y="319.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">37,474</text>
+<text x="822" y="305.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−4.7%</text>
+<text x="822" y="318.55" font-size="10" fill="#A6AFBF" text-anchor="end">−1,834</text>
+<text x="880" y="305.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">89.0%</text>
+<text x="880" y="319.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">90.9%</text>
+<text x="934" y="312.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+1.8 pt</text>
+<line x1="500" y1="325.5" x2="940" y2="325.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="326" width="345" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="344" width="344" height="17" fill="#3A84F2" opacity="0.26"/>
+<rect x="512" y="340" width="8" height="8" rx="2" fill="#CCBA78"/>
+<text x="526" y="348.26" font-size="12" fill="#E9ECF2">Parabellum</text>
+<rect x="624" y="336" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="350" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="340.73" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
+<text x="636" y="354.73" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
+<text x="762" y="341.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">35,170</text>
+<text x="762" y="355.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">35,125</text>
+<text x="822" y="341.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−0.1%</text>
+<text x="822" y="354.55" font-size="10" fill="#A6AFBF" text-anchor="end">−45</text>
+<text x="880" y="341.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">83.7%</text>
+<text x="880" y="355.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.9%</text>
+<text x="934" y="348.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+4.2 pt</text>
+<line x1="500" y1="361.5" x2="940" y2="361.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="362" width="297" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="380" width="288" height="17" fill="#3A84F2" opacity="0.26"/>
+<rect x="512" y="376" width="8" height="8" rx="2" fill="#6EC459"/>
+<text x="526" y="384.26" font-size="12" fill="#E9ECF2">Xatsh</text>
+<rect x="624" y="372" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="386" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="376.73" font-size="10.5" fill="#A6AFBF">RNG/NIN</text>
+<text x="636" y="390.73" font-size="10.5" fill="#A6AFBF">RNG/NIN</text>
+<text x="762" y="377.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">30,315</text>
+<text x="762" y="391.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">29,405</text>
+<text x="822" y="377.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−3.0%</text>
+<text x="822" y="390.55" font-size="10" fill="#A6AFBF" text-anchor="end">−910</text>
+<text x="880" y="377.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">84.3%</text>
+<text x="880" y="391.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">86.3%</text>
+<text x="934" y="384.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+1.9 pt</text>
+<line x1="500" y1="397.5" x2="940" y2="397.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="398" width="264" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="416" width="264" height="17" fill="#3A84F2" opacity="0.26"/>
+<rect x="512" y="412" width="8" height="8" rx="2" fill="#E600FF"/>
+<text x="526" y="420.26" font-size="12" fill="#E9ECF2">Thorgald</text>
+<rect x="624" y="408" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="422" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="412.73" font-size="10.5" fill="#A6AFBF">DRK/WAR</text>
+<text x="636" y="426.73" font-size="10.5" fill="#A6AFBF">DRK/SAM</text>
+<text x="762" y="413.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">26,966</text>
+<text x="762" y="427.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">26,898</text>
+<text x="822" y="413.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−0.3%</text>
+<text x="822" y="426.55" font-size="10" fill="#A6AFBF" text-anchor="end">−68</text>
+<text x="880" y="413.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">83.2%</text>
+<text x="880" y="427.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.1%</text>
+<text x="934" y="420.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+3.8 pt</text>
+<line x1="500" y1="433.5" x2="940" y2="433.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="434" width="250" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="452" width="223" height="17" fill="#3A84F2" opacity="0.26"/>
+<rect x="512" y="448" width="8" height="8" rx="2" fill="#A685BD"/>
+<text x="526" y="456.26" font-size="12" fill="#E9ECF2">Gillette</text>
+<rect x="624" y="444" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="458" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="448.73" font-size="10.5" fill="#A6AFBF">BLM/WHM</text>
+<text x="636" y="462.73" font-size="10.5" fill="#A6AFBF">BLM/WHM</text>
+<text x="762" y="449.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">25,490</text>
+<text x="762" y="463.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">22,745</text>
+<text x="822" y="449.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−10.8%</text>
+<text x="822" y="462.55" font-size="10" fill="#A6AFBF" text-anchor="end">−2,745</text>
+<text x="880" y="449.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="880" y="463.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="934" y="456.08" font-size="11.5" fill="#515A6B" text-anchor="end">—</text>
+<line x1="500" y1="469.5" x2="940" y2="469.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="488" width="187" height="17" fill="#3A84F2" opacity="0.26"/>
+<rect x="512" y="484" width="8" height="8" rx="2" fill="#C4AED3"/>
+<text x="526" y="492.26" font-size="12" fill="#E9ECF2">Ysolde</text>
+<rect x="624" y="480" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="494" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="484.73" font-size="10.5" fill="#8F98AC">—</text>
+<text x="636" y="498.73" font-size="10.5" fill="#A6AFBF">BLM/RDM</text>
+<text x="762" y="485.08" font-size="11.5" fill="#8F98AC" font-weight="600" text-anchor="end">—</text>
+<text x="762" y="499.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">19,037</text>
+<text x="822" y="485.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">new</text>
+<text x="822" y="498.55" font-size="10" fill="#A6AFBF" text-anchor="end">+19,037</text>
+<text x="880" y="485.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="880" y="499.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="934" y="492.08" font-size="11.5" fill="#515A6B" text-anchor="end">—</text>
+<line x1="500" y1="505.5" x2="940" y2="505.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="516" width="440" height="132" rx="4" fill="#0F1217"/>
+<rect x="500.5" y="516.5" width="439" height="131" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<line x1="530" y1="626.5" x2="746" y2="626.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="530" y1="586.5" x2="746" y2="586.5" stroke="#1B2029" stroke-width="1"/>
+<line x1="530" y1="546.5" x2="746" y2="546.5" stroke="#1B2029" stroke-width="1"/>
+<text x="524" y="629.5" font-size="10" fill="#78829A" text-anchor="end">0%</text>
+<text x="524" y="549.5" font-size="10" fill="#78829A" text-anchor="end">40%</text>
+<path d="M530.5 626 L530.5 615.09 Q530.5 613.09 532.5 613.09 L545.5 613.09 Q547.5 613.09 547.5 615.09 L547.5 626 Z" fill="#909AAF"/>
+<path d="M548 626 L548 613.06 Q548 611.06 550 611.06 L563 611.06 Q565 611.06 565 613.06 L565 626 Z" fill="#3A84F2"/>
+<path d="M566.5 626 L566.5 586.62 Q566.5 584.62 568.5 584.62 L581.5 584.62 Q583.5 584.62 583.5 586.62 L583.5 626 Z" fill="#909AAF"/>
+<path d="M584 626 L584 613.06 Q584 611.06 586 611.06 L599 611.06 Q601 611.06 601 613.06 L601 626 Z" fill="#3A84F2"/>
+<path d="M602.5 626 L602.5 543.93 Q602.5 541.93 604.5 541.93 L617.5 541.93 Q619.5 541.93 619.5 543.93 L619.5 626 Z" fill="#909AAF"/>
+<path d="M620 626 L620 613.06 Q620 611.06 622 611.06 L635 611.06 Q637 611.06 637 613.06 L637 626 Z" fill="#3A84F2"/>
+<path d="M638.5 626 L638.5 572.39 Q638.5 570.39 640.5 570.39 L653.5 570.39 Q655.5 570.39 655.5 572.39 L655.5 626 Z" fill="#909AAF"/>
+<path d="M656 626 L656 564.26 Q656 562.26 658 562.26 L671 562.26 Q673 562.26 673 564.26 L673 626 Z" fill="#3A84F2"/>
+<path d="M674.5 626 L674.5 600.86 Q674.5 598.86 676.5 598.86 L689.5 598.86 Q691.5 598.86 691.5 600.86 L691.5 626 Z" fill="#909AAF"/>
+<path d="M692 626 L692 548 Q692 546 694 546 L707 546 Q709 546 709 548 L709 626 Z" fill="#3A84F2"/>
+<path d="M728 626 L728 596.79 Q728 594.79 730 594.79 L743 594.79 Q745 594.79 745 596.79 L745 626 Z" fill="#3A84F2"/>
+<line x1="627.5" y1="532" x2="627.5" y2="626" stroke="#A6AFBF" stroke-width="1"/>
+<rect x="571.5" y="524" width="8" height="8" rx="2" fill="#909AAF"/>
+<text x="583.5" y="531.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 717</text>
+<line x1="661.5" y1="532" x2="661.5" y2="626" stroke="#A6AFBF" stroke-width="1"/>
+<rect x="666.5" y="524" width="8" height="8" rx="2" fill="#3A84F2"/>
+<text x="678.5" y="531.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 818</text>
+<text x="530" y="641.5" font-size="10" fill="#78829A">426</text>
+<text x="746" y="641.5" font-size="10" fill="#78829A" text-anchor="end">1,072</text>
+<text x="638" y="641.5" font-size="10" fill="#78829A" text-anchor="middle">Tachi: Gekko, share of hits</text>
+<line x1="755.5" y1="524" x2="755.5" y2="640" stroke="#1B2029" stroke-width="1"/>
+<rect x="826" y="525.5" width="13" height="13" rx="3" fill="#909AAF"/>
+<text x="832.5" y="535.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<rect x="868" y="525.5" width="13" height="13" rx="3" fill="#3A84F2"/>
+<text x="874.5" y="535.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="932" y="535.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ %</text>
+<line x1="762" y1="543.5" x2="932" y2="543.5" stroke="#2A313D" stroke-width="1"/>
+<text x="762" y="559.58" font-size="11.5" fill="#A6AFBF">Min</text>
+<text x="839" y="559.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">533</text>
+<text x="881" y="559.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">426</text>
+<text x="932" y="559.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−20.1%</text>
+<line x1="762" y1="566.5" x2="932" y2="566.5" stroke="#1B2029" stroke-width="1"/>
+<text x="762" y="582.58" font-size="11.5" fill="#A6AFBF">Median</text>
+<text x="839" y="582.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">723</text>
+<text x="881" y="582.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">850</text>
+<text x="932" y="582.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+17.6%</text>
+<line x1="762" y1="589.5" x2="932" y2="589.5" stroke="#1B2029" stroke-width="1"/>
+<text x="762" y="605.58" font-size="11.5" fill="#A6AFBF">Average</text>
+<text x="839" y="605.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">717</text>
+<text x="881" y="605.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">818</text>
+<text x="932" y="605.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+14.0%</text>
+<line x1="762" y1="612.5" x2="932" y2="612.5" stroke="#1B2029" stroke-width="1"/>
+<text x="762" y="628.58" font-size="11.5" fill="#A6AFBF">Max</text>
+<text x="839" y="628.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">961</text>
+<text x="881" y="628.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">1,072</text>
+<text x="932" y="628.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+11.6%</text>
+<rect x="500" y="660" width="440" height="76" fill="#0F1217"/>
+<line x1="530" y1="726.5" x2="932" y2="726.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="530" y1="696.5" x2="932" y2="696.5" stroke="#1B2029" stroke-width="1"/>
+<line x1="530" y1="666.5" x2="932" y2="666.5" stroke="#1B2029" stroke-width="1"/>
+<text x="524" y="670" font-size="10" fill="#78829A" text-anchor="end">300K</text>
+<text x="524" y="730" font-size="10" fill="#78829A" text-anchor="end">0</text>
+<path d="M530 726 L546.75 723.44 L563.5 722.26 L580.25 720.26 L597 717.32 L613.75 715.45 L630.5 714.24 L647.25 711.79 L664 709 L680.75 707.53 L697.5 706.07 L714.25 703.29 L731 700.83 L747.75 699.62 L764.5 697.75 L781.25 694.81 L798 692.8 L814.75 691.63 L831.5 689.31 L848.25 686.45 L865 684.87 L881.75 683.51 L898.5 680.8 L915.25 678.24 L932 676.76" fill="none" stroke="#909AAF" stroke-width="1.5"/>
+<path d="M530 726 L544.79 724.21 L559.58 722.1 L574.38 719 L589.17 717.01 L603.96 715.73 L618.75 713.15 L633.54 710.2 L648.33 708.65 L663.12 707.1 L677.92 704.16 L692.71 701.57 L707.5 700.28 L722.29 698.31 L737.08 695.21 L751.88 693.09 L766.67 691.84 L781.46 689.39 L796.25 686.37 L811.04 684.7 L825.83 683.26 L840.62 680.4 L855.42 677.69 L870.21 676.35 L885 673.96" fill="none" stroke="#3A84F2" stroke-width="1.5"/>
+<circle cx="932" cy="676.76" r="3" fill="#909AAF" stroke="#0F1217" stroke-width="1.5"/>
+<circle cx="885" cy="673.96" r="3" fill="#3A84F2" stroke="#0F1217" stroke-width="1.5"/>
+<rect x="538" y="670" width="8" height="8" rx="2" fill="#909AAF"/>
+<text x="551" y="677.73" font-size="10.5" fill="#A6AFBF">A · Hasaya_parse_2026.09.27_2114</text>
+<rect x="538" y="684" width="8" height="8" rx="2" fill="#3A84F2"/>
+<text x="551" y="691.73" font-size="10.5" fill="#A6AFBF">B · Hasaya_parse_2026.10.04_2108</text>
+<text x="500" y="755.4" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">WITH THE PROPOSED RED AND GREEN</text>
+<text x="940" y="755.2" font-size="10" fill="#78829A" text-anchor="end" class="m">#FF5063 #00DF85, bands 10% / 21%</text>
+<line x1="500" y1="761.5" x2="940" y2="761.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="500" y="762" width="440" height="36" fill="#151921"/>
+<rect x="500" y="762" width="409" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="780" width="440" height="17" fill="#3A84F2" opacity="0.21"/>
+<rect x="512" y="776" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="526" y="784.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
+<rect x="624" y="772" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="786" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="776.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="636" y="790.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="762" y="777.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">41,739</text>
+<text x="762" y="791.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">44,882</text>
+<text x="822" y="777.58" font-size="11.5" fill="#00DF85" font-weight="600" text-anchor="end">+7.5%</text>
+<text x="822" y="790.55" font-size="10" fill="#A6AFBF" text-anchor="end">+3,143</text>
+<text x="880" y="777.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.8%</text>
+<text x="880" y="791.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">85.5%</text>
+<text x="934" y="784.08" font-size="11.5" fill="#FF5063" font-weight="600" text-anchor="end">−2.3 pt</text>
+<line x1="500" y1="797.5" x2="940" y2="797.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="500" y="798" width="385" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="816" width="367" height="17" fill="#3A84F2" opacity="0.21"/>
+<rect x="512" y="812" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="526" y="820.26" font-size="12" fill="#E9ECF2">Brannoch</text>
+<rect x="624" y="808" width="6" height="2" rx="1" fill="#909AAF"/>
+<rect x="624" y="822" width="6" height="2" rx="1" fill="#3A84F2"/>
+<text x="636" y="812.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="636" y="826.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="762" y="813.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">39,308</text>
+<text x="762" y="827.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">37,474</text>
+<text x="822" y="813.58" font-size="11.5" fill="#FF5063" font-weight="600" text-anchor="end">−4.7%</text>
+<text x="822" y="826.55" font-size="10" fill="#A6AFBF" text-anchor="end">−1,834</text>
+<text x="880" y="813.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">89.0%</text>
+<text x="880" y="827.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">90.9%</text>
+<text x="934" y="820.08" font-size="11.5" fill="#00DF85" font-weight="600" text-anchor="end">+1.8 pt</text>
+<line x1="500" y1="833.5" x2="940" y2="833.5" stroke="#1B2029" stroke-width="1"/>
+<text x="500" y="853.4" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">JOB SWATCHES ON THE BANDS</text>
+<rect x="500" y="860" width="440" height="18" fill="#909AAF" opacity="0.1"/>
+<rect x="500" y="878" width="440" height="17" fill="#3A84F2" opacity="0.26"/>
+<text x="508" y="872.5" font-size="10" fill="#A6AFBF" font-weight="600">A</text>
+<text x="508" y="890.5" font-size="10" fill="#A6AFBF" font-weight="600">B</text>
+<rect x="534" y="865" width="8" height="8" rx="2" fill="#FC6E03"/>
+<rect x="534" y="882" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="538" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">SAM</text>
+<rect x="575" y="865" width="8" height="8" rx="2" fill="#F53000"/>
+<rect x="575" y="882" width="8" height="8" rx="2" fill="#F53000"/>
+<text x="579" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">NIN</text>
+<rect x="616" y="865" width="8" height="8" rx="2" fill="#E60000"/>
+<rect x="616" y="882" width="8" height="8" rx="2" fill="#E60000"/>
+<text x="620" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">WAR</text>
+<rect x="657" y="865" width="8" height="8" rx="2" fill="#E86366"/>
+<rect x="657" y="882" width="8" height="8" rx="2" fill="#E86366"/>
+<text x="661" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">RDM</text>
+<rect x="698" y="865" width="8" height="8" rx="2" fill="#C97557"/>
+<rect x="698" y="882" width="8" height="8" rx="2" fill="#C97557"/>
+<text x="702" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">COR</text>
+<rect x="739" y="865" width="8" height="8" rx="2" fill="#F5C403"/>
+<rect x="739" y="882" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="743" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">MNK</text>
+<rect x="780" y="865" width="8" height="8" rx="2" fill="#4C8FD4"/>
+<rect x="780" y="882" width="8" height="8" rx="2" fill="#4C8FD4"/>
+<text x="784" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">BLU</text>
+<rect x="821" y="865" width="8" height="8" rx="2" fill="#827AAB"/>
+<rect x="821" y="882" width="8" height="8" rx="2" fill="#827AAB"/>
+<text x="825" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">PUP</text>
+<rect x="862" y="865" width="8" height="8" rx="2" fill="#A685BD"/>
+<rect x="862" y="882" width="8" height="8" rx="2" fill="#A685BD"/>
+<text x="866" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">BLM</text>
+<rect x="903" y="865" width="8" height="8" rx="2" fill="#FFFFFF"/>
+<rect x="903" y="882" width="8" height="8" rx="2" fill="#FFFFFF"/>
+<text x="907" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">WHM</text>
+<rect x="938" y="860" width="2" height="35" fill="#F2A33A"/>
+<text x="500" y="928.73" font-size="10.5" fill="#A6AFBF">Bands part by 0.084 (0.080 deutan), by lightness first. Red on band A 5.63, on B 4.57.</text>
+<text x="500" y="943.73" font-size="10.5" fill="#78829A">B is 0.31 from the red, 0.37 from SAM, 0.36 from the accent: no run is a warm colour.</text>
+<text x="500" y="958.73" font-size="10.5" fill="#78829A">Cost: blue moves from A to B; as solids the pair is 0.16 apart (0.32 now); B is 0.06 from BLU.</text>
+<text x="976" y="67.55" font-size="10" fill="#F2A33A" font-weight="700" class="s" letter-spacing="0.8">RUNNER-UP: BLUE AND A TRUE ORANGE</text>
+<line x1="976" y1="74.5" x2="1416" y2="74.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="976" y="83" width="14" height="12" rx="2" fill="#3987E5"/>
+<text x="995" y="92.8" font-size="10" fill="#E9ECF2" class="m">A #3987E5</text>
+<rect x="1064" y="83" width="14" height="12" rx="2" fill="#E8792B"/>
+<text x="1083" y="92.8" font-size="10" fill="#E9ECF2" class="m">B #E8792B</text>
+<text x="1416" y="92.8" font-size="10" fill="#78829A" text-anchor="end" class="m">bands 26% / 24%, badge ink #101010</text>
+<rect x="976" y="102" width="216" height="46" rx="5" fill="#151921"/>
+<rect x="976.5" y="102.5" width="215" height="45" rx="4.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="977" y="103" width="3" height="44" rx="1.5" fill="#3987E5"/>
+<rect x="989" y="109" width="16" height="16" rx="3" fill="#3987E5"/>
+<text x="997" y="120.86" font-size="10.88" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="1013" y="120.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">BASELINE</text>
+<text x="989" y="140.4" font-size="11" fill="#E9ECF2" font-weight="600">Hasaya_parse_2026.09.27_2114</text>
+<rect x="1200" y="102" width="216" height="46" rx="5" fill="#151921"/>
+<rect x="1200.5" y="102.5" width="215" height="45" rx="4.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<rect x="1201" y="103" width="3" height="44" rx="1.5" fill="#E8792B"/>
+<rect x="1213" y="109" width="16" height="16" rx="3" fill="#E8792B"/>
+<text x="1221" y="120.86" font-size="10.88" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="1237" y="120.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">COMPARED</text>
+<text x="1213" y="140.4" font-size="11" fill="#E9ECF2" font-weight="600">Hasaya_parse_2026.10.04_2108</text>
+<rect x="976" y="156" width="440" height="72" fill="#0A0C10"/>
+<line x1="976" y1="156.5" x2="1416" y2="156.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="976" y1="227.5" x2="1416" y2="227.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="1196.5" y1="166" x2="1196.5" y2="218" stroke="#2A313D" stroke-width="1"/>
+<text x="990" y="173.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">TOTAL DAMAGE</text>
+<rect x="990" y="184.5" width="13" height="13" rx="3" fill="#3987E5"/>
+<text x="996.5" y="194.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="1010" y="196.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">246,211</text>
+<rect x="990" y="205.5" width="13" height="13" rx="3" fill="#E8792B"/>
+<text x="996.5" y="215.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="1010" y="217.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">260,153</text>
+<text x="1182" y="195.62" font-size="13" fill="#3DD68C" font-weight="600" text-anchor="end">+5.7%</text>
+<text x="1182" y="215.73" font-size="10.5" fill="#78829A" text-anchor="end">+13,942</text>
+<text x="1210" y="173.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">WS DAMAGE</text>
+<rect x="1210" y="184.5" width="13" height="13" rx="3" fill="#3987E5"/>
+<text x="1216.5" y="194.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<text x="1230" y="196.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">94,278</text>
+<rect x="1210" y="205.5" width="13" height="13" rx="3" fill="#E8792B"/>
+<text x="1216.5" y="215.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="1230" y="217.7" font-size="16" fill="#E9ECF2" font-weight="600" class="d">91,938</text>
+<text x="1402" y="195.62" font-size="13" fill="#F26D78" font-weight="600" text-anchor="end">−2.5%</text>
+<text x="1402" y="215.73" font-size="10.5" fill="#78829A" text-anchor="end">−2,340</text>
+<text x="1002" y="245.9" font-size="11" fill="#78829A" font-weight="500">Character</text>
+<text x="1112" y="245.9" font-size="11" fill="#78829A" font-weight="500">Job</text>
+<text x="1238" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
+<text x="1298" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ</text>
+<text x="1356" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Accuracy</text>
+<text x="1410" y="245.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ</text>
+<line x1="976" y1="253.5" x2="1416" y2="253.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="976" y="254" width="440" height="36" fill="#151921"/>
+<rect x="976" y="254" width="409" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="976" y="272" width="440" height="17" fill="#E8792B" opacity="0.24"/>
+<rect x="988" y="268" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="1002" y="276.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
+<rect x="1100" y="264" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="278" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="268.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="1112" y="282.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="1238" y="269.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">41,739</text>
+<text x="1238" y="283.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">44,882</text>
+<text x="1298" y="269.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+7.5%</text>
+<text x="1298" y="282.55" font-size="10" fill="#A6AFBF" text-anchor="end">+3,143</text>
+<text x="1356" y="269.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.8%</text>
+<text x="1356" y="283.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">85.5%</text>
+<text x="1410" y="276.08" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−2.3 pt</text>
+<line x1="976" y1="289.5" x2="1416" y2="289.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="290" width="385" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="976" y="308" width="367" height="17" fill="#E8792B" opacity="0.24"/>
+<rect x="988" y="304" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="1002" y="312.26" font-size="12" fill="#E9ECF2">Brannoch</text>
+<rect x="1100" y="300" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="314" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="304.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="1112" y="318.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="1238" y="305.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">39,308</text>
+<text x="1238" y="319.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">37,474</text>
+<text x="1298" y="305.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−4.7%</text>
+<text x="1298" y="318.55" font-size="10" fill="#A6AFBF" text-anchor="end">−1,834</text>
+<text x="1356" y="305.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">89.0%</text>
+<text x="1356" y="319.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">90.9%</text>
+<text x="1410" y="312.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+1.8 pt</text>
+<line x1="976" y1="325.5" x2="1416" y2="325.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="326" width="345" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="976" y="344" width="344" height="17" fill="#E8792B" opacity="0.24"/>
+<rect x="988" y="340" width="8" height="8" rx="2" fill="#CCBA78"/>
+<text x="1002" y="348.26" font-size="12" fill="#E9ECF2">Parabellum</text>
+<rect x="1100" y="336" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="350" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="340.73" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
+<text x="1112" y="354.73" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
+<text x="1238" y="341.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">35,170</text>
+<text x="1238" y="355.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">35,125</text>
+<text x="1298" y="341.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−0.1%</text>
+<text x="1298" y="354.55" font-size="10" fill="#A6AFBF" text-anchor="end">−45</text>
+<text x="1356" y="341.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">83.7%</text>
+<text x="1356" y="355.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.9%</text>
+<text x="1410" y="348.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+4.2 pt</text>
+<line x1="976" y1="361.5" x2="1416" y2="361.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="362" width="297" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="976" y="380" width="288" height="17" fill="#E8792B" opacity="0.24"/>
+<rect x="988" y="376" width="8" height="8" rx="2" fill="#6EC459"/>
+<text x="1002" y="384.26" font-size="12" fill="#E9ECF2">Xatsh</text>
+<rect x="1100" y="372" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="386" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="376.73" font-size="10.5" fill="#A6AFBF">RNG/NIN</text>
+<text x="1112" y="390.73" font-size="10.5" fill="#A6AFBF">RNG/NIN</text>
+<text x="1238" y="377.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">30,315</text>
+<text x="1238" y="391.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">29,405</text>
+<text x="1298" y="377.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−3.0%</text>
+<text x="1298" y="390.55" font-size="10" fill="#A6AFBF" text-anchor="end">−910</text>
+<text x="1356" y="377.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">84.3%</text>
+<text x="1356" y="391.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">86.3%</text>
+<text x="1410" y="384.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+1.9 pt</text>
+<line x1="976" y1="397.5" x2="1416" y2="397.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="398" width="264" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="976" y="416" width="264" height="17" fill="#E8792B" opacity="0.24"/>
+<rect x="988" y="412" width="8" height="8" rx="2" fill="#E600FF"/>
+<text x="1002" y="420.26" font-size="12" fill="#E9ECF2">Thorgald</text>
+<rect x="1100" y="408" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="422" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="412.73" font-size="10.5" fill="#A6AFBF">DRK/WAR</text>
+<text x="1112" y="426.73" font-size="10.5" fill="#A6AFBF">DRK/SAM</text>
+<text x="1238" y="413.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">26,966</text>
+<text x="1238" y="427.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">26,898</text>
+<text x="1298" y="413.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−0.3%</text>
+<text x="1298" y="426.55" font-size="10" fill="#A6AFBF" text-anchor="end">−68</text>
+<text x="1356" y="413.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">83.2%</text>
+<text x="1356" y="427.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.1%</text>
+<text x="1410" y="420.08" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+3.8 pt</text>
+<line x1="976" y1="433.5" x2="1416" y2="433.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="434" width="250" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="976" y="452" width="223" height="17" fill="#E8792B" opacity="0.24"/>
+<rect x="988" y="448" width="8" height="8" rx="2" fill="#A685BD"/>
+<text x="1002" y="456.26" font-size="12" fill="#E9ECF2">Gillette</text>
+<rect x="1100" y="444" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="458" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="448.73" font-size="10.5" fill="#A6AFBF">BLM/WHM</text>
+<text x="1112" y="462.73" font-size="10.5" fill="#A6AFBF">BLM/WHM</text>
+<text x="1238" y="449.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">25,490</text>
+<text x="1238" y="463.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">22,745</text>
+<text x="1298" y="449.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−10.8%</text>
+<text x="1298" y="462.55" font-size="10" fill="#A6AFBF" text-anchor="end">−2,745</text>
+<text x="1356" y="449.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="1356" y="463.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="1410" y="456.08" font-size="11.5" fill="#515A6B" text-anchor="end">—</text>
+<line x1="976" y1="469.5" x2="1416" y2="469.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="488" width="187" height="17" fill="#E8792B" opacity="0.24"/>
+<rect x="988" y="484" width="8" height="8" rx="2" fill="#C4AED3"/>
+<text x="1002" y="492.26" font-size="12" fill="#E9ECF2">Ysolde</text>
+<rect x="1100" y="480" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="494" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="484.73" font-size="10.5" fill="#8F98AC">—</text>
+<text x="1112" y="498.73" font-size="10.5" fill="#A6AFBF">BLM/RDM</text>
+<text x="1238" y="485.08" font-size="11.5" fill="#8F98AC" font-weight="600" text-anchor="end">—</text>
+<text x="1238" y="499.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">19,037</text>
+<text x="1298" y="485.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">new</text>
+<text x="1298" y="498.55" font-size="10" fill="#A6AFBF" text-anchor="end">+19,037</text>
+<text x="1356" y="485.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="1356" y="499.08" font-size="11.5" fill="#8F98AC" text-anchor="end">—</text>
+<text x="1410" y="492.08" font-size="11.5" fill="#515A6B" text-anchor="end">—</text>
+<line x1="976" y1="505.5" x2="1416" y2="505.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="516" width="440" height="132" rx="4" fill="#0F1217"/>
+<rect x="976.5" y="516.5" width="439" height="131" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
+<line x1="1006" y1="626.5" x2="1222" y2="626.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="1006" y1="586.5" x2="1222" y2="586.5" stroke="#1B2029" stroke-width="1"/>
+<line x1="1006" y1="546.5" x2="1222" y2="546.5" stroke="#1B2029" stroke-width="1"/>
+<text x="1000" y="629.5" font-size="10" fill="#78829A" text-anchor="end">0%</text>
+<text x="1000" y="549.5" font-size="10" fill="#78829A" text-anchor="end">40%</text>
+<path d="M1006.5 626 L1006.5 615.09 Q1006.5 613.09 1008.5 613.09 L1021.5 613.09 Q1023.5 613.09 1023.5 615.09 L1023.5 626 Z" fill="#3987E5"/>
+<path d="M1024 626 L1024 613.06 Q1024 611.06 1026 611.06 L1039 611.06 Q1041 611.06 1041 613.06 L1041 626 Z" fill="#E8792B"/>
+<path d="M1042.5 626 L1042.5 586.62 Q1042.5 584.62 1044.5 584.62 L1057.5 584.62 Q1059.5 584.62 1059.5 586.62 L1059.5 626 Z" fill="#3987E5"/>
+<path d="M1060 626 L1060 613.06 Q1060 611.06 1062 611.06 L1075 611.06 Q1077 611.06 1077 613.06 L1077 626 Z" fill="#E8792B"/>
+<path d="M1078.5 626 L1078.5 543.93 Q1078.5 541.93 1080.5 541.93 L1093.5 541.93 Q1095.5 541.93 1095.5 543.93 L1095.5 626 Z" fill="#3987E5"/>
+<path d="M1096 626 L1096 613.06 Q1096 611.06 1098 611.06 L1111 611.06 Q1113 611.06 1113 613.06 L1113 626 Z" fill="#E8792B"/>
+<path d="M1114.5 626 L1114.5 572.39 Q1114.5 570.39 1116.5 570.39 L1129.5 570.39 Q1131.5 570.39 1131.5 572.39 L1131.5 626 Z" fill="#3987E5"/>
+<path d="M1132 626 L1132 564.26 Q1132 562.26 1134 562.26 L1147 562.26 Q1149 562.26 1149 564.26 L1149 626 Z" fill="#E8792B"/>
+<path d="M1150.5 626 L1150.5 600.86 Q1150.5 598.86 1152.5 598.86 L1165.5 598.86 Q1167.5 598.86 1167.5 600.86 L1167.5 626 Z" fill="#3987E5"/>
+<path d="M1168 626 L1168 548 Q1168 546 1170 546 L1183 546 Q1185 546 1185 548 L1185 626 Z" fill="#E8792B"/>
+<path d="M1204 626 L1204 596.79 Q1204 594.79 1206 594.79 L1219 594.79 Q1221 594.79 1221 596.79 L1221 626 Z" fill="#E8792B"/>
+<line x1="1103.5" y1="532" x2="1103.5" y2="626" stroke="#A6AFBF" stroke-width="1"/>
+<rect x="1047.5" y="524" width="8" height="8" rx="2" fill="#3987E5"/>
+<text x="1059.5" y="531.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 717</text>
+<line x1="1137.5" y1="532" x2="1137.5" y2="626" stroke="#A6AFBF" stroke-width="1"/>
+<rect x="1142.5" y="524" width="8" height="8" rx="2" fill="#E8792B"/>
+<text x="1154.5" y="531.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 818</text>
+<text x="1006" y="641.5" font-size="10" fill="#78829A">426</text>
+<text x="1222" y="641.5" font-size="10" fill="#78829A" text-anchor="end">1,072</text>
+<text x="1114" y="641.5" font-size="10" fill="#78829A" text-anchor="middle">Tachi: Gekko, share of hits</text>
+<line x1="1231.5" y1="524" x2="1231.5" y2="640" stroke="#1B2029" stroke-width="1"/>
+<rect x="1302" y="525.5" width="13" height="13" rx="3" fill="#3987E5"/>
+<text x="1308.5" y="535.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">A</text>
+<rect x="1344" y="525.5" width="13" height="13" rx="3" fill="#E8792B"/>
+<text x="1350.5" y="535.14" font-size="8.84" fill="#101010" font-weight="700" text-anchor="middle">B</text>
+<text x="1408" y="535.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Δ %</text>
+<line x1="1238" y1="543.5" x2="1408" y2="543.5" stroke="#2A313D" stroke-width="1"/>
+<text x="1238" y="559.58" font-size="11.5" fill="#A6AFBF">Min</text>
+<text x="1315" y="559.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">533</text>
+<text x="1357" y="559.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">426</text>
+<text x="1408" y="559.58" font-size="11.5" fill="#F26D78" font-weight="600" text-anchor="end">−20.1%</text>
+<line x1="1238" y1="566.5" x2="1408" y2="566.5" stroke="#1B2029" stroke-width="1"/>
+<text x="1238" y="582.58" font-size="11.5" fill="#A6AFBF">Median</text>
+<text x="1315" y="582.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">723</text>
+<text x="1357" y="582.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">850</text>
+<text x="1408" y="582.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+17.6%</text>
+<line x1="1238" y1="589.5" x2="1408" y2="589.5" stroke="#1B2029" stroke-width="1"/>
+<text x="1238" y="605.58" font-size="11.5" fill="#A6AFBF">Average</text>
+<text x="1315" y="605.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">717</text>
+<text x="1357" y="605.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">818</text>
+<text x="1408" y="605.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+14.0%</text>
+<line x1="1238" y1="612.5" x2="1408" y2="612.5" stroke="#1B2029" stroke-width="1"/>
+<text x="1238" y="628.58" font-size="11.5" fill="#A6AFBF">Max</text>
+<text x="1315" y="628.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">961</text>
+<text x="1357" y="628.58" font-size="11.5" fill="#E9ECF2" text-anchor="end">1,072</text>
+<text x="1408" y="628.58" font-size="11.5" fill="#3DD68C" font-weight="600" text-anchor="end">+11.6%</text>
+<rect x="976" y="660" width="440" height="76" fill="#0F1217"/>
+<line x1="1006" y1="726.5" x2="1408" y2="726.5" stroke="#2A313D" stroke-width="1"/>
+<line x1="1006" y1="696.5" x2="1408" y2="696.5" stroke="#1B2029" stroke-width="1"/>
+<line x1="1006" y1="666.5" x2="1408" y2="666.5" stroke="#1B2029" stroke-width="1"/>
+<text x="1000" y="670" font-size="10" fill="#78829A" text-anchor="end">300K</text>
+<text x="1000" y="730" font-size="10" fill="#78829A" text-anchor="end">0</text>
+<path d="M1006 726 L1022.75 723.44 L1039.5 722.26 L1056.25 720.26 L1073 717.32 L1089.75 715.45 L1106.5 714.24 L1123.25 711.79 L1140 709 L1156.75 707.53 L1173.5 706.07 L1190.25 703.29 L1207 700.83 L1223.75 699.62 L1240.5 697.75 L1257.25 694.81 L1274 692.8 L1290.75 691.63 L1307.5 689.31 L1324.25 686.45 L1341 684.87 L1357.75 683.51 L1374.5 680.8 L1391.25 678.24 L1408 676.76" fill="none" stroke="#3987E5" stroke-width="1.5"/>
+<path d="M1006 726 L1020.79 724.21 L1035.58 722.1 L1050.38 719 L1065.17 717.01 L1079.96 715.73 L1094.75 713.15 L1109.54 710.2 L1124.33 708.65 L1139.12 707.1 L1153.92 704.16 L1168.71 701.57 L1183.5 700.28 L1198.29 698.31 L1213.08 695.21 L1227.88 693.09 L1242.67 691.84 L1257.46 689.39 L1272.25 686.37 L1287.04 684.7 L1301.83 683.26 L1316.62 680.4 L1331.42 677.69 L1346.21 676.35 L1361 673.96" fill="none" stroke="#E8792B" stroke-width="1.5"/>
+<circle cx="1408" cy="676.76" r="3" fill="#3987E5" stroke="#0F1217" stroke-width="1.5"/>
+<circle cx="1361" cy="673.96" r="3" fill="#E8792B" stroke="#0F1217" stroke-width="1.5"/>
+<rect x="1014" y="670" width="8" height="8" rx="2" fill="#3987E5"/>
+<text x="1027" y="677.73" font-size="10.5" fill="#A6AFBF">A · Hasaya_parse_2026.09.27_2114</text>
+<rect x="1014" y="684" width="8" height="8" rx="2" fill="#E8792B"/>
+<text x="1027" y="691.73" font-size="10.5" fill="#A6AFBF">B · Hasaya_parse_2026.10.04_2108</text>
+<text x="976" y="755.4" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">WITH THE PROPOSED RED AND GREEN</text>
+<text x="1416" y="755.2" font-size="10" fill="#78829A" text-anchor="end" class="m">#FF5063 #00DF85, bands 20% / 19%</text>
+<line x1="976" y1="761.5" x2="1416" y2="761.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="976" y="762" width="440" height="36" fill="#151921"/>
+<rect x="976" y="762" width="409" height="18" fill="#3987E5" opacity="0.2"/>
+<rect x="976" y="780" width="440" height="17" fill="#E8792B" opacity="0.19"/>
+<rect x="988" y="776" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="1002" y="784.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
+<rect x="1100" y="772" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="786" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="776.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="1112" y="790.73" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
+<text x="1238" y="777.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">41,739</text>
+<text x="1238" y="791.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">44,882</text>
+<text x="1298" y="777.58" font-size="11.5" fill="#00DF85" font-weight="600" text-anchor="end">+7.5%</text>
+<text x="1298" y="790.55" font-size="10" fill="#A6AFBF" text-anchor="end">+3,143</text>
+<text x="1356" y="777.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">87.8%</text>
+<text x="1356" y="791.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">85.5%</text>
+<text x="1410" y="784.08" font-size="11.5" fill="#FF5063" font-weight="600" text-anchor="end">−2.3 pt</text>
+<line x1="976" y1="797.5" x2="1416" y2="797.5" stroke="#1B2029" stroke-width="1"/>
+<rect x="976" y="798" width="385" height="18" fill="#3987E5" opacity="0.2"/>
+<rect x="976" y="816" width="367" height="17" fill="#E8792B" opacity="0.19"/>
+<rect x="988" y="812" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="1002" y="820.26" font-size="12" fill="#E9ECF2">Brannoch</text>
+<rect x="1100" y="808" width="6" height="2" rx="1" fill="#3987E5"/>
+<rect x="1100" y="822" width="6" height="2" rx="1" fill="#E8792B"/>
+<text x="1112" y="812.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="1112" y="826.73" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
+<text x="1238" y="813.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">39,308</text>
+<text x="1238" y="827.08" font-size="11.5" fill="#E9ECF2" font-weight="600" text-anchor="end">37,474</text>
+<text x="1298" y="813.58" font-size="11.5" fill="#FF5063" font-weight="600" text-anchor="end">−4.7%</text>
+<text x="1298" y="826.55" font-size="10" fill="#A6AFBF" text-anchor="end">−1,834</text>
+<text x="1356" y="813.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">89.0%</text>
+<text x="1356" y="827.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">90.9%</text>
+<text x="1410" y="820.08" font-size="11.5" fill="#00DF85" font-weight="600" text-anchor="end">+1.8 pt</text>
+<line x1="976" y1="833.5" x2="1416" y2="833.5" stroke="#1B2029" stroke-width="1"/>
+<text x="976" y="853.4" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">JOB SWATCHES ON THE BANDS</text>
+<rect x="976" y="860" width="440" height="18" fill="#3987E5" opacity="0.26"/>
+<rect x="976" y="878" width="440" height="17" fill="#E8792B" opacity="0.24"/>
+<text x="984" y="872.5" font-size="10" fill="#A6AFBF" font-weight="600">A</text>
+<text x="984" y="890.5" font-size="10" fill="#A6AFBF" font-weight="600">B</text>
+<rect x="1010" y="865" width="8" height="8" rx="2" fill="#FC6E03"/>
+<rect x="1010" y="882" width="8" height="8" rx="2" fill="#FC6E03"/>
+<text x="1014" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">SAM</text>
+<rect x="1051" y="865" width="8" height="8" rx="2" fill="#F53000"/>
+<rect x="1051" y="882" width="8" height="8" rx="2" fill="#F53000"/>
+<text x="1055" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">NIN</text>
+<rect x="1092" y="865" width="8" height="8" rx="2" fill="#E60000"/>
+<rect x="1092" y="882" width="8" height="8" rx="2" fill="#E60000"/>
+<text x="1096" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">WAR</text>
+<rect x="1133" y="865" width="8" height="8" rx="2" fill="#E86366"/>
+<rect x="1133" y="882" width="8" height="8" rx="2" fill="#E86366"/>
+<text x="1137" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">RDM</text>
+<rect x="1174" y="865" width="8" height="8" rx="2" fill="#C97557"/>
+<rect x="1174" y="882" width="8" height="8" rx="2" fill="#C97557"/>
+<text x="1178" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">COR</text>
+<rect x="1215" y="865" width="8" height="8" rx="2" fill="#F5C403"/>
+<rect x="1215" y="882" width="8" height="8" rx="2" fill="#F5C403"/>
+<text x="1219" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">MNK</text>
+<rect x="1256" y="865" width="8" height="8" rx="2" fill="#4C8FD4"/>
+<rect x="1256" y="882" width="8" height="8" rx="2" fill="#4C8FD4"/>
+<text x="1260" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">BLU</text>
+<rect x="1297" y="865" width="8" height="8" rx="2" fill="#827AAB"/>
+<rect x="1297" y="882" width="8" height="8" rx="2" fill="#827AAB"/>
+<text x="1301" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">PUP</text>
+<rect x="1338" y="865" width="8" height="8" rx="2" fill="#A685BD"/>
+<rect x="1338" y="882" width="8" height="8" rx="2" fill="#A685BD"/>
+<text x="1342" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">BLM</text>
+<rect x="1379" y="865" width="8" height="8" rx="2" fill="#FFFFFF"/>
+<rect x="1379" y="882" width="8" height="8" rx="2" fill="#FFFFFF"/>
+<text x="1383" y="906.4" font-size="9.5" fill="#78829A" text-anchor="middle" class="s">WHM</text>
+<rect x="1414" y="860" width="2" height="35" fill="#F2A33A"/>
+<text x="976" y="928.73" font-size="10.5" fill="#A6AFBF">Bands part by 0.102 (0.099 deutan). Red on band A 4.60, on band B 4.52.</text>
+<text x="976" y="943.73" font-size="10.5" fill="#78829A">The charting default, and B no longer reads as red: 0.09 from it, 0.10 from the accent.</text>
+<text x="976" y="958.73" font-size="10.5" fill="#78829A">Cost: B is SAM’s own colour (0.04); a B half row is a SAM row of the live tables.</text>
+<line x1="482" y1="60" x2="482" y2="970" stroke="#1B2029" stroke-width="1"/>
+<line x1="958" y1="60" x2="958" y2="970" stroke="#1B2029" stroke-width="1"/>
+</svg>

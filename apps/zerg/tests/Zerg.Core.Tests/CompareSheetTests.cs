@@ -486,7 +486,7 @@ public class CompareSheetTests
     }
 
     [Fact]
-    public void A_paused_session_is_taken_with_the_clock_it_was_paused_on()
+    public void A_paused_session_is_taken_with_the_clock_it_ended_on()
     {
         var t = new Tracker();
         t.Follow("Hasaya_2026.07.30.jsonl");
@@ -496,7 +496,8 @@ public class CompareSheetTests
         t.TogglePause(20_000);
 
         var run = ParseFile.Import(CompareSheet.Snapshot(t.Reader, t.Session, t.File, 90_000)!);
-        Assert.Equal(20_000, run.Session.PausedAt);
-        Assert.Equal(10, Compare.Measure(run).Duration);
+        // As its export would be: to the end of the last swing's second.
+        Assert.Equal(11_000, run.Session.PausedAt);
+        Assert.Equal(1, Compare.Measure(run).Duration);
     }
 }
