@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Media;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Zerg.Core;
@@ -243,28 +244,68 @@ public sealed partial class MainViewModel : ObservableObject
 
     // -------------------------------------------------------------- session
 
-    /// <summary>Start arms; during a session it re-arms for the next pull.</summary>
+    /// <summary>
+    /// How long Confirm waits to be pressed. After that the question is taken
+    /// back and the pull kept: the second button is Cancel while it is up,
+    /// and a Pause that cannot be reached is worse than a Restart that has
+    /// to be pressed again.
+    /// </summary>
+    static readonly TimeSpan AskFor = TimeSpan.FromSeconds(5);
+    DispatcherTimer? askTimer;
+
+    /// <summary>
+    /// Start arms; during a session it re-arms for the next pull. Over a
+    /// measurement the first press only asks, and the pair of buttons is
+    /// the answer: this one says Confirm, the second Cancel.
+    /// </summary>
     [RelayCommand]
     void Start()
     {
         // A saved parse has no file behind it to measure: that is done from
         // the session's own sections.
         if (Viewing) return;
-        live.Start();
+        bool asking = live.Asking;
+        if (!live.First())
+        {
+            // Still asking: the second half of a double-click is no answer.
+            if (asking) return;
+            askTimer ??= new DispatcherTimer(AskFor, DispatcherPriority.Background, (_, _) => Lapse(),
+                                             Dispatcher.CurrentDispatcher);
+            askTimer.Stop();
+            askTimer.Start();
+            LogSession("restart asked");
+            Recount();
+            return;
+        }
+        askTimer?.Stop();
         drill = healDrill = null;
         LogSession("armed");
         Recount();
     }
 
-    /// <summary>Cancel while armed, otherwise Pause or Resume.</summary>
+    /// <summary>Nobody answered: the pull is kept and the pair is itself again.</summary>
+    void Lapse()
+    {
+        askTimer?.Stop();
+        // Answered since, or ended by a new event file.
+        if (!live.Asking) return;
+        live.Withdraw();
+        LogSession("restart not confirmed");
+        Recount();
+    }
+
+    /// <summary>Cancel while a restart is asked about or the session is
+    /// armed, otherwise Pause or Resume.</summary>
     [RelayCommand]
     void Second()
     {
         if (Viewing) return;
-        bool armed = live.Session.Armed;
+        bool armed = live.Session.Armed, asking = live.Asking;
         if (armed) drill = healDrill = null;
         live.Second();
-        LogSession(armed ? "cancelled" : live.Session.PausedAt != null ? "paused" : "resumed");
+        if (asking) askTimer?.Stop();
+        LogSession(asking ? "restart called off" : armed ? "cancelled"
+                 : live.Session.PausedAt != null ? "paused" : "resumed");
         Recount();
     }
 
@@ -274,7 +315,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var s = live.Session;
         Log.Write(FormattableString.Invariant(
-            $"session {what}: armed {s.ArmedAt}, zero {s.StartedAt}, paused {s.PausedAt}, {s.Spans.Count} pauses before"));
+            $"session {what}: armed {s.ArmedAt}, zero {s.StartedAt}, paused {s.PausedAt}, ended {s.EndedAt}, {s.Spans.Count} pauses before"));
     }
 
     // -------------------------------------------------------------- filters
@@ -367,7 +408,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
         var c = snapshot = Shown.Count(excluded, Skillchains, now);
         if (c.Latched) LogSession("started");
-        View = SessionView.Of(Shown.Session, Viewing);
+        View = SessionView.Of(Shown.Session, Viewing, live.Asking);
         DescribeParse();
         Compare.SessionChanged(live.Session.StartedAt != null);
 

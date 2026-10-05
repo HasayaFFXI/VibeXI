@@ -1,7 +1,8 @@
 namespace Zerg.Core;
 
-/// <summary>How the Start button looks: the thing to press, waiting, or a re-do.</summary>
-public enum StartLook { Idle, Armed, Running, Locked }
+/// <summary>How the Start button looks: the thing to press, waiting, a re-do,
+/// or the answer that drops a measurement.</summary>
+public enum StartLook { Idle, Armed, Running, Confirm, Locked }
 
 /// <summary>How the second session button looks.</summary>
 public enum SecondLook { Off, Cancel, Live, Held }
@@ -20,13 +21,23 @@ public enum SessionLight { Idle, Armed, Live, Held }
 /// clock runs there is no arming left to cancel. One slot, one meaning at a
 /// time. Cancel is not a toggle, so it has no pressed state to announce.</para>
 ///
-/// <para>Cancel is only offered while armed, on purpose. A session with damage
-/// in it is ended by Start, not by Cancel: "cancel" would then mean throwing a
-/// measurement away, a far more destructive act than calling one off before
-/// it began.</para>
+/// <para>Cancel never throws a measurement away. A session with damage in it
+/// is ended by Start, not by Cancel: "cancel" would then mean dropping what
+/// was measured, a far more destructive act than calling something off
+/// before it happened. So it is offered twice, and both times it calls off
+/// what has not happened yet: an arming, or a restart that is still only
+/// being asked about.</para>
+///
+/// <para><b>A restart over a measurement is asked about in the pair itself.</b>
+/// Start becomes Confirm and the second button Cancel, in the places they
+/// already were. Reaching for Pause and pressing Restart is the slip this is
+/// for, and the press that follows it lands on the second button: Cancel,
+/// which loses nothing.</para>
 /// </summary>
+/// <param name="StartAsks">Pressing Start now only asks. A menu that holds
+/// the pair stays open for the answer.</param>
 public sealed record SessionView(
-    string StartText, string StartTip, StartLook StartLook, bool StartEnabled,
+    string StartText, string StartTip, StartLook StartLook, bool StartEnabled, bool StartAsks,
     string SecondText, string SecondTip, SecondLook SecondLook, bool SecondEnabled,
     bool SecondPressed, bool SecondIsToggle, SessionLight Light)
 {
@@ -34,25 +45,39 @@ public sealed record SessionView(
 
     /// <param name="imported">An imported parse is a finished recording: both
     /// buttons are held off everywhere they appear.</param>
-    public static SessionView Of(Session session, bool imported = false)
+    /// <param name="asking">Start was pressed over a measurement and waits
+    /// for its answer (<see cref="Tracker.Asking"/>).</param>
+    public static SessionView Of(Session session, bool imported = false, bool asking = false)
     {
         if (imported)
         {
             const string why = "Viewing a saved parse. Switch to Damage or Healing to measure your own.";
-            return new SessionView("Start", why, StartLook.Locked, false,
+            return new SessionView("Start", why, StartLook.Locked, false, false,
                                    "Pause", why, SecondLook.Off, false, false, false, SessionLight.Held);
         }
 
         bool armed = session.Armed, started = session.StartedAt != null, paused = session.PausedAt != null;
+        // The light is the session's, question or no question: it is still
+        // being measured, or still held, until Confirm is pressed.
+        if (asking && started)
+            return new SessionView(
+                "Confirm", "Confirm" + Dash + "drop this pull and measure a fresh one from here. " +
+                           "Left alone for a few seconds, the pull is kept.",
+                StartLook.Confirm, true, false,
+                "Cancel", "Cancel" + Dash + "keep this pull. Nothing is dropped.",
+                SecondLook.Cancel, true, false, false,
+                paused ? SessionLight.Held : SessionLight.Live);
+
         return new SessionView(
             StartText: armed || started ? "Restart" : "Start",
             StartTip: armed ? "Armed" + Dash + "the clock starts on the first counted hit. Press again to re-arm."
-                    : started ? "Zero the clock and measure a fresh pull from here"
+                    : started ? "Zero the clock and measure a fresh pull from here. Asks first: this pull is dropped."
                     : "Arm the session. The clock starts on the first hit, so pressing early costs nothing.",
             // A state, not a hover: "Restart" alone cannot say whether the clock
             // is running or still waiting, and that is the one thing being watched.
             StartLook: armed ? StartLook.Armed : started ? StartLook.Running : StartLook.Idle,
             StartEnabled: true,
+            StartAsks: started,
 
             SecondText: armed ? "Cancel" : paused ? "Resume" : "Pause",
             SecondTip: armed ? "Cancel" + Dash + "disarm. Nothing is counted until Start is pressed again."

@@ -39,6 +39,14 @@ public sealed class Session
     public List<PauseSpan> Spans { get; set; } = [];
     /// <summary>When Pause was pressed, while paused.</summary>
     public double? PausedAt { get; set; }
+    /// <summary>Where a paused clock is read: the end of the second its last
+    /// counted row landed in (<see cref="Snap"/>). Null while running, and for
+    /// a pause nobody has snapped, which is read at <see cref="PausedAt"/>.</summary>
+    public double? EndedAt { get; set; }
+
+    /// <summary>The wire clock is whole seconds: a row stamped <c>t</c> landed
+    /// somewhere in the second that begins there.</summary>
+    public const double Second = 1000;
 
     public static double Now() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
@@ -80,9 +88,11 @@ public sealed class Session
         return ms;
     }
 
-    /// <summary>Is <paramref name="t"/> inside a pause? Those events are dropped, not shifted.</summary>
+    /// <summary>Is <paramref name="t"/> inside a pause? Those events are dropped, not shifted.
+    /// A snapped pause begins where its clock is read, not at the press.</summary>
     public bool InPause(double t)
     {
+        if (EndedAt is double end && t >= end) return true;
         foreach (var s in Spans)
             if (t >= s.From && t < s.To) return true;
         return PausedAt is double p && t >= p;
@@ -107,11 +117,13 @@ public sealed class Session
     }
 
     /// <summary>How long the session has run at <paramref name="now"/>. Frozen
-    /// while paused, because the paused time grows at exactly the same rate.</summary>
+    /// while paused, because the paused time grows at exactly the same rate;
+    /// a snapped pause is frozen where it ended.</summary>
     public double Elapsed(double? now = null)
     {
         if (StartedAt is not double start) return 0;
         var n = now ?? Now();
+        if (EndedAt is double end && n > end) n = end;
         if (n < start) return 0;
         return n - start - PausedBefore(n);
     }
@@ -128,19 +140,51 @@ public sealed class Session
         return this;
     }
 
+    /// <summary>The pause that ends is the one that was pressed: the quiet
+    /// stretch a snap took off the end goes back on the clock, since the
+    /// session turned out not to be over.</summary>
     public Session Resume(double? now = null)
     {
         if (PausedAt is double p)
         {
             Spans.Add(new PauseSpan(p, now ?? Now()));
             PausedAt = null;
+            EndedAt = null;
         }
+        return this;
+    }
+
+    /// <summary>
+    /// Snaps a paused clock back to the last thing it measured.
+    /// <paramref name="last"/> is the time of the last counted row the session
+    /// covers; the clock is then read at the end of that row's second, and
+    /// whatever came after it (the wait before somebody pressed Pause, an
+    /// earlier pause and resume with nothing counted since) is time nobody
+    /// was fighting, and no DPS is divided by it.
+    ///
+    /// <para>The end of the second, not its start: the row landed somewhere
+    /// inside it, which is why arming rounds down to count the first one. A
+    /// pull of one swing is a second long, not nothing. Never later than the
+    /// clock really stopped: the press, or an earlier pause that began inside
+    /// that second.</para>
+    ///
+    /// <para>The press and the pauses are left as they happened, so Resume
+    /// undoes it. Nothing to snap to, or not paused: read at the press.</para>
+    /// </summary>
+    public Session Snap(double? last)
+    {
+        EndedAt = null;
+        if (PausedAt is not double p || last is not double t) return this;
+        double end = Math.Min(t + Second, p);
+        foreach (var s in Spans)
+            if (s.From > t) { end = Math.Min(end, s.From); break; }
+        EndedAt = end;
         return this;
     }
 
     /// <summary>A deep copy, so a snapshot cannot be moved by the live session.</summary>
     public Session Clone() => new()
     {
-        ArmedAt = ArmedAt, StartedAt = StartedAt, Spans = [.. Spans], PausedAt = PausedAt,
+        ArmedAt = ArmedAt, StartedAt = StartedAt, Spans = [.. Spans], PausedAt = PausedAt, EndedAt = EndedAt,
     };
 }

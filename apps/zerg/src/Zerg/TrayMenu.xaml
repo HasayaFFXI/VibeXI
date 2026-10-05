@@ -44,8 +44,10 @@
 
   <MenuItem Header="Show Zerg" FontWeight="SemiBold" Click="OnShow"/>
   <Separator/>
+  <!-- A Restart that asks first keeps the menu open: the answer is this
+       line and the next, where the question was put. -->
   <MenuItem Header="{Binding View.StartText}" Command="{Binding StartCommand}" IsEnabled="{Binding View.StartEnabled}"
-            AutomationProperties.AutomationId="Start"/>
+            StaysOpenOnClick="{Binding View.StartAsks}" AutomationProperties.AutomationId="Start"/>
   <MenuItem Header="{Binding View.SecondText}" Command="{Binding SecondCommand}" IsEnabled="{Binding View.SecondEnabled}"
             AutomationProperties.AutomationId="Second"/>
   <Separator/>

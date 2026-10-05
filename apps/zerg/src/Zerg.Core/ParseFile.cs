@@ -152,8 +152,14 @@ public static class ParseFile
         foreach (var k in Js.Keys(roster.Manual.Keys.ToList())) manual[k] = roster.Manual[k];
         var jobs = new JsonArray();
         foreach (var k in Js.Keys(roster.Jobs.Keys.ToList())) jobs.Add(JobRecord(k, roster.Jobs[k]));
+        // Where the clock is read is where the file says it was paused: a
+        // snapped session (Session.Snap) is written as one paused there, in
+        // the shape every reader already knows. A pause after that point is
+        // inside the one the file ends on, and is not written.
+        var paused = session.EndedAt ?? session.PausedAt;
         var spans = new JsonArray();
-        foreach (var s in session.Spans) spans.Add(new JsonObject { ["from"] = s.From, ["to"] = s.To });
+        foreach (var s in session.Spans)
+            if (paused is not double end || s.From < end) spans.Add(new JsonObject { ["from"] = s.From, ["to"] = s.To });
         var events = new JsonArray();
         foreach (var e in reader.Events) if (keep(e.T)) events.Add(ToRecord(e));
         var heals = new JsonArray();
@@ -171,7 +177,7 @@ public static class ParseFile
                 ["armedAt"] = session.ArmedAt,
                 ["startedAt"] = session.StartedAt,
                 ["spans"] = spans,
-                ["pausedAt"] = session.PausedAt,
+                ["pausedAt"] = paused,
             },
             ["kinds"] = kinds,
             ["manual"] = manual,

@@ -60,7 +60,8 @@ public class ImportExportTests
         // Not the row before the zero, nor the one that landed in the pause.
         Assert.Equal([100d, 300d, 50d], parse.Source.Events.Select(e => e.Dmg));
         Assert.Single(parse.Source.Heals);
-        Assert.Equal((10_000d, 40_000d), (parse.Session.StartedAt, parse.Session.PausedAt));
+        // Paused where the last swing's second ended, not at the press 7 s later.
+        Assert.Equal((10_000d, 33_000d), (parse.Session.StartedAt, parse.Session.PausedAt));
         Assert.Equal([new PauseSpan(20_000, 30_000)], parse.Session.Spans);
         Assert.Equal("Hasaya_2026.07.30.jsonl", parse.File);
         // The jobs travel in the roster: one of them was written before Start.
@@ -103,7 +104,7 @@ public class ImportExportTests
         var b = shown.Count(Nobody, true, 9_999_999);
 
         Assert.True(shown.Imported);
-        Assert.Equal(20_000, b.Elapsed);
+        Assert.Equal(13_000, b.Elapsed);
         Assert.Equal((a.Totals.Total, a.Elapsed, a.Healing.Total), (b.Totals.Total, b.Elapsed, b.Healing.Total));
         Assert.Equal(a.Totals.Actors.Select(x => (x.Name, x.Total, x.Dps)), b.Totals.Actors.Select(x => (x.Name, x.Total, x.Dps)));
         Assert.Equal(a.Events.Select(e => (e.T, e.Actor, e.Dmg)), b.Events.Select(e => (e.T, e.Actor, e.Dmg)));
@@ -139,7 +140,7 @@ public class ImportExportTests
 
         var after = shown.Count(Nobody, true, 99_000);
         Assert.Equal((before.Totals.Total, before.Elapsed), (after.Totals.Total, after.Elapsed));
-        Assert.Equal(40_000, shown.Session.PausedAt);
+        Assert.Equal(33_000, shown.Session.PausedAt);
         Assert.Equal("Hasaya_2026.07.30.jsonl", shown.File);
         Assert.Equal(0, shown.Lines);
     }
@@ -158,6 +159,26 @@ public class ImportExportTests
         static string Undated(string text) => Regex.Replace(text, "\"exported\": \"[^\"]*\"", "\"exported\": \"\"");
         Assert.NotEqual(original, again);
         Assert.Equal(Undated(original), Undated(again));
+    }
+
+    [Fact]
+    public void An_older_export_keeps_its_clock_until_it_is_exported_again()
+    {
+        var live = Paused();
+        // As a Zerg from before the clock was snapped wrote it: paused at the press.
+        var old = live.Session.Clone();
+        old.EndedAt = null;
+        var shown = Tracker.Of(ParseFile.Import(ParseFile.Stringify(
+            ParseFile.Export(live.Reader, old, t => old.At(t) != null, live.File, 40_000))));
+
+        Assert.Equal(40_000, shown.Session.PausedAt);
+        Assert.Equal(20_000, shown.Count(Nobody, true).Elapsed);
+
+        var again = ParseFile.Import(shown.Export(77_000)!);
+        Assert.Equal(33_000, again.Session.PausedAt);
+        Assert.Equal(13_000, Tracker.Of(again).Count(Nobody, true).Elapsed);
+        // Saving it changed the file, not what is on screen.
+        Assert.Equal(20_000, shown.Count(Nobody, true).Elapsed);
     }
 
     // ------------------------------------------------------------- wording

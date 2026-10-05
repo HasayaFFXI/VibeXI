@@ -133,6 +133,31 @@ public static class Counting
     }
 
     /// <summary>
+    /// What a paused session's clock is snapped back to
+    /// (<see cref="Session.Snap"/>): the time of the last row the session
+    /// covers that would be counted, or null when there is none.
+    ///
+    /// <para>The same test as the zero's, from the other end: a monster's
+    /// swing does not hold the clock open, and a miss does. A heal does not
+    /// either, as it does not start one. Asked without the viewer's switches,
+    /// though: the zero is latched once and stays, but an end worked out from
+    /// the exclusions would move with every chip, and the file an export
+    /// writes carries no filters to work it out from again.</para>
+    /// </summary>
+    public static double? LastCounted(IReadOnlyList<CombatEvent> events, Session sn, FilterOptions? opts = null)
+    {
+        opts ??= new FilterOptions();
+        double? last = null;
+        foreach (var e in events)
+        {
+            if (last is double t && e.T <= t) continue;
+            if (sn.At(e.T) == null) continue;
+            if (Counted(e, opts.Roster, opts.Actors, opts.Skillchains) != null) last = e.T;
+        }
+        return last;
+    }
+
+    /// <summary>
     /// Rows → uses. One action is one use however many targets it reached, but
     /// it writes a row per target: unfolded, an AoE weaponskill on three mobs
     /// would count three hits, inflate the swing count accuracy divides by, and

@@ -268,13 +268,95 @@ public class TrackerTests
         t.Feed([Lines.Hit(40, "Hasaya", 999)]);
         var held = t.Count(Nobody, true, 50_000);
         Assert.Equal(100, held.Totals.Total);
-        Assert.Equal(10_000, held.Elapsed);
+        Assert.Equal(1_000, held.Elapsed);                     // read at the last swing, not at the press
         t.Second(60_000);                                      // resume
         t.Feed([Lines.Hit(65, "Hasaya", 50)]);
         var c = t.Count(Nobody, true, 70_000);
         Assert.Equal(150, c.Totals.Total);
         Assert.Equal(20_000, c.Elapsed);
         Assert.Equal(15_000, c.Events[^1].T);                  // the pause is subtracted
+    }
+
+    [Fact]
+    public void A_paused_clock_ends_with_the_last_party_damage_row()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(20, "Tank", 120), Lines.Hit(24, "Hasaya", 300), Lines.Hit(25, "Hasaya", 0, hit: false),
+                // Neither of these holds the clock open: a monster's swing, and a heal.
+                Lines.Hit(27, "Goblin", 9, actorKind: "mob", target: "Hasaya", targetKind: "player"),
+                Lines.Heal(28, "Sylviane", 300)]);
+        t.Count(Nobody, true, 29_000);
+        t.Second(60_000);                                      // pause, 35 s after the last swing
+
+        // To the end of the second that swing landed in, a miss though it was.
+        var held = t.Count(Nobody, true, 90_000);
+        Assert.Equal((60_000d, 26_000d), (t.Session.PausedAt, t.Session.EndedAt));
+        Assert.Equal(6_000, held.Elapsed);
+        Assert.Equal([("Hasaya", 50d), ("Tank", 20d)], held.Totals.Actors.Select(a => (a.Name, a.Dps)));
+        // What came after it is outside the session, the heal included.
+        Assert.Equal(0, held.Healing.Total);
+
+        // The end is the session's, not the viewer's: no switch moves it.
+        Assert.Equal(6_000, t.Count(new HashSet<string> { "Hasaya" }, true, 90_000).Elapsed);
+        Assert.Equal(6_000, t.Count(Nobody, false, 90_000).Elapsed);
+    }
+
+    [Fact]
+    public void A_row_from_before_the_press_read_after_it_still_ends_the_clock()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(20, "Hasaya", 100)]);
+        t.Count(Nobody, true, 21_000);
+        t.Second(30_400);
+        Assert.Equal(21_000, t.Session.EndedAt);
+
+        // Written at 30 s, and polled after the press at 30.4 s.
+        t.Feed([Lines.Hit(30, "Hasaya", 50), Lines.Hit(31, "Hasaya", 999)]);
+        var held = t.Count(Nobody, true, 50_000);
+        Assert.Equal(150, held.Totals.Total);
+        // Its second runs past the press, and the clock never ends later than it stopped.
+        Assert.Equal(30_400, t.Session.EndedAt);
+        Assert.Equal(10_400, held.Elapsed);
+    }
+
+    [Fact]
+    public void A_pause_with_nothing_counted_since_the_last_one_ends_before_it()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(20, "Hasaya", 100), Lines.Hit(25, "Hasaya", 200)]);
+        t.Count(Nobody, true, 26_000);
+        t.Second(40_000);                                      // pause
+        Assert.Equal(6_000, t.Count(Nobody, true, 45_000).Elapsed);
+        t.Second(50_000);                                      // resume: the wait is back on the clock
+        Assert.Null(t.Session.EndedAt);
+        Assert.Equal(30_000, t.Count(Nobody, true, 60_000).Elapsed);
+        t.Second(70_000);                                      // paused again, and nobody swung
+        Assert.Equal(6_000, t.Count(Nobody, true, 99_000).Elapsed);
+
+        // The file is one that was paused there: the later pause is inside that one.
+        var parse = ParseFile.Import(t.Export(99_000)!);
+        Assert.Equal(26_000, parse.Session.PausedAt);
+        Assert.Empty(parse.Session.Spans);
+        Assert.Equal(6_000, Tracker.Of(parse).Count(Nobody, true).Elapsed);
+    }
+
+    [Fact]
+    public void A_snapped_clock_never_runs_into_an_earlier_pause()
+    {
+        // Paused 300 ms into the last swing's second, resumed, and paused again.
+        var s = Session.Arm(20_000).Start(20_000).Pause(25_300).Resume(40_000).Pause(50_000);
+        Assert.Equal(15_300, s.Elapsed(99_000));
+        Assert.Equal(25_300, s.Snap(25_000).EndedAt);
+        Assert.Equal(5_300, s.Elapsed(99_000));
+        Assert.Null(s.At(25_300));
+
+        // Nothing to snap to, or a session that is running: read as before.
+        Assert.Null(s.Snap(null).EndedAt);
+        Assert.Equal(15_300, s.Elapsed(99_000));
+        Assert.Null(s.Resume(60_000).Snap(25_000).EndedAt);
     }
 
     [Fact]
@@ -308,6 +390,83 @@ public class TrackerTests
         Assert.Equal(lines, t.Lines);
         Assert.Equal("SAM/WAR", t.Reader.Roster.JobLabel("Hasaya"));
         Assert.Equal(0, t.Count(Nobody, true, 41_000).Totals.Total);
+    }
+
+    [Fact]
+    public void The_first_button_arms_at_once_while_nothing_is_measured()
+    {
+        var t = Following();
+        Assert.True(t.First(20_000));                          // idle
+        Assert.True(t.Session.Armed);
+        Assert.True(t.First(25_000));                          // armed: nothing to lose yet
+        Assert.Equal(25_000, t.Session.ArmedAt);
+        Assert.False(t.Asking);
+    }
+
+    [Fact]
+    public void Over_a_measurement_the_first_button_asks_and_the_next_press_confirms()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(21, "Hasaya", 100)]);
+        t.Count(Nobody, true, 30_000);
+
+        Assert.False(t.First(40_000));
+        Assert.True(t.Asking);
+        // Asked about, not done: the pull is measured as before.
+        Assert.Equal(21_000, t.Session.StartedAt);
+        Assert.Equal(100, t.Count(Nobody, true, 40_100).Totals.Total);
+
+        // The second half of a double-click is not an answer.
+        Assert.False(t.First(40_000 + Tracker.Settle - 1));
+        Assert.True(t.Asking);
+        Assert.Single(t.Reader.Events);
+
+        Assert.True(t.First(40_000 + Tracker.Settle));
+        Assert.False(t.Asking);
+        Assert.True(t.Session.Armed);
+        Assert.Empty(t.Reader.Events);
+    }
+
+    [Fact]
+    public void The_second_button_calls_off_a_restart_and_holds_nothing()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(21, "Hasaya", 100)]);
+        t.Count(Nobody, true, 30_000);
+        t.First(40_000);
+
+        t.Second(41_000);
+        Assert.False(t.Asking);
+        Assert.Null(t.Session.PausedAt);                       // Cancel, not Pause
+        Assert.Equal(100, t.Count(Nobody, true, 42_000).Totals.Total);
+
+        t.Second(43_000);                                      // Pause again
+        Assert.Equal(43_000, t.Session.PausedAt);
+        // Asked again, the first press asks again.
+        Assert.False(t.First(50_000));
+        Assert.True(t.Asking);
+    }
+
+    [Fact]
+    public void A_restart_nobody_answered_or_a_new_file_ends_the_question()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(21, "Hasaya", 100)]);
+        t.Count(Nobody, true, 30_000);
+
+        t.First(40_000);
+        t.Withdraw();
+        Assert.False(t.Asking);
+        Assert.Single(t.Reader.Events);
+
+        t.First(50_000);
+        t.Follow("Hasaya_2026.07.31.jsonl");
+        Assert.False(t.Asking);
+        // Nothing is measured in the new file, so Start is Start.
+        Assert.True(t.First(60_000));
     }
 
     [Fact]
@@ -480,8 +639,8 @@ public class TrackerTests
     {
         var t = Following();
         t.Start(20_000);
-        t.Feed([Lines.Hit(20, "Hasaya", 100), Lines.Heal(21, "Sylviane", 300)]);
-        t.Count(Nobody, true, 22_000);
+        t.Feed([Lines.Hit(20, "Hasaya", 100), Lines.Heal(21, "Sylviane", 300), Lines.Hit(22, "Hasaya", 100)]);
+        t.Count(Nobody, true, 23_000);
         t.Second(30_000);                                      // pause
         t.Feed([Lines.Heal(40, "Sylviane", 999)]);
         Assert.Equal(300, t.Count(Nobody, true, 50_000).Healing.Total);
@@ -557,6 +716,30 @@ public class TrackerTests
         Assert.True(v.SecondPressed);
         Assert.Equal(SecondLook.Held, v.SecondLook);
         Assert.Equal(SessionLight.Held, v.Light);
+    }
+
+    [Fact]
+    public void The_buttons_while_a_restart_is_asked_about()
+    {
+        var s = Session.Arm(5000).Start(6000);
+        Assert.True(SessionView.Of(s).StartAsks);
+
+        var v = SessionView.Of(s, asking: true);
+        Assert.Equal("Confirm", v.StartText);
+        Assert.Equal(StartLook.Confirm, v.StartLook);
+        Assert.False(v.StartAsks);
+        Assert.Equal("Cancel", v.SecondText);
+        Assert.True(v.SecondEnabled);
+        Assert.False(v.SecondIsToggle);
+        Assert.Equal(SecondLook.Cancel, v.SecondLook);
+        // Still being measured, and the light says so.
+        Assert.Equal(SessionLight.Live, v.Light);
+        Assert.Equal(SessionLight.Held, SessionView.Of(s.Pause(9000), asking: true).Light);
+
+        // There is a question only over a measurement.
+        Assert.False(SessionView.Of(Session.Idle()).StartAsks);
+        Assert.False(SessionView.Of(Session.Arm(5000)).StartAsks);
+        Assert.Equal("Restart", SessionView.Of(Session.Arm(5000), asking: true).StartText);
     }
 
     [Fact]
