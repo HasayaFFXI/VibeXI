@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1488" height="2368" viewBox="0 0 1488 2368">
-<style>text{font-family:'Segoe UI Variable Text','Segoe UI Variable','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:pre}.d{font-family:'Segoe UI Variable Display','Segoe UI Variable','Segoe UI',sans-serif}.s{font-family:'Segoe UI Variable Small','Segoe UI Variable','Segoe UI',sans-serif}.m{font-family:'Cascadia Mono','Consolas',monospace}.i{font-family:'Segoe Fluent Icons','Segoe MDL2 Assets'}.halo text{paint-order:stroke;stroke:#000;stroke-opacity:.6;stroke-width:2.4px;stroke-linejoin:round}.halo .nh,.halo text[fill='#191004'],.halo text[fill='#1B0508'],.halo text[fill='#07130D']{stroke:none}</style>
+<style>text{font-family:'Segoe UI Variable Text','Segoe UI Variable','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:pre}.d{font-family:'Segoe UI Variable Display','Segoe UI Variable','Segoe UI',sans-serif}.s{font-family:'Segoe UI Variable Small','Segoe UI Variable','Segoe UI',sans-serif}.m{font-family:'Cascadia Mono','Consolas',monospace}.i{font-family:'Segoe Fluent Icons','Segoe MDL2 Assets'}.halo text{paint-order:stroke;stroke:#000;stroke-opacity:.6;stroke-width:2.4px;stroke-linejoin:round}.halo .nh,.halo text[fill='#191004'],.halo text[fill='#190405'],.halo text[fill='#051306']{stroke:none}</style>
 <defs><clipPath id="k1"><rect x="0" y="0" width="1440" height="900" rx="8"/></clipPath><clipPath id="k2"><rect x="0" y="238" width="940" height="266" rx="0"/></clipPath><clipPath id="k3"><rect x="0" y="559" width="940" height="317" rx="0"/></clipPath><clipPath id="k4"><rect x="983" y="212" width="377" height="234" rx="0"/></clipPath><clipPath id="k5"><rect x="941" y="467" width="499" height="409" rx="0"/></clipPath><clipPath id="k6"><rect x="941" y="755" width="499" height="121" rx="0"/></clipPath><filter id="s7" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter><clipPath id="k8"><rect x="0" y="0" width="1440" height="900" rx="8"/></clipPath><clipPath id="k9"><rect x="0" y="238" width="940" height="266" rx="0"/></clipPath><clipPath id="k10"><rect x="941" y="224" width="499" height="220" rx="0"/></clipPath><clipPath id="k11"><rect x="42" y="547" width="818" height="309" rx="0"/></clipPath><clipPath id="k12"><rect x="941" y="445" width="499" height="431" rx="0"/></clipPath><clipPath id="k13"><rect x="941" y="733" width="499" height="143" rx="0"/></clipPath><filter id="s14" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="5"/></filter><filter id="s15" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="11"/></filter><filter id="s16" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="11"/></filter></defs>
 <rect width="1488" height="2368" fill="#0A0C10"/>
 <text x="24" y="36.39" font-size="18" fill="#E9ECF2" font-weight="600" class="d">The layout is the user’s</text>
@@ -38,7 +38,7 @@
 <line x1="214.5" y1="46" x2="214.5" y2="66" stroke="#2A313D" stroke-width="1"/>
 <rect x="226" y="43" width="68" height="26" rx="4" fill="#151921"/>
 <rect x="226.5" y="43.5" width="67" height="25" rx="3.5" fill="none" stroke="#1B2029" stroke-width="1"/>
-<text x="260" y="60.26" font-size="12" fill="#515A6B" text-anchor="middle">Export…</text>
+<text x="260" y="60.26" font-size="12" fill="#5E677A" text-anchor="middle">Export…</text>
 <rect x="300.5" y="43.5" width="69" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
 <text x="335" y="60.26" font-size="12" fill="#A6AFBF" text-anchor="middle">Import…</text>
 <line x1="382.5" y1="46" x2="382.5" y2="66" stroke="#2A313D" stroke-width="1"/>
@@ -48,10 +48,10 @@
 <path d="M404.6 56.2 l2.6 2.6 l4.6 -5" fill="none" stroke="#191004" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
 <text x="420" y="60.08" font-size="11.5" fill="#E9ECF2" font-weight="500">Include Skillchains</text>
 <rect x="529.5" y="44.5" width="95" height="23" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
-<rect x="537.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<rect x="537.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#838DA5" stroke-width="1"/>
 <text x="555" y="60.08" font-size="11.5" fill="#A6AFBF" font-weight="500">Hide names</text>
 <rect x="631.5" y="44.5" width="179" height="23" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
-<rect x="639.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<rect x="639.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#838DA5" stroke-width="1"/>
 <text x="657" y="60.08" font-size="11.5" fill="#A6AFBF" font-weight="500">Click-through</text>
 <rect x="734.59" y="48" width="71" height="16" rx="3" fill="#0F1217"/>
 <rect x="735.09" y="48.5" width="70" height="15" rx="2.5" fill="none" stroke="#3D4656" stroke-width="1"/>
@@ -62,74 +62,74 @@
 <line x1="1412.5" y1="51" x2="1412.5" y2="61" stroke="#A6AFBF" stroke-width="1"/>
 <line x1="1413" y1="56.5" x2="1419" y2="56.5" stroke="#A6AFBF" stroke-width="1"/>
 <rect x="0" y="76" width="1440" height="64" fill="#0F1217"/>
-<text x="14" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">TOTAL DAMAGE</text>
+<text x="14" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">TOTAL DAMAGE</text>
 <text x="14" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">227,587</text>
-<text x="14" y="132.73" font-size="10.5" fill="#78829A">counting</text>
+<text x="14" y="132.73" font-size="10.5" fill="#838DA5">counting</text>
 <line x1="288.5" y1="86" x2="288.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="302" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">ELAPSED</text>
-<text x="302" y="116.81" font-size="22" font-weight="600" class="d" fill="#3DD68C">14:26</text>
-<text x="302" y="132.73" font-size="10.5" fill="#78829A">started 20:31:12</text>
+<text x="302" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">ELAPSED</text>
+<text x="302" y="116.81" font-size="22" font-weight="600" class="d" fill="#22E05A">14:26</text>
+<text x="302" y="132.73" font-size="10.5" fill="#838DA5">started 20:31:12</text>
 <line x1="576.5" y1="86" x2="576.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="590" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">PARTY DPS</text>
+<text x="590" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">PARTY DPS</text>
 <text x="590" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">262.8</text>
-<text x="590" y="132.73" font-size="10.5" fill="#78829A">10 characters</text>
+<text x="590" y="132.73" font-size="10.5" fill="#838DA5">10 characters</text>
 <line x1="864.5" y1="86" x2="864.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="878" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">TOP DPS</text>
+<text x="878" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">TOP DPS</text>
 <circle cx="883" cy="109" r="5" fill="#FC6E03"/>
 <text x="895" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">Hasaya</text>
-<text x="878" y="132.73" font-size="10.5" fill="#78829A">SAM/WAR · 17.9% of 227,587 damage</text>
+<text x="878" y="132.73" font-size="10.5" fill="#838DA5">SAM/WAR · 17.9% of 227,587 damage</text>
 <line x1="1152.5" y1="86" x2="1152.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="1166" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">BIGGEST HIT</text>
+<text x="1166" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">BIGGEST HIT</text>
 <text x="1166" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">1,459</text>
-<text x="1166" y="132.73" font-size="10.5" fill="#78829A">Xatsh · Eagle Eye Shot</text>
-<rect x="178" y="112.65" width="1.18" height="9.35" fill="#78829A" opacity="0.75"/>
-<rect x="180.18" y="99.43" width="1.18" height="22.57" fill="#78829A" opacity="0.75"/>
-<rect x="182.36" y="106.47" width="1.18" height="15.53" fill="#78829A" opacity="0.75"/>
-<rect x="184.55" y="105.1" width="1.18" height="16.9" fill="#78829A" opacity="0.75"/>
-<rect x="186.73" y="106.21" width="1.18" height="15.79" fill="#78829A" opacity="0.75"/>
-<rect x="188.91" y="101.81" width="1.18" height="20.19" fill="#78829A" opacity="0.75"/>
-<rect x="191.09" y="101.74" width="1.18" height="20.26" fill="#78829A" opacity="0.75"/>
-<rect x="193.27" y="102.51" width="1.18" height="19.49" fill="#78829A" opacity="0.75"/>
-<rect x="195.45" y="100.48" width="1.18" height="21.52" fill="#78829A" opacity="0.75"/>
-<rect x="197.64" y="105.22" width="1.18" height="16.78" fill="#78829A" opacity="0.75"/>
-<rect x="199.82" y="102.64" width="1.18" height="19.36" fill="#78829A" opacity="0.75"/>
-<rect x="202" y="102.32" width="1.18" height="19.68" fill="#78829A" opacity="0.75"/>
-<rect x="204.18" y="109.23" width="1.18" height="12.77" fill="#78829A" opacity="0.75"/>
-<rect x="206.36" y="107.58" width="1.18" height="14.42" fill="#78829A" opacity="0.75"/>
-<rect x="208.55" y="99.15" width="1.18" height="22.85" fill="#78829A" opacity="0.75"/>
-<rect x="210.73" y="105.74" width="1.18" height="16.26" fill="#78829A" opacity="0.75"/>
-<rect x="212.91" y="104.21" width="1.18" height="17.79" fill="#78829A" opacity="0.75"/>
-<rect x="215.09" y="107.9" width="1.18" height="14.1" fill="#78829A" opacity="0.75"/>
-<rect x="217.27" y="100.29" width="1.18" height="21.71" fill="#78829A" opacity="0.75"/>
-<rect x="219.45" y="96" width="1.18" height="26" fill="#78829A" opacity="0.75"/>
-<rect x="221.64" y="105.08" width="1.18" height="16.92" fill="#78829A" opacity="0.75"/>
-<rect x="223.82" y="97.2" width="1.18" height="24.8" fill="#78829A" opacity="0.75"/>
-<rect x="226" y="103.43" width="1.18" height="18.57" fill="#78829A" opacity="0.75"/>
-<rect x="228.18" y="98.57" width="1.18" height="23.43" fill="#78829A" opacity="0.75"/>
-<rect x="230.36" y="105.17" width="1.18" height="16.83" fill="#78829A" opacity="0.75"/>
-<rect x="232.55" y="102.79" width="1.18" height="19.21" fill="#78829A" opacity="0.75"/>
-<rect x="234.73" y="107.48" width="1.18" height="14.52" fill="#78829A" opacity="0.75"/>
-<rect x="236.91" y="96.9" width="1.18" height="25.1" fill="#78829A" opacity="0.75"/>
-<rect x="239.09" y="110.08" width="1.18" height="11.92" fill="#78829A" opacity="0.75"/>
-<rect x="241.27" y="106.82" width="1.18" height="15.18" fill="#78829A" opacity="0.75"/>
-<rect x="243.45" y="102.96" width="1.18" height="19.04" fill="#78829A" opacity="0.75"/>
-<rect x="245.64" y="109.19" width="1.18" height="12.81" fill="#78829A" opacity="0.75"/>
-<rect x="247.82" y="104.63" width="1.18" height="17.37" fill="#78829A" opacity="0.75"/>
-<rect x="250" y="107.13" width="1.18" height="14.87" fill="#78829A" opacity="0.75"/>
-<rect x="252.18" y="103.61" width="1.18" height="18.39" fill="#78829A" opacity="0.75"/>
-<rect x="254.36" y="102.98" width="1.18" height="19.02" fill="#78829A" opacity="0.75"/>
-<rect x="256.55" y="102.56" width="1.18" height="19.44" fill="#78829A" opacity="0.75"/>
-<rect x="258.73" y="105.04" width="1.18" height="16.96" fill="#78829A" opacity="0.75"/>
-<rect x="260.91" y="102.57" width="1.18" height="19.43" fill="#78829A" opacity="0.75"/>
-<rect x="263.09" y="101.29" width="1.18" height="20.71" fill="#78829A" opacity="0.75"/>
-<rect x="265.27" y="102.48" width="1.18" height="19.52" fill="#78829A" opacity="0.75"/>
-<rect x="267.45" y="107.04" width="1.18" height="14.96" fill="#78829A" opacity="0.75"/>
-<rect x="269.64" y="105.16" width="1.18" height="16.84" fill="#78829A" opacity="0.75"/>
-<rect x="271.82" y="113.99" width="1.18" height="8.01" fill="#78829A" opacity="0.75"/>
-<text x="274" y="93.37" font-size="9.5" fill="#515A6B" text-anchor="end" class="s">per 20 s</text>
+<text x="1166" y="132.73" font-size="10.5" fill="#838DA5">Xatsh · Eagle Eye Shot</text>
+<rect x="178" y="112.65" width="1.18" height="9.35" fill="#838DA5" opacity="0.75"/>
+<rect x="180.18" y="99.43" width="1.18" height="22.57" fill="#838DA5" opacity="0.75"/>
+<rect x="182.36" y="106.47" width="1.18" height="15.53" fill="#838DA5" opacity="0.75"/>
+<rect x="184.55" y="105.1" width="1.18" height="16.9" fill="#838DA5" opacity="0.75"/>
+<rect x="186.73" y="106.21" width="1.18" height="15.79" fill="#838DA5" opacity="0.75"/>
+<rect x="188.91" y="101.81" width="1.18" height="20.19" fill="#838DA5" opacity="0.75"/>
+<rect x="191.09" y="101.74" width="1.18" height="20.26" fill="#838DA5" opacity="0.75"/>
+<rect x="193.27" y="102.51" width="1.18" height="19.49" fill="#838DA5" opacity="0.75"/>
+<rect x="195.45" y="100.48" width="1.18" height="21.52" fill="#838DA5" opacity="0.75"/>
+<rect x="197.64" y="105.22" width="1.18" height="16.78" fill="#838DA5" opacity="0.75"/>
+<rect x="199.82" y="102.64" width="1.18" height="19.36" fill="#838DA5" opacity="0.75"/>
+<rect x="202" y="102.32" width="1.18" height="19.68" fill="#838DA5" opacity="0.75"/>
+<rect x="204.18" y="109.23" width="1.18" height="12.77" fill="#838DA5" opacity="0.75"/>
+<rect x="206.36" y="107.58" width="1.18" height="14.42" fill="#838DA5" opacity="0.75"/>
+<rect x="208.55" y="99.15" width="1.18" height="22.85" fill="#838DA5" opacity="0.75"/>
+<rect x="210.73" y="105.74" width="1.18" height="16.26" fill="#838DA5" opacity="0.75"/>
+<rect x="212.91" y="104.21" width="1.18" height="17.79" fill="#838DA5" opacity="0.75"/>
+<rect x="215.09" y="107.9" width="1.18" height="14.1" fill="#838DA5" opacity="0.75"/>
+<rect x="217.27" y="100.29" width="1.18" height="21.71" fill="#838DA5" opacity="0.75"/>
+<rect x="219.45" y="96" width="1.18" height="26" fill="#838DA5" opacity="0.75"/>
+<rect x="221.64" y="105.08" width="1.18" height="16.92" fill="#838DA5" opacity="0.75"/>
+<rect x="223.82" y="97.2" width="1.18" height="24.8" fill="#838DA5" opacity="0.75"/>
+<rect x="226" y="103.43" width="1.18" height="18.57" fill="#838DA5" opacity="0.75"/>
+<rect x="228.18" y="98.57" width="1.18" height="23.43" fill="#838DA5" opacity="0.75"/>
+<rect x="230.36" y="105.17" width="1.18" height="16.83" fill="#838DA5" opacity="0.75"/>
+<rect x="232.55" y="102.79" width="1.18" height="19.21" fill="#838DA5" opacity="0.75"/>
+<rect x="234.73" y="107.48" width="1.18" height="14.52" fill="#838DA5" opacity="0.75"/>
+<rect x="236.91" y="96.9" width="1.18" height="25.1" fill="#838DA5" opacity="0.75"/>
+<rect x="239.09" y="110.08" width="1.18" height="11.92" fill="#838DA5" opacity="0.75"/>
+<rect x="241.27" y="106.82" width="1.18" height="15.18" fill="#838DA5" opacity="0.75"/>
+<rect x="243.45" y="102.96" width="1.18" height="19.04" fill="#838DA5" opacity="0.75"/>
+<rect x="245.64" y="109.19" width="1.18" height="12.81" fill="#838DA5" opacity="0.75"/>
+<rect x="247.82" y="104.63" width="1.18" height="17.37" fill="#838DA5" opacity="0.75"/>
+<rect x="250" y="107.13" width="1.18" height="14.87" fill="#838DA5" opacity="0.75"/>
+<rect x="252.18" y="103.61" width="1.18" height="18.39" fill="#838DA5" opacity="0.75"/>
+<rect x="254.36" y="102.98" width="1.18" height="19.02" fill="#838DA5" opacity="0.75"/>
+<rect x="256.55" y="102.56" width="1.18" height="19.44" fill="#838DA5" opacity="0.75"/>
+<rect x="258.73" y="105.04" width="1.18" height="16.96" fill="#838DA5" opacity="0.75"/>
+<rect x="260.91" y="102.57" width="1.18" height="19.43" fill="#838DA5" opacity="0.75"/>
+<rect x="263.09" y="101.29" width="1.18" height="20.71" fill="#838DA5" opacity="0.75"/>
+<rect x="265.27" y="102.48" width="1.18" height="19.52" fill="#838DA5" opacity="0.75"/>
+<rect x="267.45" y="107.04" width="1.18" height="14.96" fill="#838DA5" opacity="0.75"/>
+<rect x="269.64" y="105.16" width="1.18" height="16.84" fill="#838DA5" opacity="0.75"/>
+<rect x="271.82" y="113.99" width="1.18" height="8.01" fill="#838DA5" opacity="0.75"/>
+<text x="274" y="93.37" font-size="9.5" fill="#838DA5" text-anchor="end" class="s">per 20 s</text>
 <path d="M754 109.98 L756.23 101.49 L758.47 101.67 L760.7 101.32 L762.93 101.4 L765.16 100.51 L767.4 99.85 L769.63 99.49 L771.86 98.92 L774.09 99.07 L776.33 98.89 L778.56 98.71 L780.79 99.24 L783.02 99.54 L785.26 99.08 L787.49 99.2 L789.72 99.2 L791.95 99.46 L794.19 99.18 L796.42 98.65 L798.65 98.72 L800.88 98.33 L803.12 98.32 L805.35 98.05 L807.58 98.15 L809.81 98.11 L812.05 98.31 L814.28 98 L816.51 98.3 L818.74 98.44 L820.98 98.41 L823.21 98.63 L825.44 98.66 L827.67 98.79 L829.91 98.78 L832.14 98.74 L834.37 98.69 L836.6 98.73 L838.84 98.69 L841.07 98.61 L843.3 98.57 L845.53 98.67 L847.77 98.7 L850 98.63 L850 122 L754 122 Z" fill="#A6AFBF" opacity="0.16"/>
 <path d="M754 109.98 L756.23 101.49 L758.47 101.67 L760.7 101.32 L762.93 101.4 L765.16 100.51 L767.4 99.85 L769.63 99.49 L771.86 98.92 L774.09 99.07 L776.33 98.89 L778.56 98.71 L780.79 99.24 L783.02 99.54 L785.26 99.08 L787.49 99.2 L789.72 99.2 L791.95 99.46 L794.19 99.18 L796.42 98.65 L798.65 98.72 L800.88 98.33 L803.12 98.32 L805.35 98.05 L807.58 98.15 L809.81 98.11 L812.05 98.31 L814.28 98 L816.51 98.3 L818.74 98.44 L820.98 98.41 L823.21 98.63 L825.44 98.66 L827.67 98.79 L829.91 98.78 L832.14 98.74 L834.37 98.69 L836.6 98.73 L838.84 98.69 L841.07 98.61 L843.3 98.57 L845.53 98.67 L847.77 98.7 L850 98.63" fill="none" stroke="#A6AFBF" stroke-width="1.3" stroke-linejoin="round"/>
-<text x="850" y="93.37" font-size="9.5" fill="#515A6B" text-anchor="end" class="s">running</text>
+<text x="850" y="93.37" font-size="9.5" fill="#838DA5" text-anchor="end" class="s">running</text>
 <rect x="1028" y="106" width="18.65" height="8" rx="1" fill="#FC6E03"/>
 <rect x="1047.65" y="106" width="14.43" height="8" rx="1" fill="#F5C403"/>
 <rect x="1063.08" y="106" width="13.91" height="8" rx="1" fill="#CCBA78"/>
@@ -140,14 +140,14 @@
 <rect x="1118.81" y="106" width="6.48" height="8" rx="1" fill="#F53000"/>
 <rect x="1126.28" y="106" width="5.71" height="8" rx="1" fill="#70FCB5"/>
 <rect x="1133" y="106" width="4" height="8" rx="1" fill="#E86366"/>
-<text x="1138" y="93.37" font-size="9.5" fill="#515A6B" text-anchor="end" class="s">party share</text>
-<rect x="517" y="100" width="45" height="18" rx="9" fill="#152A25"/>
-<rect x="517.5" y="100.5" width="44" height="17" rx="8.5" fill="none" stroke="#246A4C" stroke-width="1"/>
-<circle cx="527" cy="109" r="3" fill="#3DD68C"/>
-<text x="535" y="112.37" font-size="9.5" fill="#3DD68C" font-weight="700" letter-spacing="0.6">LIVE</text>
+<text x="1138" y="93.37" font-size="9.5" fill="#838DA5" text-anchor="end" class="s">party share</text>
+<rect x="517" y="100" width="45" height="18" rx="9" fill="#112B1F"/>
+<rect x="517.5" y="100.5" width="44" height="17" rx="8.5" fill="none" stroke="#186F35" stroke-width="1"/>
+<circle cx="527" cy="109" r="3" fill="#22E05A"/>
+<text x="535" y="112.37" font-size="9.5" fill="#22E05A" font-weight="700" letter-spacing="0.6">LIVE</text>
 <line x1="0" y1="139.5" x2="1440" y2="139.5" stroke="#2A313D" stroke-width="1"/>
 <rect x="0" y="140" width="1440" height="30" fill="#0F1217"/>
-<text x="14" y="158.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">CHARACTERS 12/12</text>
+<text x="14" y="158.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">CHARACTERS 12/12</text>
 <rect x="126.46" y="145" width="66" height="20" rx="3" fill="#151921"/>
 <rect x="126.96" y="145.5" width="65" height="19" rx="2.5" fill="none" stroke="#2A313D" stroke-width="1"/>
 <rect x="133.46" y="151" width="8" height="8" rx="2" fill="#FC6E03"/>
@@ -199,45 +199,45 @@
 <line x1="1001.96" y1="148" x2="1001.96" y2="162" stroke="#2A313D" stroke-width="1"/>
 <text x="1011.46" y="159.08" font-size="11.5" fill="#A6AFBF">All</text>
 <text x="1036.7" y="159.08" font-size="11.5" fill="#A6AFBF">None</text>
-<text x="1079.11" y="158.91" font-size="11" fill="#78829A">all included</text>
+<text x="1079.11" y="158.91" font-size="11" fill="#838DA5">all included</text>
 <line x1="0" y1="169.5" x2="1440" y2="169.5" stroke="#2A313D" stroke-width="1"/>
 <rect x="0" y="170" width="940" height="334" fill="#0F1217"/>
-<circle cx="9" cy="181" r="1" fill="#515A6B"/>
-<circle cx="9" cy="185" r="1" fill="#515A6B"/>
-<circle cx="9" cy="189" r="1" fill="#515A6B"/>
-<circle cx="13" cy="181" r="1" fill="#515A6B"/>
-<circle cx="13" cy="185" r="1" fill="#515A6B"/>
-<circle cx="13" cy="189" r="1" fill="#515A6B"/>
+<circle cx="9" cy="181" r="1" fill="#5E677A"/>
+<circle cx="9" cy="185" r="1" fill="#5E677A"/>
+<circle cx="9" cy="189" r="1" fill="#5E677A"/>
+<circle cx="13" cy="181" r="1" fill="#5E677A"/>
+<circle cx="13" cy="185" r="1" fill="#5E677A"/>
+<circle cx="13" cy="189" r="1" fill="#5E677A"/>
 <text x="22" y="189.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Damage by character</text>
-<text x="922" y="191" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M897 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-<text x="156.91" y="189.41" font-size="11" fill="#78829A">Total dealt since the session started</text>
+<text x="922" y="191" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M897 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="156.91" y="189.41" font-size="11" fill="#838DA5">Total dealt since the session started</text>
 <line x1="0" y1="199.5" x2="940" y2="199.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="200" width="940" height="38" fill="#0F1217"/>
-<text x="572" y="213.19" font-size="9" fill="#78829A" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">WEAPONSKILL</text>
+<text x="572" y="213.19" font-size="9" fill="#838DA5" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">WEAPONSKILL</text>
 <line x1="464" y1="210.5" x2="528.59" y2="210.5" stroke="#2A313D" stroke-width="1"/>
 <line x1="615.41" y1="210.5" x2="680" y2="210.5" stroke="#2A313D" stroke-width="1"/>
-<text x="747" y="213.19" font-size="9" fill="#78829A" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">SKILLCHAIN</text>
+<text x="747" y="213.19" font-size="9" fill="#838DA5" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">SKILLCHAIN</text>
 <line x1="696" y1="210.5" x2="709.54" y2="210.5" stroke="#2A313D" stroke-width="1"/>
 <line x1="784.46" y1="210.5" x2="798" y2="210.5" stroke="#2A313D" stroke-width="1"/>
-<text x="868" y="213.19" font-size="9" fill="#78829A" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">PET</text>
+<text x="868" y="213.19" font-size="9" fill="#838DA5" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">PET</text>
 <line x1="814" y1="210.5" x2="851.17" y2="210.5" stroke="#2A313D" stroke-width="1"/>
 <line x1="884.83" y1="210.5" x2="922" y2="210.5" stroke="#2A313D" stroke-width="1"/>
-<text x="12" y="230.91" font-size="11" fill="#78829A" font-weight="500">Character</text>
-<text x="146" y="230.91" font-size="11" fill="#78829A" font-weight="500">Job</text>
-<text x="268" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
+<text x="12" y="230.91" font-size="11" fill="#838DA5" font-weight="500">Character</text>
+<text x="146" y="230.91" font-size="11" fill="#838DA5" font-weight="500">Job</text>
+<text x="268" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
 <path d="M216.59 225.5 l3 3.4 l3 -3.4 Z" fill="#A6AFBF"/>
-<text x="332" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage %</text>
-<text x="386" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">DPS</text>
-<text x="448" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Accuracy</text>
-<text x="516" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="568" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Avg</text>
-<text x="622" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">%</text>
-<text x="680" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Acc</text>
-<text x="744" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="798" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">%</text>
-<text x="864" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="922" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Acc</text>
+<text x="332" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage %</text>
+<text x="386" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">DPS</text>
+<text x="448" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Accuracy</text>
+<text x="516" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="568" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Avg</text>
+<text x="622" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">%</text>
+<text x="680" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Acc</text>
+<text x="744" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="798" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">%</text>
+<text x="864" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="922" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Acc</text>
 <line x1="0" y1="237.5" x2="940" y2="237.5" stroke="#2A313D" stroke-width="1"/>
 <g clip-path="url(#k2)">
 <rect x="0" y="238" width="940" height="23" fill="#FC6E03" opacity="0.3"/>
@@ -248,15 +248,16 @@
 <text x="268" y="254.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
 <text x="332" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9%</text>
 <text x="386" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">47.0</text>
+<rect x="411" y="257" width="36" height="2" rx="1" fill="#FF5063" opacity="0.58"/>
 <text x="448" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">88.1%</text>
 <text x="680" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">97.0%</text>
-<text x="922" y="254.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="254.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">23,504</text>
 <text x="568" y="254.26" font-size="12" fill="#A6AFBF" text-anchor="end">735</text>
 <text x="622" y="254.26" font-size="12" fill="#A6AFBF" text-anchor="end">57.8%</text>
 <text x="744" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">6,526</text>
 <text x="798" y="254.26" font-size="12" fill="#A6AFBF" text-anchor="end">16.1%</text>
-<text x="864" y="254.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="864" y="254.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="261.5" x2="940" y2="261.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="262" width="738.12" height="23" fill="#F5C403" opacity="0.27"/>
 <rect x="12" y="270" width="8" height="8" rx="2" fill="#F5C403"/>
@@ -265,15 +266,16 @@
 <text x="268" y="278.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
 <text x="332" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">14.0%</text>
 <text x="386" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">36.9</text>
+<rect x="411" y="281" width="36" height="2" rx="1" fill="#FF5063" opacity="0.56"/>
 <text x="448" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">89.6%</text>
 <text x="680" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">92.3%</text>
-<text x="922" y="278.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="278.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">12,911</text>
 <text x="568" y="278.26" font-size="12" fill="#A6AFBF" text-anchor="end">538</text>
 <text x="622" y="278.26" font-size="12" fill="#A6AFBF" text-anchor="end">40.4%</text>
 <text x="744" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">1,620</text>
 <text x="798" y="278.26" font-size="12" fill="#A6AFBF" text-anchor="end">5.1%</text>
-<text x="864" y="278.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="864" y="278.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="285.5" x2="940" y2="285.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="286" width="713.36" height="23" fill="#CCBA78" opacity="0.29"/>
 <rect x="12" y="294" width="8" height="8" rx="2" fill="#CCBA78"/>
@@ -282,20 +284,22 @@
 <text x="268" y="302.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">30,856</text>
 <text x="332" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">13.6%</text>
 <text x="386" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">35.6</text>
-<rect x="406" y="289" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="406" y="289" width="46" height="18" rx="2" fill="#F26D78" opacity="0.14"/>
-<rect x="406.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.31"/>
+<rect x="406" y="289" width="46" height="18" rx="2" fill="#0F1217" opacity="0.49"/>
+<rect x="406" y="289" width="46" height="18" rx="2" fill="#FF5063" opacity="0.09"/>
+<rect x="406.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.19"/>
+<rect x="411" y="305" width="36" height="2" rx="1" fill="#FF5063" opacity="0.35"/>
 <text x="448" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">80.4%</text>
 <text x="680" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">90.0%</text>
-<rect x="880" y="289" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="880" y="289" width="46" height="18" rx="2" fill="#F26D78" opacity="0.14"/>
-<rect x="880.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.31"/>
+<rect x="880" y="289" width="46" height="18" rx="2" fill="#0F1217" opacity="0.46"/>
+<rect x="880" y="289" width="46" height="18" rx="2" fill="#FF5063" opacity="0.08"/>
+<rect x="880.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.17"/>
+<rect x="885" y="305" width="36" height="2" rx="1" fill="#FF5063" opacity="0.37"/>
 <text x="922" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">80.7%</text>
 <text x="516" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">9,085</text>
 <text x="568" y="302.26" font-size="12" fill="#A6AFBF" text-anchor="end">505</text>
 <text x="622" y="302.26" font-size="12" fill="#A6AFBF" text-anchor="end">29.4%</text>
-<text x="744" y="302.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="302.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="302.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="302.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="864" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">10,251</text>
 <line x1="0" y1="309.5" x2="940" y2="309.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="310" width="580.41" height="23" fill="#E600FF" opacity="0.3"/>
@@ -305,21 +309,23 @@
 <text x="268" y="326.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">25,105</text>
 <text x="332" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.0%</text>
 <text x="386" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">29.0</text>
-<rect x="406" y="313" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="406" y="313" width="46" height="18" rx="2" fill="#F26D78" opacity="0.16"/>
-<rect x="406.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.34"/>
+<rect x="406" y="313" width="46" height="18" rx="2" fill="#0F1217" opacity="0.61"/>
+<rect x="406" y="313" width="46" height="18" rx="2" fill="#FF5063" opacity="0.11"/>
+<rect x="406.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.25"/>
+<rect x="411" y="329" width="36" height="2" rx="1" fill="#FF5063" opacity="0.28"/>
 <text x="448" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">79.1%</text>
-<rect x="638" y="313" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="638" y="313" width="46" height="18" rx="2" fill="#F26D78" opacity="0.12"/>
-<rect x="638.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.25"/>
+<rect x="638" y="313" width="46" height="18" rx="2" fill="#0F1217" opacity="0.21"/>
+<rect x="638" y="313" width="46" height="18" rx="2" fill="#FF5063" opacity="0.03"/>
+<rect x="638.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.07"/>
+<rect x="643" y="329" width="36" height="2" rx="1" fill="#FF5063" opacity="0.52"/>
 <text x="680" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">83.3%</text>
-<text x="922" y="326.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="326.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">13,539</text>
 <text x="568" y="326.26" font-size="12" fill="#A6AFBF" text-anchor="end">677</text>
 <text x="622" y="326.26" font-size="12" fill="#A6AFBF" text-anchor="end">53.9%</text>
 <text x="744" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">2,335</text>
 <text x="798" y="326.26" font-size="12" fill="#A6AFBF" text-anchor="end">9.3%</text>
-<text x="864" y="326.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="864" y="326.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="333.5" x2="940" y2="333.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="334" width="520.06" height="23" fill="#A685BD" opacity="0.3"/>
 <rect x="12" y="342" width="8" height="8" rx="2" fill="#A685BD"/>
@@ -328,15 +334,15 @@
 <text x="268" y="350.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">22,495</text>
 <text x="332" y="350.26" font-size="12" fill="#E9ECF2" text-anchor="end">9.9%</text>
 <text x="386" y="350.26" font-size="12" fill="#E9ECF2" text-anchor="end">26.0</text>
-<text x="448" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="680" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="922" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="516" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="568" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="622" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="744" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="448" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="680" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="922" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="516" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="568" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="622" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="744" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="357.5" x2="940" y2="357.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="358" width="451.38" height="23" fill="#6EC459" opacity="0.3"/>
 <rect x="12" y="366" width="8" height="8" rx="2" fill="#6EC459"/>
@@ -345,18 +351,19 @@
 <text x="268" y="374.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">19,524</text>
 <text x="332" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.6%</text>
 <text x="386" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">22.5</text>
+<rect x="411" y="377" width="36" height="2" rx="1" fill="#FF5063" opacity="0.59"/>
 <text x="448" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">87.2%</text>
-<rect x="638" y="361" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="638" y="361" width="46" height="18" rx="2" fill="#F26D78" opacity="0.34"/>
-<rect x="638.5" y="361.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.72"/>
+<rect x="638" y="361" width="46" height="18" rx="2" fill="#0F1217" opacity="1"/>
+<rect x="638" y="361" width="46" height="18" rx="2" fill="#FF5063" opacity="0.34"/>
+<rect x="638.5" y="361.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.72"/>
 <text x="680" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">57.1%</text>
-<text x="922" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">8,425</text>
 <text x="568" y="374.26" font-size="12" fill="#A6AFBF" text-anchor="end">702</text>
 <text x="622" y="374.26" font-size="12" fill="#A6AFBF" text-anchor="end">43.2%</text>
-<text x="744" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="381.5" x2="940" y2="381.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="382" width="400.19" height="23" fill="#C4AED3" opacity="0.29"/>
 <rect x="12" y="390" width="8" height="8" rx="2" fill="#C4AED3"/>
@@ -365,15 +372,15 @@
 <text x="268" y="398.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">17,310</text>
 <text x="332" y="398.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.6%</text>
 <text x="386" y="398.26" font-size="12" fill="#E9ECF2" text-anchor="end">20.0</text>
-<text x="448" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="680" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="922" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="516" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="568" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="622" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="744" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="448" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="680" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="922" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="516" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="568" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="622" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="744" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="405.5" x2="940" y2="405.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="406" width="357.68" height="23" fill="#F53000" opacity="0.3"/>
 <rect x="12" y="414" width="8" height="8" rx="2" fill="#F53000"/>
@@ -382,15 +389,17 @@
 <text x="268" y="422.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">15,471</text>
 <text x="332" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">6.8%</text>
 <text x="386" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9</text>
+<rect x="411" y="425" width="36" height="2" rx="1" fill="#FF5063" opacity="0.59"/>
 <text x="448" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">87.3%</text>
+<rect x="643" y="425" width="36" height="2" rx="1" fill="#FF5063" opacity="0.6"/>
 <text x="680" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">86.7%</text>
-<text x="922" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">5,008</text>
 <text x="568" y="422.26" font-size="12" fill="#A6AFBF" text-anchor="end">385</text>
 <text x="622" y="422.26" font-size="12" fill="#A6AFBF" text-anchor="end">32.4%</text>
-<text x="744" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="429.5" x2="940" y2="429.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="430" width="321.15" height="23" fill="#70FCB5" opacity="0.23"/>
 <rect x="12" y="438" width="8" height="8" rx="2" fill="#70FCB5"/>
@@ -399,17 +408,18 @@
 <text x="268" y="446.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">13,891</text>
 <text x="332" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">6.1%</text>
 <text x="386" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">16.0</text>
-<text x="448" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="680" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<rect x="880" y="433" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="880" y="433" width="46" height="18" rx="2" fill="#F26D78" opacity="0.11"/>
-<rect x="880.5" y="433.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.23"/>
+<text x="448" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="680" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<rect x="880" y="433" width="46" height="18" rx="2" fill="#0F1217" opacity="0.11"/>
+<rect x="880" y="433" width="46" height="18" rx="2" fill="#FF5063" opacity="0.02"/>
+<rect x="880.5" y="433.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.03"/>
+<rect x="885" y="449" width="36" height="2" rx="1" fill="#FF5063" opacity="0.57"/>
 <text x="922" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">84.4%</text>
-<text x="516" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="568" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="622" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="744" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="516" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="568" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="622" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="744" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="864" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">13,891</text>
 <line x1="0" y1="453.5" x2="940" y2="453.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="454" width="239.26" height="23" fill="#E86366" opacity="0.3"/>
@@ -419,24 +429,25 @@
 <text x="268" y="470.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">10,349</text>
 <text x="332" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">4.5%</text>
 <text x="386" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">12.0</text>
-<rect x="406" y="457" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="406" y="457" width="46" height="18" rx="2" fill="#F26D78" opacity="0.16"/>
-<rect x="406.5" y="457.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.35"/>
+<rect x="406" y="457" width="46" height="18" rx="2" fill="#0F1217" opacity="0.67"/>
+<rect x="406" y="457" width="46" height="18" rx="2" fill="#FF5063" opacity="0.13"/>
+<rect x="406.5" y="457.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.28"/>
+<rect x="411" y="473" width="36" height="2" rx="1" fill="#FF5063" opacity="0.24"/>
 <text x="448" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">78.4%</text>
 <text x="680" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">90.9%</text>
-<text x="922" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">3,688</text>
 <text x="568" y="470.26" font-size="12" fill="#A6AFBF" text-anchor="end">369</text>
 <text x="622" y="470.26" font-size="12" fill="#A6AFBF" text-anchor="end">35.6%</text>
-<text x="744" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="477.5" x2="940" y2="477.5" stroke="#1B2029" stroke-width="1"/>
 </g>
 <rect x="0" y="478" width="940" height="26" fill="#151921"/>
 <line x1="0" y1="477.5" x2="940" y2="477.5" stroke="#2A313D" stroke-width="1"/>
 <text x="12" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600">Party</text>
-<text x="146" y="494.9" font-size="11" fill="#78829A">10</text>
+<text x="146" y="494.9" font-size="11" fill="#838DA5">10</text>
 <text x="268" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">227,587</text>
 <text x="332" y="495.26" font-size="12" fill="#A6AFBF" text-anchor="end">100.0%</text>
 <text x="386" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">262.8</text>
@@ -456,27 +467,27 @@
 <line x1="807.5" y1="220" x2="807.5" y2="238" stroke="#1B2029" stroke-width="1"/>
 <line x1="807.5" y1="478" x2="807.5" y2="504" stroke="#2A313D" stroke-width="1"/>
 <rect x="0" y="505" width="940" height="371" fill="#0F1217"/>
-<circle cx="9" cy="516" r="1" fill="#515A6B"/>
-<circle cx="9" cy="520" r="1" fill="#515A6B"/>
-<circle cx="9" cy="524" r="1" fill="#515A6B"/>
-<circle cx="13" cy="516" r="1" fill="#515A6B"/>
-<circle cx="13" cy="520" r="1" fill="#515A6B"/>
-<circle cx="13" cy="524" r="1" fill="#515A6B"/>
+<circle cx="9" cy="516" r="1" fill="#5E677A"/>
+<circle cx="9" cy="520" r="1" fill="#5E677A"/>
+<circle cx="9" cy="524" r="1" fill="#5E677A"/>
+<circle cx="13" cy="516" r="1" fill="#5E677A"/>
+<circle cx="13" cy="520" r="1" fill="#5E677A"/>
+<circle cx="13" cy="524" r="1" fill="#5E677A"/>
 <text x="22" y="524.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Actions</text>
-<text x="922" y="526" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M897 521.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-<text x="75.48" y="524.4" font-size="11" fill="#78829A">Every attack and weaponskill. Select a character to show theirs, and an action to drill down</text>
+<text x="922" y="526" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M897 521.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="75.48" y="524.4" font-size="11" fill="#838DA5">Every attack and weaponskill. Select a character to show theirs, and an action to drill down</text>
 <line x1="0" y1="534.5" x2="940" y2="534.5" stroke="#1B2029" stroke-width="1"/>
-<text x="12" y="550.9" font-size="11" fill="#78829A" font-weight="500">Action</text>
-<text x="320" y="550.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Hits</text>
-<text x="370" y="550.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Miss</text>
-<text x="446" y="550.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Total</text>
+<text x="12" y="550.9" font-size="11" fill="#838DA5" font-weight="500">Action</text>
+<text x="320" y="550.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Hits</text>
+<text x="370" y="550.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Miss</text>
+<text x="446" y="550.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Total</text>
 <path d="M411.32 545.5 l3 3.4 l3 -3.4 Z" fill="#A6AFBF"/>
-<text x="506" y="550.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Avg</text>
-<text x="562" y="550.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Min</text>
-<text x="622" y="550.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Max</text>
-<text x="882" y="550.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Share</text>
-<text x="646" y="550.9" font-size="11" fill="#78829A" font-weight="500">Min · avg · max</text>
+<text x="506" y="550.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Avg</text>
+<text x="562" y="550.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Min</text>
+<text x="622" y="550.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Max</text>
+<text x="886" y="550.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Share</text>
+<text x="646" y="550.9" font-size="11" fill="#838DA5" font-weight="500">Min · avg · max</text>
 <line x1="0" y1="558.5" x2="940" y2="558.5" stroke="#2A313D" stroke-width="1"/>
 <g clip-path="url(#k3)">
 <rect x="0" y="559" width="940" height="22" fill="#151921"/>
@@ -486,9 +497,8 @@
 <text x="42" y="574.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
 <text x="89.21" y="574.23" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
 <text x="446" y="574.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
-<text x="882" y="574.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9%</text>
+<text x="886" y="574.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9%</text>
 <line x1="0" y1="580.5" x2="940" y2="580.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="581" width="940" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="596.26" font-size="12" fill="#E9ECF2">Tachi: Gekko</text>
 <text x="320" y="596.26" font-size="12" fill="#E9ECF2" text-anchor="end">16</text>
 <text x="370" y="596.26" font-size="12" fill="#A6AFBF" text-anchor="end">1</text>
@@ -496,13 +506,14 @@
 <text x="506" y="596.26" font-size="12" fill="#E9ECF2" text-anchor="end">819</text>
 <text x="562" y="596.26" font-size="12" fill="#A6AFBF" text-anchor="end">452</text>
 <text x="622" y="596.26" font-size="12" fill="#A6AFBF" text-anchor="end">1,046</text>
-<line x1="646" y1="592.5" x2="808" y2="592.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="716" y="590" width="92" height="4" rx="2" fill="#78829A"/>
-<rect x="771.85" y="587" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="596.26" font-size="12" fill="#E9ECF2" text-anchor="end">32.2%</text>
+<line x1="646" y1="592.5" x2="778" y2="592.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="703.04" y="590" width="74.96" height="4" rx="2" fill="#838DA5"/>
+<rect x="748.36" y="587" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="589" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="589" width="42" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="596.26" font-size="12" fill="#E9ECF2" text-anchor="end">32.2%</text>
 <line x1="0" y1="602.5" x2="940" y2="602.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="603" width="940" height="21" fill="#1C222C"/>
-<rect x="0" y="603" width="762.4" height="21" fill="#E9ECF2" opacity="0.1"/>
 <rect x="0" y="603" width="2" height="21" fill="#F2A33A"/>
 <text x="42" y="618.26" font-size="12" fill="#E9ECF2" font-weight="600">Attack</text>
 <text x="320" y="618.26" font-size="12" fill="#E9ECF2" text-anchor="end">200</text>
@@ -511,62 +522,68 @@
 <text x="506" y="618.26" font-size="12" fill="#E9ECF2" text-anchor="end">53</text>
 <text x="562" y="618.26" font-size="12" fill="#A6AFBF" text-anchor="end">17</text>
 <text x="622" y="618.26" font-size="12" fill="#A6AFBF" text-anchor="end">129</text>
-<line x1="646" y1="614.5" x2="808" y2="614.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="648.63" y="612" width="17.35" height="4" rx="2" fill="#78829A"/>
-<rect x="653.23" y="609" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="618.26" font-size="12" fill="#E9ECF2" text-anchor="end">26.1%</text>
+<line x1="646" y1="614.5" x2="778" y2="614.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="648.15" y="612" width="14.13" height="4" rx="2" fill="#838DA5"/>
+<rect x="651.71" y="609" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="611" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="611" width="34.06" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="618.26" font-size="12" fill="#E9ECF2" text-anchor="end">26.1%</text>
 <line x1="0" y1="624.5" x2="940" y2="624.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="625" width="583.01" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="640.26" font-size="12" fill="#E9ECF2">Tachi: Kasha</text>
 <text x="320" y="640.26" font-size="12" fill="#E9ECF2" text-anchor="end">12</text>
-<text x="370" y="640.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="370" y="640.26" font-size="12" fill="#5E677A" text-anchor="end">—</text>
 <text x="446" y="640.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">8,128</text>
 <text x="506" y="640.26" font-size="12" fill="#E9ECF2" text-anchor="end">677</text>
 <text x="562" y="640.26" font-size="12" fill="#A6AFBF" text-anchor="end">524</text>
 <text x="622" y="640.26" font-size="12" fill="#A6AFBF" text-anchor="end">836</text>
-<line x1="646" y1="636.5" x2="808" y2="636.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="727.15" y="634" width="48.32" height="4" rx="2" fill="#78829A"/>
-<rect x="749.9" y="631" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="640.26" font-size="12" fill="#E9ECF2" text-anchor="end">20.0%</text>
+<line x1="646" y1="636.5" x2="778" y2="636.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="712.13" y="634" width="39.37" height="4" rx="2" fill="#838DA5"/>
+<rect x="730.48" y="631" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="633" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="633" width="26.05" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="640.26" font-size="12" fill="#E9ECF2" text-anchor="end">20.0%</text>
 <line x1="0" y1="646.5" x2="940" y2="646.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="647" width="256.57" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="662.26" font-size="12" fill="#E9ECF2">Skillchain: Light</text>
 <text x="320" y="662.26" font-size="12" fill="#E9ECF2" text-anchor="end">7</text>
-<text x="370" y="662.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="370" y="662.26" font-size="12" fill="#5E677A" text-anchor="end">—</text>
 <text x="446" y="662.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">3,577</text>
 <text x="506" y="662.26" font-size="12" fill="#E9ECF2" text-anchor="end">511</text>
 <text x="562" y="662.26" font-size="12" fill="#A6AFBF" text-anchor="end">295</text>
 <text x="622" y="662.26" font-size="12" fill="#A6AFBF" text-anchor="end">754</text>
-<line x1="646" y1="658.5" x2="808" y2="658.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="691.69" y="656" width="71.09" height="4" rx="2" fill="#78829A"/>
-<rect x="724.14" y="653" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="662.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.8%</text>
+<line x1="646" y1="658.5" x2="778" y2="658.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="683.23" y="656" width="57.92" height="4" rx="2" fill="#838DA5"/>
+<rect x="709.49" y="653" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="655" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="655" width="11.46" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="662.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.8%</text>
 <line x1="0" y1="668.5" x2="940" y2="668.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="669" width="211.53" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="684.26" font-size="12" fill="#E9ECF2">Skillchain: Fragmentation</text>
 <text x="320" y="684.26" font-size="12" fill="#E9ECF2" text-anchor="end">6</text>
-<text x="370" y="684.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="370" y="684.26" font-size="12" fill="#5E677A" text-anchor="end">—</text>
 <text x="446" y="684.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,949</text>
 <text x="506" y="684.26" font-size="12" fill="#E9ECF2" text-anchor="end">492</text>
 <text x="562" y="684.26" font-size="12" fill="#A6AFBF" text-anchor="end">241</text>
 <text x="622" y="684.26" font-size="12" fill="#A6AFBF" text-anchor="end">740</text>
-<line x1="646" y1="680.5" x2="808" y2="680.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="683.33" y="678" width="77.28" height="4" rx="2" fill="#78829A"/>
-<rect x="721.12" y="675" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="684.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.3%</text>
+<line x1="646" y1="680.5" x2="778" y2="680.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="676.41" y="678" width="62.97" height="4" rx="2" fill="#838DA5"/>
+<rect x="707.02" y="675" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="677" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="677" width="9.45" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="684.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.3%</text>
 <line x1="0" y1="690.5" x2="940" y2="690.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="691" width="162.9" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="706.26" font-size="12" fill="#E9ECF2">Tachi: Yukikaze</text>
 <text x="320" y="706.26" font-size="12" fill="#E9ECF2" text-anchor="end">4</text>
-<text x="370" y="706.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="370" y="706.26" font-size="12" fill="#5E677A" text-anchor="end">—</text>
 <text x="446" y="706.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,271</text>
 <text x="506" y="706.26" font-size="12" fill="#E9ECF2" text-anchor="end">568</text>
 <text x="562" y="706.26" font-size="12" fill="#A6AFBF" text-anchor="end">529</text>
 <text x="622" y="706.26" font-size="12" fill="#A6AFBF" text-anchor="end">610</text>
-<line x1="646" y1="702.5" x2="808" y2="702.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="727.93" y="700" width="12.54" height="4" rx="2" fill="#78829A"/>
-<rect x="732.93" y="697" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="706.26" font-size="12" fill="#E9ECF2" text-anchor="end">5.6%</text>
+<line x1="646" y1="702.5" x2="778" y2="702.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="712.76" y="700" width="10.22" height="4" rx="2" fill="#838DA5"/>
+<rect x="716.65" y="697" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="699" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="699" width="7.28" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="706.26" font-size="12" fill="#E9ECF2" text-anchor="end">5.6%</text>
 <line x1="0" y1="712.5" x2="940" y2="712.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="713" width="940" height="22" fill="#151921"/>
 <rect x="0" y="713" width="738.12" height="21" fill="#F5C403" opacity="0.24"/>
@@ -575,7 +592,7 @@
 <text x="42" y="728.26" font-size="12" fill="#E9ECF2" font-weight="600">Brannoch</text>
 <text x="102.38" y="728.23" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
 <text x="446" y="728.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
-<text x="882" y="728.26" font-size="12" fill="#E9ECF2" text-anchor="end">14.0%</text>
+<text x="886" y="728.26" font-size="12" fill="#E9ECF2" text-anchor="end">14.0%</text>
 <line x1="0" y1="734.5" x2="940" y2="734.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="735" width="940" height="22" fill="#151921"/>
 <rect x="0" y="735" width="713.36" height="21" fill="#CCBA78" opacity="0.25"/>
@@ -584,9 +601,8 @@
 <text x="42" y="750.26" font-size="12" fill="#E9ECF2" font-weight="600">Parabellum</text>
 <text x="112.28" y="750.23" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
 <text x="446" y="750.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">30,856</text>
-<text x="882" y="750.26" font-size="12" fill="#E9ECF2" text-anchor="end">13.6%</text>
+<text x="886" y="750.26" font-size="12" fill="#E9ECF2" text-anchor="end">13.6%</text>
 <line x1="0" y1="756.5" x2="940" y2="756.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="757" width="940" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="772.26" font-size="12" fill="#E9ECF2">Attack</text>
 <text x="320" y="772.26" font-size="12" fill="#E9ECF2" text-anchor="end">319</text>
 <text x="370" y="772.26" font-size="12" fill="#A6AFBF" text-anchor="end">78</text>
@@ -594,12 +610,13 @@
 <text x="506" y="772.26" font-size="12" fill="#E9ECF2" text-anchor="end">36</text>
 <text x="562" y="772.26" font-size="12" fill="#A6AFBF" text-anchor="end">6</text>
 <text x="622" y="772.26" font-size="12" fill="#A6AFBF" text-anchor="end">115</text>
-<line x1="646" y1="768.5" x2="808" y2="768.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="647.32" y="766" width="24.02" height="4" rx="2" fill="#78829A"/>
-<rect x="652.96" y="763" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="772.26" font-size="12" fill="#E9ECF2" text-anchor="end">37.3%</text>
+<line x1="646" y1="768.5" x2="778" y2="768.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="647.08" y="766" width="19.58" height="4" rx="2" fill="#838DA5"/>
+<rect x="651.49" y="763" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="765" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="765" width="42" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="772.26" font-size="12" fill="#E9ECF2" text-anchor="end">37.3%</text>
 <line x1="0" y1="778.5" x2="940" y2="778.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="779" width="741.31" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="794.26" font-size="12" fill="#E9ECF2">Rampage</text>
 <text x="320" y="794.26" font-size="12" fill="#E9ECF2" text-anchor="end">18</text>
 <text x="370" y="794.26" font-size="12" fill="#A6AFBF" text-anchor="end">2</text>
@@ -607,12 +624,13 @@
 <text x="506" y="794.26" font-size="12" fill="#E9ECF2" text-anchor="end">505</text>
 <text x="562" y="794.26" font-size="12" fill="#A6AFBF" text-anchor="end">184</text>
 <text x="622" y="794.26" font-size="12" fill="#A6AFBF" text-anchor="end">735</text>
-<line x1="646" y1="790.5" x2="808" y2="790.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="686.56" y="788" width="121.44" height="4" rx="2" fill="#78829A"/>
-<rect x="756.24" y="785" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="794.26" font-size="12" fill="#E9ECF2" text-anchor="end">29.4%</text>
+<line x1="646" y1="790.5" x2="778" y2="790.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="679.04" y="788" width="98.96" height="4" rx="2" fill="#838DA5"/>
+<rect x="735.64" y="785" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="787" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="787" width="33.12" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="794.26" font-size="12" fill="#E9ECF2" text-anchor="end">29.4%</text>
 <line x1="0" y1="800.5" x2="940" y2="800.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="801" width="550.37" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="816.26" font-size="12" fill="#E9ECF2">Fluffikins: Attack</text>
 <text x="320" y="816.26" font-size="12" fill="#E9ECF2" text-anchor="end">167</text>
 <text x="370" y="816.26" font-size="12" fill="#A6AFBF" text-anchor="end">40</text>
@@ -620,23 +638,26 @@
 <text x="506" y="816.26" font-size="12" fill="#E9ECF2" text-anchor="end">40</text>
 <text x="562" y="816.26" font-size="12" fill="#A6AFBF" text-anchor="end">12</text>
 <text x="622" y="816.26" font-size="12" fill="#A6AFBF" text-anchor="end">72</text>
-<line x1="646" y1="812.5" x2="808" y2="812.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="648.64" y="810" width="13.22" height="4" rx="2" fill="#78829A"/>
-<rect x="653.9" y="807" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="816.26" font-size="12" fill="#E9ECF2" text-anchor="end">21.9%</text>
+<line x1="646" y1="812.5" x2="778" y2="812.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="648.16" y="810" width="10.78" height="4" rx="2" fill="#838DA5"/>
+<rect x="652.25" y="807" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="809" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="809" width="24.59" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="816.26" font-size="12" fill="#E9ECF2" text-anchor="end">21.9%</text>
 <line x1="0" y1="822.5" x2="940" y2="822.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="0" y="823" width="286.08" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="42" y="838.26" font-size="12" fill="#E9ECF2">Fluffikins: Big Scissors</text>
 <text x="320" y="838.26" font-size="12" fill="#E9ECF2" text-anchor="end">11</text>
-<text x="370" y="838.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="370" y="838.26" font-size="12" fill="#5E677A" text-anchor="end">—</text>
 <text x="446" y="838.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">3,506</text>
 <text x="506" y="838.26" font-size="12" fill="#E9ECF2" text-anchor="end">319</text>
 <text x="562" y="838.26" font-size="12" fill="#A6AFBF" text-anchor="end">157</text>
 <text x="622" y="838.26" font-size="12" fill="#A6AFBF" text-anchor="end">448</text>
-<line x1="646" y1="834.5" x2="808" y2="834.5" stroke="#2A313D" stroke-width="1"/>
-<rect x="680.6" y="832" width="64.14" height="4" rx="2" fill="#78829A"/>
-<rect x="715.25" y="829" width="2" height="10" rx="1" fill="#E9ECF2"/>
-<text x="882" y="838.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.4%</text>
+<line x1="646" y1="834.5" x2="778" y2="834.5" stroke="#2A313D" stroke-width="1"/>
+<rect x="674.2" y="832" width="52.26" height="4" rx="2" fill="#838DA5"/>
+<rect x="702.24" y="829" width="2" height="10" rx="1" fill="#E9ECF2"/>
+<rect x="800" y="831" width="42" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="800" y="831" width="12.78" height="6" rx="1.5" fill="#838DA5"/>
+<text x="886" y="838.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.4%</text>
 <line x1="0" y1="844.5" x2="940" y2="844.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="845" width="940" height="22" fill="#151921"/>
 <rect x="0" y="845" width="580.41" height="21" fill="#E600FF" opacity="0.3"/>
@@ -645,7 +666,7 @@
 <text x="42" y="860.26" font-size="12" fill="#E9ECF2" font-weight="600">Thorgald</text>
 <text x="99.52" y="860.23" font-size="10.5" fill="#A6AFBF">DRK/SAM</text>
 <text x="446" y="860.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">25,105</text>
-<text x="882" y="860.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.0%</text>
+<text x="886" y="860.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.0%</text>
 <line x1="0" y1="866.5" x2="940" y2="866.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="867" width="940" height="22" fill="#151921"/>
 <rect x="0" y="867" width="520.06" height="21" fill="#A685BD" opacity="0.3"/>
@@ -654,49 +675,49 @@
 <text x="42" y="882.26" font-size="12" fill="#E9ECF2" font-weight="600">Gillette</text>
 <text x="89.11" y="882.23" font-size="10.5" fill="#A6AFBF">BLM/WHM</text>
 <text x="446" y="882.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">22,495</text>
-<text x="882" y="882.26" font-size="12" fill="#E9ECF2" text-anchor="end">9.9%</text>
+<text x="886" y="882.26" font-size="12" fill="#E9ECF2" text-anchor="end">9.9%</text>
 <line x1="0" y1="888.5" x2="940" y2="888.5" stroke="#1B2029" stroke-width="1"/>
 </g>
 <rect x="931" y="561" width="6" height="161.72" rx="3" fill="#3D4656"/>
 <rect x="941" y="170" width="499" height="296" fill="#0F1217"/>
-<circle cx="950" cy="181" r="1" fill="#515A6B"/>
-<circle cx="950" cy="185" r="1" fill="#515A6B"/>
-<circle cx="950" cy="189" r="1" fill="#515A6B"/>
-<circle cx="954" cy="181" r="1" fill="#515A6B"/>
-<circle cx="954" cy="185" r="1" fill="#515A6B"/>
-<circle cx="954" cy="189" r="1" fill="#515A6B"/>
+<circle cx="950" cy="181" r="1" fill="#5E677A"/>
+<circle cx="950" cy="185" r="1" fill="#5E677A"/>
+<circle cx="950" cy="189" r="1" fill="#5E677A"/>
+<circle cx="954" cy="181" r="1" fill="#5E677A"/>
+<circle cx="954" cy="185" r="1" fill="#5E677A"/>
+<circle cx="954" cy="189" r="1" fill="#5E677A"/>
 <text x="963" y="189.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Cumulative damage</text>
-<text x="1422" y="191" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M1397 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-<text x="1090.2" y="189.41" font-size="11" fill="#78829A">Running total per character</text>
+<text x="1422" y="191" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M1397 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="1090.2" y="189.41" font-size="11" fill="#838DA5">Running total per character</text>
 <line x1="941" y1="199.5" x2="1440" y2="199.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="1260.5" y="174.5" width="116" height="21" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
-<rect x="1268.5" y="179.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<rect x="1268.5" y="179.5" width="11" height="11" rx="2.5" fill="none" stroke="#838DA5" stroke-width="1"/>
 <text x="1286" y="188.91" font-size="11" fill="#A6AFBF" font-weight="500">Group under 5%</text>
 <line x1="983" y1="444.5" x2="1358" y2="444.5" stroke="#2A313D" stroke-width="1"/>
-<text x="977" y="448.05" font-size="10" fill="#78829A" text-anchor="end">0</text>
+<text x="977" y="448.05" font-size="10" fill="#838DA5" text-anchor="end">0</text>
 <line x1="983" y1="367.5" x2="1358" y2="367.5" stroke="#1B2029" stroke-width="1"/>
-<text x="977" y="371.05" font-size="10" fill="#78829A" text-anchor="end">20.0K</text>
+<text x="977" y="371.05" font-size="10" fill="#838DA5" text-anchor="end">20.0K</text>
 <line x1="983" y1="291.5" x2="1358" y2="291.5" stroke="#1B2029" stroke-width="1"/>
-<text x="977" y="295.05" font-size="10" fill="#78829A" text-anchor="end">40.0K</text>
+<text x="977" y="295.05" font-size="10" fill="#838DA5" text-anchor="end">40.0K</text>
 <line x1="983" y1="214.5" x2="1358" y2="214.5" stroke="#1B2029" stroke-width="1"/>
-<text x="977" y="218.05" font-size="10" fill="#78829A" text-anchor="end">60.0K</text>
+<text x="977" y="218.05" font-size="10" fill="#838DA5" text-anchor="end">60.0K</text>
 <line x1="983.5" y1="444" x2="983.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="983.5" y="458.55" font-size="10" fill="#78829A">0:00</text>
+<text x="983.5" y="458.55" font-size="10" fill="#838DA5">0:00</text>
 <line x1="1035.5" y1="444" x2="1035.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="1035.5" y="458.55" font-size="10" fill="#78829A" text-anchor="middle">2:00</text>
+<text x="1035.5" y="458.55" font-size="10" fill="#838DA5" text-anchor="middle">2:00</text>
 <line x1="1087.5" y1="444" x2="1087.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="1087.5" y="458.55" font-size="10" fill="#78829A" text-anchor="middle">4:00</text>
+<text x="1087.5" y="458.55" font-size="10" fill="#838DA5" text-anchor="middle">4:00</text>
 <line x1="1139.5" y1="444" x2="1139.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="1139.5" y="458.55" font-size="10" fill="#78829A" text-anchor="middle">6:00</text>
+<text x="1139.5" y="458.55" font-size="10" fill="#838DA5" text-anchor="middle">6:00</text>
 <line x1="1191.5" y1="444" x2="1191.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="1191.5" y="458.55" font-size="10" fill="#78829A" text-anchor="middle">8:00</text>
+<text x="1191.5" y="458.55" font-size="10" fill="#838DA5" text-anchor="middle">8:00</text>
 <line x1="1243.5" y1="444" x2="1243.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="1243.5" y="458.55" font-size="10" fill="#78829A" text-anchor="middle">10:00</text>
+<text x="1243.5" y="458.55" font-size="10" fill="#838DA5" text-anchor="middle">10:00</text>
 <line x1="1295.5" y1="444" x2="1295.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="1295.5" y="458.55" font-size="10" fill="#78829A" text-anchor="middle">12:00</text>
+<text x="1295.5" y="458.55" font-size="10" fill="#838DA5" text-anchor="middle">12:00</text>
 <line x1="1347.5" y1="444" x2="1347.5" y2="447" stroke="#2A313D" stroke-width="1"/>
-<text x="1347.5" y="458.55" font-size="10" fill="#78829A" text-anchor="middle">14:00</text>
+<text x="1347.5" y="458.55" font-size="10" fill="#838DA5" text-anchor="middle">14:00</text>
 <g clip-path="url(#k4)">
 <path d="M983 444 L985.6 444 L988.2 443.81 L990.79 443.7 L993.39 443.64 L995.99 443.55 L998.59 443.55 L1001.19 443.38 L1003.79 443.24 L1006.38 443.19 L1008.98 442.08 L1011.58 441.96 L1014.18 441.78 L1016.78 441.78 L1019.37 440.43 L1021.97 440.31 L1024.57 440.17 L1027.17 440.09 L1029.77 439.99 L1032.36 439.99 L1034.96 439.79 L1037.56 439.69 L1040.16 439.69 L1042.76 439.62 L1045.36 439.54 L1047.95 439.43 L1050.55 437.15 L1053.15 437.08 L1055.75 436.99 L1058.35 436.9 L1060.94 435.11 L1063.54 434.99 L1066.14 434.88 L1068.74 434.8 L1071.34 434.69 L1073.94 434.58 L1076.53 434.47 L1079.13 434.32 L1081.73 432.96 L1084.33 432.88 L1086.93 432.78 L1089.52 432.78 L1092.12 432.69 L1094.72 432.55 L1097.32 432.38 L1099.92 432.38 L1102.52 432.15 L1105.11 432.15 L1107.71 432.09 L1110.31 431.98 L1112.91 429.23 L1115.51 429.17 L1118.1 428.97 L1120.7 428.89 L1123.3 428.8 L1125.9 428.69 L1128.5 428.6 L1131.09 428.47 L1133.69 428.29 L1136.29 428.16 L1138.89 428.09 L1141.49 427.98 L1144.09 427.89 L1146.68 427.81 L1149.28 427.81 L1151.88 427.75 L1154.48 424.44 L1157.08 424.36 L1159.67 424.25 L1162.27 424.18 L1164.87 424.07 L1167.47 423.94 L1170.07 423.84 L1172.67 423.74 L1175.26 423.62 L1177.86 423.52 L1180.46 423.52 L1183.06 423.52 L1185.66 423.43 L1188.25 421.68 L1190.85 421.56 L1193.45 421.48 L1196.05 421.36 L1198.65 421.27 L1201.24 419.91 L1203.84 419.7 L1206.44 419.61 L1209.04 419.56 L1211.64 419.46 L1214.24 419.34 L1216.83 419.23 L1219.43 419.23 L1222.03 419.18 L1224.63 418.96 L1227.23 417.6 L1229.82 417.52 L1232.42 417.45 L1235.02 417.39 L1237.62 417.2 L1240.22 417.06 L1242.82 417.06 L1245.41 415.69 L1248.01 415.69 L1250.61 415.69 L1253.21 415.55 L1255.81 414.28 L1258.4 414.28 L1261 414.2 L1263.6 414.1 L1266.2 413.9 L1268.8 413.9 L1271.39 413.72 L1273.99 413.65 L1276.59 413.55 L1279.19 411.75 L1281.79 411.75 L1284.39 411.65 L1286.98 411.53 L1289.58 411.44 L1292.18 411.39 L1294.78 411.39 L1297.38 411.28 L1299.97 411.16 L1302.57 410.98 L1305.17 410.88 L1307.77 410.88 L1310.37 410.88 L1312.97 410.72 L1315.56 410.59 L1318.16 410.51 L1320.76 408.86 L1323.36 408.76 L1325.96 408.76 L1328.55 408.71 L1331.15 408.64 L1333.75 407.08 L1336.35 406.99 L1338.95 406.95 L1341.55 406.95 L1344.14 406.89 L1346.74 406.81 L1349.34 406.72 L1351.94 406.62 L1354.54 406.62 L1357.13 405.25 L1358 404.33" fill="none" stroke="#E86366" stroke-width="1.5" stroke-linejoin="round"/>
 <path d="M983 444 L985.6 444 L988.2 443.86 L990.79 443.7 L993.39 443.5 L995.99 443.34 L998.59 443.24 L1001.19 440.5 L1003.79 440.5 L1006.38 440.36 L1008.98 440.19 L1011.58 440.01 L1014.18 439.88 L1016.78 439.62 L1019.37 439.48 L1021.97 439.35 L1024.57 439.16 L1027.17 439.04 L1029.77 436.3 L1032.36 436.14 L1034.96 435.85 L1037.56 435.65 L1040.16 435.53 L1042.76 435.39 L1045.36 435.28 L1047.95 435.07 L1050.55 434.99 L1053.15 434.86 L1055.75 434.71 L1058.35 434.57 L1060.94 431.93 L1063.54 431.82 L1066.14 431.45 L1068.74 431.28 L1071.34 431.16 L1073.94 431.05 L1076.53 430.86 L1079.13 430.76 L1081.73 430.76 L1084.33 430.61 L1086.93 430.5 L1089.52 430.36 L1092.12 430.23 L1094.72 427.75 L1097.32 427.58 L1099.92 427.46 L1102.52 427.23 L1105.11 427.07 L1107.71 426.87 L1110.31 426.78 L1112.91 426.56 L1115.51 426.47 L1118.1 426.32 L1120.7 426.23 L1123.3 426.07 L1125.9 423.58 L1128.5 423.43 L1131.09 423.33 L1133.69 422.98 L1136.29 422.85 L1138.89 422.74 L1141.49 422.63 L1144.09 422.47 L1146.68 422.33 L1149.28 422.26 L1151.88 422.26 L1154.48 419.52 L1157.08 419.27 L1159.67 419.16 L1162.27 419.16 L1164.87 418.91 L1167.47 418.75 L1170.07 418.6 L1172.67 418.46 L1175.26 418.37 L1177.86 418.24 L1180.46 417.99 L1183.06 417.99 L1185.66 414.8 L1188.25 414.74 L1190.85 414.3 L1193.45 414.14 L1196.05 413.99 L1198.65 413.81 L1201.24 413.55 L1203.84 413.43 L1206.44 413.23 L1209.04 413.23 L1211.64 413.02 L1214.24 413.02 L1216.83 409.42 L1219.43 409.24 L1222.03 409.24 L1224.63 408.93 L1227.23 408.78 L1229.82 408.78 L1232.42 408.63 L1235.02 408.47 L1237.62 408.47 L1240.22 408.35 L1242.82 408.35 L1245.41 408.23 L1248.01 404.67 L1250.61 404.54 L1253.21 404.21 L1255.81 404.06 L1258.4 403.93 L1261 403.78 L1263.6 403.61 L1266.2 403.44 L1268.8 403.29 L1271.39 403.15 L1273.99 402.82 L1276.59 402.63 L1279.19 401.17 L1281.79 401.09 L1284.39 400.91 L1286.98 400.91 L1289.58 400.78 L1292.18 400.61 L1294.78 400.43 L1297.38 400.3 L1299.97 400.15 L1302.57 399.84 L1305.17 396.39 L1307.77 396.17 L1310.37 396.05 L1312.97 395.87 L1315.56 395.73 L1318.16 395.61 L1320.76 395.54 L1323.36 395.4 L1325.96 395.18 L1328.55 395.01 L1331.15 394.89 L1333.75 392.16 L1336.35 391.84 L1338.95 391.71 L1341.55 391.52 L1344.14 391.35 L1346.74 391.2 L1349.34 391.2 L1351.94 391.08 L1354.54 391.01 L1357.13 390.75 L1358 390.75" fill="none" stroke="#70FCB5" stroke-width="1.5" stroke-linejoin="round"/>
@@ -709,7 +730,7 @@
 <path d="M983 444 L985.6 443.53 L988.2 442.87 L990.79 442.64 L993.39 440.87 L995.99 440.48 L998.59 439.95 L1001.19 439.45 L1003.79 439.08 L1006.38 438.6 L1008.98 438.09 L1011.58 435.72 L1014.18 435.08 L1016.78 434.61 L1019.37 434.07 L1021.97 433.67 L1024.57 433.33 L1027.17 430.86 L1029.77 430.46 L1032.36 430.18 L1034.96 429.98 L1037.56 425.51 L1040.16 425.04 L1042.76 424.66 L1045.36 424.29 L1047.95 423.59 L1050.55 422.7 L1053.15 420.35 L1055.75 419.8 L1058.35 419.31 L1060.94 418.94 L1063.54 418.68 L1066.14 418.06 L1068.74 416.37 L1071.34 416.1 L1073.94 415.71 L1076.53 415.35 L1079.13 414.75 L1081.73 414.56 L1084.33 412.38 L1086.93 411.75 L1089.52 411.36 L1092.12 410.99 L1094.72 410.4 L1097.32 407.77 L1099.92 406.98 L1102.52 406.76 L1105.11 406.22 L1107.71 405.83 L1110.31 402.57 L1112.91 402.14 L1115.51 401.32 L1118.1 400.9 L1120.7 399.14 L1123.3 398.75 L1125.9 398.2 L1128.5 397.81 L1131.09 397.57 L1133.69 395.03 L1136.29 394.6 L1138.89 394.2 L1141.49 394.01 L1144.09 393.35 L1146.68 392.9 L1149.28 390.94 L1151.88 390.33 L1154.48 389.77 L1157.08 389.28 L1159.67 388.96 L1162.27 387 L1164.87 386.77 L1167.47 386.14 L1170.07 385.58 L1172.67 381.08 L1175.26 380.64 L1177.86 380.09 L1180.46 379.39 L1183.06 379.17 L1185.66 376.12 L1188.25 375.44 L1190.85 375.13 L1193.45 374.67 L1196.05 374.06 L1198.65 373.96 L1201.24 373.4 L1203.84 370.89 L1206.44 370.68 L1209.04 370.09 L1211.64 369.62 L1214.24 368.59 L1216.83 368.07 L1219.43 363.07 L1222.03 362.32 L1224.63 361.71 L1227.23 361.49 L1229.82 361.03 L1232.42 360.41 L1235.02 359.99 L1237.62 359.74 L1240.22 359.33 L1242.82 358.92 L1245.41 355.47 L1248.01 355.06 L1250.61 354.34 L1253.21 353.79 L1255.81 353.5 L1258.4 353.06 L1261 350.46 L1263.6 350.2 L1266.2 349.93 L1268.8 349.53 L1271.39 349.09 L1273.99 348.62 L1276.59 348.15 L1279.19 347.76 L1281.79 346.38 L1284.39 345.89 L1286.98 345.61 L1289.58 345.03 L1292.18 342.29 L1294.78 342.15 L1297.38 341.52 L1299.97 340.93 L1302.57 340.71 L1305.17 340.18 L1307.77 339.68 L1310.37 337.61 L1312.97 337.26 L1315.56 336.67 L1318.16 336.32 L1320.76 335.65 L1323.36 332.9 L1325.96 331.05 L1328.55 330.5 L1331.15 330.09 L1333.75 329.47 L1336.35 329.23 L1338.95 326.71 L1341.55 326.09 L1344.14 325.94 L1346.74 325.4 L1349.34 324.81 L1351.94 324.3 L1354.54 322.54 L1357.13 321.99 L1358 321.61" fill="none" stroke="#F5C403" stroke-width="1.5" stroke-linejoin="round"/>
 <path d="M983 444 L985.6 443.84 L988.2 443.75 L990.79 443.37 L993.39 443.17 L995.99 437.48 L998.59 437.26 L1001.19 437.12 L1003.79 436.67 L1006.38 436.5 L1008.98 433.68 L1011.58 433.13 L1014.18 432.72 L1016.78 432.72 L1019.37 432.19 L1021.97 427.04 L1024.57 426.91 L1027.17 426.48 L1029.77 426.24 L1032.36 426.07 L1034.96 419.94 L1037.56 419.56 L1040.16 419.34 L1042.76 419.17 L1045.36 415.36 L1047.95 415.17 L1050.55 414.97 L1053.15 414.84 L1055.75 411.29 L1058.35 411.06 L1060.94 410.44 L1063.54 410.01 L1066.14 409.82 L1068.74 403.7 L1071.34 403.5 L1073.94 403.5 L1076.53 402.9 L1079.13 402.59 L1081.73 397.71 L1084.33 397.55 L1086.93 397.17 L1089.52 396.96 L1092.12 392.79 L1094.72 392.5 L1097.32 392.38 L1099.92 392.02 L1102.52 391.9 L1105.11 384.81 L1107.71 384.66 L1110.31 384.42 L1112.91 384.27 L1115.51 384.08 L1118.1 380.48 L1120.7 380.48 L1123.3 380.07 L1125.9 379.58 L1128.5 379.22 L1131.09 374.88 L1133.69 374.29 L1136.29 373.87 L1138.89 373.13 L1141.49 372.93 L1144.09 366.24 L1146.68 366.13 L1149.28 365.53 L1151.88 365.53 L1154.48 365.13 L1157.08 360.94 L1159.67 360.49 L1162.27 360.34 L1164.87 359.88 L1167.47 357.99 L1170.07 357.62 L1172.67 357 L1175.26 357 L1177.86 353.84 L1180.46 351.66 L1183.06 351.49 L1185.66 351.32 L1188.25 351.32 L1190.85 350.93 L1193.45 347.63 L1196.05 347.3 L1198.65 347.1 L1201.24 346.99 L1203.84 342.8 L1206.44 342.33 L1209.04 342.11 L1211.64 341.79 L1214.24 339.52 L1216.83 339.21 L1219.43 338.74 L1222.03 334.57 L1224.63 334.38 L1227.23 334.16 L1229.82 333.48 L1232.42 331.07 L1235.02 330.91 L1237.62 330.67 L1240.22 330.51 L1242.82 327.37 L1245.41 327.11 L1248.01 327.11 L1250.61 323.9 L1253.21 323.69 L1255.81 323.69 L1258.4 320.56 L1261 320.43 L1263.6 320.08 L1266.2 319.99 L1268.8 319.53 L1271.39 317.02 L1273.99 316.85 L1276.59 316.15 L1279.19 316.04 L1281.79 313.23 L1284.39 312.69 L1286.98 312.48 L1289.58 310.05 L1292.18 309.94 L1294.78 309.6 L1297.38 309.37 L1299.97 309.17 L1302.57 305.51 L1305.17 305.1 L1307.77 304.88 L1310.37 304.45 L1312.97 304.25 L1315.56 304.08 L1318.16 303.88 L1320.76 300.75 L1323.36 300.62 L1325.96 300.56 L1328.55 300.1 L1331.15 295.85 L1333.75 295.69 L1336.35 295.18 L1338.95 294.91 L1341.55 292.24 L1344.14 292.09 L1346.74 291.54 L1349.34 289.37 L1351.94 289.13 L1354.54 288.54 L1357.13 288.32 L1358 288.14" fill="none" stroke="#FC6E03" stroke-width="2" stroke-linejoin="round"/>
 </g>
-<line x1="1358.5" y1="214" x2="1358.5" y2="444" stroke="#3DD68C" stroke-width="1" opacity="0.55"/>
+<line x1="1358.5" y1="214" x2="1358.5" y2="444" stroke="#22E05A" stroke-width="1" opacity="0.55"/>
 <circle cx="1358" cy="404.33" r="3" fill="#E86366" stroke="#0F1217" stroke-width="1.5"/>
 <circle cx="1358" cy="390.75" r="3" fill="#70FCB5" stroke="#0F1217" stroke-width="1.5"/>
 <circle cx="1358" cy="384.69" r="3" fill="#F53000" stroke="#0F1217" stroke-width="1.5"/>
@@ -739,48 +760,48 @@
 <rect x="941" y="467" width="499" height="409" fill="#0F1217"/>
 <g clip-path="url(#k5)">
 <rect x="941" y="467" width="2" height="44" fill="#F2A33A"/>
-<circle cx="951" cy="478" r="1" fill="#515A6B"/>
-<circle cx="951" cy="482" r="1" fill="#515A6B"/>
-<circle cx="951" cy="486" r="1" fill="#515A6B"/>
-<circle cx="955" cy="478" r="1" fill="#515A6B"/>
-<circle cx="955" cy="482" r="1" fill="#515A6B"/>
-<circle cx="955" cy="486" r="1" fill="#515A6B"/>
+<circle cx="951" cy="478" r="1" fill="#5E677A"/>
+<circle cx="951" cy="482" r="1" fill="#5E677A"/>
+<circle cx="951" cy="486" r="1" fill="#5E677A"/>
+<circle cx="955" cy="478" r="1" fill="#5E677A"/>
+<circle cx="955" cy="482" r="1" fill="#5E677A"/>
+<circle cx="955" cy="486" r="1" fill="#5E677A"/>
 <text x="964" y="486.97" font-size="14" fill="#E9ECF2" font-weight="600">Attack</text>
 <rect x="964" y="495" width="8" height="8" rx="2" fill="#FC6E03"/>
-<text x="978" y="502.9" font-size="11" fill="#78829A">Hasaya · 200 hits · 27 misses · 10,629 total damage</text>
+<text x="978" y="502.9" font-size="11" fill="#838DA5">Hasaya · 200 hits · 27 misses · 10,629 total damage</text>
 <rect x="1376.5" y="477.5" width="51" height="21" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
 <text x="1402" y="491.9" font-size="11" fill="#A6AFBF" text-anchor="middle">Close</text>
-<path d="M1354 489.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M1354 489.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
 <rect x="941" y="511" width="499" height="42" fill="#151921"/>
-<text x="953" y="527.2" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">MIN</text>
+<text x="953" y="527.2" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">MIN</text>
 <text x="953" y="545.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">17</text>
 <line x1="1024.5" y1="519" x2="1024.5" y2="545" stroke="#2A313D" stroke-width="1"/>
-<text x="1036.17" y="527.2" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">AVERAGE</text>
+<text x="1036.17" y="527.2" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">AVERAGE</text>
 <text x="1036.17" y="545.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">53</text>
 <line x1="1107.5" y1="519" x2="1107.5" y2="545" stroke="#2A313D" stroke-width="1"/>
-<text x="1119.33" y="527.2" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">MAX</text>
+<text x="1119.33" y="527.2" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">MAX</text>
 <text x="1119.33" y="545.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">129</text>
 <line x1="1190.5" y1="519" x2="1190.5" y2="545" stroke="#2A313D" stroke-width="1"/>
-<text x="1202.5" y="527.2" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">MEDIAN</text>
+<text x="1202.5" y="527.2" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">MEDIAN</text>
 <text x="1202.5" y="545.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">47</text>
 <line x1="1274.5" y1="519" x2="1274.5" y2="545" stroke="#2A313D" stroke-width="1"/>
-<text x="1285.67" y="527.2" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">STD DEV</text>
+<text x="1285.67" y="527.2" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">STD DEV</text>
 <text x="1285.67" y="545.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">22</text>
 <line x1="1357.5" y1="519" x2="1357.5" y2="545" stroke="#2A313D" stroke-width="1"/>
-<text x="1368.83" y="527.2" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">ACCURACY</text>
+<text x="1368.83" y="527.2" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">ACCURACY</text>
 <text x="1368.83" y="545.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">88%</text>
 <line x1="941" y1="511.5" x2="1440" y2="511.5" stroke="#1B2029" stroke-width="1"/>
 <line x1="941" y1="552.5" x2="1440" y2="552.5" stroke="#1B2029" stroke-width="1"/>
 <line x1="979" y1="691.5" x2="1424" y2="691.5" stroke="#2A313D" stroke-width="1"/>
-<text x="973" y="695.05" font-size="10" fill="#78829A" text-anchor="end">0</text>
+<text x="973" y="695.05" font-size="10" fill="#838DA5" text-anchor="end">0</text>
 <line x1="979" y1="662.5" x2="1424" y2="662.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="666.05" font-size="10" fill="#78829A" text-anchor="end">10</text>
+<text x="973" y="666.05" font-size="10" fill="#838DA5" text-anchor="end">10</text>
 <line x1="979" y1="632.5" x2="1424" y2="632.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="636.05" font-size="10" fill="#78829A" text-anchor="end">20</text>
+<text x="973" y="636.05" font-size="10" fill="#838DA5" text-anchor="end">20</text>
 <line x1="979" y1="602.5" x2="1424" y2="602.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="606.05" font-size="10" fill="#78829A" text-anchor="end">30</text>
+<text x="973" y="606.05" font-size="10" fill="#838DA5" text-anchor="end">30</text>
 <line x1="979" y1="573.5" x2="1424" y2="573.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="577.05" font-size="10" fill="#78829A" text-anchor="end">40</text>
+<text x="973" y="577.05" font-size="10" fill="#838DA5" text-anchor="end">40</text>
 <rect x="1070.38" y="573" width="63.57" height="118" fill="#E9ECF2" opacity="0.04"/>
 <path d="M979.5 691 L979.5 681.2 Q979.5 679.2 981.5 679.2 L997.69 679.2 Q999.69 679.2 999.69 681.2 L999.69 691 Z" fill="#FC6E03"/>
 <path d="M1000.69 691 L1000.69 684.15 Q1000.69 682.15 1002.69 682.15 L1018.88 682.15 Q1020.88 682.15 1020.88 684.15 L1020.88 691 Z" fill="#FC6E03"/>
@@ -802,75 +823,75 @@
 <path d="M1360.93 691 L1360.93 690.05 Q1360.93 688.05 1362.93 688.05 L1379.12 688.05 Q1381.12 688.05 1381.12 690.05 L1381.12 691 Z" fill="#FC6E03"/>
 <path d="M1382.12 691 L1382.12 690.05 Q1382.12 688.05 1384.12 688.05 L1400.31 688.05 Q1402.31 688.05 1402.31 690.05 L1402.31 691 Z" fill="#FC6E03"/>
 <path d="M1403.31 691 L1403.31 687.1 Q1403.31 685.1 1405.31 685.1 L1421.5 685.1 Q1423.5 685.1 1423.5 687.1 L1423.5 691 Z" fill="#FC6E03"/>
-<text x="979" y="705.55" font-size="10" fill="#78829A">17</text>
-<text x="1042.57" y="705.55" font-size="10" fill="#78829A" text-anchor="middle">33</text>
-<text x="1106.14" y="705.55" font-size="10" fill="#78829A" text-anchor="middle">49</text>
-<text x="1169.71" y="705.55" font-size="10" fill="#78829A" text-anchor="middle">65</text>
-<text x="1233.29" y="705.55" font-size="10" fill="#78829A" text-anchor="middle">81</text>
-<text x="1296.86" y="705.55" font-size="10" fill="#78829A" text-anchor="middle">97</text>
-<text x="1360.43" y="705.55" font-size="10" fill="#78829A" text-anchor="middle">113</text>
-<text x="1424" y="705.55" font-size="10" fill="#78829A" text-anchor="end">129</text>
+<text x="979" y="705.55" font-size="10" fill="#838DA5">17</text>
+<text x="1042.57" y="705.55" font-size="10" fill="#838DA5" text-anchor="middle">33</text>
+<text x="1106.14" y="705.55" font-size="10" fill="#838DA5" text-anchor="middle">49</text>
+<text x="1169.71" y="705.55" font-size="10" fill="#838DA5" text-anchor="middle">65</text>
+<text x="1233.29" y="705.55" font-size="10" fill="#838DA5" text-anchor="middle">81</text>
+<text x="1296.86" y="705.55" font-size="10" fill="#838DA5" text-anchor="middle">97</text>
+<text x="1360.43" y="705.55" font-size="10" fill="#838DA5" text-anchor="middle">113</text>
+<text x="1424" y="705.55" font-size="10" fill="#838DA5" text-anchor="end">129</text>
 <line x1="1123.5" y1="569" x2="1123.5" y2="691" stroke="#A6AFBF" stroke-width="1"/>
 <text x="1128.5" y="570.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 53</text>
 <line x1="1098.5" y1="686" x2="1098.5" y2="695" stroke="#E9ECF2" stroke-width="1.5"/>
-<text x="1190.5" y="721.73" font-size="10.5" fill="#78829A" text-anchor="middle">Damage distribution · 21 bins · IQR 40–56 · 90th percentile 92 · 16% crit</text>
+<text x="1190.5" y="721.73" font-size="10.5" fill="#838DA5" text-anchor="middle">Damage distribution · 21 bins · IQR 40–56 · 90th percentile 92 · 16% crit</text>
 <rect x="941" y="731" width="499" height="24" fill="#0F1217"/>
 <line x1="941" y1="731.5" x2="1440" y2="731.5" stroke="#2A313D" stroke-width="1"/>
-<path d="M953 741 l3.5 4 l3.5 -4" fill="none" stroke="#78829A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M953 741 l3.5 4 l3.5 -4" fill="none" stroke="#838DA5" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
 <text x="967" y="747.08" font-size="11.5" fill="#E9ECF2" font-weight="600">Every hit</text>
-<text x="1021.08" y="747.4" font-size="11" fill="#78829A">227</text>
-<text x="1282" y="746.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="1418" y="746.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">vs avg</text>
+<text x="1021.08" y="747.4" font-size="11" fill="#838DA5">227</text>
+<text x="1282" y="746.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="1418" y="746.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">vs avg</text>
 <line x1="941" y1="754.5" x2="1440" y2="754.5" stroke="#1B2029" stroke-width="1"/>
 <g clip-path="url(#k6)">
-<text x="953" y="768.9" font-size="11" fill="#78829A" class="m">14:24</text>
+<text x="953" y="768.9" font-size="11" fill="#838DA5" class="m">14:24</text>
 <text x="1013" y="769.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="769.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">47</text>
 <line x1="1334.5" y1="759" x2="1334.5" y2="771" stroke="#3D4656" stroke-width="1"/>
-<rect x="1331.08" y="762.5" width="2.92" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1331.08" y="762.5" width="2.92" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="769.26" font-size="12" fill="#A6AFBF" text-anchor="end">−6</text>
 <line x1="941" y1="774.5" x2="1440" y2="774.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="788.9" font-size="11" fill="#78829A" class="m">14:20</text>
+<text x="953" y="788.9" font-size="11" fill="#838DA5" class="m">14:20</text>
 <text x="1013" y="789.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="789.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">57</text>
 <line x1="1334.5" y1="779" x2="1334.5" y2="791" stroke="#3D4656" stroke-width="1"/>
-<rect x="1335" y="782.5" width="1.83" height="5" rx="1" fill="#3DD68C" opacity="0.85"/>
+<rect x="1335" y="782.5" width="1.83" height="5" rx="1" fill="#22E05A" opacity="0.85"/>
 <text x="1418" y="789.26" font-size="12" fill="#A6AFBF" text-anchor="end">+4</text>
 <line x1="941" y1="794.5" x2="1440" y2="794.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="808.9" font-size="11" fill="#78829A" class="m">14:16</text>
+<text x="953" y="808.9" font-size="11" fill="#838DA5" class="m">14:16</text>
 <text x="1013" y="809.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1255.32" y="808.2" font-size="9" fill="#F2A33A" text-anchor="end">✦</text>
 <text x="1282" y="809.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">108</text>
 <line x1="1334.5" y1="799" x2="1334.5" y2="811" stroke="#3D4656" stroke-width="1"/>
-<rect x="1335" y="802.5" width="26.03" height="5" rx="1" fill="#3DD68C" opacity="0.85"/>
+<rect x="1335" y="802.5" width="26.03" height="5" rx="1" fill="#22E05A" opacity="0.85"/>
 <text x="1418" y="809.26" font-size="12" fill="#A6AFBF" text-anchor="end">+55</text>
 <line x1="941" y1="814.5" x2="1440" y2="814.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="828.9" font-size="11" fill="#78829A" class="m">14:12</text>
+<text x="953" y="828.9" font-size="11" fill="#838DA5" class="m">14:12</text>
 <text x="1013" y="829.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="829.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">46</text>
 <line x1="1334.5" y1="819" x2="1334.5" y2="831" stroke="#3D4656" stroke-width="1"/>
-<rect x="1330.61" y="822.5" width="3.39" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1330.61" y="822.5" width="3.39" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="829.26" font-size="12" fill="#A6AFBF" text-anchor="end">−7</text>
 <line x1="941" y1="834.5" x2="1440" y2="834.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="848.9" font-size="11" fill="#78829A" class="m">14:07</text>
+<text x="953" y="848.9" font-size="11" fill="#838DA5" class="m">14:07</text>
 <text x="1013" y="849.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="849.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">63</text>
 <line x1="1334.5" y1="839" x2="1334.5" y2="851" stroke="#3D4656" stroke-width="1"/>
-<rect x="1335" y="842.5" width="4.68" height="5" rx="1" fill="#3DD68C" opacity="0.85"/>
+<rect x="1335" y="842.5" width="4.68" height="5" rx="1" fill="#22E05A" opacity="0.85"/>
 <text x="1418" y="849.26" font-size="12" fill="#A6AFBF" text-anchor="end">+10</text>
 <line x1="941" y1="854.5" x2="1440" y2="854.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="868.9" font-size="11" fill="#78829A" class="m">14:03</text>
+<text x="953" y="868.9" font-size="11" fill="#838DA5" class="m">14:03</text>
 <text x="1013" y="869.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="869.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">43</text>
 <line x1="1334.5" y1="859" x2="1334.5" y2="871" stroke="#3D4656" stroke-width="1"/>
-<rect x="1329.19" y="862.5" width="4.81" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1329.19" y="862.5" width="4.81" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="869.26" font-size="12" fill="#A6AFBF" text-anchor="end">−10</text>
 <line x1="941" y1="874.5" x2="1440" y2="874.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="888.9" font-size="11" fill="#78829A" class="m">13:58</text>
+<text x="953" y="888.9" font-size="11" fill="#838DA5" class="m">13:58</text>
 <text x="1013" y="889.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="889.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">45</text>
 <line x1="1334.5" y1="879" x2="1334.5" y2="891" stroke="#3D4656" stroke-width="1"/>
-<rect x="1330.13" y="882.5" width="3.87" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1330.13" y="882.5" width="3.87" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="889.26" font-size="12" fill="#A6AFBF" text-anchor="end">−8</text>
 <line x1="941" y1="894.5" x2="1440" y2="894.5" stroke="#1B2029" stroke-width="1"/>
 </g>
@@ -886,7 +907,7 @@
 <rect x="941" y="170" width="499" height="30" fill="#0A0C10" opacity="0.55"/>
 <rect x="945.5" y="174.5" width="490" height="287" rx="4" fill="none" stroke="#3D4656" stroke-width="1" stroke-dasharray="5 4"/>
 <text x="1190.5" y="330.26" font-size="12" fill="#A6AFBF" font-weight="600" text-anchor="middle">Cumulative damage is being moved</text>
-<text x="1190.5" y="347.9" font-size="11" fill="#78829A" text-anchor="middle">Esc puts it back</text>
+<text x="1190.5" y="347.9" font-size="11" fill="#838DA5" text-anchor="middle">Esc puts it back</text>
 <rect x="0" y="535" width="940" height="341" fill="#0A0C10" opacity="0.84"/>
 <rect x="3.5" y="538.5" width="933" height="81.66" rx="3" fill="none" stroke="#3D4656" stroke-width="1" stroke-dasharray="3 3"/>
 <rect x="446.94" y="569.33" width="46.13" height="20" rx="3" fill="#0A0C10"/>
@@ -926,10 +947,10 @@
 <path d="M590 719.5 l0 16 l4.5 -3.5 l3 6.5 l2.5 -1 l-3 -6.5 l5.5 0 Z" fill="#FFFFFF" stroke="#000000" stroke-width="1" stroke-linejoin="round"/>
 <rect x="0" y="876" width="1440" height="24" fill="#0A0C10"/>
 <line x1="0" y1="876.5" x2="1440" y2="876.5" stroke="#2A313D" stroke-width="1"/>
-<circle cx="16" cy="888" r="4" fill="#3DD68C"/>
+<circle cx="16" cy="888" r="4" fill="#22E05A"/>
 <text x="30" y="891.9" font-size="11" fill="#A6AFBF" class="m">Hasaya-20261005203112.jsonl</text>
-<text x="214.04" y="891.9" font-size="11" fill="#78829A">2,944 events · started 20:31:12</text>
-<text x="1426" y="891.9" font-size="11" fill="#78829A" text-anchor="end">Moving Cumulative damage · Esc cancels</text>
+<text x="214.04" y="891.9" font-size="11" fill="#838DA5">2,944 events · started 20:31:12</text>
+<text x="1426" y="891.9" font-size="11" fill="#838DA5" text-anchor="end">Moving Cumulative damage · Esc cancels</text>
 </g>
 <rect x="0.5" y="0.5" width="1439" height="899" rx="8" fill="none" stroke="#3D4656" stroke-width="1"/>
 </svg>
@@ -967,7 +988,7 @@
 <line x1="214.5" y1="46" x2="214.5" y2="66" stroke="#2A313D" stroke-width="1"/>
 <rect x="226" y="43" width="68" height="26" rx="4" fill="#151921"/>
 <rect x="226.5" y="43.5" width="67" height="25" rx="3.5" fill="none" stroke="#1B2029" stroke-width="1"/>
-<text x="260" y="60.26" font-size="12" fill="#515A6B" text-anchor="middle">Export…</text>
+<text x="260" y="60.26" font-size="12" fill="#5E677A" text-anchor="middle">Export…</text>
 <rect x="300.5" y="43.5" width="69" height="25" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
 <text x="335" y="60.26" font-size="12" fill="#A6AFBF" text-anchor="middle">Import…</text>
 <line x1="382.5" y1="46" x2="382.5" y2="66" stroke="#2A313D" stroke-width="1"/>
@@ -977,10 +998,10 @@
 <path d="M404.6 56.2 l2.6 2.6 l4.6 -5" fill="none" stroke="#191004" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
 <text x="420" y="60.08" font-size="11.5" fill="#E9ECF2" font-weight="500">Include Skillchains</text>
 <rect x="529.5" y="44.5" width="95" height="23" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
-<rect x="537.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<rect x="537.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#838DA5" stroke-width="1"/>
 <text x="555" y="60.08" font-size="11.5" fill="#A6AFBF" font-weight="500">Hide names</text>
 <rect x="631.5" y="44.5" width="179" height="23" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
-<rect x="639.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<rect x="639.5" y="50.5" width="11" height="11" rx="2.5" fill="none" stroke="#838DA5" stroke-width="1"/>
 <text x="657" y="60.08" font-size="11.5" fill="#A6AFBF" font-weight="500">Click-through</text>
 <rect x="734.59" y="48" width="71" height="16" rx="3" fill="#0F1217"/>
 <rect x="735.09" y="48.5" width="70" height="15" rx="2.5" fill="none" stroke="#3D4656" stroke-width="1"/>
@@ -991,74 +1012,74 @@
 <line x1="1412.5" y1="51" x2="1412.5" y2="61" stroke="#A6AFBF" stroke-width="1"/>
 <line x1="1413" y1="56.5" x2="1419" y2="56.5" stroke="#A6AFBF" stroke-width="1"/>
 <rect x="0" y="76" width="1440" height="64" fill="#0F1217"/>
-<text x="14" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">TOTAL DAMAGE</text>
+<text x="14" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">TOTAL DAMAGE</text>
 <text x="14" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">227,587</text>
-<text x="14" y="132.73" font-size="10.5" fill="#78829A">counting</text>
+<text x="14" y="132.73" font-size="10.5" fill="#838DA5">counting</text>
 <line x1="288.5" y1="86" x2="288.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="302" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">ELAPSED</text>
-<text x="302" y="116.81" font-size="22" font-weight="600" class="d" fill="#3DD68C">14:26</text>
-<text x="302" y="132.73" font-size="10.5" fill="#78829A">started 20:31:12</text>
+<text x="302" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">ELAPSED</text>
+<text x="302" y="116.81" font-size="22" font-weight="600" class="d" fill="#22E05A">14:26</text>
+<text x="302" y="132.73" font-size="10.5" fill="#838DA5">started 20:31:12</text>
 <line x1="576.5" y1="86" x2="576.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="590" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">PARTY DPS</text>
+<text x="590" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">PARTY DPS</text>
 <text x="590" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">262.8</text>
-<text x="590" y="132.73" font-size="10.5" fill="#78829A">10 characters</text>
+<text x="590" y="132.73" font-size="10.5" fill="#838DA5">10 characters</text>
 <line x1="864.5" y1="86" x2="864.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="878" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">TOP DPS</text>
+<text x="878" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">TOP DPS</text>
 <circle cx="883" cy="109" r="5" fill="#FC6E03"/>
 <text x="895" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">Hasaya</text>
-<text x="878" y="132.73" font-size="10.5" fill="#78829A">SAM/WAR · 17.9% of 227,587 damage</text>
+<text x="878" y="132.73" font-size="10.5" fill="#838DA5">SAM/WAR · 17.9% of 227,587 damage</text>
 <line x1="1152.5" y1="86" x2="1152.5" y2="130" stroke="#2A313D" stroke-width="1"/>
-<text x="1166" y="93.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">BIGGEST HIT</text>
+<text x="1166" y="93.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">BIGGEST HIT</text>
 <text x="1166" y="116.81" font-size="22" font-weight="600" class="d" fill="#E9ECF2">1,459</text>
-<text x="1166" y="132.73" font-size="10.5" fill="#78829A">Xatsh · Eagle Eye Shot</text>
-<rect x="178" y="112.65" width="1.18" height="9.35" fill="#78829A" opacity="0.75"/>
-<rect x="180.18" y="99.43" width="1.18" height="22.57" fill="#78829A" opacity="0.75"/>
-<rect x="182.36" y="106.47" width="1.18" height="15.53" fill="#78829A" opacity="0.75"/>
-<rect x="184.55" y="105.1" width="1.18" height="16.9" fill="#78829A" opacity="0.75"/>
-<rect x="186.73" y="106.21" width="1.18" height="15.79" fill="#78829A" opacity="0.75"/>
-<rect x="188.91" y="101.81" width="1.18" height="20.19" fill="#78829A" opacity="0.75"/>
-<rect x="191.09" y="101.74" width="1.18" height="20.26" fill="#78829A" opacity="0.75"/>
-<rect x="193.27" y="102.51" width="1.18" height="19.49" fill="#78829A" opacity="0.75"/>
-<rect x="195.45" y="100.48" width="1.18" height="21.52" fill="#78829A" opacity="0.75"/>
-<rect x="197.64" y="105.22" width="1.18" height="16.78" fill="#78829A" opacity="0.75"/>
-<rect x="199.82" y="102.64" width="1.18" height="19.36" fill="#78829A" opacity="0.75"/>
-<rect x="202" y="102.32" width="1.18" height="19.68" fill="#78829A" opacity="0.75"/>
-<rect x="204.18" y="109.23" width="1.18" height="12.77" fill="#78829A" opacity="0.75"/>
-<rect x="206.36" y="107.58" width="1.18" height="14.42" fill="#78829A" opacity="0.75"/>
-<rect x="208.55" y="99.15" width="1.18" height="22.85" fill="#78829A" opacity="0.75"/>
-<rect x="210.73" y="105.74" width="1.18" height="16.26" fill="#78829A" opacity="0.75"/>
-<rect x="212.91" y="104.21" width="1.18" height="17.79" fill="#78829A" opacity="0.75"/>
-<rect x="215.09" y="107.9" width="1.18" height="14.1" fill="#78829A" opacity="0.75"/>
-<rect x="217.27" y="100.29" width="1.18" height="21.71" fill="#78829A" opacity="0.75"/>
-<rect x="219.45" y="96" width="1.18" height="26" fill="#78829A" opacity="0.75"/>
-<rect x="221.64" y="105.08" width="1.18" height="16.92" fill="#78829A" opacity="0.75"/>
-<rect x="223.82" y="97.2" width="1.18" height="24.8" fill="#78829A" opacity="0.75"/>
-<rect x="226" y="103.43" width="1.18" height="18.57" fill="#78829A" opacity="0.75"/>
-<rect x="228.18" y="98.57" width="1.18" height="23.43" fill="#78829A" opacity="0.75"/>
-<rect x="230.36" y="105.17" width="1.18" height="16.83" fill="#78829A" opacity="0.75"/>
-<rect x="232.55" y="102.79" width="1.18" height="19.21" fill="#78829A" opacity="0.75"/>
-<rect x="234.73" y="107.48" width="1.18" height="14.52" fill="#78829A" opacity="0.75"/>
-<rect x="236.91" y="96.9" width="1.18" height="25.1" fill="#78829A" opacity="0.75"/>
-<rect x="239.09" y="110.08" width="1.18" height="11.92" fill="#78829A" opacity="0.75"/>
-<rect x="241.27" y="106.82" width="1.18" height="15.18" fill="#78829A" opacity="0.75"/>
-<rect x="243.45" y="102.96" width="1.18" height="19.04" fill="#78829A" opacity="0.75"/>
-<rect x="245.64" y="109.19" width="1.18" height="12.81" fill="#78829A" opacity="0.75"/>
-<rect x="247.82" y="104.63" width="1.18" height="17.37" fill="#78829A" opacity="0.75"/>
-<rect x="250" y="107.13" width="1.18" height="14.87" fill="#78829A" opacity="0.75"/>
-<rect x="252.18" y="103.61" width="1.18" height="18.39" fill="#78829A" opacity="0.75"/>
-<rect x="254.36" y="102.98" width="1.18" height="19.02" fill="#78829A" opacity="0.75"/>
-<rect x="256.55" y="102.56" width="1.18" height="19.44" fill="#78829A" opacity="0.75"/>
-<rect x="258.73" y="105.04" width="1.18" height="16.96" fill="#78829A" opacity="0.75"/>
-<rect x="260.91" y="102.57" width="1.18" height="19.43" fill="#78829A" opacity="0.75"/>
-<rect x="263.09" y="101.29" width="1.18" height="20.71" fill="#78829A" opacity="0.75"/>
-<rect x="265.27" y="102.48" width="1.18" height="19.52" fill="#78829A" opacity="0.75"/>
-<rect x="267.45" y="107.04" width="1.18" height="14.96" fill="#78829A" opacity="0.75"/>
-<rect x="269.64" y="105.16" width="1.18" height="16.84" fill="#78829A" opacity="0.75"/>
-<rect x="271.82" y="113.99" width="1.18" height="8.01" fill="#78829A" opacity="0.75"/>
-<text x="274" y="93.37" font-size="9.5" fill="#515A6B" text-anchor="end" class="s">per 20 s</text>
+<text x="1166" y="132.73" font-size="10.5" fill="#838DA5">Xatsh · Eagle Eye Shot</text>
+<rect x="178" y="112.65" width="1.18" height="9.35" fill="#838DA5" opacity="0.75"/>
+<rect x="180.18" y="99.43" width="1.18" height="22.57" fill="#838DA5" opacity="0.75"/>
+<rect x="182.36" y="106.47" width="1.18" height="15.53" fill="#838DA5" opacity="0.75"/>
+<rect x="184.55" y="105.1" width="1.18" height="16.9" fill="#838DA5" opacity="0.75"/>
+<rect x="186.73" y="106.21" width="1.18" height="15.79" fill="#838DA5" opacity="0.75"/>
+<rect x="188.91" y="101.81" width="1.18" height="20.19" fill="#838DA5" opacity="0.75"/>
+<rect x="191.09" y="101.74" width="1.18" height="20.26" fill="#838DA5" opacity="0.75"/>
+<rect x="193.27" y="102.51" width="1.18" height="19.49" fill="#838DA5" opacity="0.75"/>
+<rect x="195.45" y="100.48" width="1.18" height="21.52" fill="#838DA5" opacity="0.75"/>
+<rect x="197.64" y="105.22" width="1.18" height="16.78" fill="#838DA5" opacity="0.75"/>
+<rect x="199.82" y="102.64" width="1.18" height="19.36" fill="#838DA5" opacity="0.75"/>
+<rect x="202" y="102.32" width="1.18" height="19.68" fill="#838DA5" opacity="0.75"/>
+<rect x="204.18" y="109.23" width="1.18" height="12.77" fill="#838DA5" opacity="0.75"/>
+<rect x="206.36" y="107.58" width="1.18" height="14.42" fill="#838DA5" opacity="0.75"/>
+<rect x="208.55" y="99.15" width="1.18" height="22.85" fill="#838DA5" opacity="0.75"/>
+<rect x="210.73" y="105.74" width="1.18" height="16.26" fill="#838DA5" opacity="0.75"/>
+<rect x="212.91" y="104.21" width="1.18" height="17.79" fill="#838DA5" opacity="0.75"/>
+<rect x="215.09" y="107.9" width="1.18" height="14.1" fill="#838DA5" opacity="0.75"/>
+<rect x="217.27" y="100.29" width="1.18" height="21.71" fill="#838DA5" opacity="0.75"/>
+<rect x="219.45" y="96" width="1.18" height="26" fill="#838DA5" opacity="0.75"/>
+<rect x="221.64" y="105.08" width="1.18" height="16.92" fill="#838DA5" opacity="0.75"/>
+<rect x="223.82" y="97.2" width="1.18" height="24.8" fill="#838DA5" opacity="0.75"/>
+<rect x="226" y="103.43" width="1.18" height="18.57" fill="#838DA5" opacity="0.75"/>
+<rect x="228.18" y="98.57" width="1.18" height="23.43" fill="#838DA5" opacity="0.75"/>
+<rect x="230.36" y="105.17" width="1.18" height="16.83" fill="#838DA5" opacity="0.75"/>
+<rect x="232.55" y="102.79" width="1.18" height="19.21" fill="#838DA5" opacity="0.75"/>
+<rect x="234.73" y="107.48" width="1.18" height="14.52" fill="#838DA5" opacity="0.75"/>
+<rect x="236.91" y="96.9" width="1.18" height="25.1" fill="#838DA5" opacity="0.75"/>
+<rect x="239.09" y="110.08" width="1.18" height="11.92" fill="#838DA5" opacity="0.75"/>
+<rect x="241.27" y="106.82" width="1.18" height="15.18" fill="#838DA5" opacity="0.75"/>
+<rect x="243.45" y="102.96" width="1.18" height="19.04" fill="#838DA5" opacity="0.75"/>
+<rect x="245.64" y="109.19" width="1.18" height="12.81" fill="#838DA5" opacity="0.75"/>
+<rect x="247.82" y="104.63" width="1.18" height="17.37" fill="#838DA5" opacity="0.75"/>
+<rect x="250" y="107.13" width="1.18" height="14.87" fill="#838DA5" opacity="0.75"/>
+<rect x="252.18" y="103.61" width="1.18" height="18.39" fill="#838DA5" opacity="0.75"/>
+<rect x="254.36" y="102.98" width="1.18" height="19.02" fill="#838DA5" opacity="0.75"/>
+<rect x="256.55" y="102.56" width="1.18" height="19.44" fill="#838DA5" opacity="0.75"/>
+<rect x="258.73" y="105.04" width="1.18" height="16.96" fill="#838DA5" opacity="0.75"/>
+<rect x="260.91" y="102.57" width="1.18" height="19.43" fill="#838DA5" opacity="0.75"/>
+<rect x="263.09" y="101.29" width="1.18" height="20.71" fill="#838DA5" opacity="0.75"/>
+<rect x="265.27" y="102.48" width="1.18" height="19.52" fill="#838DA5" opacity="0.75"/>
+<rect x="267.45" y="107.04" width="1.18" height="14.96" fill="#838DA5" opacity="0.75"/>
+<rect x="269.64" y="105.16" width="1.18" height="16.84" fill="#838DA5" opacity="0.75"/>
+<rect x="271.82" y="113.99" width="1.18" height="8.01" fill="#838DA5" opacity="0.75"/>
+<text x="274" y="93.37" font-size="9.5" fill="#838DA5" text-anchor="end" class="s">per 20 s</text>
 <path d="M754 109.98 L756.23 101.49 L758.47 101.67 L760.7 101.32 L762.93 101.4 L765.16 100.51 L767.4 99.85 L769.63 99.49 L771.86 98.92 L774.09 99.07 L776.33 98.89 L778.56 98.71 L780.79 99.24 L783.02 99.54 L785.26 99.08 L787.49 99.2 L789.72 99.2 L791.95 99.46 L794.19 99.18 L796.42 98.65 L798.65 98.72 L800.88 98.33 L803.12 98.32 L805.35 98.05 L807.58 98.15 L809.81 98.11 L812.05 98.31 L814.28 98 L816.51 98.3 L818.74 98.44 L820.98 98.41 L823.21 98.63 L825.44 98.66 L827.67 98.79 L829.91 98.78 L832.14 98.74 L834.37 98.69 L836.6 98.73 L838.84 98.69 L841.07 98.61 L843.3 98.57 L845.53 98.67 L847.77 98.7 L850 98.63 L850 122 L754 122 Z" fill="#A6AFBF" opacity="0.16"/>
 <path d="M754 109.98 L756.23 101.49 L758.47 101.67 L760.7 101.32 L762.93 101.4 L765.16 100.51 L767.4 99.85 L769.63 99.49 L771.86 98.92 L774.09 99.07 L776.33 98.89 L778.56 98.71 L780.79 99.24 L783.02 99.54 L785.26 99.08 L787.49 99.2 L789.72 99.2 L791.95 99.46 L794.19 99.18 L796.42 98.65 L798.65 98.72 L800.88 98.33 L803.12 98.32 L805.35 98.05 L807.58 98.15 L809.81 98.11 L812.05 98.31 L814.28 98 L816.51 98.3 L818.74 98.44 L820.98 98.41 L823.21 98.63 L825.44 98.66 L827.67 98.79 L829.91 98.78 L832.14 98.74 L834.37 98.69 L836.6 98.73 L838.84 98.69 L841.07 98.61 L843.3 98.57 L845.53 98.67 L847.77 98.7 L850 98.63" fill="none" stroke="#A6AFBF" stroke-width="1.3" stroke-linejoin="round"/>
-<text x="850" y="93.37" font-size="9.5" fill="#515A6B" text-anchor="end" class="s">running</text>
+<text x="850" y="93.37" font-size="9.5" fill="#838DA5" text-anchor="end" class="s">running</text>
 <rect x="1028" y="106" width="18.65" height="8" rx="1" fill="#FC6E03"/>
 <rect x="1047.65" y="106" width="14.43" height="8" rx="1" fill="#F5C403"/>
 <rect x="1063.08" y="106" width="13.91" height="8" rx="1" fill="#CCBA78"/>
@@ -1069,14 +1090,14 @@
 <rect x="1118.81" y="106" width="6.48" height="8" rx="1" fill="#F53000"/>
 <rect x="1126.28" y="106" width="5.71" height="8" rx="1" fill="#70FCB5"/>
 <rect x="1133" y="106" width="4" height="8" rx="1" fill="#E86366"/>
-<text x="1138" y="93.37" font-size="9.5" fill="#515A6B" text-anchor="end" class="s">party share</text>
-<rect x="517" y="100" width="45" height="18" rx="9" fill="#152A25"/>
-<rect x="517.5" y="100.5" width="44" height="17" rx="8.5" fill="none" stroke="#246A4C" stroke-width="1"/>
-<circle cx="527" cy="109" r="3" fill="#3DD68C"/>
-<text x="535" y="112.37" font-size="9.5" fill="#3DD68C" font-weight="700" letter-spacing="0.6">LIVE</text>
+<text x="1138" y="93.37" font-size="9.5" fill="#838DA5" text-anchor="end" class="s">party share</text>
+<rect x="517" y="100" width="45" height="18" rx="9" fill="#112B1F"/>
+<rect x="517.5" y="100.5" width="44" height="17" rx="8.5" fill="none" stroke="#186F35" stroke-width="1"/>
+<circle cx="527" cy="109" r="3" fill="#22E05A"/>
+<text x="535" y="112.37" font-size="9.5" fill="#22E05A" font-weight="700" letter-spacing="0.6">LIVE</text>
 <line x1="0" y1="139.5" x2="1440" y2="139.5" stroke="#2A313D" stroke-width="1"/>
 <rect x="0" y="140" width="1440" height="30" fill="#0F1217"/>
-<text x="14" y="158.37" font-size="9.5" fill="#78829A" font-weight="600" class="s" letter-spacing="0.7">CHARACTERS 12/12</text>
+<text x="14" y="158.37" font-size="9.5" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.7">CHARACTERS 12/12</text>
 <rect x="126.46" y="145" width="66" height="20" rx="3" fill="#151921"/>
 <rect x="126.96" y="145.5" width="65" height="19" rx="2.5" fill="none" stroke="#2A313D" stroke-width="1"/>
 <rect x="133.46" y="151" width="8" height="8" rx="2" fill="#FC6E03"/>
@@ -1128,45 +1149,45 @@
 <line x1="1001.96" y1="148" x2="1001.96" y2="162" stroke="#2A313D" stroke-width="1"/>
 <text x="1011.46" y="159.08" font-size="11.5" fill="#A6AFBF">All</text>
 <text x="1036.7" y="159.08" font-size="11.5" fill="#A6AFBF">None</text>
-<text x="1079.11" y="158.91" font-size="11" fill="#78829A">all included</text>
+<text x="1079.11" y="158.91" font-size="11" fill="#838DA5">all included</text>
 <line x1="0" y1="169.5" x2="1440" y2="169.5" stroke="#2A313D" stroke-width="1"/>
 <rect x="0" y="170" width="940" height="334" fill="#0F1217"/>
-<circle cx="9" cy="181" r="1" fill="#515A6B"/>
-<circle cx="9" cy="185" r="1" fill="#515A6B"/>
-<circle cx="9" cy="189" r="1" fill="#515A6B"/>
-<circle cx="13" cy="181" r="1" fill="#515A6B"/>
-<circle cx="13" cy="185" r="1" fill="#515A6B"/>
-<circle cx="13" cy="189" r="1" fill="#515A6B"/>
+<circle cx="9" cy="181" r="1" fill="#5E677A"/>
+<circle cx="9" cy="185" r="1" fill="#5E677A"/>
+<circle cx="9" cy="189" r="1" fill="#5E677A"/>
+<circle cx="13" cy="181" r="1" fill="#5E677A"/>
+<circle cx="13" cy="185" r="1" fill="#5E677A"/>
+<circle cx="13" cy="189" r="1" fill="#5E677A"/>
 <text x="22" y="189.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Damage by character</text>
-<text x="922" y="191" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M897 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-<text x="156.91" y="189.41" font-size="11" fill="#78829A">Total dealt since the session started</text>
+<text x="922" y="191" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M897 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="156.91" y="189.41" font-size="11" fill="#838DA5">Total dealt since the session started</text>
 <line x1="0" y1="199.5" x2="940" y2="199.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="200" width="940" height="38" fill="#0F1217"/>
-<text x="572" y="213.19" font-size="9" fill="#78829A" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">WEAPONSKILL</text>
+<text x="572" y="213.19" font-size="9" fill="#838DA5" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">WEAPONSKILL</text>
 <line x1="464" y1="210.5" x2="528.59" y2="210.5" stroke="#2A313D" stroke-width="1"/>
 <line x1="615.41" y1="210.5" x2="680" y2="210.5" stroke="#2A313D" stroke-width="1"/>
-<text x="747" y="213.19" font-size="9" fill="#78829A" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">SKILLCHAIN</text>
+<text x="747" y="213.19" font-size="9" fill="#838DA5" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">SKILLCHAIN</text>
 <line x1="696" y1="210.5" x2="709.54" y2="210.5" stroke="#2A313D" stroke-width="1"/>
 <line x1="784.46" y1="210.5" x2="798" y2="210.5" stroke="#2A313D" stroke-width="1"/>
-<text x="868" y="213.19" font-size="9" fill="#78829A" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">PET</text>
+<text x="868" y="213.19" font-size="9" fill="#838DA5" font-weight="600" text-anchor="middle" class="s" letter-spacing="0.8">PET</text>
 <line x1="814" y1="210.5" x2="851.17" y2="210.5" stroke="#2A313D" stroke-width="1"/>
 <line x1="884.83" y1="210.5" x2="922" y2="210.5" stroke="#2A313D" stroke-width="1"/>
-<text x="12" y="230.91" font-size="11" fill="#78829A" font-weight="500">Character</text>
-<text x="146" y="230.91" font-size="11" fill="#78829A" font-weight="500">Job</text>
-<text x="268" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
+<text x="12" y="230.91" font-size="11" fill="#838DA5" font-weight="500">Character</text>
+<text x="146" y="230.91" font-size="11" fill="#838DA5" font-weight="500">Job</text>
+<text x="268" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
 <path d="M216.59 225.5 l3 3.4 l3 -3.4 Z" fill="#A6AFBF"/>
-<text x="332" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage %</text>
-<text x="386" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">DPS</text>
-<text x="448" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Accuracy</text>
-<text x="516" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="568" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Avg</text>
-<text x="622" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">%</text>
-<text x="680" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Acc</text>
-<text x="744" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="798" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">%</text>
-<text x="864" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="922" y="230.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Acc</text>
+<text x="332" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage %</text>
+<text x="386" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">DPS</text>
+<text x="448" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Accuracy</text>
+<text x="516" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="568" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Avg</text>
+<text x="622" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">%</text>
+<text x="680" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Acc</text>
+<text x="744" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="798" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">%</text>
+<text x="864" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="922" y="230.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Acc</text>
 <line x1="0" y1="237.5" x2="940" y2="237.5" stroke="#2A313D" stroke-width="1"/>
 <g clip-path="url(#k9)">
 <rect x="0" y="238" width="940" height="23" fill="#FC6E03" opacity="0.3"/>
@@ -1177,15 +1198,16 @@
 <text x="268" y="254.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
 <text x="332" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9%</text>
 <text x="386" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">47.0</text>
+<rect x="411" y="257" width="36" height="2" rx="1" fill="#FF5063" opacity="0.58"/>
 <text x="448" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">88.1%</text>
 <text x="680" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">97.0%</text>
-<text x="922" y="254.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="254.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">23,504</text>
 <text x="568" y="254.26" font-size="12" fill="#A6AFBF" text-anchor="end">735</text>
 <text x="622" y="254.26" font-size="12" fill="#A6AFBF" text-anchor="end">57.8%</text>
 <text x="744" y="254.26" font-size="12" fill="#E9ECF2" text-anchor="end">6,526</text>
 <text x="798" y="254.26" font-size="12" fill="#A6AFBF" text-anchor="end">16.1%</text>
-<text x="864" y="254.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="864" y="254.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="261.5" x2="940" y2="261.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="262" width="738.12" height="23" fill="#F5C403" opacity="0.27"/>
 <rect x="12" y="270" width="8" height="8" rx="2" fill="#F5C403"/>
@@ -1194,15 +1216,16 @@
 <text x="268" y="278.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
 <text x="332" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">14.0%</text>
 <text x="386" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">36.9</text>
+<rect x="411" y="281" width="36" height="2" rx="1" fill="#FF5063" opacity="0.56"/>
 <text x="448" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">89.6%</text>
 <text x="680" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">92.3%</text>
-<text x="922" y="278.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="278.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">12,911</text>
 <text x="568" y="278.26" font-size="12" fill="#A6AFBF" text-anchor="end">538</text>
 <text x="622" y="278.26" font-size="12" fill="#A6AFBF" text-anchor="end">40.4%</text>
 <text x="744" y="278.26" font-size="12" fill="#E9ECF2" text-anchor="end">1,620</text>
 <text x="798" y="278.26" font-size="12" fill="#A6AFBF" text-anchor="end">5.1%</text>
-<text x="864" y="278.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="864" y="278.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="285.5" x2="940" y2="285.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="286" width="713.36" height="23" fill="#CCBA78" opacity="0.29"/>
 <rect x="12" y="294" width="8" height="8" rx="2" fill="#CCBA78"/>
@@ -1211,20 +1234,22 @@
 <text x="268" y="302.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">30,856</text>
 <text x="332" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">13.6%</text>
 <text x="386" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">35.6</text>
-<rect x="406" y="289" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="406" y="289" width="46" height="18" rx="2" fill="#F26D78" opacity="0.14"/>
-<rect x="406.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.31"/>
+<rect x="406" y="289" width="46" height="18" rx="2" fill="#0F1217" opacity="0.49"/>
+<rect x="406" y="289" width="46" height="18" rx="2" fill="#FF5063" opacity="0.09"/>
+<rect x="406.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.19"/>
+<rect x="411" y="305" width="36" height="2" rx="1" fill="#FF5063" opacity="0.35"/>
 <text x="448" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">80.4%</text>
 <text x="680" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">90.0%</text>
-<rect x="880" y="289" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="880" y="289" width="46" height="18" rx="2" fill="#F26D78" opacity="0.14"/>
-<rect x="880.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.31"/>
+<rect x="880" y="289" width="46" height="18" rx="2" fill="#0F1217" opacity="0.46"/>
+<rect x="880" y="289" width="46" height="18" rx="2" fill="#FF5063" opacity="0.08"/>
+<rect x="880.5" y="289.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.17"/>
+<rect x="885" y="305" width="36" height="2" rx="1" fill="#FF5063" opacity="0.37"/>
 <text x="922" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">80.7%</text>
 <text x="516" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">9,085</text>
 <text x="568" y="302.26" font-size="12" fill="#A6AFBF" text-anchor="end">505</text>
 <text x="622" y="302.26" font-size="12" fill="#A6AFBF" text-anchor="end">29.4%</text>
-<text x="744" y="302.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="302.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="302.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="302.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="864" y="302.26" font-size="12" fill="#E9ECF2" text-anchor="end">10,251</text>
 <line x1="0" y1="309.5" x2="940" y2="309.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="310" width="580.41" height="23" fill="#E600FF" opacity="0.3"/>
@@ -1234,21 +1259,23 @@
 <text x="268" y="326.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">25,105</text>
 <text x="332" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.0%</text>
 <text x="386" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">29.0</text>
-<rect x="406" y="313" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="406" y="313" width="46" height="18" rx="2" fill="#F26D78" opacity="0.16"/>
-<rect x="406.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.34"/>
+<rect x="406" y="313" width="46" height="18" rx="2" fill="#0F1217" opacity="0.61"/>
+<rect x="406" y="313" width="46" height="18" rx="2" fill="#FF5063" opacity="0.11"/>
+<rect x="406.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.25"/>
+<rect x="411" y="329" width="36" height="2" rx="1" fill="#FF5063" opacity="0.28"/>
 <text x="448" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">79.1%</text>
-<rect x="638" y="313" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="638" y="313" width="46" height="18" rx="2" fill="#F26D78" opacity="0.12"/>
-<rect x="638.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.25"/>
+<rect x="638" y="313" width="46" height="18" rx="2" fill="#0F1217" opacity="0.21"/>
+<rect x="638" y="313" width="46" height="18" rx="2" fill="#FF5063" opacity="0.03"/>
+<rect x="638.5" y="313.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.07"/>
+<rect x="643" y="329" width="36" height="2" rx="1" fill="#FF5063" opacity="0.52"/>
 <text x="680" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">83.3%</text>
-<text x="922" y="326.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="326.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">13,539</text>
 <text x="568" y="326.26" font-size="12" fill="#A6AFBF" text-anchor="end">677</text>
 <text x="622" y="326.26" font-size="12" fill="#A6AFBF" text-anchor="end">53.9%</text>
 <text x="744" y="326.26" font-size="12" fill="#E9ECF2" text-anchor="end">2,335</text>
 <text x="798" y="326.26" font-size="12" fill="#A6AFBF" text-anchor="end">9.3%</text>
-<text x="864" y="326.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="864" y="326.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="333.5" x2="940" y2="333.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="334" width="520.06" height="23" fill="#A685BD" opacity="0.3"/>
 <rect x="12" y="342" width="8" height="8" rx="2" fill="#A685BD"/>
@@ -1257,15 +1284,15 @@
 <text x="268" y="350.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">22,495</text>
 <text x="332" y="350.26" font-size="12" fill="#E9ECF2" text-anchor="end">9.9%</text>
 <text x="386" y="350.26" font-size="12" fill="#E9ECF2" text-anchor="end">26.0</text>
-<text x="448" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="680" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="922" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="516" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="568" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="622" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="744" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="350.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="448" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="680" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="922" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="516" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="568" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="622" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="744" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="350.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="357.5" x2="940" y2="357.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="358" width="451.38" height="23" fill="#6EC459" opacity="0.3"/>
 <rect x="12" y="366" width="8" height="8" rx="2" fill="#6EC459"/>
@@ -1274,18 +1301,19 @@
 <text x="268" y="374.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">19,524</text>
 <text x="332" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.6%</text>
 <text x="386" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">22.5</text>
+<rect x="411" y="377" width="36" height="2" rx="1" fill="#FF5063" opacity="0.59"/>
 <text x="448" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">87.2%</text>
-<rect x="638" y="361" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="638" y="361" width="46" height="18" rx="2" fill="#F26D78" opacity="0.34"/>
-<rect x="638.5" y="361.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.72"/>
+<rect x="638" y="361" width="46" height="18" rx="2" fill="#0F1217" opacity="1"/>
+<rect x="638" y="361" width="46" height="18" rx="2" fill="#FF5063" opacity="0.34"/>
+<rect x="638.5" y="361.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.72"/>
 <text x="680" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">57.1%</text>
-<text x="922" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="374.26" font-size="12" fill="#E9ECF2" text-anchor="end">8,425</text>
 <text x="568" y="374.26" font-size="12" fill="#A6AFBF" text-anchor="end">702</text>
 <text x="622" y="374.26" font-size="12" fill="#A6AFBF" text-anchor="end">43.2%</text>
-<text x="744" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="374.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="374.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="381.5" x2="940" y2="381.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="382" width="400.19" height="23" fill="#C4AED3" opacity="0.29"/>
 <rect x="12" y="390" width="8" height="8" rx="2" fill="#C4AED3"/>
@@ -1294,15 +1322,15 @@
 <text x="268" y="398.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">17,310</text>
 <text x="332" y="398.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.6%</text>
 <text x="386" y="398.26" font-size="12" fill="#E9ECF2" text-anchor="end">20.0</text>
-<text x="448" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="680" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="922" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="516" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="568" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="622" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="744" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="398.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="448" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="680" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="922" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="516" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="568" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="622" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="744" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="398.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="405.5" x2="940" y2="405.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="406" width="357.68" height="23" fill="#F53000" opacity="0.3"/>
 <rect x="12" y="414" width="8" height="8" rx="2" fill="#F53000"/>
@@ -1311,15 +1339,17 @@
 <text x="268" y="422.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">15,471</text>
 <text x="332" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">6.8%</text>
 <text x="386" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9</text>
+<rect x="411" y="425" width="36" height="2" rx="1" fill="#FF5063" opacity="0.59"/>
 <text x="448" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">87.3%</text>
+<rect x="643" y="425" width="36" height="2" rx="1" fill="#FF5063" opacity="0.6"/>
 <text x="680" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">86.7%</text>
-<text x="922" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="422.26" font-size="12" fill="#E9ECF2" text-anchor="end">5,008</text>
 <text x="568" y="422.26" font-size="12" fill="#A6AFBF" text-anchor="end">385</text>
 <text x="622" y="422.26" font-size="12" fill="#A6AFBF" text-anchor="end">32.4%</text>
-<text x="744" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="422.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="422.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="429.5" x2="940" y2="429.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="430" width="321.15" height="23" fill="#70FCB5" opacity="0.23"/>
 <rect x="12" y="438" width="8" height="8" rx="2" fill="#70FCB5"/>
@@ -1328,17 +1358,18 @@
 <text x="268" y="446.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">13,891</text>
 <text x="332" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">6.1%</text>
 <text x="386" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">16.0</text>
-<text x="448" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="680" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<rect x="880" y="433" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="880" y="433" width="46" height="18" rx="2" fill="#F26D78" opacity="0.11"/>
-<rect x="880.5" y="433.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.23"/>
+<text x="448" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="680" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<rect x="880" y="433" width="46" height="18" rx="2" fill="#0F1217" opacity="0.11"/>
+<rect x="880" y="433" width="46" height="18" rx="2" fill="#FF5063" opacity="0.02"/>
+<rect x="880.5" y="433.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.03"/>
+<rect x="885" y="449" width="36" height="2" rx="1" fill="#FF5063" opacity="0.57"/>
 <text x="922" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">84.4%</text>
-<text x="516" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="568" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="622" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="744" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="446.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="516" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="568" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="622" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="744" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="446.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="864" y="446.26" font-size="12" fill="#E9ECF2" text-anchor="end">13,891</text>
 <line x1="0" y1="453.5" x2="940" y2="453.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="0" y="454" width="239.26" height="23" fill="#E86366" opacity="0.3"/>
@@ -1348,24 +1379,25 @@
 <text x="268" y="470.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">10,349</text>
 <text x="332" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">4.5%</text>
 <text x="386" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">12.0</text>
-<rect x="406" y="457" width="46" height="18" rx="2" fill="#0F1217"/>
-<rect x="406" y="457" width="46" height="18" rx="2" fill="#F26D78" opacity="0.16"/>
-<rect x="406.5" y="457.5" width="45" height="17" rx="2" fill="none" stroke="#F26D78" stroke-width="1" opacity="0.35"/>
+<rect x="406" y="457" width="46" height="18" rx="2" fill="#0F1217" opacity="0.67"/>
+<rect x="406" y="457" width="46" height="18" rx="2" fill="#FF5063" opacity="0.13"/>
+<rect x="406.5" y="457.5" width="45" height="17" rx="2" fill="none" stroke="#FF5063" stroke-width="1" opacity="0.28"/>
+<rect x="411" y="473" width="36" height="2" rx="1" fill="#FF5063" opacity="0.24"/>
 <text x="448" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">78.4%</text>
 <text x="680" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">90.9%</text>
-<text x="922" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="922" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <text x="516" y="470.26" font-size="12" fill="#E9ECF2" text-anchor="end">3,688</text>
 <text x="568" y="470.26" font-size="12" fill="#A6AFBF" text-anchor="end">369</text>
 <text x="622" y="470.26" font-size="12" fill="#A6AFBF" text-anchor="end">35.6%</text>
-<text x="744" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="798" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="864" y="470.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
+<text x="744" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="798" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
+<text x="864" y="470.26" font-size="12" fill="#949EB2" text-anchor="end">—</text>
 <line x1="0" y1="477.5" x2="940" y2="477.5" stroke="#1B2029" stroke-width="1"/>
 </g>
 <rect x="0" y="478" width="940" height="26" fill="#151921"/>
 <line x1="0" y1="477.5" x2="940" y2="477.5" stroke="#2A313D" stroke-width="1"/>
 <text x="12" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600">Party</text>
-<text x="146" y="494.9" font-size="11" fill="#78829A">10</text>
+<text x="146" y="494.9" font-size="11" fill="#838DA5">10</text>
 <text x="268" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">227,587</text>
 <text x="332" y="495.26" font-size="12" fill="#A6AFBF" text-anchor="end">100.0%</text>
 <text x="386" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">262.8</text>
@@ -1385,24 +1417,24 @@
 <line x1="807.5" y1="220" x2="807.5" y2="238" stroke="#1B2029" stroke-width="1"/>
 <line x1="807.5" y1="478" x2="807.5" y2="504" stroke="#2A313D" stroke-width="1"/>
 <rect x="941" y="170" width="499" height="274" fill="#0F1217"/>
-<circle cx="950" cy="181" r="1" fill="#515A6B"/>
-<circle cx="950" cy="185" r="1" fill="#515A6B"/>
-<circle cx="950" cy="189" r="1" fill="#515A6B"/>
-<circle cx="954" cy="181" r="1" fill="#515A6B"/>
-<circle cx="954" cy="185" r="1" fill="#515A6B"/>
-<circle cx="954" cy="189" r="1" fill="#515A6B"/>
+<circle cx="950" cy="181" r="1" fill="#5E677A"/>
+<circle cx="950" cy="185" r="1" fill="#5E677A"/>
+<circle cx="950" cy="189" r="1" fill="#5E677A"/>
+<circle cx="954" cy="181" r="1" fill="#5E677A"/>
+<circle cx="954" cy="185" r="1" fill="#5E677A"/>
+<circle cx="954" cy="189" r="1" fill="#5E677A"/>
 <text x="963" y="189.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Actions</text>
-<text x="1422" y="191" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M1397 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-<text x="1016.48" y="189.41" font-size="11" fill="#78829A">Select an action to drill down</text>
+<text x="1422" y="191" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M1397 186.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="1016.48" y="189.41" font-size="11" fill="#838DA5">Select an action to drill down</text>
 <line x1="941" y1="199.5" x2="1440" y2="199.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="215.91" font-size="11" fill="#78829A" font-weight="500">Action</text>
-<text x="1181" y="215.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Hits</text>
-<text x="1225" y="215.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Miss</text>
-<text x="1293" y="215.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Total</text>
-<path d="M1258.32 210.5 l3 3.4 l3 -3.4 Z" fill="#A6AFBF"/>
-<text x="1345" y="215.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Avg</text>
-<text x="1401" y="215.91" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Max</text>
+<text x="953" y="215.91" font-size="11" fill="#838DA5" font-weight="500">Action</text>
+<text x="1167" y="215.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Hits</text>
+<text x="1233" y="215.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Total</text>
+<path d="M1198.32 210.5 l3 3.4 l3 -3.4 Z" fill="#A6AFBF"/>
+<text x="1283" y="215.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Avg</text>
+<text x="1337" y="215.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Max</text>
+<text x="1419" y="215.91" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Share</text>
 <line x1="941" y1="223.5" x2="1440" y2="223.5" stroke="#2A313D" stroke-width="1"/>
 <g clip-path="url(#k10)">
 <rect x="941" y="224" width="499" height="22" fill="#151921"/>
@@ -1411,57 +1443,64 @@
 <rect x="969" y="231" width="8" height="8" rx="2" fill="#FC6E03"/>
 <text x="983" y="239.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
 <text x="1030.21" y="239.23" font-size="10.5" fill="#A6AFBF">SAM/WAR</text>
-<text x="1293" y="239.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
+<text x="1233" y="239.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
+<text x="1419" y="239.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9%</text>
 <line x1="941" y1="245.5" x2="1440" y2="245.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="941" y="246" width="499" height="21" fill="#1C222C"/>
-<rect x="941" y="246" width="499" height="21" fill="#E9ECF2" opacity="0.1"/>
 <rect x="941" y="246" width="2" height="21" fill="#F2A33A"/>
 <text x="983" y="261.26" font-size="12" fill="#E9ECF2" font-weight="600">Tachi: Gekko</text>
-<text x="1181" y="261.26" font-size="12" fill="#E9ECF2" text-anchor="end">16</text>
-<text x="1225" y="261.26" font-size="12" fill="#A6AFBF" text-anchor="end">1</text>
-<text x="1293" y="261.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">13,105</text>
-<text x="1345" y="261.26" font-size="12" fill="#E9ECF2" text-anchor="end">819</text>
-<text x="1401" y="261.26" font-size="12" fill="#A6AFBF" text-anchor="end">1,046</text>
+<text x="1167" y="261.26" font-size="12" fill="#E9ECF2" text-anchor="end">16</text>
+<text x="1233" y="261.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">13,105</text>
+<text x="1283" y="261.26" font-size="12" fill="#E9ECF2" text-anchor="end">819</text>
+<text x="1337" y="261.26" font-size="12" fill="#A6AFBF" text-anchor="end">1,046</text>
+<rect x="1355" y="254" width="20" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="1355" y="254" width="20" height="6" rx="1.5" fill="#838DA5"/>
+<text x="1419" y="261.26" font-size="12" fill="#E9ECF2" text-anchor="end">32.2%</text>
 <line x1="941" y1="267.5" x2="1440" y2="267.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="941" y="268" width="404.72" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="983" y="283.26" font-size="12" fill="#E9ECF2">Attack</text>
-<text x="1181" y="283.26" font-size="12" fill="#E9ECF2" text-anchor="end">200</text>
-<text x="1225" y="283.26" font-size="12" fill="#A6AFBF" text-anchor="end">27</text>
-<text x="1293" y="283.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">10,629</text>
-<text x="1345" y="283.26" font-size="12" fill="#E9ECF2" text-anchor="end">53</text>
-<text x="1401" y="283.26" font-size="12" fill="#A6AFBF" text-anchor="end">129</text>
+<text x="1167" y="283.26" font-size="12" fill="#E9ECF2" text-anchor="end">200</text>
+<text x="1233" y="283.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">10,629</text>
+<text x="1283" y="283.26" font-size="12" fill="#E9ECF2" text-anchor="end">53</text>
+<text x="1337" y="283.26" font-size="12" fill="#A6AFBF" text-anchor="end">129</text>
+<rect x="1355" y="276" width="20" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="1355" y="276" width="16.22" height="6" rx="1.5" fill="#838DA5"/>
+<text x="1419" y="283.26" font-size="12" fill="#E9ECF2" text-anchor="end">26.1%</text>
 <line x1="941" y1="289.5" x2="1440" y2="289.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="941" y="290" width="309.49" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="983" y="305.26" font-size="12" fill="#E9ECF2">Tachi: Kasha</text>
-<text x="1181" y="305.26" font-size="12" fill="#E9ECF2" text-anchor="end">12</text>
-<text x="1225" y="305.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="1293" y="305.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">8,128</text>
-<text x="1345" y="305.26" font-size="12" fill="#E9ECF2" text-anchor="end">677</text>
-<text x="1401" y="305.26" font-size="12" fill="#A6AFBF" text-anchor="end">836</text>
+<text x="1167" y="305.26" font-size="12" fill="#E9ECF2" text-anchor="end">12</text>
+<text x="1233" y="305.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">8,128</text>
+<text x="1283" y="305.26" font-size="12" fill="#E9ECF2" text-anchor="end">677</text>
+<text x="1337" y="305.26" font-size="12" fill="#A6AFBF" text-anchor="end">836</text>
+<rect x="1355" y="298" width="20" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="1355" y="298" width="12.4" height="6" rx="1.5" fill="#838DA5"/>
+<text x="1419" y="305.26" font-size="12" fill="#E9ECF2" text-anchor="end">20.0%</text>
 <line x1="941" y1="311.5" x2="1440" y2="311.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="941" y="312" width="136.2" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="983" y="327.26" font-size="12" fill="#E9ECF2">Skillchain: Light</text>
-<text x="1181" y="327.26" font-size="12" fill="#E9ECF2" text-anchor="end">7</text>
-<text x="1225" y="327.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="1293" y="327.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">3,577</text>
-<text x="1345" y="327.26" font-size="12" fill="#E9ECF2" text-anchor="end">511</text>
-<text x="1401" y="327.26" font-size="12" fill="#A6AFBF" text-anchor="end">754</text>
+<text x="1167" y="327.26" font-size="12" fill="#E9ECF2" text-anchor="end">7</text>
+<text x="1233" y="327.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">3,577</text>
+<text x="1283" y="327.26" font-size="12" fill="#E9ECF2" text-anchor="end">511</text>
+<text x="1337" y="327.26" font-size="12" fill="#A6AFBF" text-anchor="end">754</text>
+<rect x="1355" y="320" width="20" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="1355" y="320" width="5.46" height="6" rx="1.5" fill="#838DA5"/>
+<text x="1419" y="327.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.8%</text>
 <line x1="941" y1="333.5" x2="1440" y2="333.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="941" y="334" width="112.29" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="983" y="349.26" font-size="12" fill="#E9ECF2">Skillchain: Fragmentation</text>
-<text x="1181" y="349.26" font-size="12" fill="#E9ECF2" text-anchor="end">6</text>
-<text x="1225" y="349.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="1293" y="349.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,949</text>
-<text x="1345" y="349.26" font-size="12" fill="#E9ECF2" text-anchor="end">492</text>
-<text x="1401" y="349.26" font-size="12" fill="#A6AFBF" text-anchor="end">740</text>
+<text x="1167" y="349.26" font-size="12" fill="#E9ECF2" text-anchor="end">6</text>
+<text x="1233" y="349.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,949</text>
+<text x="1283" y="349.26" font-size="12" fill="#E9ECF2" text-anchor="end">492</text>
+<text x="1337" y="349.26" font-size="12" fill="#A6AFBF" text-anchor="end">740</text>
+<rect x="1355" y="342" width="20" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="1355" y="342" width="4.5" height="6" rx="1.5" fill="#838DA5"/>
+<text x="1419" y="349.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.3%</text>
 <line x1="941" y1="355.5" x2="1440" y2="355.5" stroke="#1B2029" stroke-width="1"/>
-<rect x="941" y="356" width="86.47" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="983" y="371.26" font-size="12" fill="#E9ECF2">Tachi: Yukikaze</text>
-<text x="1181" y="371.26" font-size="12" fill="#E9ECF2" text-anchor="end">4</text>
-<text x="1225" y="371.26" font-size="12" fill="#8F98AC" text-anchor="end">—</text>
-<text x="1293" y="371.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,271</text>
-<text x="1345" y="371.26" font-size="12" fill="#E9ECF2" text-anchor="end">568</text>
-<text x="1401" y="371.26" font-size="12" fill="#A6AFBF" text-anchor="end">610</text>
+<text x="1167" y="371.26" font-size="12" fill="#E9ECF2" text-anchor="end">4</text>
+<text x="1233" y="371.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,271</text>
+<text x="1283" y="371.26" font-size="12" fill="#E9ECF2" text-anchor="end">568</text>
+<text x="1337" y="371.26" font-size="12" fill="#A6AFBF" text-anchor="end">610</text>
+<rect x="1355" y="364" width="20" height="6" rx="1.5" fill="#1C222C"/>
+<rect x="1355" y="364" width="3.47" height="6" rx="1.5" fill="#838DA5"/>
+<text x="1419" y="371.26" font-size="12" fill="#E9ECF2" text-anchor="end">5.6%</text>
 <line x1="941" y1="377.5" x2="1440" y2="377.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="941" y="378" width="499" height="22" fill="#151921"/>
 <rect x="941" y="378" width="391.83" height="21" fill="#F5C403" opacity="0.24"/>
@@ -1469,7 +1508,8 @@
 <rect x="969" y="385" width="8" height="8" rx="2" fill="#F5C403"/>
 <text x="983" y="393.26" font-size="12" fill="#E9ECF2" font-weight="600">Brannoch</text>
 <text x="1043.38" y="393.23" font-size="10.5" fill="#A6AFBF">MNK/WAR</text>
-<text x="1293" y="393.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
+<text x="1233" y="393.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
+<text x="1419" y="393.26" font-size="12" fill="#E9ECF2" text-anchor="end">14.0%</text>
 <line x1="941" y1="399.5" x2="1440" y2="399.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="941" y="400" width="499" height="22" fill="#151921"/>
 <rect x="941" y="400" width="378.69" height="21" fill="#CCBA78" opacity="0.25"/>
@@ -1477,7 +1517,8 @@
 <rect x="969" y="407" width="8" height="8" rx="2" fill="#CCBA78"/>
 <text x="983" y="415.26" font-size="12" fill="#E9ECF2" font-weight="600">Parabellum</text>
 <text x="1053.28" y="415.23" font-size="10.5" fill="#A6AFBF">BST/NIN</text>
-<text x="1293" y="415.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">30,856</text>
+<text x="1233" y="415.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">30,856</text>
+<text x="1419" y="415.26" font-size="12" fill="#E9ECF2" text-anchor="end">13.6%</text>
 <line x1="941" y1="421.5" x2="1440" y2="421.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="941" y="422" width="499" height="22" fill="#151921"/>
 <rect x="941" y="422" width="308.11" height="21" fill="#E600FF" opacity="0.3"/>
@@ -1485,49 +1526,50 @@
 <rect x="969" y="429" width="8" height="8" rx="2" fill="#E600FF"/>
 <text x="983" y="437.26" font-size="12" fill="#E9ECF2" font-weight="600">Thorgald</text>
 <text x="1040.52" y="437.23" font-size="10.5" fill="#A6AFBF">DRK/SAM</text>
-<text x="1293" y="437.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">25,105</text>
+<text x="1233" y="437.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">25,105</text>
+<text x="1419" y="437.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.0%</text>
 <line x1="941" y1="443.5" x2="1440" y2="443.5" stroke="#1B2029" stroke-width="1"/>
 </g>
 <rect x="1432" y="228" width="6" height="95.4" rx="3" fill="#3D4656"/>
 <rect x="0" y="505" width="940" height="371" fill="#0F1217"/>
-<circle cx="9" cy="516" r="1" fill="#515A6B"/>
-<circle cx="9" cy="520" r="1" fill="#515A6B"/>
-<circle cx="9" cy="524" r="1" fill="#515A6B"/>
-<circle cx="13" cy="516" r="1" fill="#515A6B"/>
-<circle cx="13" cy="520" r="1" fill="#515A6B"/>
-<circle cx="13" cy="524" r="1" fill="#515A6B"/>
+<circle cx="9" cy="516" r="1" fill="#5E677A"/>
+<circle cx="9" cy="520" r="1" fill="#5E677A"/>
+<circle cx="9" cy="524" r="1" fill="#5E677A"/>
+<circle cx="13" cy="516" r="1" fill="#5E677A"/>
+<circle cx="13" cy="520" r="1" fill="#5E677A"/>
+<circle cx="13" cy="524" r="1" fill="#5E677A"/>
 <text x="22" y="524.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Cumulative damage</text>
-<text x="922" y="526" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M897 521.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-<text x="149.2" y="524.4" font-size="11" fill="#78829A">Running total per character</text>
+<text x="922" y="526" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M897 521.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="149.2" y="524.4" font-size="11" fill="#838DA5">Running total per character</text>
 <line x1="0" y1="534.5" x2="940" y2="534.5" stroke="#1B2029" stroke-width="1"/>
 <rect x="760.5" y="509.5" width="116" height="21" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
-<rect x="768.5" y="514.5" width="11" height="11" rx="2.5" fill="none" stroke="#78829A" stroke-width="1"/>
+<rect x="768.5" y="514.5" width="11" height="11" rx="2.5" fill="none" stroke="#838DA5" stroke-width="1"/>
 <text x="786" y="523.9" font-size="11" fill="#A6AFBF" font-weight="500">Group under 5%</text>
 <line x1="42" y1="854.5" x2="858" y2="854.5" stroke="#2A313D" stroke-width="1"/>
-<text x="36" y="858.05" font-size="10" fill="#78829A" text-anchor="end">0</text>
+<text x="36" y="858.05" font-size="10" fill="#838DA5" text-anchor="end">0</text>
 <line x1="42" y1="752.5" x2="858" y2="752.5" stroke="#1B2029" stroke-width="1"/>
-<text x="36" y="756.05" font-size="10" fill="#78829A" text-anchor="end">20.0K</text>
+<text x="36" y="756.05" font-size="10" fill="#838DA5" text-anchor="end">20.0K</text>
 <line x1="42" y1="651.5" x2="858" y2="651.5" stroke="#1B2029" stroke-width="1"/>
-<text x="36" y="655.05" font-size="10" fill="#78829A" text-anchor="end">40.0K</text>
+<text x="36" y="655.05" font-size="10" fill="#838DA5" text-anchor="end">40.0K</text>
 <line x1="42" y1="549.5" x2="858" y2="549.5" stroke="#1B2029" stroke-width="1"/>
-<text x="36" y="553.05" font-size="10" fill="#78829A" text-anchor="end">60.0K</text>
+<text x="36" y="553.05" font-size="10" fill="#838DA5" text-anchor="end">60.0K</text>
 <line x1="42.5" y1="854" x2="42.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="42.5" y="868.55" font-size="10" fill="#78829A">0:00</text>
+<text x="42.5" y="868.55" font-size="10" fill="#838DA5">0:00</text>
 <line x1="155.5" y1="854" x2="155.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="155.5" y="868.55" font-size="10" fill="#78829A" text-anchor="middle">2:00</text>
+<text x="155.5" y="868.55" font-size="10" fill="#838DA5" text-anchor="middle">2:00</text>
 <line x1="268.5" y1="854" x2="268.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="268.5" y="868.55" font-size="10" fill="#78829A" text-anchor="middle">4:00</text>
+<text x="268.5" y="868.55" font-size="10" fill="#838DA5" text-anchor="middle">4:00</text>
 <line x1="381.5" y1="854" x2="381.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="381.5" y="868.55" font-size="10" fill="#78829A" text-anchor="middle">6:00</text>
+<text x="381.5" y="868.55" font-size="10" fill="#838DA5" text-anchor="middle">6:00</text>
 <line x1="494.5" y1="854" x2="494.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="494.5" y="868.55" font-size="10" fill="#78829A" text-anchor="middle">8:00</text>
+<text x="494.5" y="868.55" font-size="10" fill="#838DA5" text-anchor="middle">8:00</text>
 <line x1="607.5" y1="854" x2="607.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="607.5" y="868.55" font-size="10" fill="#78829A" text-anchor="middle">10:00</text>
+<text x="607.5" y="868.55" font-size="10" fill="#838DA5" text-anchor="middle">10:00</text>
 <line x1="720.5" y1="854" x2="720.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="720.5" y="868.55" font-size="10" fill="#78829A" text-anchor="middle">12:00</text>
+<text x="720.5" y="868.55" font-size="10" fill="#838DA5" text-anchor="middle">12:00</text>
 <line x1="834.5" y1="854" x2="834.5" y2="857" stroke="#2A313D" stroke-width="1"/>
-<text x="834.5" y="868.55" font-size="10" fill="#78829A" text-anchor="middle">14:00</text>
+<text x="834.5" y="868.55" font-size="10" fill="#838DA5" text-anchor="middle">14:00</text>
 <g clip-path="url(#k11)">
 <path d="M42 854 L47.65 854 L53.31 853.75 L58.96 853.6 L64.61 853.53 L70.27 853.41 L75.92 853.41 L81.58 853.18 L87.23 852.99 L92.88 852.93 L98.54 851.45 L104.19 851.3 L109.84 851.05 L115.5 851.05 L121.15 849.26 L126.8 849.11 L132.46 848.93 L138.11 848.81 L143.76 848.68 L149.42 848.68 L155.07 848.42 L160.73 848.29 L166.38 848.29 L172.03 848.19 L177.69 848.08 L183.34 847.95 L188.99 844.92 L194.65 844.82 L200.3 844.71 L205.95 844.58 L211.61 842.21 L217.26 842.05 L222.91 841.91 L228.57 841.81 L234.22 841.66 L239.88 841.51 L245.53 841.36 L251.18 841.17 L256.84 839.37 L262.49 839.25 L268.14 839.13 L273.8 839.13 L279.45 839 L285.1 838.82 L290.76 838.59 L296.41 838.59 L302.06 838.28 L307.72 838.28 L313.37 838.21 L319.03 838.06 L324.68 834.42 L330.33 834.33 L335.99 834.07 L341.64 833.96 L347.29 833.85 L352.95 833.69 L358.6 833.58 L364.25 833.41 L369.91 833.17 L375.56 833 L381.21 832.9 L386.87 832.76 L392.52 832.64 L398.18 832.53 L403.83 832.53 L409.48 832.45 L415.14 828.06 L420.79 827.96 L426.44 827.81 L432.1 827.72 L437.75 827.58 L443.4 827.39 L449.06 827.27 L454.71 827.13 L460.36 826.97 L466.02 826.84 L471.67 826.84 L477.33 826.84 L482.98 826.72 L488.63 824.4 L494.29 824.24 L499.94 824.13 L505.59 823.98 L511.25 823.86 L516.9 822.06 L522.55 821.78 L528.21 821.66 L533.86 821.59 L539.52 821.46 L545.17 821.3 L550.82 821.16 L556.48 821.16 L562.13 821.08 L567.78 820.79 L573.44 818.99 L579.09 818.89 L584.74 818.8 L590.4 818.71 L596.05 818.47 L601.7 818.27 L607.36 818.27 L613.01 816.46 L618.67 816.46 L624.32 816.46 L629.97 816.27 L635.63 814.59 L641.28 814.59 L646.93 814.48 L652.59 814.34 L658.24 814.09 L663.89 814.09 L669.55 813.84 L675.2 813.75 L680.85 813.62 L686.51 811.24 L692.16 811.24 L697.82 811.1 L703.47 810.94 L709.12 810.82 L714.78 810.76 L720.43 810.76 L726.08 810.61 L731.74 810.45 L737.39 810.21 L743.04 810.07 L748.7 810.07 L754.35 810.07 L760 809.87 L765.66 809.69 L771.31 809.59 L776.97 807.4 L782.62 807.27 L788.27 807.27 L793.93 807.21 L799.58 807.11 L805.23 805.04 L810.89 804.93 L816.54 804.86 L822.19 804.86 L827.85 804.78 L833.5 804.69 L839.15 804.56 L844.81 804.43 L850.46 804.43 L856.12 802.61 L858 801.39" fill="none" stroke="#E86366" stroke-width="1.5" stroke-linejoin="round"/>
 <path d="M42 854 L47.65 854 L53.31 853.81 L58.96 853.6 L64.61 853.33 L70.27 853.12 L75.92 852.99 L81.58 849.35 L87.23 849.35 L92.88 849.18 L98.54 848.95 L104.19 848.71 L109.84 848.53 L115.5 848.19 L121.15 848 L126.8 847.83 L132.46 847.58 L138.11 847.42 L143.76 843.78 L149.42 843.57 L155.07 843.19 L160.73 842.92 L166.38 842.77 L172.03 842.58 L177.69 842.43 L183.34 842.16 L188.99 842.05 L194.65 841.88 L200.3 841.68 L205.95 841.5 L211.61 838 L217.26 837.85 L222.91 837.36 L228.57 837.14 L234.22 836.97 L239.88 836.83 L245.53 836.57 L251.18 836.45 L256.84 836.45 L262.49 836.25 L268.14 836.09 L273.8 835.91 L279.45 835.74 L285.1 832.45 L290.76 832.22 L296.41 832.07 L302.06 831.76 L307.72 831.55 L313.37 831.29 L319.03 831.17 L324.68 830.87 L330.33 830.75 L335.99 830.56 L341.64 830.44 L347.29 830.23 L352.95 826.92 L358.6 826.72 L364.25 826.59 L369.91 826.13 L375.56 825.96 L381.21 825.81 L386.87 825.66 L392.52 825.45 L398.18 825.26 L403.83 825.17 L409.48 825.17 L415.14 821.54 L420.79 821.21 L426.44 821.05 L432.1 821.05 L437.75 820.73 L443.4 820.52 L449.06 820.32 L454.71 820.13 L460.36 820.01 L466.02 819.83 L471.67 819.51 L477.33 819.51 L482.98 815.28 L488.63 815.2 L494.29 814.62 L499.94 814.4 L505.59 814.2 L511.25 813.97 L516.9 813.62 L522.55 813.46 L528.21 813.19 L533.86 813.19 L539.52 812.91 L545.17 812.91 L550.82 808.14 L556.48 807.91 L562.13 807.91 L567.78 807.5 L573.44 807.29 L579.09 807.29 L584.74 807.1 L590.4 806.88 L596.05 806.88 L601.7 806.73 L607.36 806.73 L613.01 806.57 L618.67 801.84 L624.32 801.67 L629.97 801.23 L635.63 801.04 L641.28 800.86 L646.93 800.67 L652.59 800.44 L658.24 800.22 L663.89 800.02 L669.55 799.83 L675.2 799.39 L680.85 799.14 L686.51 797.21 L692.16 797.09 L697.82 796.86 L703.47 796.86 L709.12 796.69 L714.78 796.47 L720.43 796.22 L726.08 796.05 L731.74 795.86 L737.39 795.45 L743.04 790.87 L748.7 790.58 L754.35 790.42 L760 790.18 L765.66 790 L771.31 789.83 L776.97 789.73 L782.62 789.55 L788.27 789.26 L793.93 789.03 L799.58 788.88 L805.23 785.25 L810.89 784.84 L816.54 784.66 L822.19 784.4 L827.85 784.18 L833.5 783.98 L839.15 783.98 L844.81 783.83 L850.46 783.73 L856.12 783.39 L858 783.39" fill="none" stroke="#70FCB5" stroke-width="1.5" stroke-linejoin="round"/>
@@ -1540,7 +1582,7 @@
 <path d="M42 854 L47.65 853.37 L53.31 852.51 L58.96 852.19 L64.61 849.85 L70.27 849.33 L75.92 848.63 L81.58 847.96 L87.23 847.48 L92.88 846.83 L98.54 846.17 L104.19 843.02 L109.84 842.17 L115.5 841.55 L121.15 840.83 L126.8 840.31 L132.46 839.85 L138.11 836.58 L143.76 836.05 L149.42 835.67 L155.07 835.41 L160.73 829.48 L166.38 828.86 L172.03 828.35 L177.69 827.86 L183.34 826.93 L188.99 825.75 L194.65 822.64 L200.3 821.9 L205.95 821.25 L211.61 820.77 L217.26 820.42 L222.91 819.61 L228.57 817.36 L234.22 817.01 L239.88 816.49 L245.53 816.01 L251.18 815.21 L256.84 814.96 L262.49 812.07 L268.14 811.23 L273.8 810.71 L279.45 810.23 L285.1 809.44 L290.76 805.95 L296.41 804.91 L302.06 804.62 L307.72 803.9 L313.37 803.38 L319.03 799.05 L324.68 798.48 L330.33 797.41 L335.99 796.84 L341.64 794.51 L347.29 793.99 L352.95 793.27 L358.6 792.75 L364.25 792.44 L369.91 789.06 L375.56 788.49 L381.21 787.97 L386.87 787.7 L392.52 786.83 L398.18 786.23 L403.83 783.64 L409.48 782.83 L415.14 782.09 L420.79 781.44 L426.44 781.02 L432.1 778.42 L437.75 778.11 L443.4 777.27 L449.06 776.52 L454.71 770.56 L460.36 769.98 L466.02 769.25 L471.67 768.32 L477.33 768.04 L482.98 763.98 L488.63 763.08 L494.29 762.67 L499.94 762.06 L505.59 761.25 L511.25 761.12 L516.9 760.38 L522.55 757.05 L528.21 756.77 L533.86 755.99 L539.52 755.37 L545.17 754.01 L550.82 753.31 L556.48 746.68 L562.13 745.68 L567.78 744.88 L573.44 744.58 L579.09 743.97 L584.74 743.15 L590.4 742.6 L596.05 742.27 L601.7 741.71 L607.36 741.18 L613.01 736.61 L618.67 736.05 L624.32 735.11 L629.97 734.37 L635.63 733.98 L641.28 733.4 L646.93 729.96 L652.59 729.62 L658.24 729.25 L663.89 728.73 L669.55 728.14 L675.2 727.51 L680.85 726.9 L686.51 726.37 L692.16 724.55 L697.82 723.9 L703.47 723.52 L709.12 722.76 L714.78 719.12 L720.43 718.94 L726.08 718.1 L731.74 717.32 L737.39 717.03 L743.04 716.32 L748.7 715.67 L754.35 712.92 L760 712.45 L765.66 711.67 L771.31 711.21 L776.97 710.32 L782.62 706.67 L788.27 704.21 L793.93 703.49 L799.58 702.95 L805.23 702.13 L810.89 701.8 L816.54 698.47 L822.19 697.64 L827.85 697.44 L833.5 696.72 L839.15 695.94 L844.81 695.27 L850.46 692.94 L856.12 692.2 L858 691.7" fill="none" stroke="#F5C403" stroke-width="1.5" stroke-linejoin="round"/>
 <path d="M42 854 L47.65 853.78 L53.31 853.67 L58.96 853.17 L64.61 852.9 L70.27 845.36 L75.92 845.06 L81.58 844.87 L87.23 844.29 L92.88 844.05 L98.54 840.31 L104.19 839.58 L109.84 839.04 L115.5 839.04 L121.15 838.33 L126.8 831.51 L132.46 831.33 L138.11 830.77 L143.76 830.44 L149.42 830.22 L155.07 822.09 L160.73 821.59 L166.38 821.3 L172.03 821.07 L177.69 816.02 L183.34 815.77 L188.99 815.5 L194.65 815.33 L200.3 810.62 L205.95 810.32 L211.61 809.49 L217.26 808.93 L222.91 808.67 L228.57 800.56 L234.22 800.29 L239.88 800.29 L245.53 799.49 L251.18 799.08 L256.84 792.62 L262.49 792.41 L268.14 791.9 L273.8 791.62 L279.45 786.1 L285.1 785.71 L290.76 785.54 L296.41 785.08 L302.06 784.91 L307.72 775.51 L313.37 775.31 L319.03 774.99 L324.68 774.79 L330.33 774.54 L335.99 769.76 L341.64 769.76 L347.29 769.22 L352.95 768.57 L358.6 768.1 L364.25 762.35 L369.91 761.55 L375.56 761 L381.21 760.02 L386.87 759.75 L392.52 750.88 L398.18 750.73 L403.83 749.94 L409.48 749.94 L415.14 749.41 L420.79 743.85 L426.44 743.26 L432.1 743.06 L437.75 742.45 L443.4 739.94 L449.06 739.45 L454.71 738.63 L460.36 738.63 L466.02 734.43 L471.67 731.55 L477.33 731.33 L482.98 731.1 L488.63 731.1 L494.29 730.59 L499.94 726.21 L505.59 725.76 L511.25 725.51 L516.9 725.35 L522.55 719.79 L528.21 719.18 L533.86 718.88 L539.52 718.46 L545.17 715.45 L550.82 715.04 L556.48 714.41 L562.13 708.89 L567.78 708.63 L573.44 708.35 L579.09 707.44 L584.74 704.24 L590.4 704.03 L596.05 703.72 L601.7 703.5 L607.36 699.33 L613.01 699 L618.67 699 L624.32 694.74 L629.97 694.45 L635.63 694.45 L641.28 690.3 L646.93 690.14 L652.59 689.67 L658.24 689.55 L663.89 688.94 L669.55 685.62 L675.2 685.39 L680.85 684.46 L686.51 684.31 L692.16 680.59 L697.82 679.87 L703.47 679.6 L709.12 676.37 L714.78 676.22 L720.43 675.77 L726.08 675.47 L731.74 675.2 L737.39 670.34 L743.04 669.81 L748.7 669.52 L754.35 668.94 L760 668.68 L765.66 668.46 L771.31 668.19 L776.97 664.04 L782.62 663.87 L788.27 663.78 L793.93 663.18 L799.58 657.54 L805.23 657.33 L810.89 656.65 L816.54 656.29 L822.19 652.76 L827.85 652.55 L833.5 651.83 L839.15 648.95 L844.81 648.63 L850.46 647.85 L856.12 647.56 L858 647.32" fill="none" stroke="#FC6E03" stroke-width="2" stroke-linejoin="round"/>
 </g>
-<line x1="858.5" y1="549" x2="858.5" y2="854" stroke="#3DD68C" stroke-width="1" opacity="0.55"/>
+<line x1="858.5" y1="549" x2="858.5" y2="854" stroke="#22E05A" stroke-width="1" opacity="0.55"/>
 <circle cx="858" cy="801.39" r="3" fill="#E86366" stroke="#0F1217" stroke-width="1.5"/>
 <circle cx="858" cy="783.39" r="3" fill="#70FCB5" stroke="#0F1217" stroke-width="1.5"/>
 <circle cx="858" cy="775.36" r="3" fill="#F53000" stroke="#0F1217" stroke-width="1.5"/>
@@ -1567,125 +1609,125 @@
 <rect x="941" y="445" width="499" height="431" fill="#0F1217"/>
 <g clip-path="url(#k12)">
 <rect x="941" y="445" width="2" height="44" fill="#F2A33A"/>
-<circle cx="951" cy="456" r="1" fill="#515A6B"/>
-<circle cx="951" cy="460" r="1" fill="#515A6B"/>
-<circle cx="951" cy="464" r="1" fill="#515A6B"/>
-<circle cx="955" cy="456" r="1" fill="#515A6B"/>
-<circle cx="955" cy="460" r="1" fill="#515A6B"/>
-<circle cx="955" cy="464" r="1" fill="#515A6B"/>
+<circle cx="951" cy="456" r="1" fill="#5E677A"/>
+<circle cx="951" cy="460" r="1" fill="#5E677A"/>
+<circle cx="951" cy="464" r="1" fill="#5E677A"/>
+<circle cx="955" cy="456" r="1" fill="#5E677A"/>
+<circle cx="955" cy="460" r="1" fill="#5E677A"/>
+<circle cx="955" cy="464" r="1" fill="#5E677A"/>
 <text x="964" y="464.97" font-size="14" fill="#E9ECF2" font-weight="600">Tachi: Gekko</text>
 <rect x="964" y="473" width="8" height="8" rx="2" fill="#FC6E03"/>
-<text x="978" y="480.9" font-size="11" fill="#78829A">Hasaya · 16 hits · 1 misses · 13,105 total damage</text>
+<text x="978" y="480.9" font-size="11" fill="#838DA5">Hasaya · 16 hits · 1 misses · 13,105 total damage</text>
 <rect x="1376.5" y="455.5" width="51" height="21" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
 <text x="1402" y="469.9" font-size="11" fill="#A6AFBF" text-anchor="middle">Close</text>
-<path d="M1354 467.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M1354 467.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
 <rect x="941" y="489" width="499" height="42" fill="#151921"/>
-<text x="953" y="505.19" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">MIN</text>
+<text x="953" y="505.19" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">MIN</text>
 <text x="953" y="523.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">452</text>
 <line x1="1024.5" y1="497" x2="1024.5" y2="523" stroke="#2A313D" stroke-width="1"/>
-<text x="1036.17" y="505.19" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">AVERAGE</text>
+<text x="1036.17" y="505.19" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">AVERAGE</text>
 <text x="1036.17" y="523.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">819</text>
 <line x1="1107.5" y1="497" x2="1107.5" y2="523" stroke="#2A313D" stroke-width="1"/>
-<text x="1119.33" y="505.19" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">MAX</text>
+<text x="1119.33" y="505.19" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">MAX</text>
 <text x="1119.33" y="523.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">1,046</text>
 <line x1="1190.5" y1="497" x2="1190.5" y2="523" stroke="#2A313D" stroke-width="1"/>
-<text x="1202.5" y="505.19" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">MEDIAN</text>
+<text x="1202.5" y="505.19" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">MEDIAN</text>
 <text x="1202.5" y="523.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">792</text>
 <line x1="1274.5" y1="497" x2="1274.5" y2="523" stroke="#2A313D" stroke-width="1"/>
-<text x="1285.67" y="505.19" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">STD DEV</text>
+<text x="1285.67" y="505.19" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">STD DEV</text>
 <text x="1285.67" y="523.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">151</text>
 <line x1="1357.5" y1="497" x2="1357.5" y2="523" stroke="#2A313D" stroke-width="1"/>
-<text x="1368.83" y="505.19" font-size="9" fill="#78829A" font-weight="600" class="s" letter-spacing="0.6">ACCURACY</text>
+<text x="1368.83" y="505.19" font-size="9" fill="#838DA5" font-weight="600" class="s" letter-spacing="0.6">ACCURACY</text>
 <text x="1368.83" y="523.3" font-size="15" font-weight="600" class="d" fill="#E9ECF2">94%</text>
 <line x1="941" y1="489.5" x2="1440" y2="489.5" stroke="#1B2029" stroke-width="1"/>
 <line x1="941" y1="530.5" x2="1440" y2="530.5" stroke="#1B2029" stroke-width="1"/>
 <line x1="979" y1="669.5" x2="1424" y2="669.5" stroke="#2A313D" stroke-width="1"/>
-<text x="973" y="673.05" font-size="10" fill="#78829A" text-anchor="end">0</text>
+<text x="973" y="673.05" font-size="10" fill="#838DA5" text-anchor="end">0</text>
 <line x1="979" y1="640.5" x2="1424" y2="640.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="644.05" font-size="10" fill="#78829A" text-anchor="end">2</text>
+<text x="973" y="644.05" font-size="10" fill="#838DA5" text-anchor="end">2</text>
 <line x1="979" y1="610.5" x2="1424" y2="610.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="614.05" font-size="10" fill="#78829A" text-anchor="end">4</text>
+<text x="973" y="614.05" font-size="10" fill="#838DA5" text-anchor="end">4</text>
 <line x1="979" y1="580.5" x2="1424" y2="580.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="584.05" font-size="10" fill="#78829A" text-anchor="end">6</text>
+<text x="973" y="584.05" font-size="10" fill="#838DA5" text-anchor="end">6</text>
 <line x1="979" y1="551.5" x2="1424" y2="551.5" stroke="#1B2029" stroke-width="1"/>
-<text x="973" y="555.05" font-size="10" fill="#78829A" text-anchor="end">8</text>
+<text x="973" y="555.05" font-size="10" fill="#838DA5" text-anchor="end">8</text>
 <rect x="1211.99" y="551" width="119.49" height="118" fill="#E9ECF2" opacity="0.04"/>
 <path d="M979.5 669 L979.5 656.25 Q979.5 654.25 981.5 654.25 L1065.5 654.25 Q1067.5 654.25 1067.5 656.25 L1067.5 669 Z" fill="#FC6E03"/>
 <path d="M1068.5 669 L1068.5 656.25 Q1068.5 654.25 1070.5 654.25 L1154.5 654.25 Q1156.5 654.25 1156.5 656.25 L1156.5 669 Z" fill="#FC6E03"/>
 <path d="M1157.5 669 L1157.5 567.75 Q1157.5 565.75 1159.5 565.75 L1243.5 565.75 Q1245.5 565.75 1245.5 567.75 L1245.5 669 Z" fill="#FC6E03"/>
 <path d="M1246.5 669 L1246.5 626.75 Q1246.5 624.75 1248.5 624.75 L1332.5 624.75 Q1334.5 624.75 1334.5 626.75 L1334.5 669 Z" fill="#FC6E03"/>
 <path d="M1335.5 669 L1335.5 612 Q1335.5 610 1337.5 610 L1421.5 610 Q1423.5 610 1423.5 612 L1423.5 669 Z" fill="#FC6E03"/>
-<text x="979" y="683.55" font-size="10" fill="#78829A">452</text>
-<text x="1068" y="683.55" font-size="10" fill="#78829A" text-anchor="middle">571</text>
-<text x="1157" y="683.55" font-size="10" fill="#78829A" text-anchor="middle">690</text>
-<text x="1246" y="683.55" font-size="10" fill="#78829A" text-anchor="middle">808</text>
-<text x="1335" y="683.55" font-size="10" fill="#78829A" text-anchor="middle">927</text>
-<text x="1424" y="683.55" font-size="10" fill="#78829A" text-anchor="end">1,046</text>
+<text x="979" y="683.55" font-size="10" fill="#838DA5">452</text>
+<text x="1068" y="683.55" font-size="10" fill="#838DA5" text-anchor="middle">571</text>
+<text x="1157" y="683.55" font-size="10" fill="#838DA5" text-anchor="middle">690</text>
+<text x="1246" y="683.55" font-size="10" fill="#838DA5" text-anchor="middle">808</text>
+<text x="1335" y="683.55" font-size="10" fill="#838DA5" text-anchor="middle">927</text>
+<text x="1424" y="683.55" font-size="10" fill="#838DA5" text-anchor="end">1,046</text>
 <line x1="1254.5" y1="547" x2="1254.5" y2="669" stroke="#A6AFBF" stroke-width="1"/>
 <text x="1259.5" y="548.55" font-size="10" fill="#A6AFBF" font-weight="600">avg 819</text>
 <line x1="1234.5" y1="664" x2="1234.5" y2="673" stroke="#E9ECF2" stroke-width="1.5"/>
-<text x="1190.5" y="699.73" font-size="10.5" fill="#78829A" text-anchor="middle">Damage distribution · 5 bins · IQR 763–923 · 90th percentile 1,016</text>
+<text x="1190.5" y="699.73" font-size="10.5" fill="#838DA5" text-anchor="middle">Damage distribution · 5 bins · IQR 763–923 · 90th percentile 1,016</text>
 <rect x="941" y="709" width="499" height="24" fill="#0F1217"/>
 <line x1="941" y1="709.5" x2="1440" y2="709.5" stroke="#2A313D" stroke-width="1"/>
-<path d="M953 719 l3.5 4 l3.5 -4" fill="none" stroke="#78829A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M953 719 l3.5 4 l3.5 -4" fill="none" stroke="#838DA5" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
 <text x="967" y="725.08" font-size="11.5" fill="#E9ECF2" font-weight="600">Every hit</text>
-<text x="1021.08" y="725.4" font-size="11" fill="#78829A">17</text>
-<text x="1282" y="724.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">Damage</text>
-<text x="1418" y="724.9" font-size="11" fill="#78829A" font-weight="500" text-anchor="end">vs avg</text>
+<text x="1021.08" y="725.4" font-size="11" fill="#838DA5">17</text>
+<text x="1282" y="724.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">Damage</text>
+<text x="1418" y="724.9" font-size="11" fill="#838DA5" font-weight="500" text-anchor="end">vs avg</text>
 <line x1="941" y1="732.5" x2="1440" y2="732.5" stroke="#1B2029" stroke-width="1"/>
 <g clip-path="url(#k13)">
-<text x="953" y="746.9" font-size="11" fill="#78829A" class="m">12:38</text>
+<text x="953" y="746.9" font-size="11" fill="#838DA5" class="m">12:38</text>
 <text x="1013" y="747.26" font-size="12" fill="#A6AFBF">Suzaku</text>
-<text x="1282" y="747.26" font-size="12" fill="#515A6B" text-anchor="end">miss</text>
-<text x="1418" y="747.26" font-size="12" fill="#515A6B" text-anchor="end">—</text>
+<text x="1282" y="747.26" font-size="12" fill="#5E677A" text-anchor="end">miss</text>
+<text x="1418" y="747.26" font-size="12" fill="#5E677A" text-anchor="end">—</text>
 <line x1="941" y1="752.5" x2="1440" y2="752.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="766.9" font-size="11" fill="#78829A" class="m">11:24</text>
+<text x="953" y="766.9" font-size="11" fill="#838DA5" class="m">11:24</text>
 <text x="1013" y="767.26" font-size="12" fill="#A6AFBF">Suzaku</text>
 <text x="1282" y="767.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">733</text>
 <line x1="1334.5" y1="757" x2="1334.5" y2="769" stroke="#3D4656" stroke-width="1"/>
-<rect x="1325.56" y="760.5" width="8.44" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1325.56" y="760.5" width="8.44" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="767.26" font-size="12" fill="#A6AFBF" text-anchor="end">−86</text>
 <line x1="941" y1="772.5" x2="1440" y2="772.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="786.9" font-size="11" fill="#78829A" class="m">10:35</text>
+<text x="953" y="786.9" font-size="11" fill="#838DA5" class="m">10:35</text>
 <text x="1013" y="787.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="787.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">731</text>
 <line x1="1334.5" y1="777" x2="1334.5" y2="789" stroke="#3D4656" stroke-width="1"/>
-<rect x="1325.36" y="780.5" width="8.64" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1325.36" y="780.5" width="8.64" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="787.26" font-size="12" fill="#A6AFBF" text-anchor="end">−88</text>
 <line x1="941" y1="792.5" x2="1440" y2="792.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="806.9" font-size="11" fill="#78829A" class="m">10:15</text>
+<text x="953" y="806.9" font-size="11" fill="#838DA5" class="m">10:15</text>
 <text x="1013" y="807.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="807.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">791</text>
 <line x1="1334.5" y1="797" x2="1334.5" y2="809" stroke="#3D4656" stroke-width="1"/>
-<rect x="1331.25" y="800.5" width="2.75" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1331.25" y="800.5" width="2.75" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="807.26" font-size="12" fill="#A6AFBF" text-anchor="end">−28</text>
 <line x1="941" y1="812.5" x2="1440" y2="812.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="826.9" font-size="11" fill="#78829A" class="m">9:09</text>
+<text x="953" y="826.9" font-size="11" fill="#838DA5" class="m">9:09</text>
 <text x="1013" y="827.26" font-size="12" fill="#A6AFBF">Byakko</text>
 <text x="1282" y="827.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">1,043</text>
 <line x1="1334.5" y1="817" x2="1334.5" y2="829" stroke="#3D4656" stroke-width="1"/>
-<rect x="1335" y="820.5" width="21.96" height="5" rx="1" fill="#3DD68C" opacity="0.85"/>
+<rect x="1335" y="820.5" width="21.96" height="5" rx="1" fill="#22E05A" opacity="0.85"/>
 <text x="1418" y="827.26" font-size="12" fill="#A6AFBF" text-anchor="end">+224</text>
 <line x1="941" y1="832.5" x2="1440" y2="832.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="846.9" font-size="11" fill="#78829A" class="m">8:25</text>
+<text x="953" y="846.9" font-size="11" fill="#838DA5" class="m">8:25</text>
 <text x="1013" y="847.26" font-size="12" fill="#A6AFBF">Byakko</text>
 <text x="1282" y="847.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">988</text>
 <line x1="1334.5" y1="837" x2="1334.5" y2="849" stroke="#3D4656" stroke-width="1"/>
-<rect x="1335" y="840.5" width="16.57" height="5" rx="1" fill="#3DD68C" opacity="0.85"/>
+<rect x="1335" y="840.5" width="16.57" height="5" rx="1" fill="#22E05A" opacity="0.85"/>
 <text x="1418" y="847.26" font-size="12" fill="#A6AFBF" text-anchor="end">+169</text>
 <line x1="941" y1="852.5" x2="1440" y2="852.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="866.9" font-size="11" fill="#78829A" class="m">7:29</text>
+<text x="953" y="866.9" font-size="11" fill="#838DA5" class="m">7:29</text>
 <text x="1013" y="867.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="867.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">775</text>
 <line x1="1334.5" y1="857" x2="1334.5" y2="869" stroke="#3D4656" stroke-width="1"/>
-<rect x="1329.68" y="860.5" width="4.32" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1329.68" y="860.5" width="4.32" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="867.26" font-size="12" fill="#A6AFBF" text-anchor="end">−44</text>
 <line x1="941" y1="872.5" x2="1440" y2="872.5" stroke="#1B2029" stroke-width="1"/>
-<text x="953" y="886.9" font-size="11" fill="#78829A" class="m">7:04</text>
+<text x="953" y="886.9" font-size="11" fill="#838DA5" class="m">7:04</text>
 <text x="1013" y="887.26" font-size="12" fill="#A6AFBF">Kirin</text>
 <text x="1282" y="887.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">452</text>
 <line x1="1334.5" y1="877" x2="1334.5" y2="889" stroke="#3D4656" stroke-width="1"/>
-<rect x="1298" y="880.5" width="36" height="5" rx="1" fill="#F26D78" opacity="0.85"/>
+<rect x="1298" y="880.5" width="36" height="5" rx="1" fill="#FF5063" opacity="0.85"/>
 <text x="1418" y="887.26" font-size="12" fill="#A6AFBF" text-anchor="end">−367</text>
 <line x1="941" y1="892.5" x2="1440" y2="892.5" stroke="#1B2029" stroke-width="1"/>
 </g>
@@ -1707,10 +1749,10 @@
 <path d="M931.5 436.98 h18 M931.5 436.98 l4 -4 m-4 4 l4 4 M949.5 436.98 l-4 -4 m4 4 l-4 4" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
 <rect x="0" y="876" width="1440" height="24" fill="#0A0C10"/>
 <line x1="0" y1="876.5" x2="1440" y2="876.5" stroke="#2A313D" stroke-width="1"/>
-<circle cx="16" cy="888" r="4" fill="#3DD68C"/>
+<circle cx="16" cy="888" r="4" fill="#22E05A"/>
 <text x="30" y="891.9" font-size="11" fill="#A6AFBF" class="m">Hasaya-20261005203112.jsonl</text>
-<text x="214.04" y="891.9" font-size="11" fill="#78829A">2,944 events · started 20:31:12</text>
-<text x="1426" y="891.9" font-size="11" fill="#78829A" text-anchor="end">Double-click a divider to set it back</text>
+<text x="214.04" y="891.9" font-size="11" fill="#838DA5">2,944 events · started 20:31:12</text>
+<text x="1426" y="891.9" font-size="11" fill="#838DA5" text-anchor="end">Double-click a divider to set it back</text>
 </g>
 <rect x="0.5" y="0.5" width="1439" height="899" rx="8" fill="none" stroke="#3D4656" stroke-width="1"/>
 </svg>
@@ -1737,7 +1779,7 @@
 <rect x="146" y="2079.44" width="104" height="39.12" rx="2" fill="#F2A33A" opacity="0.16"/>
 <rect x="146.75" y="2080.19" width="102.5" height="37.62" rx="2" fill="none" stroke="#F2A33A" stroke-width="1.5"/>
 <text x="198" y="2102.73" font-size="10.5" fill="#F2A33A" font-weight="600" text-anchor="middle">swap</text>
-<text x="198" y="2041.37" font-size="9.5" fill="#78829A" text-anchor="middle">section’s edge: full width</text>
+<text x="198" y="2041.37" font-size="9.5" fill="#838DA5" text-anchor="middle">section’s edge: full width</text>
 <text x="38" y="2199.41" font-size="11" fill="#A6AFBF">On another pane: above, below, left or right of it (the two then</text>
 <text x="38" y="2214.41" font-size="11" fill="#A6AFBF">share its room), or its middle, which swaps the two. On the</text>
 <text x="38" y="2229.41" font-size="11" fill="#A6AFBF">section’s own edge: the pane takes that whole side. Panes are</text>
@@ -1782,44 +1824,44 @@
 <rect x="766" y="2018" width="320" height="148" fill="#0A0C10"/>
 <rect x="766.5" y="2018.5" width="319" height="147" fill="none" stroke="#2A313D" stroke-width="1"/>
 <rect x="767" y="2019" width="318" height="30" fill="#0F1217"/>
-<circle cx="776" cy="2030" r="1" fill="#515A6B"/>
-<circle cx="776" cy="2034" r="1" fill="#515A6B"/>
-<circle cx="776" cy="2038" r="1" fill="#515A6B"/>
-<circle cx="780" cy="2030" r="1" fill="#515A6B"/>
-<circle cx="780" cy="2034" r="1" fill="#515A6B"/>
-<circle cx="780" cy="2038" r="1" fill="#515A6B"/>
+<circle cx="776" cy="2030" r="1" fill="#5E677A"/>
+<circle cx="776" cy="2034" r="1" fill="#5E677A"/>
+<circle cx="776" cy="2038" r="1" fill="#5E677A"/>
+<circle cx="780" cy="2030" r="1" fill="#5E677A"/>
+<circle cx="780" cy="2034" r="1" fill="#5E677A"/>
+<circle cx="780" cy="2038" r="1" fill="#5E677A"/>
 <text x="789" y="2038.44" font-size="12.5" fill="#A6AFBF" font-weight="600">Actions</text>
-<text x="1067" y="2040" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M1042 2032.5 l3.5 3.5 l3.5 -3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
-<text x="842.48" y="2038.4" font-size="11" fill="#78829A">10 characters</text>
+<text x="1067" y="2040" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M1042 2032.5 l3.5 3.5 l3.5 -3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="842.48" y="2038.4" font-size="11" fill="#838DA5">10 characters</text>
 <line x1="767" y1="2048.5" x2="1085" y2="2048.5" stroke="#1B2029" stroke-width="1"/>
 <line x1="767" y1="2049.5" x2="1085" y2="2049.5" stroke="#2A313D" stroke-width="1"/>
 <rect x="767" y="2050" width="318" height="46" fill="#0F1217"/>
 <rect x="775.5" y="2056.5" width="301" height="33" rx="4" fill="none" stroke="#2A313D" stroke-width="1" stroke-dasharray="4 3"/>
-<circle cx="784" cy="2069" r="1" fill="#515A6B"/>
-<circle cx="784" cy="2073" r="1" fill="#515A6B"/>
-<circle cx="784" cy="2077" r="1" fill="#515A6B"/>
-<circle cx="788" cy="2069" r="1" fill="#515A6B"/>
-<circle cx="788" cy="2073" r="1" fill="#515A6B"/>
-<circle cx="788" cy="2077" r="1" fill="#515A6B"/>
-<text x="805" y="2079.5" font-size="13" fill="#78829A" text-anchor="middle" class="i"></text>
+<circle cx="784" cy="2069" r="1" fill="#5E677A"/>
+<circle cx="784" cy="2073" r="1" fill="#5E677A"/>
+<circle cx="784" cy="2077" r="1" fill="#5E677A"/>
+<circle cx="788" cy="2069" r="1" fill="#5E677A"/>
+<circle cx="788" cy="2073" r="1" fill="#5E677A"/>
+<circle cx="788" cy="2077" r="1" fill="#5E677A"/>
+<text x="805" y="2079.5" font-size="13" fill="#838DA5" text-anchor="middle" class="i"></text>
 <text x="821" y="2077.44" font-size="12.5" fill="#A6AFBF" font-weight="600">Cumulative damage</text>
 <rect x="981" y="2062" width="86" height="22" rx="4" fill="#1C222C"/>
 <rect x="981.5" y="2062.5" width="85" height="21" rx="3.5" fill="none" stroke="#2A313D" stroke-width="1"/>
 <text x="1024" y="2076.91" font-size="11" fill="#E9ECF2" text-anchor="middle">Bring back</text>
 <line x1="767" y1="2096.5" x2="1085" y2="2096.5" stroke="#2A313D" stroke-width="1"/>
 <rect x="767" y="2097" width="318" height="68" fill="#0F1217"/>
-<circle cx="776" cy="2108" r="1" fill="#515A6B"/>
-<circle cx="776" cy="2112" r="1" fill="#515A6B"/>
-<circle cx="776" cy="2116" r="1" fill="#515A6B"/>
-<circle cx="780" cy="2108" r="1" fill="#515A6B"/>
-<circle cx="780" cy="2112" r="1" fill="#515A6B"/>
-<circle cx="780" cy="2116" r="1" fill="#515A6B"/>
+<circle cx="776" cy="2108" r="1" fill="#5E677A"/>
+<circle cx="776" cy="2112" r="1" fill="#5E677A"/>
+<circle cx="776" cy="2116" r="1" fill="#5E677A"/>
+<circle cx="780" cy="2108" r="1" fill="#5E677A"/>
+<circle cx="780" cy="2112" r="1" fill="#5E677A"/>
+<circle cx="780" cy="2116" r="1" fill="#5E677A"/>
 <text x="789" y="2116.44" font-size="12.5" fill="#E9ECF2" font-weight="600">Damage by character</text>
-<text x="1067" y="2118" font-size="12" fill="#78829A" text-anchor="middle" class="i"></text>
-<path d="M1042 2113.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#515A6B" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="1067" y="2118" font-size="12" fill="#838DA5" text-anchor="middle" class="i"></text>
+<path d="M1042 2113.5 l3.5 -3.5 l3.5 3.5" fill="none" stroke="#5E677A" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
 <line x1="767" y1="2126.5" x2="1085" y2="2126.5" stroke="#1B2029" stroke-width="1"/>
-<text x="926" y="2149.73" font-size="10.5" fill="#78829A" text-anchor="middle">takes the room the other two gave up</text>
+<text x="926" y="2149.73" font-size="10.5" fill="#838DA5" text-anchor="middle">takes the room the other two gave up</text>
 <text x="766" y="2191.41" font-size="11" fill="#A6AFBF">Fold: a pane shrinks to its heading where it stands and its</text>
 <text x="766" y="2206.41" font-size="11" fill="#A6AFBF">neighbours take the room; the same mark opens it. There is no</text>
 <text x="766" y="2221.41" font-size="11" fill="#A6AFBF">"hidden": a pane is always on screen as itself, its heading, or its</text>

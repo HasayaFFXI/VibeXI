@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
-<style>text{font-family:'Segoe UI Variable Text','Segoe UI Variable','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:pre}.d{font-family:'Segoe UI Variable Display','Segoe UI Variable','Segoe UI',sans-serif}.s{font-family:'Segoe UI Variable Small','Segoe UI Variable','Segoe UI',sans-serif}.m{font-family:'Cascadia Mono','Consolas',monospace}.i{font-family:'Segoe Fluent Icons','Segoe MDL2 Assets'}.halo text{paint-order:stroke;stroke:#000;stroke-opacity:.6;stroke-width:2.4px;stroke-linejoin:round}.halo .nh,.halo text[fill='#191004'],.halo text[fill='#1B0508'],.halo text[fill='#07130D']{stroke:none}</style>
+<style>text{font-family:'Segoe UI Variable Text','Segoe UI Variable','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:pre}.d{font-family:'Segoe UI Variable Display','Segoe UI Variable','Segoe UI',sans-serif}.s{font-family:'Segoe UI Variable Small','Segoe UI Variable','Segoe UI',sans-serif}.m{font-family:'Cascadia Mono','Consolas',monospace}.i{font-family:'Segoe Fluent Icons','Segoe MDL2 Assets'}.halo text{paint-order:stroke;stroke:#000;stroke-opacity:.6;stroke-width:2.4px;stroke-linejoin:round}.halo .nh,.halo text[fill='#191004'],.halo text[fill='#190405'],.halo text[fill='#051306']{stroke:none}</style>
 <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16324A"/><stop offset=".45" stop-color="#3E6A78"/><stop offset=".62" stop-color="#C58B5A"/><stop offset=".63" stop-color="#4B5B3A"/><stop offset="1" stop-color="#1E2A1C"/></linearGradient><filter id="soft"><feGaussianBlur stdDeviation="9"/></filter><filter id="soft2"><feGaussianBlur stdDeviation="3"/></filter><clipPath id="k1"><rect x="68" y="392" width="324" height="204" rx="0"/></clipPath><clipPath id="k2"><rect x="500" y="96" width="628" height="532" rx="0"/></clipPath></defs>
 <rect width="1440" height="900" fill="#000000"/>
 <rect width="1440" height="844" fill="url(#sky)"/>
@@ -24,7 +24,7 @@
 <rect x="94" y="45" width="50" height="20" rx="4" fill="rgba(255,255,255,0.13)"/>
 <rect x="94.5" y="45.5" width="49" height="19" rx="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
 <text x="119" y="58.91" font-size="11" fill="#E9ECF2" font-weight="600" text-anchor="middle">Pause</text>
-<text x="154" y="59.44" font-size="12.5" fill="#3DD68C" font-weight="600" class="d">14:26</text>
+<text x="154" y="59.44" font-size="12.5" fill="#22E05A" font-weight="600" class="d">14:26</text>
 <text x="195.62" y="59.44" font-size="12.5" fill="#E9ECF2" font-weight="600" class="d">227,587</text>
 <text x="460" y="58.91" font-size="11" fill="#98A2B6" font-weight="600" text-anchor="end">Damage by character</text>
 <text x="42" y="84.19" font-size="9" fill="#98A2B6" font-weight="600" class="s" letter-spacing="0.6">CHARACTER</text>
@@ -113,7 +113,7 @@
 <rect x="94" y="335" width="50" height="20" rx="4" fill="rgba(255,255,255,0.13)"/>
 <rect x="94.5" y="335.5" width="49" height="19" rx="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
 <text x="119" y="348.9" font-size="11" fill="#E9ECF2" font-weight="600" text-anchor="middle">Pause</text>
-<text x="154" y="349.44" font-size="12.5" fill="#3DD68C" font-weight="600" class="d">14:26</text>
+<text x="154" y="349.44" font-size="12.5" fill="#22E05A" font-weight="600" class="d">14:26</text>
 <text x="195.62" y="349.44" font-size="12.5" fill="#E9ECF2" font-weight="600" class="d">227,587</text>
 <text x="460" y="348.9" font-size="11" fill="#98A2B6" font-weight="600" text-anchor="end">Cumulative damage</text>
 <rect x="338.5" y="365.5" width="112" height="19" rx="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
@@ -149,7 +149,7 @@
 <path d="M68 594 L70.23 593.59 L72.46 593.02 L74.69 592.81 L76.92 591.28 L79.15 590.94 L81.39 590.48 L83.62 590.04 L85.85 589.72 L88.08 589.3 L90.31 588.86 L92.54 586.8 L94.77 586.24 L97 585.84 L99.23 585.37 L101.46 585.02 L103.7 584.72 L105.93 582.58 L108.16 582.23 L110.39 581.98 L112.62 581.81 L114.85 577.92 L117.08 577.51 L119.31 577.18 L121.54 576.86 L123.77 576.25 L126 575.48 L128.24 573.43 L130.47 572.95 L132.7 572.53 L134.93 572.21 L137.16 571.98 L139.39 571.45 L141.62 569.97 L143.85 569.74 L146.08 569.4 L148.31 569.09 L150.55 568.57 L152.78 568.4 L155.01 566.51 L157.24 565.95 L159.47 565.61 L161.7 565.3 L163.93 564.78 L166.16 562.49 L168.39 561.81 L170.62 561.62 L172.85 561.15 L175.09 560.81 L177.32 557.97 L179.55 557.6 L181.78 556.89 L184.01 556.52 L186.24 554.99 L188.47 554.65 L190.7 554.18 L192.93 553.84 L195.16 553.63 L197.39 551.41 L199.63 551.04 L201.86 550.7 L204.09 550.53 L206.32 549.95 L208.55 549.56 L210.78 547.86 L213.01 547.33 L215.24 546.85 L217.47 546.42 L219.7 546.14 L221.94 544.44 L224.17 544.23 L226.4 543.69 L228.63 543.2 L230.86 539.29 L233.09 538.91 L235.32 538.43 L237.55 537.82 L239.78 537.63 L242.01 534.97 L244.24 534.38 L246.48 534.11 L248.71 533.71 L250.94 533.18 L253.17 533.1 L255.4 532.61 L257.63 530.42 L259.86 530.24 L262.09 529.73 L264.32 529.32 L266.55 528.43 L268.79 527.97 L271.02 523.62 L273.25 522.97 L275.48 522.44 L277.71 522.25 L279.94 521.85 L282.17 521.31 L284.4 520.95 L286.63 520.73 L288.86 520.37 L291.09 520.02 L293.33 517.02 L295.56 516.66 L297.79 516.04 L300.02 515.56 L302.25 515.3 L304.48 514.92 L306.71 512.66 L308.94 512.44 L311.17 512.2 L313.4 511.85 L315.64 511.47 L317.87 511.06 L320.1 510.65 L322.33 510.31 L324.56 509.12 L326.79 508.69 L329.02 508.44 L331.25 507.94 L333.48 505.56 L335.71 505.44 L337.94 504.89 L340.18 504.38 L342.41 504.18 L344.64 503.72 L346.87 503.29 L349.1 501.49 L351.33 501.18 L353.56 500.67 L355.79 500.37 L358.02 499.78 L360.25 497.39 L362.48 495.78 L364.72 495.3 L366.95 494.95 L369.18 494.41 L371.41 494.2 L373.64 492.01 L375.87 491.47 L378.1 491.34 L380.33 490.87 L382.56 490.36 L384.79 489.91 L387.03 488.39 L389.26 487.9 L390 487.58" fill="none" stroke="#F5C403" stroke-width="1.5" stroke-linejoin="round"/>
 <path d="M68 594 L70.23 593.86 L72.46 593.79 L74.69 593.45 L76.92 593.28 L79.15 588.33 L81.39 588.14 L83.62 588.01 L85.85 587.63 L88.08 587.48 L90.31 585.02 L92.54 584.55 L94.77 584.19 L97 584.19 L99.23 583.73 L101.46 579.25 L103.7 579.14 L105.93 578.77 L108.16 578.55 L110.39 578.41 L112.62 573.08 L114.85 572.75 L117.08 572.56 L119.31 572.41 L121.54 569.09 L123.77 568.93 L126 568.75 L128.24 568.64 L130.47 565.55 L132.7 565.36 L134.93 564.81 L137.16 564.45 L139.39 564.28 L141.62 558.96 L143.85 558.78 L146.08 558.78 L148.31 558.26 L150.55 557.99 L152.78 553.75 L155.01 553.61 L157.24 553.28 L159.47 553.09 L161.7 549.47 L163.93 549.22 L166.16 549.11 L168.39 548.8 L170.62 548.7 L172.85 542.53 L175.09 542.4 L177.32 542.19 L179.55 542.06 L181.78 541.89 L184.01 538.76 L186.24 538.76 L188.47 538.41 L190.7 537.98 L192.93 537.67 L195.16 533.9 L197.39 533.38 L199.63 533.02 L201.86 532.38 L204.09 532.2 L206.32 526.38 L208.55 526.28 L210.78 525.76 L213.01 525.76 L215.24 525.42 L217.47 521.77 L219.7 521.39 L221.94 521.25 L224.17 520.85 L226.4 519.21 L228.63 518.89 L230.86 518.35 L233.09 518.35 L235.32 515.6 L237.55 513.71 L239.78 513.56 L242.01 513.41 L244.24 513.41 L246.48 513.07 L248.71 510.2 L250.94 509.91 L253.17 509.74 L255.4 509.64 L257.63 506 L259.86 505.59 L262.09 505.4 L264.32 505.12 L266.55 503.15 L268.79 502.88 L271.02 502.47 L273.25 498.85 L275.48 498.68 L277.71 498.49 L279.94 497.89 L282.17 495.8 L284.4 495.66 L286.63 495.45 L288.86 495.31 L291.09 492.58 L293.33 492.36 L295.56 492.36 L297.79 489.57 L300.02 489.38 L302.25 489.38 L304.48 486.66 L306.71 486.55 L308.94 486.24 L311.17 486.16 L313.4 485.77 L315.64 483.59 L317.87 483.43 L320.1 482.82 L322.33 482.73 L324.56 480.29 L326.79 479.81 L329.02 479.64 L331.25 477.52 L333.48 477.42 L335.71 477.13 L337.94 476.93 L340.18 476.76 L342.41 473.57 L344.64 473.22 L346.87 473.03 L349.1 472.65 L351.33 472.48 L353.56 472.33 L355.79 472.16 L358.02 469.43 L360.25 469.32 L362.48 469.27 L364.72 468.87 L366.95 465.18 L369.18 465.03 L371.41 464.59 L373.64 464.35 L375.87 462.04 L378.1 461.9 L380.33 461.43 L382.56 459.54 L384.79 459.33 L387.03 458.82 L389.26 458.63 L390 458.47" fill="none" stroke="#FC6E03" stroke-width="2" stroke-linejoin="round"/>
 </g>
-<line x1="390.5" y1="394" x2="390.5" y2="594" stroke="#3DD68C" stroke-width="1" opacity="0.55"/>
+<line x1="390.5" y1="394" x2="390.5" y2="594" stroke="#22E05A" stroke-width="1" opacity="0.55"/>
 <circle cx="390" cy="559.5" r="3" fill="#E86366" stroke="#101010" stroke-width="1.5"/>
 <circle cx="390" cy="547.7" r="3" fill="#70FCB5" stroke="#101010" stroke-width="1.5"/>
 <circle cx="390" cy="542.43" r="3" fill="#F53000" stroke="#101010" stroke-width="1.5"/>
@@ -188,7 +188,7 @@
 <rect x="566" y="45" width="50" height="20" rx="4" fill="rgba(255,255,255,0.13)"/>
 <rect x="566.5" y="45.5" width="49" height="19" rx="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
 <text x="591" y="58.91" font-size="11" fill="#E9ECF2" font-weight="600" text-anchor="middle">Pause</text>
-<text x="626" y="59.44" font-size="12.5" fill="#3DD68C" font-weight="600" class="d">14:26</text>
+<text x="626" y="59.44" font-size="12.5" fill="#22E05A" font-weight="600" class="d">14:26</text>
 <text x="667.62" y="59.44" font-size="12.5" fill="#E9ECF2" font-weight="600" class="d">227,587</text>
 <text x="1122" y="60.5" font-size="11" fill="#E9ECF2" text-anchor="middle" class="i"></text>
 <rect x="1111.5" y="45.5" width="21" height="19" rx="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
@@ -199,14 +199,14 @@
 <circle cx="1060.14" cy="55" r="2.5" fill="#F2A33A"/>
 <text x="1004" y="58.91" font-size="11" fill="#B9C1CF" font-weight="600" text-anchor="end">Actions</text>
 <text x="508" y="87.91" font-size="11" fill="#98A2B6" font-weight="500">Action</text>
-<text x="776" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Hits</text>
-<text x="824" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Miss</text>
-<text x="898" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Total</text>
-<path d="M863.32 82.5 l3 3.4 l3 -3.4 Z" fill="#B9C1CF"/>
-<text x="954" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Avg</text>
-<text x="1006" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Min</text>
-<text x="1064" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Max</text>
-<text x="1124" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Share</text>
+<text x="744" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Hits</text>
+<text x="790" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Miss</text>
+<text x="864" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Total</text>
+<path d="M829.32 82.5 l3 3.4 l3 -3.4 Z" fill="#B9C1CF"/>
+<text x="918" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Avg</text>
+<text x="966" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Min</text>
+<text x="1022" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Max</text>
+<text x="1118" y="87.91" font-size="11" fill="#98A2B6" font-weight="500" text-anchor="end">Share</text>
 <line x1="500" y1="95.5" x2="1128" y2="95.5" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
 <g clip-path="url(#k2)">
 <rect x="500" y="96" width="628" height="22" fill="rgba(255,255,255,0.07)"/>
@@ -215,20 +215,21 @@
 <rect x="528" y="103" width="8" height="8" rx="2" fill="#FC6E03"/>
 <text x="542" y="111.26" font-size="12" fill="#E9ECF2" font-weight="600">Hasaya</text>
 <text x="589.21" y="111.23" font-size="10.5" fill="#B9C1CF">SAM/WAR</text>
-<text x="898" y="111.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
-<text x="1124" y="111.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9%</text>
+<text x="864" y="111.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">40,659</text>
+<text x="1118" y="111.26" font-size="12" fill="#E9ECF2" text-anchor="end">17.9%</text>
 <line x1="500" y1="117.5" x2="1128" y2="117.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="500" y="118" width="628" height="21" fill="rgba(255,255,255,0.13)"/>
-<rect x="500" y="118" width="628" height="21" fill="#E9ECF2" opacity="0.1"/>
 <rect x="500" y="118" width="2" height="21" fill="#F2A33A"/>
 <text x="542" y="133.26" font-size="12" fill="#E9ECF2" font-weight="600">Tachi: Gekko</text>
-<text x="776" y="133.26" font-size="12" fill="#E9ECF2" text-anchor="end">16</text>
-<text x="824" y="133.26" font-size="12" fill="#B9C1CF" text-anchor="end">1</text>
-<text x="898" y="133.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">13,105</text>
-<text x="954" y="133.26" font-size="12" fill="#E9ECF2" text-anchor="end">819</text>
-<text x="1006" y="133.26" font-size="12" fill="#B9C1CF" text-anchor="end">452</text>
-<text x="1064" y="133.26" font-size="12" fill="#B9C1CF" text-anchor="end">1,046</text>
-<text x="1124" y="133.26" font-size="12" fill="#E9ECF2" text-anchor="end">32.2%</text>
+<text x="744" y="133.26" font-size="12" fill="#E9ECF2" text-anchor="end">16</text>
+<text x="790" y="133.26" font-size="12" fill="#B9C1CF" text-anchor="end">1</text>
+<text x="864" y="133.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">13,105</text>
+<text x="918" y="133.26" font-size="12" fill="#E9ECF2" text-anchor="end">819</text>
+<text x="966" y="133.26" font-size="12" fill="#B9C1CF" text-anchor="end">452</text>
+<text x="1022" y="133.26" font-size="12" fill="#B9C1CF" text-anchor="end">1,046</text>
+<rect x="1040" y="126" width="34" height="6" rx="1.5" fill="rgba(255,255,255,0.13)"/>
+<rect x="1040" y="126" width="34" height="6" rx="1.5" fill="#98A2B6"/>
+<text x="1118" y="133.26" font-size="12" fill="#E9ECF2" text-anchor="end">32.2%</text>
 <line x1="500" y1="139.5" x2="1128" y2="139.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="542" y="144" width="582" height="40" fill="rgba(255,255,255,0.07)"/>
 <text x="554" y="160.19" font-size="9" fill="#98A2B6" font-weight="600" class="s" letter-spacing="0.6">MIN</text>
@@ -278,55 +279,60 @@
 <path d="M553.5 368.5 l4 3.5 l-4 3.5" fill="none" stroke="#B9C1CF" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>
 <text x="568" y="376.08" font-size="11.5" fill="#E9ECF2" font-weight="600">Every hit</text>
 <text x="622.08" y="376.4" font-size="11" fill="#98A2B6">17</text>
-<rect x="500" y="392" width="509.35" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="542" y="407.26" font-size="12" fill="#E9ECF2">Attack</text>
-<text x="776" y="407.26" font-size="12" fill="#E9ECF2" text-anchor="end">200</text>
-<text x="824" y="407.26" font-size="12" fill="#B9C1CF" text-anchor="end">27</text>
-<text x="898" y="407.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">10,629</text>
-<text x="954" y="407.26" font-size="12" fill="#E9ECF2" text-anchor="end">53</text>
-<text x="1006" y="407.26" font-size="12" fill="#B9C1CF" text-anchor="end">17</text>
-<text x="1064" y="407.26" font-size="12" fill="#B9C1CF" text-anchor="end">129</text>
-<text x="1124" y="407.26" font-size="12" fill="#E9ECF2" text-anchor="end">26.1%</text>
+<text x="744" y="407.26" font-size="12" fill="#E9ECF2" text-anchor="end">200</text>
+<text x="790" y="407.26" font-size="12" fill="#B9C1CF" text-anchor="end">27</text>
+<text x="864" y="407.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">10,629</text>
+<text x="918" y="407.26" font-size="12" fill="#E9ECF2" text-anchor="end">53</text>
+<text x="966" y="407.26" font-size="12" fill="#B9C1CF" text-anchor="end">17</text>
+<text x="1022" y="407.26" font-size="12" fill="#B9C1CF" text-anchor="end">129</text>
+<rect x="1040" y="400" width="34" height="6" rx="1.5" fill="rgba(255,255,255,0.13)"/>
+<rect x="1040" y="400" width="27.58" height="6" rx="1.5" fill="#98A2B6"/>
+<text x="1118" y="407.26" font-size="12" fill="#E9ECF2" text-anchor="end">26.1%</text>
 <line x1="500" y1="413.5" x2="1128" y2="413.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-<rect x="500" y="414" width="389.5" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="542" y="429.26" font-size="12" fill="#E9ECF2">Tachi: Kasha</text>
-<text x="776" y="429.26" font-size="12" fill="#E9ECF2" text-anchor="end">12</text>
-<text x="824" y="429.26" font-size="12" fill="#A8B2C2" text-anchor="end">—</text>
-<text x="898" y="429.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">8,128</text>
-<text x="954" y="429.26" font-size="12" fill="#E9ECF2" text-anchor="end">677</text>
-<text x="1006" y="429.26" font-size="12" fill="#B9C1CF" text-anchor="end">524</text>
-<text x="1064" y="429.26" font-size="12" fill="#B9C1CF" text-anchor="end">836</text>
-<text x="1124" y="429.26" font-size="12" fill="#E9ECF2" text-anchor="end">20.0%</text>
+<text x="744" y="429.26" font-size="12" fill="#E9ECF2" text-anchor="end">12</text>
+<text x="790" y="429.26" font-size="12" fill="#6F798C" text-anchor="end">—</text>
+<text x="864" y="429.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">8,128</text>
+<text x="918" y="429.26" font-size="12" fill="#E9ECF2" text-anchor="end">677</text>
+<text x="966" y="429.26" font-size="12" fill="#B9C1CF" text-anchor="end">524</text>
+<text x="1022" y="429.26" font-size="12" fill="#B9C1CF" text-anchor="end">836</text>
+<rect x="1040" y="422" width="34" height="6" rx="1.5" fill="rgba(255,255,255,0.13)"/>
+<rect x="1040" y="422" width="21.09" height="6" rx="1.5" fill="#98A2B6"/>
+<text x="1118" y="429.26" font-size="12" fill="#E9ECF2" text-anchor="end">20.0%</text>
 <line x1="500" y1="435.5" x2="1128" y2="435.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-<rect x="500" y="436" width="171.41" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="542" y="451.26" font-size="12" fill="#E9ECF2">Skillchain: Light</text>
-<text x="776" y="451.26" font-size="12" fill="#E9ECF2" text-anchor="end">7</text>
-<text x="824" y="451.26" font-size="12" fill="#A8B2C2" text-anchor="end">—</text>
-<text x="898" y="451.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">3,577</text>
-<text x="954" y="451.26" font-size="12" fill="#E9ECF2" text-anchor="end">511</text>
-<text x="1006" y="451.26" font-size="12" fill="#B9C1CF" text-anchor="end">295</text>
-<text x="1064" y="451.26" font-size="12" fill="#B9C1CF" text-anchor="end">754</text>
-<text x="1124" y="451.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.8%</text>
+<text x="744" y="451.26" font-size="12" fill="#E9ECF2" text-anchor="end">7</text>
+<text x="790" y="451.26" font-size="12" fill="#6F798C" text-anchor="end">—</text>
+<text x="864" y="451.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">3,577</text>
+<text x="918" y="451.26" font-size="12" fill="#E9ECF2" text-anchor="end">511</text>
+<text x="966" y="451.26" font-size="12" fill="#B9C1CF" text-anchor="end">295</text>
+<text x="1022" y="451.26" font-size="12" fill="#B9C1CF" text-anchor="end">754</text>
+<rect x="1040" y="444" width="34" height="6" rx="1.5" fill="rgba(255,255,255,0.13)"/>
+<rect x="1040" y="444" width="9.28" height="6" rx="1.5" fill="#98A2B6"/>
+<text x="1118" y="451.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.8%</text>
 <line x1="500" y1="457.5" x2="1128" y2="457.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-<rect x="500" y="458" width="141.32" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="542" y="473.26" font-size="12" fill="#E9ECF2">Skillchain: Fragmentation</text>
-<text x="776" y="473.26" font-size="12" fill="#E9ECF2" text-anchor="end">6</text>
-<text x="824" y="473.26" font-size="12" fill="#A8B2C2" text-anchor="end">—</text>
-<text x="898" y="473.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,949</text>
-<text x="954" y="473.26" font-size="12" fill="#E9ECF2" text-anchor="end">492</text>
-<text x="1006" y="473.26" font-size="12" fill="#B9C1CF" text-anchor="end">241</text>
-<text x="1064" y="473.26" font-size="12" fill="#B9C1CF" text-anchor="end">740</text>
-<text x="1124" y="473.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.3%</text>
+<text x="744" y="473.26" font-size="12" fill="#E9ECF2" text-anchor="end">6</text>
+<text x="790" y="473.26" font-size="12" fill="#6F798C" text-anchor="end">—</text>
+<text x="864" y="473.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,949</text>
+<text x="918" y="473.26" font-size="12" fill="#E9ECF2" text-anchor="end">492</text>
+<text x="966" y="473.26" font-size="12" fill="#B9C1CF" text-anchor="end">241</text>
+<text x="1022" y="473.26" font-size="12" fill="#B9C1CF" text-anchor="end">740</text>
+<rect x="1040" y="466" width="34" height="6" rx="1.5" fill="rgba(255,255,255,0.13)"/>
+<rect x="1040" y="466" width="7.65" height="6" rx="1.5" fill="#98A2B6"/>
+<text x="1118" y="473.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.3%</text>
 <line x1="500" y1="479.5" x2="1128" y2="479.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-<rect x="500" y="480" width="108.83" height="21" fill="#E9ECF2" opacity="0.1"/>
 <text x="542" y="495.26" font-size="12" fill="#E9ECF2">Tachi: Yukikaze</text>
-<text x="776" y="495.26" font-size="12" fill="#E9ECF2" text-anchor="end">4</text>
-<text x="824" y="495.26" font-size="12" fill="#A8B2C2" text-anchor="end">—</text>
-<text x="898" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,271</text>
-<text x="954" y="495.26" font-size="12" fill="#E9ECF2" text-anchor="end">568</text>
-<text x="1006" y="495.26" font-size="12" fill="#B9C1CF" text-anchor="end">529</text>
-<text x="1064" y="495.26" font-size="12" fill="#B9C1CF" text-anchor="end">610</text>
-<text x="1124" y="495.26" font-size="12" fill="#E9ECF2" text-anchor="end">5.6%</text>
+<text x="744" y="495.26" font-size="12" fill="#E9ECF2" text-anchor="end">4</text>
+<text x="790" y="495.26" font-size="12" fill="#6F798C" text-anchor="end">—</text>
+<text x="864" y="495.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">2,271</text>
+<text x="918" y="495.26" font-size="12" fill="#E9ECF2" text-anchor="end">568</text>
+<text x="966" y="495.26" font-size="12" fill="#B9C1CF" text-anchor="end">529</text>
+<text x="1022" y="495.26" font-size="12" fill="#B9C1CF" text-anchor="end">610</text>
+<rect x="1040" y="488" width="34" height="6" rx="1.5" fill="rgba(255,255,255,0.13)"/>
+<rect x="1040" y="488" width="5.89" height="6" rx="1.5" fill="#98A2B6"/>
+<text x="1118" y="495.26" font-size="12" fill="#E9ECF2" text-anchor="end">5.6%</text>
 <line x1="500" y1="501.5" x2="1128" y2="501.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="500" y="502" width="628" height="22" fill="rgba(255,255,255,0.07)"/>
 <rect x="500" y="502" width="493.13" height="21" fill="#F5C403" opacity="0.3"/>
@@ -334,8 +340,8 @@
 <rect x="528" y="509" width="8" height="8" rx="2" fill="#F5C403"/>
 <text x="542" y="517.26" font-size="12" fill="#E9ECF2" font-weight="600">Brannoch</text>
 <text x="602.38" y="517.23" font-size="10.5" fill="#B9C1CF">MNK/WAR</text>
-<text x="898" y="517.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
-<text x="1124" y="517.26" font-size="12" fill="#E9ECF2" text-anchor="end">14.0%</text>
+<text x="864" y="517.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">31,927</text>
+<text x="1118" y="517.26" font-size="12" fill="#E9ECF2" text-anchor="end">14.0%</text>
 <line x1="500" y1="523.5" x2="1128" y2="523.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="500" y="524" width="628" height="22" fill="rgba(255,255,255,0.07)"/>
 <rect x="500" y="524" width="476.59" height="21" fill="#CCBA78" opacity="0.3"/>
@@ -343,8 +349,8 @@
 <rect x="528" y="531" width="8" height="8" rx="2" fill="#CCBA78"/>
 <text x="542" y="539.26" font-size="12" fill="#E9ECF2" font-weight="600">Parabellum</text>
 <text x="612.28" y="539.23" font-size="10.5" fill="#B9C1CF">BST/NIN</text>
-<text x="898" y="539.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">30,856</text>
-<text x="1124" y="539.26" font-size="12" fill="#E9ECF2" text-anchor="end">13.6%</text>
+<text x="864" y="539.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">30,856</text>
+<text x="1118" y="539.26" font-size="12" fill="#E9ECF2" text-anchor="end">13.6%</text>
 <line x1="500" y1="545.5" x2="1128" y2="545.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="500" y="546" width="628" height="22" fill="rgba(255,255,255,0.07)"/>
 <rect x="500" y="546" width="387.76" height="21" fill="#E600FF" opacity="0.3"/>
@@ -352,8 +358,8 @@
 <rect x="528" y="553" width="8" height="8" rx="2" fill="#E600FF"/>
 <text x="542" y="561.26" font-size="12" fill="#E9ECF2" font-weight="600">Thorgald</text>
 <text x="599.52" y="561.23" font-size="10.5" fill="#B9C1CF">DRK/SAM</text>
-<text x="898" y="561.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">25,105</text>
-<text x="1124" y="561.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.0%</text>
+<text x="864" y="561.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">25,105</text>
+<text x="1118" y="561.26" font-size="12" fill="#E9ECF2" text-anchor="end">11.0%</text>
 <line x1="500" y1="567.5" x2="1128" y2="567.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="500" y="568" width="628" height="22" fill="rgba(255,255,255,0.07)"/>
 <rect x="500" y="568" width="347.45" height="21" fill="#A685BD" opacity="0.3"/>
@@ -361,8 +367,8 @@
 <rect x="528" y="575" width="8" height="8" rx="2" fill="#A685BD"/>
 <text x="542" y="583.26" font-size="12" fill="#E9ECF2" font-weight="600">Gillette</text>
 <text x="589.11" y="583.23" font-size="10.5" fill="#B9C1CF">BLM/WHM</text>
-<text x="898" y="583.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">22,495</text>
-<text x="1124" y="583.26" font-size="12" fill="#E9ECF2" text-anchor="end">9.9%</text>
+<text x="864" y="583.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">22,495</text>
+<text x="1118" y="583.26" font-size="12" fill="#E9ECF2" text-anchor="end">9.9%</text>
 <line x1="500" y1="589.5" x2="1128" y2="589.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="500" y="590" width="628" height="22" fill="rgba(255,255,255,0.07)"/>
 <rect x="500" y="590" width="301.56" height="21" fill="#6EC459" opacity="0.3"/>
@@ -370,8 +376,8 @@
 <rect x="528" y="597" width="8" height="8" rx="2" fill="#6EC459"/>
 <text x="542" y="605.26" font-size="12" fill="#E9ECF2" font-weight="600">Xatsh</text>
 <text x="580.04" y="605.23" font-size="10.5" fill="#B9C1CF">RNG/NIN</text>
-<text x="898" y="605.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">19,524</text>
-<text x="1124" y="605.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.6%</text>
+<text x="864" y="605.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">19,524</text>
+<text x="1118" y="605.26" font-size="12" fill="#E9ECF2" text-anchor="end">8.6%</text>
 <line x1="500" y1="611.5" x2="1128" y2="611.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <rect x="500" y="612" width="628" height="22" fill="rgba(255,255,255,0.07)"/>
 <rect x="500" y="612" width="267.36" height="21" fill="#C4AED3" opacity="0.3"/>
@@ -379,8 +385,8 @@
 <rect x="528" y="619" width="8" height="8" rx="2" fill="#C4AED3"/>
 <text x="542" y="627.26" font-size="12" fill="#E9ECF2" font-weight="600">Ysolde</text>
 <text x="586.3" y="627.23" font-size="10.5" fill="#B9C1CF">BLM/RDM</text>
-<text x="898" y="627.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">17,310</text>
-<text x="1124" y="627.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.6%</text>
+<text x="864" y="627.26" font-size="12" fill="#E9ECF2" font-weight="600" text-anchor="end">17,310</text>
+<text x="1118" y="627.26" font-size="12" fill="#E9ECF2" text-anchor="end">7.6%</text>
 <line x1="500" y1="633.5" x2="1128" y2="633.5" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 </g>
 <rect x="1131" y="98" width="5" height="263" rx="2.5" fill="rgba(255,255,255,0.28)"/>
@@ -389,7 +395,7 @@
 <rect x="1172" y="40" width="250" height="182" rx="8" fill="#06080C" opacity="0.3"/>
 <rect x="1172.5" y="40.5" width="249" height="181" rx="8" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="1"/>
 <line x1="1173" y1="69.5" x2="1421" y2="69.5" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
-<text x="1180" y="59.44" font-size="12.5" fill="#3DD68C" font-weight="600" class="d">14:26</text>
+<text x="1180" y="59.44" font-size="12.5" fill="#22E05A" font-weight="600" class="d">14:26</text>
 <text x="1221.62" y="59.44" font-size="12.5" fill="#E9ECF2" font-weight="600" class="d">95,954</text>
 <text x="1406" y="60.5" font-size="11" fill="#98A2B6" text-anchor="middle" class="i"></text>
 <text x="1390" y="58.91" font-size="11" fill="#98A2B6" font-weight="600" text-anchor="end">Healing by character</text>
@@ -428,20 +434,19 @@
 <text x="1414" y="209.08" font-size="11.5" fill="#E9ECF2" text-anchor="end">1.2%</text>
 <circle cx="1170" cy="38" r="9" fill="#F2A33A"/>
 <text x="1170" y="42" font-size="11" font-weight="700" fill="#191004" text-anchor="middle" class="nh">4</text>
-<rect x="1172" y="280" width="250" height="64" rx="8" fill="#06080C" opacity="0.7"/>
-<rect x="1172.5" y="280.5" width="249" height="63" rx="8" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="1"/>
-<rect x="1180" y="285" width="54" height="20" rx="4" fill="#F26D78"/>
-<text x="1207" y="298.9" font-size="11" fill="#1B0508" font-weight="600" text-anchor="middle">Confirm</text>
-<rect x="1238" y="285" width="50" height="20" rx="4" fill="rgba(255,255,255,0.13)"/>
-<rect x="1238.5" y="285.5" width="49" height="19" rx="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
-<text x="1263" y="298.9" font-size="11" fill="#E9ECF2" font-weight="600" text-anchor="middle">Cancel</text>
-<text x="1298" y="299.44" font-size="12.5" fill="#3DD68C" font-weight="600" class="d">14:26</text>
-<text x="1339.62" y="299.44" font-size="12.5" fill="#E9ECF2" font-weight="600" class="d">227,587</text>
-<rect x="1180" y="309" width="108" height="2" rx="1" fill="rgba(255,255,255,0.12)"/>
-<rect x="1180" y="309" width="66" height="2" rx="1" fill="#F26D78"/>
-<text x="1182" y="329.9" font-size="11" fill="#B9C1CF">Drop this pull? Kept if left alone.</text>
-<circle cx="1170" cy="278" r="9" fill="#F2A33A"/>
-<text x="1170" y="282" font-size="11" font-weight="700" fill="#191004" text-anchor="middle" class="nh">5</text>
+<rect x="1140" y="280" width="282" height="30" rx="8" fill="#06080C" opacity="0.7"/>
+<rect x="1140.5" y="280.5" width="281" height="29" rx="8" fill="none" stroke="rgba(255,255,255,0.13)" stroke-width="1"/>
+<line x1="1141" y1="309.5" x2="1421" y2="309.5" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+<rect x="1148" y="285" width="54" height="20" rx="4" fill="#FF5063"/>
+<text x="1175" y="298.9" font-size="11" fill="#190405" font-weight="600" text-anchor="middle">Confirm</text>
+<rect x="1206" y="285" width="50" height="20" rx="4" fill="rgba(255,255,255,0.13)"/>
+<rect x="1206.5" y="285.5" width="49" height="19" rx="3.5" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+<text x="1231" y="298.9" font-size="11" fill="#E9ECF2" font-weight="600" text-anchor="middle">Cancel</text>
+<text x="1266" y="299.44" font-size="12.5" fill="#22E05A" font-weight="600" class="d">14:26</text>
+<text x="1307.62" y="299.44" font-size="12.5" fill="#E9ECF2" font-weight="600" class="d">95,954</text>
+<text x="1414" y="298.9" font-size="11" fill="#98A2B6" font-weight="600" text-anchor="end">Heals</text>
+<circle cx="1138" cy="278" r="9" fill="#F2A33A"/>
+<text x="1138" y="282" font-size="11" font-weight="700" fill="#191004" text-anchor="middle" class="nh">5</text>
 </g>
 <rect x="0" y="844" width="1440" height="56" fill="#0A0C10"/>
 <line x1="0" y1="844.5" x2="1440" y2="844.5" stroke="#2A313D" stroke-width="1"/>
@@ -449,6 +454,6 @@
 <text x="16" y="875.9" font-size="11" fill="#A6AFBF">2  Cumulative damage at 45%: lines named at their ends, no legend.</text>
 <text x="16" y="890.9" font-size="11" fill="#A6AFBF">3  Actions at 82%, pointer over it: opacity and Dock appear; the drill-down opens under the row.</text>
 <text x="760" y="860.9" font-size="11" fill="#A6AFBF">4  Click-through on: no buttons, a lock; the clock and the total stay.</text>
-<text x="760" y="875.9" font-size="11" fill="#A6AFBF">5  Restart asks in the pair: Confirm / Cancel, and a bar for the five seconds.</text>
-<text x="1424" y="890.9" font-size="11" fill="#78829A" text-anchor="end">The backdrop is a stand-in for the game, not a screenshot.</text>
+<text x="760" y="875.9" font-size="11" fill="#A6AFBF">5  Restart asks in the pair: Confirm / Cancel on every bar at once. Left alone five seconds, the pull is kept.</text>
+<text x="1424" y="890.9" font-size="11" fill="#838DA5" text-anchor="end">The backdrop is a stand-in for the game, not a screenshot.</text>
 </svg>
