@@ -3,6 +3,11 @@
 A design exploration to react to, not an implementation. Nothing here is wired
 to Zerg; nothing under `apps/zerg` was changed.
 
+**Status: revision 3, 2026-10-05, with the palette revision of the same day
+applied on top.** Every proposal has been decided by the owner and the sheets
+match the decisions (section 5, "Decisions"). What is still open is listed at
+the end of that section.
+
 | File | What it shows |
 |---|---|
 | `01-damage-live.svg` | Damage section, session running, an action picked (the primary screen) |
@@ -10,12 +15,19 @@ to Zerg; nothing under `apps/zerg` was changed.
 | `03-compare.svg` | Compare: two runs by character, a row opened onto its actions, one action opened onto its distribution in both runs |
 | `04-pop-outs.svg` | The pop-outs over the game: strip, cumulative chart, Actions with its drill-down under the row, click-through, a restart being asked about |
 | `05-tray-menu.svg` | The tray menu, its Panels submenu, and the menu while a restart waits for its answer |
-| `06-settings.svg` | The Settings page |
-| `07-states.svg` | Idle with no addon, armed, restart asked, trouble, View with and without a parse, Compare with an empty slot, Hide names on with Include Skillchains off, click-through on |
+| `06-settings.svg` | The Settings page, with the two Row shading switches, the Low accuracy mark and Compare colours |
+| `07-states.svg` | Idle with no addon, armed, restart asked, trouble, View with and without a parse, Compare with an empty slot, Hide names on with Include Skillchains off, click-through on; and the same rows under each of the four pairs of the shading switches |
 | `08-kit.svg` | Tokens, type, and every stock control restyled |
 | `09-damage-live-light.svg` | Screen 01 in the light tokens |
 | `10-layout.svg` | The layout is the user's: a pane being moved with its drop places, the arrangement that results with a divider being dragged, and the rules |
 | `png/` | The same ten, rendered at 100% |
+
+Two other files sit in this folder and are **a record, not part of this
+design**: `03-compare-palette-proposal.svg` and `08-kit-palette-proposal.svg`.
+They are the colour proposals the owner chose from (decisions 16 to 19), and
+they show options that were not taken as well as those that were; they have no
+PNG. The colours decided are the ones in section 2, and where a proposal sheet
+differs from section 2, section 2 is right.
 
 The SVGs name fonts that ship with Windows 11 (Segoe UI Variable, Cascadia
 Mono, Segoe Fluent Icons). On a machine without them they fall back and the
@@ -83,12 +95,12 @@ roughly three screens of scrolling for the same content.
 | `line3` | `#3D4656` | strong edge: window frame, menu, scroll thumb |
 | `t1` | `#E9ECF2` | figures, names (15.9:1 on `bg1`) |
 | `t2` | `#A6AFBF` | secondary figures, button text (8.5:1) |
-| `t3` | `#78829A` | labels, column headings, notes (4.9:1) |
-| `t4` | `#515A6B` | a dash, a disabled control (2.7:1; never carries information alone) |
+| `t3` | `#838DA5` | labels, column headings, notes, captions (5.6:1; 4.8:1 on `bg3`) |
+| `t4` | `#5E677A` | a dash, a disabled control (3.3:1; never carries information alone) |
 | `accent` | `#F2A33A` | brand, selected, focus, armed and held (9.0:1); text on it `#191004` |
-| `live` | `#3DD68C` | counting, better (10.0:1); text on it `#07130D` |
-| `crit` | `#F26D78` | dropped, error, worse (6.5:1) |
-| `runA` / `runB` | `#3987E5` / `#D95926` | Compare's two runs, as now; badge ink `#101010` |
+| `live` | `#22E05A` | counting, better (10.6:1); text on it `#051306` (10.8:1) |
+| `crit` | `#FF5063` | dropped, error, worse (5.9:1; 5.0:1 on `bg3`); text on it `#190405` (6.2:1) |
+| `runA` / `runB` | `#3987E5` / `#E8792B` as installed | Compare's two runs: blue for the baseline, orange for the compared run. **Each is a setting** (Compare colours, sheet 06); badge ink `#101010` |
 | job colours | as `Themes/Dark.xaml` | unchanged; a second character on a job is a shade of it, as now |
 | close hover | `#C42B1C` | the caption's close button under the pointer |
 
@@ -97,6 +109,10 @@ surfaces are white at 7% (heading row), 13% (button, selected) and 20% (hover);
 rules are white at 8%, 16% and 28%; `t2` to `t4` are one step lighter
 (`#B9C1CF`, `#98A2B6`, `#6F798C`); and every glyph carries a black halo
 (2.4 px at 60%) so it holds over a bright sky at 30% backdrop.
+
+Tints follow from the tokens and are not chosen separately. A state tag is
+its colour at 12% over `bg1` with an edge at 45%: LIVE `#112B1F` / `#186F35`,
+IDLE (from `t3`) `#1D2128` / `#434957`, ARMED and HELD `#2A231B` / `#755327`.
 
 ### The row shade
 
@@ -108,24 +124,65 @@ length. Its strength is set per colour, by one rule: **as strong as leaves
 |---|---|---|
 | Most job colours | 30% of the colour over the row | 22% (WAR 21%) |
 | Held back for legibility | BST 29%, BRD 28%, MNK 27%, SMN 23%, PLD 22%, WHM 20% | none |
-| An action or heal under a character | `t1` at 10%, no colour | `t1` at 8% |
-| Compare, a run's band | run A / run B at 26% | 16% (not drawn; from the contrast figures) |
+| An action or heal under a character, when that switch is on (it is off as installed) | `t1` at 10%, no colour | `t1` at 8% |
+| Compare, a run's band | set from the run's colour (the rule is below): 20% for run A and 19% for run B as installed | 16% (not drawn; from the contrast figures, and not reworked for the new colours) |
 | Pop-out strip | same rule, up to 34%, over the panel's backdrop | same |
 | Hovered row | `t1` at 5% over the whole row, a `line3` rule above and below | same |
 | Selected row | `bg3` under the shade, a 2 px amber edge | same |
-| A dash on a shaded row | `#8F98AC` (halfway from `t3` to `t2`) | `#58606F` |
+| A dash on a shaded row | `#949EB2` (halfway from `t3` to `t2`) | `#58606F` |
 
 Measured on the worst colour of each theme: `t1` 8.4:1, `t2` 4.5:1, a dash
-3.4:1 (dark); `t1` 11.9:1, `t2` 5.6:1, a dash 4.2:1 (light). Job names beside a
+3.7:1 (dark); `t1` 11.9:1, `t2` 5.6:1, a dash 4.2:1 (light). Job names beside a
 character move from `t3` to `t2` in shaded tables, because `t3` falls to about
-2.6:1 on the pale shades. Nothing marks the shade's end: a line there cut
+3.0:1 on the pale shades. Nothing marks the shade's end: a line there cut
 through whichever figure it fell on.
 
-**The low-rate mark is a cut-out, not a wash.** A wash of red over a row
-already shaded red, magenta or orange disappears. The cell is first filled
-with the pane's own surface, then washed red (10% to 34%) and outlined red
-(22% to 72%), so it reads the same on a plain row and on any shade. Figures on
-it stay at 9.1:1 or better.
+**A run's band has its own rule, because its colour is the user's.** The
+band is **as strong as leaves `crit` text at 4.5:1 on it over `bg1`, and never
+over 26%**. Red is the darkest text that sits on a band, so everything else
+follows: on the installed pair `live` is 8.1:1 or better, `t1` 12.1:1, `t2`
+6.5:1 and a dash 5.3:1. The rule gives 20% for the installed blue and 19% for
+the installed orange; a paler pick gets a fainter band (white 10%, a yellow
+13%) and a dark one stops at the 26% cap. On the opened row (`bg2`) red is
+4.2:1 on either band, as it was before this revision.
+
+The shade's edge is exact: it falls where the share ends and crosses a figure
+if one is there, as the real pop-out's does. It is not snapped to a column and
+does not fade, and no line marks it (a line cut through the figure it fell
+on).
+
+**Two switches, and one rule.** Settings has "Shade characters in their
+colour" (on as installed) and "Shade actions and heals" (off as installed).
+The first governs every top-level row: a character's row in Damage by
+character and Healing by character, their heading in Actions and Heals, the
+runs' bands in Compare, and the pop-out strip. The second governs the rows
+under a character. The rule for both: **a share is drawn exactly once. Where
+the row is shaded, the row is the bar and the cell is the figure alone; where
+it is not, a small bar sits in the row's own share cell (Damage %, Healing %,
+Share) beside the figure, to the same scale.** In Compare with the first
+switch off, the Damage cell gets its two small run bars back. Sheet 07 shows
+the same rows under all four pairs. The pop-outs follow both switches: a
+strip with shading off is still a strip (its 3 px colour edge stays), with
+the small bar in its % cell.
+
+**The low accuracy mark.** Accuracy, WS Acc and Pet Acc under a threshold are
+marked in red, more strongly the lower they fall. The threshold is a setting,
+**90% as installed**; at 60% and under the mark is at its strongest (the 60%
+is fixed and is not a setting; confirmed by the owner, see section 5). The
+mark is drawn in the live tables only, not in Compare, and not on the Party
+line as the sheets stand (see "Still open" in section 5). With 90%, thirteen of the
+seventeen rates in the example table are under the line, so the mark is
+graded in kind as well as strength, to stay calm:
+
+- **90% down to about 85%:** a 2 px red rule under the figure, nothing else.
+- **About 85% down to 75%:** the cell is progressively cut out of the row:
+  filled with the pane's own surface, washed red, outlined red. A cut-out and
+  not a wash, because a wash of red over a row already shaded red, magenta or
+  orange disappears; cut out, it reads the same on a plain row and on any
+  shade.
+- **75% down to 60%:** the full cut-out, its wash and outline deepening.
+- **60% and under:** the strongest (wash 34%, outline 72%). Figures on it
+  stay at 9.6:1 or better.
 
 ### Colour, light (cheap, so included)
 
@@ -253,7 +310,7 @@ disabled.
   its damage out of the leader's, with all fourteen figures on top. Damage %
   is the number alone; the share is not drawn twice. The eleven narrow
   columns are grouped under WEAPONSKILL, SKILLCHAIN and PET so their headings
-  can be one word. A rate under 85% is cut out in red, deepening to 60%, so
+  can be one word. A rate under 90% is marked in red, deepening to 60%, so
   the low Accuracy is found without reading (Xatsh's 57.1% WS Acc). The
   owner's row has an amber marker. A **Party** line closes the table under
   the columns it sums, unshaded.
@@ -264,12 +321,13 @@ disabled.
     are what the bar is for, would be a few pixels. The percentage beside it
     carries the absolute share.
 - **Actions.** Same tree, 22 px rows. A character's heading is shaded the
-  same way (their damage out of the leader's, in their colour). An action is
-  shaded without a colour, to its total out of that character's largest
-  action, so one rule holds everywhere: *a row is shaded to its value over
-  the largest of its siblings.* Share is the number alone. Added: a "Min,
-  avg, max" mark per action (a line from least to greatest with a tick at the
-  average, scaled to the character's biggest hit).
+  same way (their damage out of the leader's, in their colour), and its Share
+  is the figure alone. An action is not shaded as installed: its share is a
+  small grey bar in the Share cell beside the figure, its total out of that
+  character's largest action. One scale holds everywhere, shaded or not: *a
+  row's share is drawn to its value over the largest of its siblings.* Added:
+  a "Min, avg, max" mark per action (a line from least to greatest with a tick
+  at the average, scaled to the character's biggest hit).
 - **Every pane** has a grip in its heading and every divider a grip at its
   middle: the layout is adjustable (sheet 10). The layout button ends the
   command bar.
@@ -285,7 +343,8 @@ disabled.
 ### 02 Healing, held
 
 The same grid over the heals, with the same back-shade: Healing by character
-to the leading healer, a healer's heading in Heals, a heal without a colour. Held: the clock, the tag and Resume are amber,
+to the leading healer, a healer's heading in Heals; a heal under a healer has the small bar
+in its Share cell, as an action does. Held: the clock, the tag and Resume are amber,
 and Export wakes. Cumulative healing is floating, so its pane shrinks to a
 46 px dashed stand-in with "Bring back" and the drill-down takes the height.
 The status line says how many panels are out and offers Dock all. The Heals
@@ -306,7 +365,11 @@ and Max are per target, so one line would mix two scales.
   length here says which run, so it is not the job's colour; the swatch keeps
   that). The two bars that sat in the Damage cell are gone; the cell is the
   two figures. By damage type and By target are shaded the same way. Green
-  and red changes stay at 4.6:1 or better on either band.
+  and red changes stay at 4.5:1 or better on either band, whatever colours
+  the runs are set to (section 2, "The row shade").
+- **The runs are blue and orange as installed** (`#3987E5`, `#E8792B`), the
+  usual pair for two series, in place of blue and a vermilion that read as
+  the red of a worse change. Both are the user's to set (sheet 06).
 - **A row's actions** open in a darker well, indented, with the same columns
   as now. **An action's distribution** opens under it: the paired histogram
   on shared bins with each run's average ruled, and the figures beside it
@@ -331,14 +394,15 @@ and Max are per target, so one line would mix two scales.
 - **Actions.** The drill-down opens under the picked row as now: six
   figures, the histogram, and Every hit folded.
 - **Click-through.** No pair, no tools, a lock; the clock and total stay.
-- **Restart asked.** Confirm in red, Cancel, and a 2 px line that runs down
-  the five seconds, so the wait is visible.
+- **Restart asked.** Confirm in red and Cancel, on every bar at once, as
+  today. Nothing counts the five seconds down.
 
 ### 05 Tray menu
 
 The same lines in the same order, restyled. One addition: a heading line with
 the session's state, clock and total. While a restart is being asked about the
-menu stays open (as now) and the same five-second line runs under Confirm.
+menu stays open, as now, with Confirm in red; nothing counts the five seconds
+down.
 
 ### 06 Settings
 
@@ -347,14 +411,58 @@ at the right, in place of five stacked cards. The hot key is drawn as keycaps;
 the listening state is shown beside it. The opacity slider gets a small
 preview of a strip at that opacity.
 
+Two rows are new, between Draw frequency and Theme:
+
+- **Row shading**, two toggles. "Shade characters in their colour" (ticked;
+  "on unless switched off"), with the line "A character's row in Damage by
+  character and Healing by character, their heading in Actions and Heals, and
+  the two runs in Compare." And "Shade actions and heals" (unticked; "off
+  unless switched on"), with "The rows under a character, shaded without a
+  colour." The row's explanation says what an unshaded row shows instead and
+  that the pop-outs follow both. A four-row preview beside them shows the
+  table as currently set.
+- **Low accuracy mark**, a slider from 50% to 100%, at 90% ("90% unless
+  changed"), with six sample rates under it drawn as they would be marked.
+
+One more is new, after Theme:
+
+- **Compare colours**, a well for each run: the run's badge in its colour,
+  the colour's code, a chevron. Opening a well shows a picker under it (a
+  square for saturation and brightness, a strip for hue, a field for the
+  code) and the band strength that colour comes out at. Any colour can be
+  picked. "Use default" puts both back and is off while both are as
+  installed. A one-row preview beside the wells shows a Compare row as set,
+  with the two strengths under it. The sheet shows A at rest and B open.
+
 ### 07 States
 
 Each is a 960-wide piece of the window. Wording is Zerg's own
-(`SessionText`, `SessionView`, the tooltips). Two proposals to note: a
-failure (a refused export) is a red line above the status line that stays
-until dismissed, instead of a note that clears itself after 8 seconds; and
-**View is a tab** that appears while a parse is open, with the file's name and
-a close mark, so the section has a visible place and a way back.
+(`SessionText`, `SessionView`, the tooltips). **View is a tab** that appears
+while a parse is open, with the file's name and a close mark, so the section
+has a visible place and a way back. A refused export says why in red in the
+command bar's note and clears after 8 seconds, as today; in a window too
+narrow for the note beside the buttons it wraps to a line of its own, also as
+today. Restart asked is Confirm and Cancel in the pair, with no countdown.
+
+The last row is **Row shading, the four settings**: three characters and one
+of them opened onto three actions, drawn under each pair of the two switches
+(characters shaded and actions not, which is how Zerg is installed; both;
+neither; actions only), so the choices can be compared on the same rows.
+
+### 08 Kit
+
+The reference sheet for sections 2 and 3: the colour tokens, the type scale,
+the measures, the job colours, and the controls: buttons at rest, hovered,
+pressed, focused and disabled; the session pair in each of its six looks;
+toggles, segments, chips and state tags; text box, combo box and slider;
+scroll bars, tooltip and keycaps; the hover card and a menu; the window
+chrome; and the marks used inside a cell. For the panes it shows a divider
+at rest, under the pointer and dragged, a heading at rest and under the
+pointer, the place a dragged pane will land, and a pane folded to its
+heading. The layout button's menu is on sheet 10, not here. Its table rows
+(shaded, hovered, selected, and a Compare row shaded twice) show the shading
+as installed, characters shaded and actions not, and point to sheet 07 for
+the other three settings.
 
 ### 09 Light
 
@@ -375,9 +483,10 @@ with the pane's heading and a sketch of its contents. The status line says
 what is happening.
 
 **B, put down, and a divider in the hand.** The same Damage section after
-that swap: the chart wide under the table, Actions as a narrow tree (it sheds
-Min, the mark and Share below 700 wide, as its pop-out already sheds
-columns), the drill-down under it. The divider between the columns is being
+that swap: the chart wide under the table, Actions as a narrow tree (in a
+narrow pane it sheds Miss, Min and the "Min, avg, max" mark and keeps Share
+with its small bar, as its pop-out already sheds columns), the drill-down
+under it. The divider between the columns is being
 dragged: solid amber, with both widths in a small readout that follows the
 pointer. Sizes change live; there is no ghost line.
 
@@ -438,7 +547,8 @@ pointer. Sizes change live; there is no ghost line.
 | A fixed order of cards | Panes moved by their headings and sized by their dividers, per section, remembered | The layout that suits a six-person party does not suit an alliance, or a second monitor |
 | Fourteen ungrouped headings ("WS Damage", "WS Avg", ...) | Three column groups with one-word headings | Fits 940 px without sideways scrolling; easier to find a group |
 | Rows 32 and 30, text 13 | Rows 24 and 22, text 12 | A full alliance (18) fits where 13 rows did |
-| Nothing marks a poor rate | A red cut-out under 85% | The eye finds the outlier, on any row colour |
+| Nothing marks a poor rate | A red mark under 90% (a setting): a rule, then a cut-out as it falls | The eye finds the outlier, on any row colour, without thirteen boxes |
+| No choice about how a share is drawn | Two switches: characters shaded in their colour (on), actions and heals shaded (off) | Some will want the plain table; the share is drawn once either way |
 | Min, Avg, Max as three numbers | The numbers, plus one mark | Spread is a shape before it is a figure |
 | Legend above the docked chart | Lines named at their ends | Already how the panel does it; one row saved |
 | Drill-down is a card under Actions | A pane beside the tables | Picking an action no longer moves the page |
@@ -446,31 +556,127 @@ pointer. Sizes change live; there is no ghost line.
 | Click-through's hot key only in a tooltip | On the toggle, as a keycap | The one fact needed before going back to the game |
 | Panel bar: title, pair, clock, total, slider, %, Dock | Pair, clock, total, title; tools on hover | Less chrome over the game; works narrower |
 | Strip bar at a flat 70% behind the text, with a text shadow | The same bar at a strength set per colour (20% to 34%); halo on all panel text | Legible on every job colour; one idiom with the main window |
-| A restart's five seconds are invisible | A line that runs down | The wait can be seen |
 | Tray menu has no status | A heading line with state, clock, total | Answers "is it running?" |
 | Compare: a tick before every figure, two bars in the Damage cell | The run marked once per row; the row shaded twice, A over B | Hundreds fewer marks; the same share idiom as the live tables |
 | Compare rows 44, spread lines 34 | 36 and 23 | Density |
-| Settings: five cards | Five ruled rows, label left, control right | Shorter; the control is beside what explains it |
+| Settings: five cards | Eight ruled rows, label left, control right: the five settings there are now, plus Row shading, Low accuracy mark and Compare colours | Shorter; the control is beside what explains it |
 
-### Proposals that change behaviour
+### Decisions
 
-These are more than a restyle. Each needs a yes before it is built.
+The owner has been through every proposal. This is where each stands.
 
-1. **Movable, resizable panes** (sheet 10): a per-section arrangement the
-   user owns, with fold, lock and reset, saved in `settings.json`.
-2. **The bar chart is retired** in favour of back-shaded table rows, in both
-   live sections, and Compare's in-cell bars in favour of banded rows.
+**Accepted, as drawn**
+
+1. **Movable, resizable panes** (sheet 10): splits only, no tabs or stacking;
+   fold, not hide; per section, remembered, with lock and reset. The whole
+   model stands.
+2. **Back-shaded rows** replace the bar chart, with the shade's edge exact
+   (it crosses a figure where it falls, as the pop-out's does; no snapping, no
+   fade).
 3. **View is a tab** while a parse is open.
-4. **A failed export stays** on a line of its own until dismissed.
-5. **Panel bar:** the pair at the left edge; opacity and Dock only under the
+4. **Panel bar:** the pair at the left edge; opacity and Dock only under the
    pointer.
-6. **A visible five-second line** under Confirm, on the bar, panels and tray
-   menu.
-7. **A heading line in the tray menu** with state, clock and total.
-8. **Name-only chips**, the job in the tooltip.
-9. **A Party line** under the per-character tables (needs a small core
-   addition).
-10. **The red cut-out's thresholds** (85% and 60%) are a guess.
+5. **A heading line in the tray menu** with state, clock and total.
+6. **Name-only chips**, the job in the tooltip.
+7. **A Party line** under the per-character tables. It needs a small core
+   addition (party-wide Accuracy, WS and pet figures in the live count).
+8. **The amber accent** `#F2A33A`, unchanged.
+
+**Rejected, and removed from the sheets**
+
+9. **A failed export that stays until dismissed.** The note clears after 8
+   seconds, as today.
+10. **A visible five-second line under Confirm.** Confirm and Cancel are
+    restyled and nothing more.
+
+**Changed**
+
+11. **The low accuracy mark starts at 90%** (it was 85%) **and the threshold
+    is a setting.** The mark was reweighted for it (a rule first, a cut-out
+    as the rate falls); the threshold itself was not touched.
+12. **Shading is governed by two settings:** characters in their colour (on
+    as installed) and actions and heals without a colour (off as installed).
+    An unshaded row carries its share as a small bar in its own cell. The
+    pop-outs follow both.
+
+**Confirmed afterwards** (first drawn as the designer's assumptions, then
+accepted by the owner)
+
+13. **60% stays the fixed point at which the mark is strongest**, and is not
+    a setting. If the threshold is set below about 65% the grading has little
+    room; an implementation should keep the strongest point at least 15
+    points under the threshold.
+14. **The mark applies to Accuracy, WS Acc and Pet Acc** in the live tables,
+    and not to Compare's accuracy cells, which already carry a toned change.
+15. **With "Shade characters in their colour" off, a pop-out strip keeps its
+    3 px colour edge** and shows the small bar in its % cell.
+
+**Palette revision** (decided 2026-10-05 from the two proposal sheets; dark
+theme only, the light theme is left as it was by the owner's choice)
+
+16. **`crit` is `#FF5063`** (it was `#F26D78`, which read as pink and sat on
+    RDM's colour). It is darker, so it is 5.9:1 on `bg1` where the old red
+    was 6.5:1, and a run's band is fainter to keep it readable.
+17. **`live` is `#22E05A`**, a signal green (it was `#3DD68C`). The owner
+    chose it over the emerald the review recommended, knowing the cost: it is
+    nearer THF's and RNG's greens, and nearer the amber of HELD for a viewer
+    with deuteranopia, so LIVE against HELD rests on the tag's word and mark.
+18. **`t3` is `#838DA5` and `t4` is `#5E677A`** (they were `#78829A` and
+    `#515A6B`), and the 9.5 px captions that were drawn in `t4` ("per 20 s",
+    "running", "party share") are `t3`.
+19. **The runs are blue `#3987E5` and orange `#E8792B` as installed, and each
+    is a setting with a free colour picker.** The band's strength is worked
+    out from the colour (section 2).
+
+**Assumed by the palette revision, for the owner to confirm**
+
+- **A run's band is never over 26%**, the strength it had before the
+  revision. Only "keep red readable" was decided; the cap is an assumption,
+  so that a dark pick does not flood the row.
+- **Nothing stops the two runs being set alike, or to a colour that reads as
+  better or worse** (a green, a red). A free picker was the choice; the
+  preview in Settings is the only guard.
+- **A badge's letter is `#101010` or `t1`, whichever is clearer on the picked
+  colour.** On the installed pair it is `#101010` (5.2:1 and 6.5:1).
+- **One pair of run colours serves both themes once it is set**, with the
+  strength worked out per theme; until then each theme keeps its installed
+  pair. The light pair was not reworked.
+- **The colours stay with the slot** when Swap A ↔ B is used.
+
+**What the decisions add to what Zerg remembers** (all in `settings.json`,
+beside what is there now):
+
+- the two run colours (blue and orange as installed);
+- the low accuracy threshold (90% as installed);
+- "Shade characters in their colour" (on as installed);
+- "Shade actions and heals" (off as installed);
+- each section's arrangement of panes, as shares of the room, with which
+  panes are folded (Damage, Healing and Compare each have their own).
+
+**Described only, by the owner's choice** (not drawn, and not to be):
+
+- **Light Compare.** The run bands there work out at 16%; at that strength
+  green "better" text is about 4.4:1, just under the 4.5:1 the rest of the
+  design holds to, so it needs tuning when it is built.
+- **Compare with "Shade characters in their colour" off** (the two small run
+  bars back in the Damage cell).
+- A rearranged Healing or Compare section.
+- The locked layout.
+- The sideways rail a pane folds to when alone in its column.
+
+The script that generated these sheets is not in the repository, also by the
+owner's choice.
+
+**Still open**
+
+- **The Party line and the low accuracy mark.** The sheets draw the Party
+  line's rates without the mark (85.2%, 86.0% and 82.4% in the example are
+  all under 90%). Whether the party's own rates should be marked was not
+  asked and not decided.
+- **Whether Lock layout is remembered** between runs of Zerg is not stated
+  anywhere above.
+- Everything in section 7, which is what could not be learned from the
+  source.
 
 **Kept on purpose:** every word of Zerg's vocabulary and every tooltip quoted;
 job colours and the shade for a second character on a job; a name always
@@ -489,15 +695,17 @@ S is a style, template or binding (hours). M is a day or two. L is more.
 | Tokens, dark and light | Two brush dictionaries swapped by `AppTheme`, as `Themes/Dark.xaml` and `Light.xaml` are now. Stop using the Fluent `*FillColor*Brush` keys | S |
 | Own control templates | Button, ToggleButton, RadioButton (segment), Slider, ScrollBar, ToolTip, TextBox, Expander, ContextMenu, MenuItem. Cleanest with `ThemeMode="None"` so nothing Fluent shows through; Mica goes, and solid surfaces are cheaper to draw. `TrayMenu` is a subclass and must still name its style | M to L |
 | Custom title bar | `WindowChrome` (caption height 36, `IsHitTestVisibleInChrome` on the tabs and buttons). Keep `SingleBorderWindow` for the Windows 11 corners and shadow. Needs the usual inset when maximized, and a check that `WindowPlacement` still restores correctly. The Snap Layouts flyout on the maximize button needs an `HTMAXBUTTON` hit-test hook; without it snapping by drag and Win+arrows still work | M |
-| Two-column pane layout | A `Grid` in place of the `StackPanel`; each pane its own `ScrollViewer`. Below about 1100 wide fall back to today's single column order | M |
+| Two-column pane layout | The arrangement as installed: a `Grid` in place of the `StackPanel`; each pane its own `ScrollViewer`. Once panes can be moved this is the split-tree host below, showing its default tree. The single-column fallback is at 700 wide (see "Narrow-window fallback"); an earlier figure of 1100 belonged to the fixed layout and no longer applies | M |
 | Denser rows, grouped headings | `v:Cells` width strings and row heights; a second `Cells` row for the groups | S |
 | Back-shaded rows | Exactly what `BarsCard.xaml`'s strip does today: a `Rectangle` stretched across the row behind its `v:Cells`, `v:Grow.Share="{Binding Fraction}"`, `Fraction` already being total over the largest total. Move that into the table's row template; add `Fraction` to `ActorRow`, `HealerRow` and the heading rows. No `DropShadowEffect` is needed at these strengths | S |
 | Shade strength per colour | One function beside `Shades` (lower the alpha until `t2` clears 4.5:1 over the surface), worked out once per colour and theme and handed over as the brush, as `PanelColorOf` is | S |
+| Compare colours | Two colours in `settings.json`. `RunABrush` and `RunBBrush` stop being aliases of `Series1` and `Series2` (which are also the fallback job slots) and are set at start and on change. The band strength is the same kind of function as the shade's, with `crit` in place of `t2` and a 26% cap. The picker is a small `Popup` of Zerg's own (a square, a strip, a text box): WPF has no stock colour picker | M |
 | Resizing panes | `Grid` + `GridSplitter` with a restyled template (the rule, the grip, a 7 px hit area); star sizes written to `settings.json` on `DragCompleted`; `MinWidth`/`MinHeight` on the panes; arrow keys come free; a double-click handler resets | S to M |
 | Moving panes (docking) | Real work. Recommended: **a small split-tree control of Zerg's own**, not a docking library. A layout model (`Split { Orientation, Ratio, A, B }` or `Leaf { PaneKey, Folded }`, in `Zerg.Core` so it is testable: insert beside, swap, remove-and-heal, clamp to minimums, serialise) and a host that builds nested `Grid`s with `GridSplitter`s from it and re-parents the existing card instances. The drag is a mouse capture on the heading, an adorner for the carried card, and a hit test of the pointer against each pane's five zones and the section's edges. AvalonDock (the usual library) would also do it, but it is built around tabs, auto-hide and its own floating windows: all three were decided against, its floating windows activate and would have to be kept away from Zerg's no-activate panels, and its chrome would need retemplating end to end to match. Suppressing most of a library costs more than the two or three hundred lines this needs. Watch for: a re-parented card rebuilds its visuals (charts repaint, lists remake rows, UI Automation peers go stale: the `AppTheme.RereadRows` trap) | L |
 | Fold, lock, reset, the layout menu | State on the leaf; a button and a menu; the drill-down's automatic fold is a binding to `DrillOpen` | S to M |
 | Narrow-window fallback | Below 700 wide swap the tree host for today's `StackPanel` order | S |
-| Cut-out on low rates | A `Border` behind the figure: surface brush, then a red brush and stroke whose opacity comes from a converter. Thresholds (85%, 60%) are a design guess to confirm | S |
+| Low accuracy mark | A `Border` behind the figure (surface brush, red brush, red stroke) and a 2 px rule under it, their opacities from one converter given the rate and the threshold. The threshold is a new `lowAccuracy` in `settings.json` with a slider on the Settings page, as `drawFrequency` has | S |
+| The two shading switches | Two booleans in `settings.json` and on the view model; the row templates show the back `Rectangle` or the cell bar by a trigger; panels inherit them through the shared `DataContext`. Compare's `RunBars` stays in the tree for when the first is off | S |
 | "Min, avg, max" mark | A small element with `OnRender`, three rectangles. Rows update in place, so it redraws only on a count | S to M |
 | Party line | Needs the party's Accuracy, WS and pet figures from the live count; Compare's `Measurement` already works them out. A small core change with its own test and a line in `RULES.md` | S to M |
 | Marks in the figures band | A tiny `Chart` subclass fed from `Counting.Cumulative`; redraw on a count, never on the beat | M |
@@ -508,10 +716,8 @@ S is a style, template or binding (hours). M is a day or two. L is more.
 | Sections as tabs; View as a tab | Restyle the radio buttons; bind the View tab to `HasParse`. An information-architecture decision more than work | S |
 | Name-only chips, "+N" | Template; the overflow needs a small panel or a wrap as now | S |
 | Status line: panels out, Dock all | A count on `PanelSet` beside `AnyOut` | S |
-| A failure that stays | Do not start the 8-second timer when `ParseNoteBad`; add a dismiss | S |
 | Panel bar reorder, tools on hover | `PanelWindow.xaml`; tools at opacity 0 and not hit-testable at rest | S |
 | Halo on panel text | Today's `DropShadowEffect` on the strip, applied to the panel's body. It costs a bitmap pass per panel: measure it at the draw frequency before keeping it | S to M |
-| Five-second line | A `DoubleAnimation` on `ScaleX` started by a trigger on `StartLook = Confirm` (30 fps is plenty) | S |
 | Tray menu heading | A non-interactive first item bound to the same view model | S |
 | Compare restyle | `RunPair`, `ChangeText` and the row templates; `RunBars` becomes two half-height rectangles behind the row, sized from the `BarPair` lengths `CompareSheet` already gives; no change to `CompareSheet` except, optionally, exposing a spread line's two parts separately (it already has `Main` and `Sub`) | M |
 | Settings rows, keycaps, preview | XAML only | S |
@@ -573,6 +779,16 @@ Static drawings only; no application code is in this folder. The SVGs were
 written by a throwaway script kept outside the repository, so that the layout
 grid is exact and the figures on every sheet come from one simulated
 fight. Each was rendered in a browser engine (headless Edge) and checked at
-100% and 200% for overlap, clipping, alignment and contrast (the contrast figures in
-section 2 are computed, not judged by eye); the PNGs are
-those renders.
+100% for overlap, clipping, alignment and contrast, with closer crops of the
+shaded tables, the Settings rows and the layout sheet (the contrast figures
+in section 2 are computed, not judged by eye); the PNGs are those renders.
+
+Three revisions: the first design; then back-shaded rows and movable panes;
+then the owner's decisions (two proposals removed, the 90% threshold, the two
+shading switches).
+
+The palette revision (decisions 16 to 19) was not made by that script. The
+new values were written straight into the nine dark SVGs, the Compare colours
+row was drawn into sheet 06 by hand, and the nine PNGs were rendered again.
+Sheet 09 and its PNG were not touched. If the script is run again it will
+put the old colours back unless its tokens are changed to those in section 2.
