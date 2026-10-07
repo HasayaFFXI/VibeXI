@@ -4,7 +4,7 @@
              x:Name="Self" Focusable="False" IsTabStop="False">
   <UserControl.Resources>
     <Style x:Key="Figure" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontSize" Value="11.5"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
       <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>

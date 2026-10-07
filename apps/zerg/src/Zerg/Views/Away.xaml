@@ -8,14 +8,14 @@
        PanelInfo. It carries "Bring back" and nothing else, since a card can
        only be away by having been popped out. -->
   <Border CornerRadius="8" Padding="16,12" BorderThickness="1"
-          BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+          BorderBrush="{DynamicResource Line2Brush}">
     <DockPanel>
       <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" VerticalAlignment="Center" Margin="12,0,0,0"
               Content="Bring back" Command="{Binding DockCommand}" ToolTip="Return this card to the main window"
               AutomationProperties.Name="{Binding Title, StringFormat='Bring back {0}'}"/>
       <StackPanel>
         <TextBlock Text="{Binding Title}" FontFamily="{StaticResource NumberFont}" FontSize="16" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                   Foreground="{DynamicResource Text2Brush}"/>
         <TextBlock Text="Showing in its own panel." Style="{StaticResource Label}" Margin="0,2,0,0"/>
       </StackPanel>
     </DockPanel>

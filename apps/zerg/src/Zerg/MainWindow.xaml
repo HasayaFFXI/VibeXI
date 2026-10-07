@@ -8,6 +8,7 @@
         mc:Ignorable="d" d:DataContext="{d:DesignInstance local:MainViewModel}"
         Title="Zerg" Icon="zerg.ico"
         Width="1280" Height="900" MinWidth="520" MinHeight="360"
+        Background="{DynamicResource Bg0Brush}" Foreground="{DynamicResource Text1Brush}"
         FontFamily="{StaticResource TextFont}" UseLayoutRounding="True">
   <Window.Resources>
 
@@ -25,22 +26,22 @@
     <Style x:Key="StatusDot" TargetType="Ellipse">
       <Setter Property="Width" Value="10"/>
       <Setter Property="Height" Value="10"/>
-      <Setter Property="Fill" Value="{DynamicResource SystemFillColorNeutralBrush}"/>
+      <Setter Property="Fill" Value="{DynamicResource Text3Brush}"/>
       <Style.Triggers>
         <DataTrigger Binding="{Binding StatusLight}" Value="Live">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource LiveBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Armed">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Held">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Waiting">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Error">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource CritBrush}"/>
         </DataTrigger>
       </Style.Triggers>
     </Style>
@@ -53,7 +54,7 @@
       <Setter Property="Height" Value="10"/>
       <Setter Property="Opacity" Value="0"/>
       <Setter Property="StrokeThickness" Value="1.5"/>
-      <Setter Property="Stroke" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+      <Setter Property="Stroke" Value="{DynamicResource AccentBrush}"/>
       <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
       <Setter Property="RenderTransform">
         <Setter.Value>
@@ -133,10 +134,10 @@
                    Background="Transparent" AutomationProperties.LiveSetting="Polite">
           <TextBlock.Style>
             <Style TargetType="TextBlock">
-              <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+              <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
               <Style.Triggers>
                 <DataTrigger Binding="{Binding ParseNoteBad}" Value="True">
-                  <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                  <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
                 </DataTrigger>
                 <Trigger Property="Text" Value="">
                   <Setter Property="Visibility" Value="Collapsed"/>
@@ -247,13 +248,13 @@
       <Grid>
       <StackPanel Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
 
-        <!-- One hero figure, then the clock beside the total it divides. -->
+        <!-- The total first, then the clock beside the total it divides. -->
         <UniformGrid x:Name="Tiles" Columns="5" Margin="-6,0">
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Total damage" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding TotalText}" Style="{StaticResource Figure}" FontSize="36"
-                         Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+              <TextBlock Text="{Binding TotalText}" Style="{StaticResource Figure}"
+                         Foreground="{DynamicResource AccentBrush}"/>
               <TextBlock Text="{Binding TotalNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>
@@ -262,21 +263,21 @@
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Elapsed" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}" FontSize="36"/>
+              <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}"/>
               <TextBlock Text="{Binding ClockNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Party DPS" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding DpsText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
+              <TextBlock Text="{Binding DpsText}" Style="{StaticResource Figure}"/>
               <TextBlock Text="{Binding DpsNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Top DPS" Style="{StaticResource Label}"/>
-              <DockPanel Margin="0,8,0,0" ToolTip="{Binding TopTip}" Background="Transparent">
+              <DockPanel ToolTip="{Binding TopTip}" Background="Transparent">
                 <Ellipse Width="12" Height="12" Fill="{Binding TopSwatch}" VerticalAlignment="Center" Margin="0,2,10,0"
                          Visibility="{Binding HasTop, Converter={StaticResource Visible}}"/>
                 <TextBlock Text="{Binding TopName}" Style="{StaticResource Figure}" TextTrimming="CharacterEllipsis"/>
@@ -287,7 +288,7 @@
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Biggest hit" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding BigText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
+              <TextBlock Text="{Binding BigText}" Style="{StaticResource Figure}"/>
               <TextBlock Text="{Binding BigNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>
@@ -318,29 +319,29 @@
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Total healing" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding HealTotalText}" Style="{StaticResource Figure}" FontSize="36"
-                         Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+              <TextBlock Text="{Binding HealTotalText}" Style="{StaticResource Figure}"
+                         Foreground="{DynamicResource AccentBrush}"/>
               <TextBlock Text="{Binding HealTotalNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Elapsed" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}" FontSize="36"/>
+              <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}"/>
               <TextBlock Text="{Binding ClockNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Party HPS" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding HpsText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
+              <TextBlock Text="{Binding HpsText}" Style="{StaticResource Figure}"/>
               <TextBlock Text="{Binding HpsNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Top healer" Style="{StaticResource Label}"/>
-              <DockPanel Margin="0,8,0,0" ToolTip="{Binding TopHealerTip}" Background="Transparent">
+              <DockPanel ToolTip="{Binding TopHealerTip}" Background="Transparent">
                 <Ellipse Width="12" Height="12" Fill="{Binding TopHealerSwatch}" VerticalAlignment="Center" Margin="0,2,10,0"
                          Visibility="{Binding HasTopHealer, Converter={StaticResource Visible}}"/>
                 <TextBlock Text="{Binding TopHealerName}" Style="{StaticResource Figure}" TextTrimming="CharacterEllipsis"/>
@@ -351,7 +352,7 @@
           <Border Style="{StaticResource Tile}">
             <StackPanel>
               <TextBlock Text="Biggest heal" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding BigHealText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
+              <TextBlock Text="{Binding BigHealText}" Style="{StaticResource Figure}"/>
               <TextBlock Text="{Binding BigHealNote}" Style="{StaticResource TileNote}"/>
             </StackPanel>
           </Border>

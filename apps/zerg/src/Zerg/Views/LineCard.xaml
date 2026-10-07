@@ -48,7 +48,7 @@
               <Grid Width="12" Height="10" VerticalAlignment="Center">
                 <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" HorizontalAlignment="Left"/>
                 <Line X1="0" Y1="5" X2="12" Y2="5" StrokeThickness="2" StrokeDashArray="1.5 1.5"
-                      Stroke="{DynamicResource TextFillColorTertiaryBrush}"
+                      Stroke="{DynamicResource Text3Brush}"
                       Visibility="{Binding Group, Converter={StaticResource Visible}}"/>
               </Grid>
               <TextBlock Text="{Binding Name}" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center"/>

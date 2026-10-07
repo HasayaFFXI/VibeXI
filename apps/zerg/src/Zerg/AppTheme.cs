@@ -7,14 +7,20 @@ using Microsoft.Win32;
 namespace Zerg;
 
 /// <summary>
-/// Light or dark, for the parts of Zerg the Fluent theme doesn't colour.
+/// Light or dark: which set of Zerg's colours is in use.
 ///
-/// <para>Windows' Fluent theme (<see cref="Application.ThemeMode"/>) restyles
-/// every control and supplies the text and surface brushes. Zerg's own
-/// colours, the ones that stand for data, come in a light and a dark set
-/// (<c>Themes/Light.xaml</c>, <c>Themes/Dark.xaml</c>); this keeps the right
-/// set merged into the application's resources and says when it changes, so
-/// anything that hands a chart its colours can hand them over again.</para>
+/// <para>Windows' Fluent theme (<see cref="Application.ThemeMode"/>) still
+/// draws every stock control. The colours are Zerg's own and come in a light
+/// and a dark set (<c>Themes/Light.xaml</c>, <c>Themes/Dark.xaml</c>): the
+/// tokens every surface, rule and piece of ink is drawn in, the colours that
+/// stand for data, and Zerg's values under the Fluent brush names the
+/// theme's own templates ask for. This keeps the right set merged into the
+/// application's resources and says when it changes, so anything that hands
+/// a chart its colours can hand them over again.</para>
+///
+/// <para>The set is merged at run time, after <c>App.xaml</c> has been
+/// read, so XAML asks for a token with <c>DynamicResource</c>; a
+/// <c>StaticResource</c> to one fails at startup.</para>
 /// </summary>
 static class AppTheme
 {
@@ -54,6 +60,9 @@ static class AppTheme
 
         var next = Load(dark);
         var merged = Application.Current.Resources.MergedDictionaries;
+        // Last in the list, and the last answers first. WPF keeps the Fluent
+        // theme's dictionary first and swaps it where it stands when
+        // ThemeMode changes, so Zerg's set outranks it before and after.
         merged.Add(next);
         if (colours != null) merged.Remove(colours);
         // The set just taken out is the other theme's, for whoever asks for it.
@@ -141,4 +150,17 @@ static class AppTheme
     /// </summary>
     public static Color Series(int slot, bool dark) =>
         Set(dark)?[$"Series{(slot % Slots + Slots) % Slots + 1}"] is Color c ? c : Colors.Gray;
+
+    /// <summary>
+    /// A token's colour by its key in the theme files ("Bg1", "Text2",
+    /// "Crit"), for code that has to work a colour out and cannot ask XAML
+    /// for a brush: how strong a row's shade may be, say. Gray for a key
+    /// neither file has.
+    ///
+    /// <para>These are the application's values. A floating panel redefines
+    /// some brushes for itself (<c>Themes/Panel.xaml</c>: its ink is a step
+    /// lighter, its surfaces are white at a strength), and this does not
+    /// read that file.</para>
+    /// </summary>
+    public static Color Token(string key, bool dark) => Set(dark)?[key] is Color c ? c : Colors.Gray;
 }

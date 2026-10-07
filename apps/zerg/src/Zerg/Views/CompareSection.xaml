@@ -64,7 +64,7 @@
 
     <!-- What opens under a row: set in from the row, on a quieter surface. -->
     <Style x:Key="Under" TargetType="Border">
-      <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
       <Setter Property="CornerRadius" Value="4"/>
       <Setter Property="Padding" Value="22,6,0,10"/>
       <Setter Property="Margin" Value="0,0,0,6"/>
@@ -78,18 +78,18 @@
         <Rectangle RadiusX="6" RadiusY="6" StrokeThickness="1">
           <Rectangle.Style>
             <Style TargetType="Rectangle">
-              <Setter Property="Stroke" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
-              <Setter Property="Fill" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+              <Setter Property="Stroke" Value="{DynamicResource Line2Brush}"/>
+              <Setter Property="Fill" Value="{DynamicResource Bg2Brush}"/>
               <Style.Triggers>
                 <DataTrigger Binding="{Binding IsEmpty}" Value="True">
                   <Setter Property="StrokeDashArray" Value="4 3"/>
-                  <Setter Property="Stroke" Value="{DynamicResource ControlStrongStrokeColorDefaultBrush}"/>
+                  <Setter Property="Stroke" Value="{DynamicResource Line3Brush}"/>
                   <Setter Property="Fill" Value="Transparent"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsOver}" Value="True">
-                  <Setter Property="Stroke" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                  <Setter Property="Stroke" Value="{DynamicResource AccentBrush}"/>
                   <Setter Property="StrokeThickness" Value="2"/>
-                  <Setter Property="Fill" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
+                  <Setter Property="Fill" Value="{DynamicResource Bg3Brush}"/>
                 </DataTrigger>
               </Style.Triggers>
             </Style>
@@ -140,7 +140,7 @@
             </StackPanel>
           </DockPanel>
 
-          <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="13"
+          <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="12"
                      HorizontalAlignment="Center" Margin="0,18,0,10"
                      Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}"/>
 
@@ -160,7 +160,7 @@
 
           <!-- Why the last file would not load. It stays on the slot it was meant for. -->
           <TextBlock Text="{Binding Error}" Style="{StaticResource Quiet}" Margin="0,6,0,0"
-                     Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                     Foreground="{DynamicResource CritBrush}"/>
         </StackPanel>
       </Grid>
     </DataTemplate>
@@ -233,7 +233,7 @@
                   <Border Style="{StaticResource RowLine}" MinHeight="34" Background="Transparent" ToolTip="{Binding Tip}">
                     <v:Cells Widths="{StaticResource SpreadColumns}">
                       <TextBlock Text="{Binding Label}" Style="{StaticResource CellText}"
-                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                 Foreground="{DynamicResource Text2Brush}"/>
                       <TextBlock Text="{Binding A}" Style="{StaticResource Cell}"/>
                       <TextBlock Text="{Binding B}" Style="{StaticResource Cell}"/>
                       <v:ChangeText Value="{Binding Change}"/>
@@ -284,8 +284,8 @@
                         <v:Cells Widths="{StaticResource ActionColumns}">
                           <DockPanel Margin="8,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                            <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource Text2Brush}"/>
+                            <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center"/>
                           </DockPanel>
                           <v:RunPair Value="{Binding Line.Uses}"/>
@@ -347,8 +347,8 @@
                         <v:Cells Widths="{StaticResource HealColumns}">
                           <DockPanel Margin="8,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                            <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource Text2Brush}"/>
+                            <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center"/>
                           </DockPanel>
                           <v:RunPair Value="{Binding Line.Casts}"/>
@@ -384,7 +384,7 @@
 
     <!-- The healing table's two kinds of row. -->
     <DataTemplate x:Key="PartyRow">
-      <Border Style="{StaticResource PairRow}" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+      <Border Style="{StaticResource PairRow}" Background="{DynamicResource Bg2Brush}">
         <v:Cells Widths="{StaticResource HealerColumns}">
           <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" FontWeight="SemiBold" Padding="22,0,8,0"/>
           <v:RunBars Value="{Binding Line.Healing}"/>
@@ -405,9 +405,9 @@
             <v:Cells Widths="{StaticResource HealerColumns}">
               <DockPanel Margin="8,0" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                           Foreground="{DynamicResource Text2Brush}"/>
                 <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
               </DockPanel>
               <v:RunBars Value="{Binding Line.Healing}"/>
               <v:ChangeText Value="{Binding Line.HealingChange}"/>
@@ -517,7 +517,7 @@
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SubB, TargetNullValue=''}"
                              Style="{StaticResource Quiet}" FontSize="11" Margin="0,-2,0,0"/>
                 </Grid>
-                <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}"
                         Margin="0,8,0,0" Padding="0,7,0,0">
                   <v:ChangeText Value="{Binding Change}" Beside="True"/>
                 </Border>
@@ -526,8 +526,8 @@
             <DataTemplate.Triggers>
               <!-- The total leads, as it does in the live sections. -->
               <DataTrigger Binding="{Binding Hero}" Value="True">
-                <Setter TargetName="FigureA" Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
-                <Setter TargetName="FigureB" Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                <Setter TargetName="FigureA" Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                <Setter TargetName="FigureB" Property="Foreground" Value="{DynamicResource AccentBrush}"/>
               </DataTrigger>
             </DataTemplate.Triggers>
           </DataTemplate>
@@ -626,18 +626,18 @@
                             <v:Cells Widths="{StaticResource ActorColumns}">
                               <DockPanel Margin="8,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                           Foreground="{DynamicResource Text2Brush}"/>
                                 <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,8,0"/>
-                                <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
+                                <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
                                            VerticalAlignment="Center"/>
                               </DockPanel>
                               <!-- By character, the job in each run; by job, who was
                                    on it. One or the other is there, never an
                                    empty copy of both. -->
                               <Grid Background="Transparent" ToolTip="{Binding JobsTip}">
-                                <v:RunPair Value="{Binding Jobs}" Words="True" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                <v:RunPair Value="{Binding Jobs}" Words="True" Foreground="{DynamicResource Text2Brush}"
                                            Visibility="{Binding Jobs, Converter={StaticResource Present}}"/>
-                                <TextBlock Text="{Binding Members}" Style="{StaticResource Quiet}" FontSize="12"
+                                <TextBlock Text="{Binding Members}" Style="{StaticResource Quiet}"
                                            VerticalAlignment="Center" Margin="8,2"/>
                               </Grid>
                               <v:RunBars Value="{Binding Line.Damage}"/>
@@ -741,7 +741,7 @@
               </StackPanel>
             </ScrollViewer>
             <!-- Why a side is dashes, or that nobody healed. -->
-            <TextBlock Text="{Binding HealNote}" Style="{StaticResource Quiet}" FontSize="13" Margin="0,8,0,0"/>
+            <TextBlock Text="{Binding HealNote}" Style="{StaticResource Quiet}" FontSize="12" Margin="0,8,0,0"/>
           </StackPanel>
         </Border>
 

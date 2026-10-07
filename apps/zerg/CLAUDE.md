@@ -57,7 +57,10 @@ appends to a file, Zerg reads it. Zerg uses nothing else in the repository
   `tools/replay.py`.
 - **Windows 11 Home.** **Usually two monitors**: the primary is 3440×1440 at
   (0,0); the second is at x=3440 with a different scale. Not always: list the
-  screens before assuming. Both refresh at about 120 Hz.
+  screens before assuming. Windows reports 174 Hz for the primary and
+  240 Hz for the second (2026-10-05). On 2026-10-06 there was one screen
+  only, 2560×1600 at 150 %: a window 1440×900 pixels then holds 960×600
+  units, and a grab of it does not compare with one taken at 100 %.
 - The shell tools are Windows PowerShell 5.1 and Git Bash. **Never edit
   source with PS 5.1 `Get-Content`/`Set-Content`**: it reads UTF-8 without a
   BOM as ANSI and mangles non-ASCII. Use the editor tools. PowerShell scripts
@@ -142,8 +145,9 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
   KeyChord.cs              a key with its modifiers, as text ("Ctrl+Alt+Z"), as Windows wants it,
                            and as pressed on the Settings page (Of)
 src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
-  App.xaml(.cs)            Fluent theme, shared styles, startup (single instance first), options,
-                           crash dialog
+  App.xaml(.cs)            Fluent theme (still: it draws every stock control), the fonts, the
+                           measures (heights, radii), the type styles and the other shared
+                           styles; startup (single instance first), options, crash dialog
   MainWindow               command bar (Start and Pause first, Export… and Import… after them,
                            the gear for the Settings page last), the Damage | Healing |
                            Compare switch on the line under it with the Toggles beside it
@@ -183,7 +187,9 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
                            the Healing section's HealLineCard, HealBarsCard, HealActionsCard,
                            HealDrillCard), each with a docked and a floating form switched by
                            Float.On; Away (the stand-in for a floating card), Grow (a bar's eased
-                           length), Cells (table-row panel), WheelChain, ActionRowTemplates,
+                           length), Cells (table-row panel), Caps (a label in capitals with
+                           room between the letters; nothing uses it yet), WheelChain,
+                           ActionRowTemplates,
                            HiddenConverter, PresentConverter; ViewCard (the View section's head:
                            open or drop one parse, then Damage | Healing); CompareSection (the
                            whole Compare section) and its cells: RunPair (A over B), ChangeText
@@ -194,12 +200,19 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
                            Watch(dir) follows another folder from then on
   Settings.cs              %LOCALAPPDATA%\VibeXI\zerg\settings.json
   AppTheme.cs              light or dark: sets the Fluent theme, merges Themes/Light|Dark.xaml;
-                           after a switch, makes a screen reader look at every list again
-  Themes/                  Zerg's own colours per theme: the 18 fallback slots, the job colours,
-                           the chart surface, the two runs of a comparison
+                           after a switch, makes a screen reader look at every list again;
+                           Job, Series and Token hand code a colour by its key
+  Themes/                  Zerg's own colours. Dark.xaml and Light.xaml, one merged at a time:
+                           the tokens (Bg0 to Bg4, Line to Line3, Text1 to Text4, Accent, Live,
+                           Crit and what is written on them, tag tints, overlays), the 18
+                           fallback slots, the job colours, the chart surface, the two runs of
+                           a comparison, and Zerg's values under the Fluent brush names (until
+                           the Fluent theme goes). Panel.xaml: the tokens as a floating panel
+                           has them, merged into PanelWindow's own resources
   Charts/                  the chart elements, which only paint: Chart (base), LineChart, BarChart,
                            HistogramChart, PairedHistogramChart (Compare's, in the runs'
-                           colours), Models (their inputs), DrawnText (tabular figures)
+                           colours), Models (their inputs), DrawnText (tabular figures; the
+                           same line with room between its letters, for Caps)
   Native/                  TaskDialog (TaskDialogIndirect), WindowPlacement (Get/SetWindowPlacement,
                            and a panel's frame in screen pixels), Overlay (tool-window and
                            no-activate styles; a move or resize followed by hand; click-through),
@@ -260,6 +273,16 @@ tools/make-icon.ps1        the icon, from assets/
   and a text-width function; `src/Zerg/Charts` paints it. A chart is given an
   immutable model: build a new one for each draw. Series colours are the
   caller's, so models are built again on `AppTheme.Changed`.
+- **Tokens.** Every surface, rule and piece of ink is a named value from
+  `Themes/Dark.xaml` or `Themes/Light.xaml` (`Bg1Brush`, `Line2Brush`,
+  `Text3Brush`, `AccentBrush`, ...; `UI-REDESIGN-PLAN.md`, section 4, lists
+  them and what each is for). XAML asks for one with `DynamicResource`, never
+  `StaticResource`: `AppTheme` merges the file at run time, after `App.xaml`
+  is read. A floating panel has its own values under the same keys
+  (`Themes/Panel.xaml`, merged into `PanelWindow`), so a card is dark in a
+  panel with no trigger per brush. Sizes of type are the styles in `App.xaml`
+  (`Figure`, `Cell`, `Head`, `Label`, `Badge`, ...); the measures there
+  (`RowHeight`, `ControlRadius`, ...) are for the phases still to come.
 - **Colours and names.** `MainViewModel.ColorOf` is the one place a
   character's colour is decided, and `NameOf` the one place a name is drawn.
   Panels are always dark, so each coloured thing has a panel twin
@@ -308,7 +331,14 @@ Zerg replaced; nothing reads them.
    apps/zerg/src/Zerg/bin/Debug/net10.0-windows/Zerg.exe --events-dir <dir> >/dev/null 2>&1 &
    dotnet run --file apps/zerg/tools/drive.cs -- click <pid> Start
    python apps/zerg/tools/replay.py apps/zerg/tools/events/Hasaya_2026.07.30.jsonl <dir>/Hasaya_2026.10.03.jsonl --extras
-   # wait ~27 s for the squeezed session to pass, then:
+   # replay.py prints three numbers: the first row's time, the last row's
+   # time (both Unix seconds) and the row count. Wait until 3 s past the
+   # second number (about 27 s in all). A Pause before then cuts the session
+   # short, silently: a whole one with --extras reads 153,687 damage in 00:24.
+   # Then one more line, which counts nothing, so that a count happens after
+   # the last row. Until one does, the cumulative chart is not live and its
+   # right-hand edge stands still while the session runs:
+   printf '{"kind":"meta","t":%s}\n' "$(date +%s)" >> <dir>/Hasaya_2026.10.03.jsonl
    dotnet run --file apps/zerg/tools/drive.cs -- click <pid> Pause
    ```
    `tools/drive.cs` then reads and drives the window: `front <pid>`,
@@ -431,6 +461,35 @@ Zerg replaced; nothing reads them.
   the old square box, with no error. Base it on `DefaultToolTipStyle`. A
   tooltip also takes its text alignment from the element it is on, which is
   why `App.xaml` sets it back to left.
+- **Where a merged dictionary stands decides who answers.** WPF keeps the
+  Fluent theme's dictionary first in the application's merged list and
+  replaces it where it stands when `ThemeMode` changes; the last dictionary
+  answers first, so the set `AppTheme` adds outranks the theme, before and
+  after a switch. A window with its own `ThemeMode` (`PanelWindow`) carries
+  its own Fluent dictionary, nearer than anything in the application: a
+  Fluent brush key given Zerg's value in `Themes/Dark.xaml` does not reach a
+  panel.
+- **Giving a Fluent brush key Zerg's value recolours Zerg's own uses of it
+  and little else.** A checked toggle stayed the theme's blue with
+  `AccentFillColorDefaultBrush` set to amber (seen): the theme settles what
+  its templates draw inside its own dictionary, or most of it. Which
+  templates, if any, do take such a value was not worked out.
+- **A `DynamicResource` to a key that does not exist is not an error.** WPF
+  leaves the property unset and the app starts. A key renamed by plain text
+  replacement is how to get one: `AccentTextFillColorPrimaryBrush` contains
+  `TextFillColorPrimaryBrush`, and the replacement made a key nothing
+  defines. It was caught before a run by listing the keys in use against
+  the keys the theme files define; do that after any such edit.
+- **Text with no size of its own is 14 units while the Fluent theme is
+  loaded**, not WPF's 12: the theme's window style sets it, and a
+  `TextBlock` with no `FontSize` and no style inherits it. Taking
+  `FontSize="13"` off a name made it larger (seen). When the theme is
+  switched off the inherited size becomes 12, and whatever leans on it
+  shrinks.
+- **There is no Medium weight.** Segoe UI Variable (under each of its three
+  names), Segoe UI and Cascadia Mono have Regular and SemiBold faces and
+  nothing between that WPF can pick: `FontWeight="Medium"` is drawn SemiBold
+  (asked of WPF off screen, 2026-10-06).
 - **The Fluent menu's own tick is not used.** One tickable line indents every
   plain line beside it, and `IsChecked` without `IsCheckable` draws no tick.
   `TrayMenu` gives every line a header template with a tick column.
@@ -468,7 +527,10 @@ Zerg replaced; nothing reads them.
   Damage section on screen (the chart about 15, the figures about 10); 10%
   with only the cumulative pop-out up; 2% on the Settings page, or with the
   bars pop-out up and the main window in the tray. At 4 a second, 2 to 3%
-  with the Damage section on screen.
+  with the Damage section on screen. Take these as rough: measured again on
+  2026-10-05, the same build at 30 a second with the Damage section on
+  screen (1440 by 900 on the primary monitor, no panels) read 14.6 to 15.7%,
+  and 18.4 to 20.7% forty minutes later. The spread was not explained.
 - **A UI Automation client makes every layout dearer** from then on (WPF
   keeps its peers up to date), so a cost measured after `drive.cs` has read
   the window is too high. `front`, `snap` and `press` do not use it.
@@ -547,7 +609,10 @@ Zerg replaced; nothing reads them.
   PowerShell one-liner inside Git Bash did nothing once: check the log for
   `exit` before rebuilding.
 - **A Bash command of more than about 8,000 characters arrives cut short.**
-  Write a long script to a file and run the file.
+  Write a long script to a file and run the file. Write it with the editor
+  tools: a script made with a here-document inside a Bash command lost a
+  backslash (`\\` arrived as `\`), and three grabs were saved over each
+  other under one wrong name.
 - **A `\u` escape written through the editor tools arrives as the raw
   character** (a raw U+2028 broke the C# lexer). Write `(char)0x2028`, or
   `\p{Zl}` in a regex.
@@ -564,6 +629,14 @@ it.
 **Next is packaging**, which has not been started and waits for the user's
 word: a single-file self-contained `Zerg.exe`, a zip, a version resource;
 then a clean-machine test, SmartScreen, and a README for players.
+
+**A redesign of the UI is under way**, a re-skin in place to the design in
+`apps/zerg-mockup/`: `UI-REDESIGN-PLAN.md` is the plan, and its section 10
+is the record of each phase. Phases 0 (baseline) and 1 (tokens, fonts and
+type) are done (2026-10-06): the app is in its new colours, still on the
+Fluent theme's control templates. Phase 2 (Zerg's own templates, and
+switching the Fluent theme off) is next. `dist/Zerg` is still the build
+from before the redesign.
 
 Open ideas, none started:
 - **Opening a `.zerg` file by double-click** (a per-user file association,

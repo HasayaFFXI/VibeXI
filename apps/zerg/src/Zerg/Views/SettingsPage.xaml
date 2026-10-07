@@ -70,8 +70,8 @@
                 <Style.Triggers>
                   <DataTrigger Binding="{Binding Recording}" Value="True">
                     <Setter Property="FontWeight" Value="Normal"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-                    <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                   </DataTrigger>
                 </Style.Triggers>
               </Style>
@@ -87,7 +87,7 @@
             <Style TargetType="TextBlock" BasedOn="{StaticResource Quiet}">
               <Style.Triggers>
                 <DataTrigger Binding="{Binding HotKeyNoteBad}" Value="True">
-                  <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                  <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
                 </DataTrigger>
               </Style.Triggers>
             </Style>

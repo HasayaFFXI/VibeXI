@@ -22,22 +22,22 @@
         </Style.Triggers>
       </Style>
     </StackPanel.Style>
-    <TextBlock Text="{Binding Value.Main, ElementName=Self}" FontSize="13" HorizontalAlignment="Right"
+    <TextBlock Text="{Binding Value.Main, ElementName=Self}" FontSize="12" HorizontalAlignment="Right"
                VerticalAlignment="Center" Typography.NumeralAlignment="Tabular">
       <TextBlock.Style>
         <Style TargetType="TextBlock">
           <Setter Property="FontWeight" Value="SemiBold"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
           <Style.Triggers>
             <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.Better}">
-              <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+              <Setter Property="Foreground" Value="{DynamicResource LiveBrush}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.Worse}">
-              <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+              <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.None}">
               <Setter Property="FontWeight" Value="Normal"/>
-              <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+              <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
             </DataTrigger>
           </Style.Triggers>
         </Style>
@@ -48,7 +48,7 @@
       <TextBlock.Style>
         <Style TargetType="TextBlock">
           <Setter Property="HorizontalAlignment" Value="Right"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
           <Style.Triggers>
             <DataTrigger Binding="{Binding Beside, ElementName=Self}" Value="True">
               <Setter Property="Margin" Value="8,1,0,0"/>

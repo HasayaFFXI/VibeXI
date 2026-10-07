@@ -16,9 +16,13 @@ sealed class DrawnText : IDisposable
     static readonly TextFormatter Formatter = TextFormatter.Create(TextFormattingMode.Ideal);
 
     readonly TextLine line;
+    readonly Brush brush;
+    readonly float pixelsPerDip;
 
     public DrawnText(string text, Typeface face, double size, Brush brush, double pixelsPerDip)
     {
+        this.brush = brush;
+        this.pixelsPerDip = (float)pixelsPerDip;
         var run = new Run(face, size, brush, pixelsPerDip);
         // A paragraph width of 0 is "no limit": the line is never wrapped.
         line = Formatter.FormatLine(new Source(text, run), 0, 0, new Paragraph(run), null);
@@ -29,6 +33,43 @@ sealed class DrawnText : IDisposable
 
     /// <summary>Draws the line with its top-left corner at (x, y).</summary>
     public void Draw(DrawingContext dc, double x, double y) => line.Draw(dc, new Point(x, y), InvertAxes.None);
+
+    /// <summary>
+    /// How wide the line is with <paramref name="tracking"/> more room after
+    /// every glyph but the last (letter spacing, which WPF's text has no
+    /// setting for).
+    /// </summary>
+    public double WidthSpaced(double tracking) => Width + tracking * Math.Max(0, Glyphs().Sum(r => r.GlyphIndices.Count) - 1);
+
+    /// <summary>
+    /// Draws the line with its top-left corner at (x, y) and
+    /// <paramref name="tracking"/> more room after every glyph.
+    ///
+    /// <para>The glyphs are the ones the text formatter chose, so the font
+    /// it fell back to for a character the face lacks, the tabular figures
+    /// and the kerning are all as <see cref="Draw(DrawingContext, double, double)"/>
+    /// draws them; only the advances are longer.</para>
+    /// </summary>
+    public void DrawSpaced(DrawingContext dc, double x, double y, double tracking)
+    {
+        if (tracking == 0)
+        {
+            Draw(dc, x, y);
+            return;
+        }
+        double at = x, baseline = y + line.Baseline;
+        foreach (var run in Glyphs())
+        {
+            var advances = run.AdvanceWidths.Select(w => w + tracking).ToList();
+            dc.DrawGlyphRun(brush, new GlyphRun(run.GlyphTypeface, run.BidiLevel, run.IsSideways, run.FontRenderingEmSize,
+                pixelsPerDip, run.GlyphIndices, new Point(at, baseline), advances, run.GlyphOffsets, run.Characters,
+                run.DeviceFontName, run.ClusterMap, run.CaretStops, run.Language));
+            at += advances.Sum();
+        }
+    }
+
+    /// <summary>The runs of glyphs the formatter made of the line: one per font it used.</summary>
+    IEnumerable<GlyphRun> Glyphs() => line.GetIndexedGlyphRuns()?.Select(r => r.GlyphRun) ?? [];
 
     public void Dispose() => line.Dispose();
 

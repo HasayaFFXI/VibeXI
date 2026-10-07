@@ -50,16 +50,17 @@ public abstract class Chart : FrameworkElement
     protected Chart()
     {
         AddVisualChild(card);
-        // The inks follow the theme. A drawn layer can't restyle itself, so
+        // The inks follow the theme, and are a floating panel's own inside
+        // one (Themes/Panel.xaml). A drawn layer can't restyle itself, so
         // each is a property, and a change to one redraws the chart.
-        SetResourceReference(InkProperty, "TextFillColorPrimaryBrush");
-        SetResourceReference(Ink2Property, "TextFillColorSecondaryBrush");
-        SetResourceReference(MutedProperty, "TextFillColorTertiaryBrush");
-        SetResourceReference(GridInkProperty, "DividerStrokeColorDefaultBrush");
-        SetResourceReference(AxisInkProperty, "SurfaceStrokeColorDefaultBrush");
+        SetResourceReference(InkProperty, "Text1Brush");
+        SetResourceReference(Ink2Property, "Text2Brush");
+        SetResourceReference(MutedProperty, "Text3Brush");
+        SetResourceReference(GridInkProperty, "LineBrush");
+        SetResourceReference(AxisInkProperty, "Line2Brush");
         SetResourceReference(SurfaceProperty, "ChartSurfaceBrush");
-        SetResourceReference(CardFillProperty, "SolidBackgroundFillColorQuarternaryBrush");
-        SetResourceReference(CardStrokeProperty, "SurfaceStrokeColorDefaultBrush");
+        SetResourceReference(CardFillProperty, "HoverCardBrush");
+        SetResourceReference(CardStrokeProperty, "Line3Brush");
         UseLayoutRounding = true;
         Cursor = Cursors.Cross;
         // A chart that is not on screen may have skipped a redraw (the live

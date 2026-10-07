@@ -11,7 +11,7 @@
            same room in every row for the bars to be to one scale. -->
       <Setter Property="MinWidth" Value="58"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
       <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
     <!-- Thin, square at the axis and rounded at the end that says how much. -->

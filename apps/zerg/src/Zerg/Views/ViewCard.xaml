@@ -21,7 +21,7 @@
       <Style TargetType="Border" BasedOn="{StaticResource Card}">
         <Style.Triggers>
           <DataTrigger Binding="{Binding ViewOver}" Value="True">
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
           </DataTrigger>
         </Style.Triggers>
       </Style>
@@ -36,9 +36,9 @@
         <Grid Margin="0,12,0,0">
           <!-- Dashed: an outline of where a parse goes. -->
           <Rectangle RadiusX="6" RadiusY="6" StrokeThickness="1" StrokeDashArray="4 3"
-                     Stroke="{DynamicResource ControlStrongStrokeColorDefaultBrush}" Fill="Transparent"/>
+                     Stroke="{DynamicResource Line3Brush}" Fill="Transparent"/>
           <StackPanel Margin="16,18" HorizontalAlignment="Center">
-            <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="13"
+            <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="12"
                        HorizontalAlignment="Center"/>
             <Button Content="Open…" Command="{Binding OpenParseCommand}" Style="{DynamicResource AccentButtonStyle}"
                     ToolTip="Open an exported parse" HorizontalAlignment="Center" Margin="0,10,0,0"
@@ -87,7 +87,7 @@
 
       <!-- Why the last file would not open. Whatever was open is still open. -->
       <TextBlock Text="{Binding ViewError}" Style="{StaticResource Quiet}" Margin="0,8,0,0"
-                 Foreground="{DynamicResource SystemFillColorCriticalBrush}" AutomationProperties.LiveSetting="Polite"/>
+                 Foreground="{DynamicResource CritBrush}" AutomationProperties.LiveSetting="Polite"/>
     </StackPanel>
   </Border>
 </UserControl>

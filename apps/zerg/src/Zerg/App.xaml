@@ -3,25 +3,70 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Zerg"
              xmlns:v="clr-namespace:Zerg.Views"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              ThemeMode="System"
              ShutdownMode="OnMainWindowClose">
   <Application.Resources>
+    <ResourceDictionary>
+    <ResourceDictionary.MergedDictionaries>
+      <!-- Files of shared styles are merged here; none yet (Themes/Controls.xaml
+           will be the first). The colours are not merged here: AppTheme merges
+           Themes/Dark.xaml or Themes/Light.xaml at run time, which is why
+           every colour token is asked for with DynamicResource. -->
+    </ResourceDictionary.MergedDictionaries>
 
     <!-- Plain "Segoe UI Variable" silently falls back: WPF sees the variable
-         font only under its optical-size names. Segoe UI is the Windows 10 face. -->
+         font only under its optical-size names. Segoe UI is the Windows 10 face.
+         None of the three has a Medium (500) face WPF can pick: asked for
+         Medium it draws SemiBold. -->
     <FontFamily x:Key="TextFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="NumberFont">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <!-- The optical size for small capitals: wider and more open than Text. -->
+    <FontFamily x:Key="SmallFont">Segoe UI Variable Small, Segoe UI</FontFamily>
+    <!-- For what is read as a string: a file name, a path, a key, the time of
+         a hit. Cascadia Mono comes with Windows 11; Consolas is behind it. -->
+    <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
     <!-- Segoe Fluent Icons ships with Windows 11; MDL2 has the same code points. -->
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
+    <!-- Measures (UI-REDESIGN-PLAN.md, section 4.6), in device-independent
+         units. Heights of the window's bands, then of rows, then the rest. -->
+    <sys:Double x:Key="TitleBarHeight">36</sys:Double>
+    <sys:Double x:Key="CommandBarHeight">40</sys:Double>
+    <sys:Double x:Key="FiguresBandHeight">64</sys:Double>
+    <sys:Double x:Key="ViewBandHeight">38</sys:Double>
+    <sys:Double x:Key="CharactersBandHeight">30</sys:Double>
+    <sys:Double x:Key="PaneHeadingHeight">30</sys:Double>
+    <sys:Double x:Key="StatusBarHeight">24</sys:Double>
+    <sys:Double x:Key="ColumnHeadHeight">24</sys:Double>
+    <sys:Double x:Key="GroupedHeadHeight">38</sys:Double>
+    <sys:Double x:Key="RowHeight">24</sys:Double>
+    <sys:Double x:Key="SubRowHeight">22</sys:Double>
+    <sys:Double x:Key="HitRowHeight">20</sys:Double>
+    <sys:Double x:Key="PairRowHeight">36</sys:Double>
+    <sys:Double x:Key="PartyRowHeight">26</sys:Double>
+    <!-- A cell's padding, left and right. -->
+    <Thickness x:Key="CellPadding">8,0</Thickness>
+    <!-- Corners: a control, a chip, the window. A bar or a swatch is a
+         Rectangle, whose radius is a number. -->
+    <CornerRadius x:Key="ControlRadius">4</CornerRadius>
+    <CornerRadius x:Key="ChipRadius">3</CornerRadius>
+    <CornerRadius x:Key="WindowRadius">8</CornerRadius>
+    <sys:Double x:Key="BarRadius">2</sys:Double>
+    <!-- The smallest a pane may be made, and the window width under which a
+         section's panes stand in one column. -->
+    <sys:Double x:Key="PaneMinWidth">320</sys:Double>
+    <sys:Double x:Key="PaneMinHeight">132</sys:Double>
+    <sys:Double x:Key="NarrowWidth">700</sys:Double>
+
     <local:EqualsConverter x:Key="Equals"/>
 
-    <!-- A layered surface on Mica, from the theme's own card brushes. In a
-         floating panel the card is the whole window, so its own frame is
-         chrome over the game: it gives it up. -->
+    <!-- The pane surface with a rule round it. In a floating panel the card
+         is the whole window, so its own frame is chrome over the game: it
+         gives it up. -->
     <Style x:Key="Card" TargetType="Border">
-      <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource Bg1Brush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="8"/>
       <Setter Property="Padding" Value="16"/>
@@ -34,18 +79,86 @@
       </Style.Triggers>
     </Style>
 
+    <!-- ================================================================ type
+         The scale (UI-REDESIGN-PLAN.md, section 4.5): 22, 18, 16, 15, 14, 13,
+         12.5, 12, 11.5, 11, 10.5, 9.5, 9. Ink is the window's (Text1) unless
+         a style says otherwise. -->
+
     <!-- A figure that updates live: tabular, so digits don't shuffle sideways
-         as the value changes. -->
+         as the value changes. The five across the top. -->
     <Style x:Key="Figure" TargetType="TextBlock">
       <Setter Property="FontFamily" Value="{StaticResource NumberFont}"/>
-      <Setter Property="FontSize" Value="28"/>
+      <Setter Property="FontSize" Value="22"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
+    <!-- Smaller figures: a Compare tile's, then the drill-down's six. -->
+    <Style x:Key="TileFigure" TargetType="TextBlock" BasedOn="{StaticResource Figure}">
+      <Setter Property="FontSize" Value="16"/>
+    </Style>
+    <Style x:Key="DrillFigure" TargetType="TextBlock" BasedOn="{StaticResource Figure}">
+      <Setter Property="FontSize" Value="15"/>
+    </Style>
 
+    <!-- Titles, largest first: a page ("Settings"), the drill-down, a parse's
+         name in a slot or the View band, a pane (and a section's tab). -->
+    <Style x:Key="PageTitle" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource NumberFont}"/>
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style x:Key="DrillTitle" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style x:Key="SlotTitle" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style x:Key="PaneTitle" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12.5"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- A note: what a figure is of, what a pane holds, the status line's detail. -->
     <Style x:Key="Label" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+    </Style>
+
+    <!-- A label in small capitals with room between the letters: over a
+         figure, "CHARACTERS 12/12", "BASELINE". Drawn by Views/Caps, because
+         a TextBlock has no letter spacing. -->
+    <Style x:Key="Caps" TargetType="v:Caps">
+      <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
+      <Setter Property="FontSize" Value="9.5"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Tracking" Value="0.7"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <!-- Over a group of columns (WEAPONSKILL, SKILLCHAIN, PET). Over a
+         drill-down figure and in a strip's heading the tracking is 0.6. -->
+    <Style x:Key="GroupCaps" TargetType="v:Caps" BasedOn="{StaticResource Caps}">
+      <Setter Property="FontSize" Value="9"/>
+      <Setter Property="Tracking" Value="0.8"/>
+    </Style>
+    <!-- The word in a state tag (LIVE, ARMED, HELD, IDLE, SAVED), in the
+         state's own colour, which whoever uses it gives. -->
+    <Style x:Key="TagText" TargetType="v:Caps">
+      <Setter Property="FontFamily" Value="{StaticResource TextFont}"/>
+      <Setter Property="FontSize" Value="9.5"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Tracking" Value="0.6"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- What is read as a string: a file name or the time of a hit at this
+         size; a path or a colour code at 11.5; a key on a keycap at 10. -->
+    <Style x:Key="Mono" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
     </Style>
 
     <!-- One choice of a few, drawn as a toggle (a row of these is a segmented
@@ -86,10 +199,10 @@
     <!-- A job beside a name ("SAM/WAR"). Gone, not blank, when there is none
          to show: the name already is the job, or no job was ever reported. -->
     <Style x:Key="Badge" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontSize" Value="10.5"/>
       <Setter Property="Margin" Value="6,0,0,0"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
       <Style.Triggers>
         <Trigger Property="Text" Value="">
           <Setter Property="Visibility" Value="Collapsed"/>
@@ -99,18 +212,18 @@
 
     <!-- A character's colour, as a mark beside their name. -->
     <Style x:Key="Swatch" TargetType="Rectangle">
-      <Setter Property="Width" Value="10"/>
-      <Setter Property="Height" Value="10"/>
-      <Setter Property="RadiusX" Value="2"/>
-      <Setter Property="RadiusY" Value="2"/>
+      <Setter Property="Width" Value="8"/>
+      <Setter Property="Height" Value="8"/>
+      <Setter Property="RadiusX" Value="{StaticResource BarRadius}"/>
+      <Setter Property="RadiusY" Value="{StaticResource BarRadius}"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <!-- Table cells. Figures are right-aligned and tabular, so a column of
          them lines up and holds still while it updates. -->
     <Style x:Key="Cell" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="Padding" Value="8,0"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Padding" Value="{StaticResource CellPadding}"/>
       <Setter Property="TextAlignment" Value="Right"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
       <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -119,10 +232,17 @@
     <Style x:Key="CellText" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
       <Setter Property="TextAlignment" Value="Left"/>
     </Style>
+    <!-- A cell that holds run A over run B, in Compare. -->
+    <Style x:Key="PairCell" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
+      <Setter Property="FontSize" Value="11.5"/>
+    </Style>
+    <!-- A column's heading, in sentence case. The design asks for Medium
+         (500); the face has none and WPF would draw SemiBold for it, so this
+         is Regular (the plan's Q19). -->
     <Style x:Key="Head" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
       <!-- So the whole cell, not just its letters, shows the tooltip. -->
       <Setter Property="Background" Value="Transparent"/>
     </Style>
@@ -138,7 +258,7 @@
 
     <!-- The line between table rows. -->
     <Style x:Key="RowLine" TargetType="Border">
-      <Setter Property="BorderBrush" Value="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
       <Setter Property="BorderThickness" Value="0,1,0,0"/>
       <Setter Property="MinHeight" Value="32"/>
     </Style>
@@ -185,9 +305,9 @@
       <Setter Property="Padding" Value="18,7,18,8"/>
       <Setter Property="FontSize" Value="14"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource ControlElevationBorderBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
       <Setter Property="Template">
@@ -222,16 +342,16 @@
     <Style x:Key="StartButton" TargetType="Button" BasedOn="{StaticResource SessionButton}">
       <Style.Triggers>
         <DataTrigger Binding="{Binding View.StartLook}" Value="Confirm">
-          <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+          <Setter Property="Background" Value="{DynamicResource CritBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource OnCritBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding View.StartLook}" Value="Idle">
-          <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+          <Setter Property="Background" Value="{DynamicResource LiveBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource OnLiveBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding View.StartLook}" Value="Armed">
-          <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBrush}"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+          <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
         </DataTrigger>
       </Style.Triggers>
     </Style>
@@ -239,8 +359,8 @@
     <Style x:Key="SecondButton" TargetType="Button" BasedOn="{StaticResource SessionButton}">
       <Style.Triggers>
         <DataTrigger Binding="{Binding View.SecondLook}" Value="Held">
-          <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBrush}"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+          <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
         </DataTrigger>
       </Style.Triggers>
     </Style>
@@ -248,13 +368,13 @@
     <!-- Two colours, one meaning each, on the clock and the status dot alike:
          green is counting, amber is not. -->
     <Style x:Key="Clock" TargetType="TextBlock" BasedOn="{StaticResource Figure}">
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
       <Style.Triggers>
         <DataTrigger Binding="{Binding Light}" Value="Live">
-          <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource LiveBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding Light}" Value="Held">
-          <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
         </DataTrigger>
       </Style.Triggers>
     </Style>
@@ -265,13 +385,13 @@
       <Setter Property="Margin" Value="0,0,6,6"/>
       <Setter Property="Padding" Value="9,3,11,4"/>
       <Setter Property="FontSize" Value="12"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ToggleButton">
             <Border x:Name="Face" CornerRadius="13" Padding="{TemplateBinding Padding}" BorderThickness="1"
-                    Background="{DynamicResource ControlFillColorDefaultBrush}"
-                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                    Background="{DynamicResource Bg3Brush}"
+                    BorderBrush="{DynamicResource Line2Brush}">
               <ContentPresenter VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
@@ -280,10 +400,10 @@
                 <Setter TargetName="Face" Property="Background" Value="Transparent"/>
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Face" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                <Setter TargetName="Face" Property="Background" Value="{DynamicResource Bg4Brush}"/>
               </Trigger>
               <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="Face" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                <Setter TargetName="Face" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -294,7 +414,7 @@
     <!-- A table row that can be picked: plain until pointed at. -->
     <Style x:Key="RowButton" TargetType="Button">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
       <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template">
@@ -305,10 +425,10 @@
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Face" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                <Setter TargetName="Face" Property="Background" Value="{DynamicResource Bg2Brush}"/>
               </Trigger>
               <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="Face" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                <Setter TargetName="Face" Property="Background" Value="{DynamicResource Bg2Brush}"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -316,5 +436,6 @@
       </Setter>
     </Style>
 
+    </ResourceDictionary>
   </Application.Resources>
 </Application>

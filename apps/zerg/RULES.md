@@ -242,8 +242,9 @@ Every number is measured from the session's zero, and there is no other clock
 - **One denominator.** `Counting.Aggregate` divides the party's DPS and each
   character's by the session clock, so the column adds up to the party figure.
 - **DPS decays between polls**: the total holds and the clock grows, so the
-  Elapsed tile, the party DPS and each character's DPS are rewritten 4 times a
-  second, together. A tile decaying past a frozen column reads as a bug.
+  Elapsed tile, the party DPS and each character's DPS are rewritten at the
+  draw frequency (30 times a second unless set), together. A tile decaying
+  past a frozen column reads as a bug.
 - **The chart's left edge is the zero and its right edge is the clock**, paused
   included. A flat line out to the present is a falling DPS, drawn. The axis
   and the DPS beside it must always describe the same span.

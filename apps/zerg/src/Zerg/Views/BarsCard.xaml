@@ -17,7 +17,7 @@
       <Setter Property="Padding" Value="4,0"/>
       <Setter Property="TextAlignment" Value="Right"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
     </Style>
     <Style x:Key="StripCell" TargetType="TextBlock">
       <Setter Property="FontSize" Value="12"/>
@@ -47,7 +47,7 @@
       </DockPanel>
 
       <StackPanel Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Visible}}">
-        <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Label}" FontSize="13" Margin="6,6,6,0"
+        <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Label}" FontSize="12" Margin="6,6,6,0"
                    Visibility="{Binding HasActors, Converter={StaticResource Hidden}}"/>
         <v:Cells Widths="{StaticResource StripColumns}" Height="16"
                  Visibility="{Binding HasActors, Converter={StaticResource Visible}}">
@@ -67,7 +67,7 @@
                 <Rectangle Fill="{Binding Fill}" Opacity="0.7" RadiusX="2" RadiusY="2" RenderTransformOrigin="0,0.5"
                            v:Grow.Share="{Binding Fraction}"/>
                 <!-- Whose file this is: found without reading the names. -->
-                <Rectangle Width="2" HorizontalAlignment="Left" Fill="{DynamicResource AccentFillColorDefaultBrush}"
+                <Rectangle Width="2" HorizontalAlignment="Left" Fill="{DynamicResource AccentBrush}"
                            Visibility="{Binding IsOwner, Converter={StaticResource Visible}}"/>
                 <!-- A dark halo keeps pale text legible on the brightest fills. -->
                 <v:Cells Widths="{StaticResource StripColumns}">
@@ -77,8 +77,8 @@
                   <DockPanel LastChildFill="False" Margin="6,0,4,0">
                     <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}" FontSize="10.5"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"
+                               Foreground="{DynamicResource Text2Brush}"/>
                   </DockPanel>
                   <TextBlock Text="{Binding Damage}" Style="{StaticResource StripCell}" FontWeight="SemiBold"/>
                   <TextBlock Text="{Binding Share}" Style="{StaticResource StripCell}"/>
@@ -137,11 +137,11 @@
                     <v:Cells Widths="{StaticResource Columns}">
                       <DockPanel Margin="8,0" VerticalAlignment="Center">
                         <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis"
+                        <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
                                    VerticalAlignment="Center"/>
                       </DockPanel>
                       <TextBlock Text="{Binding Job}" Style="{StaticResource CellText}" ToolTip="{Binding JobTip}"
-                                 Background="Transparent" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                 Background="Transparent" Foreground="{DynamicResource Text2Brush}"
                                  Visibility="{Binding ShowJob, Converter={StaticResource Visible}}"/>
                       <TextBlock Text="{Binding Damage}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
                       <TextBlock Text="{Binding Share}" Style="{StaticResource Cell}"/>

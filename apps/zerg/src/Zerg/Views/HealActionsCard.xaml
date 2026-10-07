@@ -11,14 +11,14 @@
          Picking it shows their heals under it; picking it again puts them
          away. -->
     <DataTemplate x:Key="Heading">
-      <Border Style="{StaticResource RowLine}" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+      <Border Style="{StaticResource RowLine}" Background="{DynamicResource Bg2Brush}">
         <Button Style="{StaticResource RowButton}"
                 Command="{Binding DataContext.ToggleHealsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                 CommandParameter="{Binding}" AutomationProperties.Name="{Binding Label}"
                 ToolTip="Show or hide this character's heals">
           <StackPanel Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
             <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                       Foreground="{DynamicResource Text2Brush}"/>
             <Rectangle Margin="0,0,8,0">
               <Rectangle.Style>
                 <Style TargetType="Rectangle" BasedOn="{StaticResource Swatch}">
@@ -31,13 +31,13 @@
                 </Style>
               </Rectangle.Style>
             </Rectangle>
-            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
             <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"/>
-            <TextBlock Text="—" FontSize="13" Margin="8,0" VerticalAlignment="Center"
-                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-            <TextBlock Text="{Binding Total}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+            <TextBlock Text="—" FontSize="12" Margin="8,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource Text4Brush}"/>
+            <TextBlock Text="{Binding Total}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
                        Typography.NumeralAlignment="Tabular"/>
-            <TextBlock Text="{Binding Pet}" Style="{StaticResource Badge}" FontSize="13" Margin="8,0,0,0"
+            <TextBlock Text="{Binding Pet}" Style="{StaticResource Badge}" FontSize="12" Margin="8,0,0,0"
                        Typography.NumeralAlignment="Tabular"/>
           </StackPanel>
         </Button>
@@ -74,14 +74,14 @@
             <Style TargetType="Button" BasedOn="{StaticResource RowButton}">
               <Style.Triggers>
                 <DataTrigger Binding="{Binding Selected}" Value="True">
-                  <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
+                  <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
                 </DataTrigger>
               </Style.Triggers>
             </Style>
           </Button.Style>
           <Grid>
             <Border Width="3" CornerRadius="1.5" HorizontalAlignment="Left" Margin="0,5"
-                    Background="{DynamicResource AccentFillColorDefaultBrush}"
+                    Background="{DynamicResource AccentBrush}"
                     Visibility="{Binding Selected, Converter={StaticResource Visible}}"/>
             <v:Cells Widths="{StaticResource Columns}">
               <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" Padding="40,0,8,0"/>
@@ -119,7 +119,7 @@
         </StackPanel>
       </DockPanel>
 
-      <TextBlock DockPanel.Dock="Top" Text="{Binding HealEmptyText}" Style="{StaticResource Label}" FontSize="13"
+      <TextBlock DockPanel.Dock="Top" Text="{Binding HealEmptyText}" Style="{StaticResource Label}" FontSize="12"
                  Margin="0,18,0,8" HorizontalAlignment="Center"
                  Visibility="{Binding HasHeals, Converter={StaticResource Hidden}}"/>
 

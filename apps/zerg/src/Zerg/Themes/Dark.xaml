@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <!-- Zerg's own colours for the dark theme. AppTheme merges this file or its
-       twin, whichever matches what Windows' Fluent theme is showing. -->
+       twin, whichever the theme setting (or Windows, under "System") asks for. -->
 
   <!-- The eighteen fallback slots, one per character of a full alliance, for
        anyone whose job has no colour of its own. Solved as a set, per theme,
@@ -54,10 +54,93 @@
   <Color x:Key="JobCOR">#C97557</Color>
   <Color x:Key="JobPUP">#827AAB</Color>
 
-  <!-- The ring round a chart marker: what a card on Mica comes out as, but
-       solid. The card's own brush is translucent, and a see-through ring
-       would not part a marker from the lines under it. -->
-  <SolidColorBrush x:Key="ChartSurfaceBrush" Color="#2B2B2B"/>
+  <!-- ============================================================ tokens
+       The redesign's named values (UI-REDESIGN-PLAN.md, section 4). Each
+       colour is a Color under its name and a brush under that name plus
+       "Brush". Both theme files define the same keys, and Themes/Panel.xaml
+       defines some of them again for a floating panel, so a token is
+       always asked for with DynamicResource: AppTheme merges this file at
+       run time, after App.xaml has been read, and a StaticResource to a
+       token fails at startup. -->
+
+  <!-- Surfaces, from the window itself (Bg0) up to what is under the
+       pointer (Bg4); rules, from the one between rows (Line) to a frame
+       (Line3); ink, from figures (Text1) to a dash (Text4). -->
+  <Color x:Key="Bg0">#0A0C10</Color>
+  <Color x:Key="Bg1">#0F1217</Color>
+  <Color x:Key="Bg2">#151921</Color>
+  <Color x:Key="Bg3">#1C222C</Color>
+  <Color x:Key="Bg4">#262D3A</Color>
+  <Color x:Key="Line">#1B2029</Color>
+  <Color x:Key="Line2">#2A313D</Color>
+  <Color x:Key="Line3">#3D4656</Color>
+  <Color x:Key="Text1">#E9ECF2</Color>
+  <Color x:Key="Text2">#A6AFBF</Color>
+  <Color x:Key="Text3">#838DA5</Color>
+  <Color x:Key="Text4">#5E677A</Color>
+  <Color x:Key="ShadedDash">#949EB2</Color>
+  <Color x:Key="MarkTile">#07080C</Color>
+  <SolidColorBrush x:Key="Bg0Brush" Color="{StaticResource Bg0}"/>
+  <SolidColorBrush x:Key="Bg1Brush" Color="{StaticResource Bg1}"/>
+  <SolidColorBrush x:Key="Bg2Brush" Color="{StaticResource Bg2}"/>
+  <SolidColorBrush x:Key="Bg3Brush" Color="{StaticResource Bg3}"/>
+  <SolidColorBrush x:Key="Bg4Brush" Color="{StaticResource Bg4}"/>
+  <SolidColorBrush x:Key="LineBrush" Color="{StaticResource Line}"/>
+  <SolidColorBrush x:Key="Line2Brush" Color="{StaticResource Line2}"/>
+  <SolidColorBrush x:Key="Line3Brush" Color="{StaticResource Line3}"/>
+  <SolidColorBrush x:Key="Text1Brush" Color="{StaticResource Text1}"/>
+  <SolidColorBrush x:Key="Text2Brush" Color="{StaticResource Text2}"/>
+  <SolidColorBrush x:Key="Text3Brush" Color="{StaticResource Text3}"/>
+  <SolidColorBrush x:Key="Text4Brush" Color="{StaticResource Text4}"/>
+  <SolidColorBrush x:Key="ShadedDashBrush" Color="{StaticResource ShadedDash}"/>
+  <SolidColorBrush x:Key="MarkTileBrush" Color="{StaticResource MarkTile}"/>
+
+  <!-- Colours that mean something. Accent: brand, selected, focus, armed and
+       held. Live: counting, a better change. Crit: dropped, an error, a
+       worse change. On*: text and glyphs on a fill of that colour. -->
+  <Color x:Key="Accent">#F2A33A</Color>
+  <Color x:Key="OnAccent">#191004</Color>
+  <Color x:Key="Live">#22E05A</Color>
+  <Color x:Key="OnLive">#051306</Color>
+  <Color x:Key="Crit">#FF5063</Color>
+  <Color x:Key="OnCrit">#190405</Color>
+  <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Accent}"/>
+  <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccent}"/>
+  <SolidColorBrush x:Key="LiveBrush" Color="{StaticResource Live}"/>
+  <SolidColorBrush x:Key="OnLiveBrush" Color="{StaticResource OnLive}"/>
+  <SolidColorBrush x:Key="CritBrush" Color="{StaticResource Crit}"/>
+  <SolidColorBrush x:Key="OnCritBrush" Color="{StaticResource OnCrit}"/>
+  <!-- The caption's close button under the pointer; the same in both themes. -->
+  <SolidColorBrush x:Key="CloseHoverBrush" Color="#C42B1C"/>
+
+  <!-- A state tag: its colour at 12% over Bg1, with an edge at 45%. Idle
+       is from Text3 (and serves SAVED); Held is from Accent (and serves
+       ARMED). Worked out by that rule, not chosen: if a colour above
+       changes, work its pair out again. -->
+  <SolidColorBrush x:Key="TagLiveFillBrush" Color="#112B1F"/>
+  <SolidColorBrush x:Key="TagLiveEdgeBrush" Color="#186F35"/>
+  <SolidColorBrush x:Key="TagIdleFillBrush" Color="#1D2128"/>
+  <SolidColorBrush x:Key="TagIdleEdgeBrush" Color="#434957"/>
+  <SolidColorBrush x:Key="TagHeldFillBrush" Color="#2A231B"/>
+  <SolidColorBrush x:Key="TagHeldEdgeBrush" Color="#755327"/>
+
+  <!-- Overlays: a colour at a strength, over whatever is beneath. -->
+  <SolidColorBrush x:Key="RowHoverBrush" Color="{StaticResource Text1}" Opacity="0.05"/>
+  <SolidColorBrush x:Key="ActionShadeBrush" Color="{StaticResource Text1}" Opacity="0.10"/>
+  <SolidColorBrush x:Key="DropZoneFillBrush" Color="{StaticResource Accent}" Opacity="0.15"/>
+  <SolidColorBrush x:Key="EdgeZoneBrush" Color="{StaticResource Accent}" Opacity="0.28"/>
+  <SolidColorBrush x:Key="DividerHoverBrush" Color="{StaticResource Accent}" Opacity="0.55"/>
+  <SolidColorBrush x:Key="HistogramBandBrush" Color="{StaticResource Text1}" Opacity="0.04"/>
+
+  <!-- A chart's hover card. Bg4 here; a floating panel has its own
+       (Themes/Panel.xaml), because Bg4 is see-through there and the card
+       must not be. -->
+  <SolidColorBrush x:Key="HoverCardBrush" Color="{StaticResource Bg4}"/>
+
+  <!-- The ring round a chart marker: the colour of what the chart sits on,
+       the pane surface. Solid, so a ring parts a marker from the lines
+       under it. -->
+  <SolidColorBrush x:Key="ChartSurfaceBrush" Color="{StaticResource Bg1}"/>
 
   <!-- The two runs of a comparison, A and B: the first two fallback slots,
        the pair furthest apart. They say which run a mark belongs to and
@@ -66,5 +149,39 @@
   <SolidColorBrush x:Key="RunABrush" Color="{StaticResource Series1}"/>
   <SolidColorBrush x:Key="RunBBrush" Color="{StaticResource Series2}"/>
   <SolidColorBrush x:Key="RunInkBrush" Color="#101010"/>
+
+  <!-- ============================================== Fluent keys, on tokens
+       Step 1.4 of the plan; taken out again at step 2.5. The Fluent theme is
+       still loaded and still draws every stock control. Whatever asks the
+       application for one of these brush names with DynamicResource gets
+       Zerg's colour: AppTheme merges this file after WPF has merged the
+       theme's own, and the later of two merged dictionaries answers first.
+       They do little now. Nothing of Zerg's own asks for one of these keys
+       any more, and the theme settles most of what its templates draw
+       inside its own dictionary (a checked toggle stays Fluent's blue). A
+       floating panel is not reached at all: its window carries a Fluent set
+       of its own. -->
+  <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="{StaticResource Text1}"/>
+  <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="{StaticResource Text2}"/>
+  <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="{StaticResource Text3}"/>
+  <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{StaticResource Accent}"/>
+  <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{StaticResource Accent}"/>
+  <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="{StaticResource OnAccent}"/>
+  <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="{StaticResource Live}"/>
+  <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="{StaticResource Accent}"/>
+  <SolidColorBrush x:Key="SystemFillColorCriticalBrush" Color="{StaticResource Crit}"/>
+  <SolidColorBrush x:Key="SystemFillColorNeutralBrush" Color="{StaticResource Text3}"/>
+  <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource Bg1}"/>
+  <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource Line2}"/>
+  <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="{StaticResource Line2}"/>
+  <SolidColorBrush x:Key="ControlElevationBorderBrush" Color="{StaticResource Line2}"/>
+  <SolidColorBrush x:Key="SurfaceStrokeColorDefaultBrush" Color="{StaticResource Line2}"/>
+  <SolidColorBrush x:Key="ControlStrongStrokeColorDefaultBrush" Color="{StaticResource Line3}"/>
+  <SolidColorBrush x:Key="DividerStrokeColorDefaultBrush" Color="{StaticResource Line}"/>
+  <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="{StaticResource Bg2}"/>
+  <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="{StaticResource Bg3}"/>
+  <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="{StaticResource Bg3}"/>
+  <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="{StaticResource Bg4}"/>
+  <SolidColorBrush x:Key="SolidBackgroundFillColorQuarternaryBrush" Color="{StaticResource Bg4}"/>
 
 </ResourceDictionary>

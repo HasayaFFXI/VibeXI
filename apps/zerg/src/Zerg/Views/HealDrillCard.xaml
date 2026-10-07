@@ -36,7 +36,7 @@
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <Border Margin="4,0" Padding="12,8" CornerRadius="6"
-                    Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                    Background="{DynamicResource Bg2Brush}">
               <StackPanel>
                 <TextBlock Text="{Binding Label}" Style="{StaticResource Label}" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Text="{Binding Value}" Style="{StaticResource Figure}" FontSize="20"/>
@@ -98,7 +98,7 @@
                     <TextBlock Text="{Binding Target}" Style="{StaticResource CellText}"/>
                     <TextBlock Text="{Binding Damage}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding VsAvg}" Style="{StaticResource Cell}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                               Foreground="{DynamicResource Text2Brush}"/>
                   </v:Cells>
                 </Border>
               </DataTemplate>
