@@ -279,6 +279,7 @@ public static class Counting
         }
 
         var actors = new List<ActorTotals>();
+        var party = new Split();
         double grand = 0, tMin = double.PositiveInfinity, tMax = double.NegativeInfinity;
 
         foreach (var name in order)
@@ -292,6 +293,7 @@ public static class Counting
             a.Duration = duration ?? span;
             a.Dps = a.Duration > 0 ? a.Total / a.Duration : 0;
             a.FinishSplit();
+            party.Add(a.Split);
             grand += a.Total;
             if (a.First is double f && f < tMin) tMin = f;
             if (a.Last is double l && l > tMax) tMax = l;
@@ -313,6 +315,8 @@ public static class Counting
             Duration = duration ?? (none ? 0 : (tMax - tMin) / 1000),
             Events = lines,
             Uses = uses.Count,
+            Split = party,
+            Party = party.Figures(grand),
         };
     }
 

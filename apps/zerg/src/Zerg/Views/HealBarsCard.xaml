@@ -2,142 +2,268 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-             xmlns:c="clr-namespace:Zerg.Charts"
              xmlns:v="clr-namespace:Zerg.Views">
   <UserControl.Resources>
-    <!-- Character, Job, then six figures. The heading and every row share it. -->
-    <sys:String x:Key="Columns">1.6*,84,*,*,*,*,*,*</sys:String>
+    <!-- Character, Job, then six figures: the widths the design draws them
+         at in a table 930 wide, as shares. The heading and every row share
+         them. The Healing % column is wide enough for the small bar an
+         unshaded row has beside its figure, so there is one set. -->
+    <sys:String x:Key="Columns">190*,100*,104*,105*,96*,96*,115*,124*</sys:String>
 
-    <!-- The strip: Character, then Healing, % and Casts, each wide enough for
-         its longest figure so one growing a digit moves nothing beside it. -->
-    <sys:String x:Key="StripColumns">*,72,52,52</sys:String>
-    <Style x:Key="StripHead" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="10"/>
-      <Setter Property="Padding" Value="4,0"/>
-      <Setter Property="TextAlignment" Value="Right"/>
-      <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+    <!-- The strip: Character, then Healing, % and Casts, as the damage
+         card's strip is (Views/BarsCard.xaml says how its columns are
+         worked out and what goes in a narrow panel: here Casts and the
+         job beside the name). -->
+    <sys:String x:Key="StripColumns">1*110,72,52,56</sys:String>
+    <sys:String x:Key="StripBarColumns">1*110,72,96,56</sys:String>
+    <Style x:Key="Strip" TargetType="v:Cells">
+      <Setter Property="Widths" Value="{StaticResource StripColumns}"/>
+      <Style.Triggers>
+        <Trigger Property="v:Shading.Characters" Value="False">
+          <Setter Property="Widths" Value="{StaticResource StripBarColumns}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The strip itself says whether its columns fit (v:Shed.Full). -->
+    <Style x:Key="StripRoom" TargetType="StackPanel">
+      <Setter Property="v:Shed.Full" Value="{StaticResource StripColumns}"/>
+      <Style.Triggers>
+        <Trigger Property="v:Shading.Characters" Value="False">
+          <Setter Property="v:Shed.Full" Value="{StaticResource StripBarColumns}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <!-- A column's heading in the strip: small capitals, set against the
+         column's right-hand end as its figures are. -->
+    <Style x:Key="StripHead" TargetType="v:Caps" BasedOn="{StaticResource GroupCaps}">
+      <Setter Property="Tracking" Value="0.6"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="Margin" Value="4,0,2,0"/>
     </Style>
     <Style x:Key="StripCell" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="Padding" Value="4,0"/>
+      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="Padding" Value="4,0,2,0"/>
       <Setter Property="TextAlignment" Value="Right"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
       <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+      <Style.Triggers>
+        <!-- Nothing to measure: a dash, in the quietest ink. -->
+        <Trigger Property="Text" Value="&#x2014;">
+          <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The last column's, which goes in a narrow panel. -->
+    <Style x:Key="StripCellSheds" TargetType="TextBlock" BasedOn="{StaticResource StripCell}">
+      <Style.Triggers>
+        <Trigger Property="v:Shed.Narrow" Value="True">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The job beside the name: quieter than the name, and gone in a
+         narrow panel (and where there is none to show, as any badge). -->
+    <Style x:Key="StripJob" TargetType="TextBlock" BasedOn="{StaticResource Badge}">
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+      <Style.Triggers>
+        <Trigger Property="v:Shed.Narrow" Value="True">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
     </Style>
   </UserControl.Resources>
 
-  <!-- Healing by character: a bar each, then the per-character table.
+  <!-- Healing by character: one table, and the bar is the row, as in Damage
+       by character: each healer's row is shaded in their colour to their
+       healing out of the leading healer's. A pane: the column headings
+       stand still, the rows scroll under them, and the Party line stands
+       still under the rows. Healing has no rates, so nothing here is
+       marked low.
 
        Floating, it is a strip, as the damage card is: one short row per
        character, the bar behind the name, and the three figures a glance
        during a fight is for. -->
-  <Border Style="{StaticResource Card}">
-    <StackPanel>
-      <DockPanel>
-        <Button DockPanel.Dock="Right" Style="{StaticResource PopOut}" Command="{Binding Panels[hbars].PopOutCommand}"
-                AutomationProperties.Name="Pop out Healing by character"/>
-        <StackPanel>
-          <TextBlock Text="Healing by character" Style="{StaticResource CardTitle}"/>
-          <TextBlock Text="Total healed since the session started. Hover a column heading for how it is counted."
-                     Style="{StaticResource CardNote}"/>
-        </StackPanel>
-      </DockPanel>
-
-      <StackPanel Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Visible}}">
-        <TextBlock Text="{Binding HealEmptyText}" Style="{StaticResource Label}" FontSize="12" Margin="6,6,6,0"
+  <v:Pane Title="Healing by character" Note="Total healed since the session started"
+          Hint="Total healed since the session started. Hover a column heading for how it is counted."
+          PopOutCommand="{Binding Panels[hbars].PopOutCommand}"
+          v:Shading.Characters="{Binding ShadeCharacters}">
+    <Grid>
+      <!-- The strip, as the damage card's is (Views/BarsCard.xaml): the
+           shade, the 3-unit edge, the owner's mark, the cells, and no
+           effect on a row. -->
+      <StackPanel Style="{StaticResource StripRoom}"
+                  Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Visible}}">
+        <TextBlock Text="{Binding HealEmptyText}" Style="{StaticResource Label}" FontSize="12" Margin="13,8,13,0"
                    Visibility="{Binding HasHealers, Converter={StaticResource Hidden}}"/>
-        <v:Cells Widths="{StaticResource StripColumns}" Height="16"
+        <v:Cells Style="{StaticResource Strip}" Height="{StaticResource HitRowHeight}" Margin="3,0"
                  Visibility="{Binding HasHealers, Converter={StaticResource Visible}}">
-          <TextBlock Text="CHARACTER" Style="{StaticResource StripHead}" TextAlignment="Left" Padding="6,0,4,0"/>
-          <TextBlock Text="HEALING" Style="{StaticResource StripHead}"/>
-          <TextBlock Text="%" Style="{StaticResource StripHead}" ToolTip="This character's healing out of the whole party's"/>
-          <TextBlock Text="CASTS" Style="{StaticResource StripHead}" ToolTip="One per cast, however many people it reached"/>
+          <v:Caps Text="CHARACTER" Style="{StaticResource StripHead}" HorizontalAlignment="Left" Margin="10,0,4,0"/>
+          <v:Caps Text="HEALING" Style="{StaticResource StripHead}"/>
+          <!-- A border, so the whole of the column's heading shows the tooltip. -->
+          <Border Background="Transparent" ToolTip="This character's healing out of the whole party's">
+            <v:Caps Text="%" Style="{StaticResource StripHead}"/>
+          </Border>
+          <Border Background="Transparent" Style="{StaticResource Sheds}"
+                  ToolTip="One per cast, however many people it reached">
+            <v:Caps Text="CASTS" Style="{StaticResource StripHead}"/>
+          </Border>
         </v:Cells>
         <ItemsControl ItemsSource="{Binding HealStrip}" Focusable="False">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Grid Height="20" Margin="0,1,0,0" Background="Transparent" ToolTip="{Binding Tip}">
-                <Rectangle Fill="{Binding Fill}" Opacity="0.7" RadiusX="2" RadiusY="2" RenderTransformOrigin="0,0.5"
-                           v:Grow.Share="{Binding Fraction}"/>
+              <Grid Height="{StaticResource HitRowHeight}" Margin="3,0,3,1" Background="Transparent" ToolTip="{Binding Tip}">
+                <Rectangle Style="{StaticResource RowShade}" Fill="{Binding Fill}" RadiusX="{StaticResource BarRadius}"
+                           RadiusY="{StaticResource BarRadius}" v:Grow.Share="{Binding Fraction}"/>
+                <Rectangle Width="3" HorizontalAlignment="Left" RadiusX="1.5" RadiusY="1.5" Fill="{Binding Edge}"
+                           IsHitTestVisible="False"/>
                 <!-- Whose file this is: found without reading the names. -->
-                <Rectangle Width="2" HorizontalAlignment="Left" Fill="{DynamicResource AccentBrush}"
-                           Visibility="{Binding IsOwner, Converter={StaticResource Visible}}"/>
-                <!-- A dark halo keeps pale text legible on the brightest fills. -->
-                <v:Cells Widths="{StaticResource StripColumns}">
-                  <v:Cells.Effect>
-                    <DropShadowEffect ShadowDepth="0" BlurRadius="3" Color="Black" Opacity="0.75"/>
-                  </v:Cells.Effect>
-                  <DockPanel LastChildFill="False" Margin="6,0,4,0">
-                    <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center"
+                <Path Data="M0,0 L3.5,3.5 L0,7 Z" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Left"
+                      VerticalAlignment="Center" Margin="-3,0,0,0" IsHitTestVisible="False"
+                      Visibility="{Binding IsOwner, Converter={StaticResource Visible}}"/>
+                <v:Cells Style="{StaticResource Strip}">
+                  <DockPanel LastChildFill="False" Margin="10,0,4,0">
+                    <TextBlock x:Name="Name" Text="{Binding Name}" FontSize="12" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
-                    <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"
-                               Foreground="{DynamicResource Text2Brush}"/>
+                    <TextBlock Text="{Binding Job}" Style="{StaticResource StripJob}"/>
                   </DockPanel>
-                  <TextBlock Text="{Binding Healing}" Style="{StaticResource StripCell}" FontWeight="SemiBold"/>
-                  <TextBlock Text="{Binding Share}" Style="{StaticResource StripCell}"/>
-                  <TextBlock Text="{Binding Casts}" Style="{StaticResource StripCell}"/>
+                  <TextBlock Text="{Binding Healing}" Style="{StaticResource StripCell}" FontSize="12" FontWeight="SemiBold"/>
+                  <v:SmallBar For="Character" Length="36" Inset="8" Value="{Binding Fraction}" Fill="{Binding Edge}">
+                    <TextBlock Text="{Binding Share}" Style="{StaticResource StripCell}"/>
+                  </v:SmallBar>
+                  <TextBlock Text="{Binding Casts}" Style="{StaticResource StripCellSheds}"/>
                 </v:Cells>
               </Grid>
+              <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsOwner}" Value="True">
+                  <Setter TargetName="Name" Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+              </DataTemplate.Triggers>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
       </StackPanel>
 
       <!-- The docked form: not in a floating panel. -->
-      <StackPanel Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
-        <c:BarChart Margin="0,10,0,0" Rows="{Binding HealBars}" Height="{Binding HealBarsHeight}"
-                    EmptyText="{Binding HealEmptyText}" AutomationProperties.Name="Healing by character chart"/>
+      <Grid Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
+        <TextBlock Text="{Binding HealEmptyText}" Style="{StaticResource Label}" FontSize="12" Margin="0,18,0,8"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Visibility="{Binding HasHealers, Converter={StaticResource Hidden}}"/>
 
-        <ScrollViewer x:Name="Scroller" Margin="0,8,0,0" HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Disabled" v:WheelChain.On="True"
-                      Visibility="{Binding HasHealers, Converter={StaticResource Visible}}">
-          <!-- The bottom margin is room for the scroll bar a narrow window
-               brings: it is drawn over the content, and would sit on the last row. -->
-          <StackPanel MinWidth="720" Width="{Binding ViewportWidth, ElementName=Scroller}" Margin="0,0,0,12">
-            <v:Cells Widths="{StaticResource Columns}" Margin="0,0,0,6">
-              <TextBlock Text="Character" Style="{StaticResource HeadText}"/>
-              <TextBlock Text="Job" Style="{StaticResource HeadText}"
-                         Visibility="{Binding ShowJob, Converter={StaticResource Visible}}"/>
-              <TextBlock Text="Healing" Style="{StaticResource Head}"
-                         ToolTip="Every cure, waltz and healing ability this character used. Pet heals are not included"/>
-              <TextBlock Text="Healing %" Style="{StaticResource Head}"
-                         ToolTip="This character's healing out of the whole party's"/>
-              <TextBlock Text="HPS" Style="{StaticResource Head}" ToolTip="Healing divided by the session clock"/>
-              <TextBlock Text="Casts" Style="{StaticResource Head}"
-                         ToolTip="One per cast, however many people it reached"/>
-              <TextBlock Text="Avg / cast" Style="{StaticResource Head}" ToolTip="Healing divided by casts"/>
-              <TextBlock Text="Pet Healing" Style="{StaticResource Head}"
-                         ToolTip="Everything this character's pet healed. Not part of Healing"/>
-            </v:Cells>
+        <!-- Sideways, the table scrolls only in a pane too narrow for its
+             columns. -->
+        <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      v:WheelChain.On="True" Visibility="{Binding HasHealers, Converter={StaticResource Visible}}">
+          <Grid MinWidth="720" Width="{Binding ViewportWidth, ElementName=Scroller}">
+            <Grid.Style>
+              <Style TargetType="Grid">
+                <Style.Triggers>
+                  <!-- Room for the scroll bar a narrow pane brings: it is
+                       drawn over the content, and would lie on the Party
+                       line. -->
+                  <DataTrigger Binding="{Binding ComputedHorizontalScrollBarVisibility, ElementName=Scroller}" Value="Visible">
+                    <Setter Property="Margin" Value="0,0,0,12"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Grid.Style>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-            <ItemsControl ItemsSource="{Binding Healers}" Focusable="False">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Border Style="{StaticResource RowLine}">
-                    <v:Cells Widths="{StaticResource Columns}">
-                      <DockPanel Margin="8,0" VerticalAlignment="Center">
-                        <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"/>
-                      </DockPanel>
-                      <TextBlock Text="{Binding Job}" Style="{StaticResource CellText}" ToolTip="{Binding JobTip}"
-                                 Background="Transparent" Foreground="{DynamicResource Text2Brush}"
-                                 Visibility="{Binding ShowJob, Converter={StaticResource Visible}}"/>
-                      <TextBlock Text="{Binding Healing}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
-                      <TextBlock Text="{Binding Share}" Style="{StaticResource Cell}"/>
-                      <TextBlock Text="{Binding Hps}" Style="{StaticResource Cell}"/>
-                      <TextBlock Text="{Binding Casts}" Style="{StaticResource Cell}"/>
-                      <TextBlock Text="{Binding Avg}" Style="{StaticResource Cell}"/>
-                      <TextBlock Text="{Binding PetHealing}" Style="{StaticResource Cell}"/>
-                    </v:Cells>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
+            <!-- 14 units are kept clear at the right of the headings, the
+                 rows' cells and the Party line: the room the rows' scroll
+                 bar is drawn in. -->
+            <Grid Height="{StaticResource ColumnHeadHeight}">
+              <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,1">
+                <TextBlock Text="Character" Style="{StaticResource HeadText}" Padding="12,0,8,0"/>
+                <TextBlock Text="Job" Style="{StaticResource HeadText}"
+                           Visibility="{Binding ShowJob, Converter={StaticResource Visible}}"/>
+                <TextBlock Text="Healing" Style="{StaticResource Head}"
+                           ToolTip="Every cure, waltz and healing ability this character used. Pet heals are not included"/>
+                <TextBlock Text="Healing %" Style="{StaticResource Head}"
+                           ToolTip="This character's healing out of the whole party's"/>
+                <TextBlock Text="HPS" Style="{StaticResource Head}" ToolTip="Healing divided by the session clock"/>
+                <TextBlock Text="Casts" Style="{StaticResource Head}"
+                           ToolTip="One per cast, however many people it reached"/>
+                <TextBlock Text="Avg / cast" Style="{StaticResource Head}" ToolTip="Healing divided by casts"/>
+                <TextBlock Text="Pet Healing" Style="{StaticResource Head}"
+                           ToolTip="Everything this character's pet healed. Not part of Healing"/>
+              </v:Cells>
+              <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+            </Grid>
+
+            <!-- The rows. Back to front: the shade, the rule, what the row
+                 wears under the pointer, the owner's mark, the cells. The
+                 Healing % has a small bar beside it only while the row is
+                 not shaded. -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          v:WheelChain.On="True" Focusable="False">
+              <ItemsControl ItemsSource="{Binding Healers}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Grid x:Name="Row" Height="{StaticResource RowHeight}" Background="Transparent" ToolTip="{Binding Tip}">
+                      <Rectangle Style="{StaticResource RowShade}" Margin="0,0,0,1" Fill="{Binding Shade}"
+                                 v:Grow.Share="{Binding Fraction}"/>
+                      <Rectangle Style="{StaticResource RowRule}"/>
+                      <Border x:Name="Hover" Style="{StaticResource RowHover}"/>
+                      <Path Style="{StaticResource OwnerMark}"
+                            Visibility="{Binding IsOwner, Converter={StaticResource Visible}}"/>
+                      <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,1">
+                        <DockPanel Margin="12,0,8,0" VerticalAlignment="Center">
+                          <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,6,0"/>
+                          <TextBlock x:Name="Name" Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                     VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Text="{Binding Job}" Style="{StaticResource JobCell}" ToolTip="{Binding JobTip}"
+                                   Visibility="{Binding ShowJob, Converter={StaticResource Visible}}"/>
+                        <TextBlock Text="{Binding Healing}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
+                        <v:SmallBar For="Character" Length="48" Value="{Binding Fraction}" Fill="{Binding Swatch}">
+                          <TextBlock Text="{Binding Share}" Style="{StaticResource Fig}"/>
+                        </v:SmallBar>
+                        <TextBlock Text="{Binding Hps}" Style="{StaticResource Cell}"/>
+                        <TextBlock Text="{Binding Casts}" Style="{StaticResource Cell}"/>
+                        <TextBlock Text="{Binding Avg}" Style="{StaticResource FigQuiet}"/>
+                        <TextBlock Text="{Binding PetHealing}" Style="{StaticResource Fig}"/>
+                      </v:Cells>
+                    </Grid>
+                    <DataTemplate.Triggers>
+                      <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                        <Setter TargetName="Hover" Property="Visibility" Value="Visible"/>
+                      </Trigger>
+                      <DataTrigger Binding="{Binding IsOwner}" Value="True">
+                        <Setter TargetName="Name" Property="FontWeight" Value="SemiBold"/>
+                      </DataTrigger>
+                    </DataTemplate.Triggers>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+
+            <!-- The Party line: the party as a whole under the columns it
+                 sums, on the raised surface, unshaded. Its HPS is the
+                 party's, rewritten with the rows'. -->
+            <Grid Grid.Row="2" Height="{StaticResource PartyRowHeight}" Background="{DynamicResource Bg2Brush}">
+              <Rectangle Height="1" VerticalAlignment="Top" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+              <v:Cells Widths="{StaticResource Columns}" Margin="0,1,14,0">
+                <TextBlock Text="Party" Style="{StaticResource CellText}" Padding="12,0,8,0" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding HealParty.Count}" Style="{StaticResource CellText}" FontSize="11"
+                           Foreground="{DynamicResource Text3Brush}" Background="Transparent"
+                           ToolTip="The characters listed above"
+                           Visibility="{Binding ShowJob, Converter={StaticResource Visible}}"/>
+                <TextBlock Text="{Binding HealParty.Healing}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding HealParty.Share}" Style="{StaticResource SubFigQuiet}"/>
+                <TextBlock Text="{Binding HealParty.Hps}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding HealParty.Casts}" Style="{StaticResource Cell}"/>
+                <TextBlock Text="{Binding HealParty.Avg}" Style="{StaticResource SubFigQuiet}"/>
+                <TextBlock Text="{Binding HealParty.PetHealing}" Style="{StaticResource SubFig}"/>
+              </v:Cells>
+            </Grid>
+          </Grid>
         </ScrollViewer>
-      </StackPanel>
-    </StackPanel>
-  </Border>
+      </Grid>
+    </Grid>
+  </v:Pane>
 </UserControl>

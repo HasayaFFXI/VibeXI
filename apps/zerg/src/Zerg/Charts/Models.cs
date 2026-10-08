@@ -20,26 +20,28 @@ public sealed record LineSeries(string Name, double[] Values, Color Color, bool 
 /// The lines of a cumulative chart on their shared time grid (milliseconds on
 /// the session clock), drawn in the order given, so the last is on top. When
 /// <paramref name="Live"/>, the last grid time is the live edge, not an event,
-/// and the chart may move it (<see cref="LineChart.Edge"/>).
+/// and the chart may move it (<see cref="LineChart.Edge"/>). When
+/// <paramref name="Running"/>, the session is counting, and the chart rules
+/// its right-hand edge in the colour that says so; a held session's chart
+/// can be live (its edge is the held clock) and is not running.
 /// </summary>
-public sealed record LineModel(double[] Times, IReadOnlyList<LineSeries> Series, bool Live = false);
+public sealed record LineModel(double[] Times, IReadOnlyList<LineSeries> Series, bool Live = false, bool Running = false);
 
-/// <summary>One line of a hover card: what, and how much.</summary>
-public sealed record CardRow(string Label, string Value);
+/// <summary>One segment of a share bar (<see cref="ShareBar"/>): how much,
+/// and the colour it is drawn in. The brush is frozen.</summary>
+public sealed record ShareSlice(double Amount, Brush Fill);
 
 /// <summary>
-/// One bar. <paramref name="Hover"/> is what its hover card lists; without it
-/// the card shows the value alone. <paramref name="Key"/> says which bar this
-/// is from one update to the next (the label, unless given), so a bar grows
-/// from where it was.
+/// A histogram: its bins, the mean to mark, and how many values there are;
+/// and, to mark where most of them fell, the quartiles the band runs
+/// between and the median (each null for no mark).
 /// </summary>
-public sealed record BarRow(string Label, double Value, Color Color, IReadOnlyList<CardRow>? Hover = null,
-                            string? Key = null) : IBarRow;
-
-/// <summary>A histogram: its bins, the mean to mark, and how many values there are.</summary>
-public sealed record HistogramModel(IReadOnlyList<Bin> Bins, double Avg, int Count)
+public sealed record HistogramModel(IReadOnlyList<Bin> Bins, double Avg, int Count,
+                                    double? Q1 = null, double? Q3 = null, double? Median = null)
 {
-    public static HistogramModel From(Distribution d) => new(d.Bins, d.Avg, d.Count);
+    public static HistogramModel From(Distribution d) => d.Count > 0
+        ? new(d.Bins, d.Avg, d.Count, d.Q1, d.Q3, d.Median)
+        : new(d.Bins, d.Avg, d.Count);
 }
 
 /// <summary>

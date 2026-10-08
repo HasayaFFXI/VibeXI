@@ -107,8 +107,10 @@
   <SolidColorBrush x:Key="OnLiveBrush" Color="{StaticResource OnLive}"/>
   <SolidColorBrush x:Key="CritBrush" Color="{StaticResource Crit}"/>
   <SolidColorBrush x:Key="OnCritBrush" Color="{StaticResource OnCrit}"/>
-  <!-- The caption's close button under the pointer; the same in both themes. -->
+  <!-- The caption's close button under the pointer, and the mark on it;
+       the same in both themes. -->
   <SolidColorBrush x:Key="CloseHoverBrush" Color="#C42B1C"/>
+  <SolidColorBrush x:Key="OnCloseHoverBrush" Color="#FFFFFF"/>
 
   <!-- A state tag: its colour at 12% over Bg1, with an edge at 45%. Idle
        is from Text3 (and serves SAVED); Held is from Accent (and serves
@@ -139,46 +141,17 @@
        under it. -->
   <SolidColorBrush x:Key="ChartSurfaceBrush" Color="{StaticResource Bg1}"/>
 
-  <!-- The two runs of a comparison, A and B: the first two fallback slots,
-       the pair furthest apart. They say which run a mark belongs to and
-       nothing else; a character's swatch keeps the character's own colour.
-       The ink is for the letter on a run's badge. -->
-  <SolidColorBrush x:Key="RunABrush" Color="{StaticResource Series1}"/>
-  <SolidColorBrush x:Key="RunBBrush" Color="{StaticResource Series2}"/>
-  <SolidColorBrush x:Key="RunInkBrush" Color="#FFFFFF"/>
-
-  <!-- ============================================== Fluent keys, on tokens
-       Step 1.4 of the plan; taken out again at step 2.5. The Fluent theme is
-       still loaded and still draws every stock control. Whatever asks the
-       application for one of these brush names with DynamicResource gets
-       Zerg's colour: AppTheme merges this file after WPF has merged the
-       theme's own, and the later of two merged dictionaries answers first.
-       They do little now. Nothing of Zerg's own asks for one of these keys
-       any more, and the theme settles most of what its templates draw
-       inside its own dictionary (a checked toggle stays Fluent's blue). A
-       floating panel is not reached at all: its window carries a Fluent set
-       of its own. -->
-  <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="{StaticResource Text1}"/>
-  <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="{StaticResource Text2}"/>
-  <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="{StaticResource Text3}"/>
-  <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{StaticResource Accent}"/>
-  <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{StaticResource Accent}"/>
-  <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="{StaticResource OnAccent}"/>
-  <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="{StaticResource Live}"/>
-  <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="{StaticResource Accent}"/>
-  <SolidColorBrush x:Key="SystemFillColorCriticalBrush" Color="{StaticResource Crit}"/>
-  <SolidColorBrush x:Key="SystemFillColorNeutralBrush" Color="{StaticResource Text3}"/>
-  <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource Bg1}"/>
-  <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource Line2}"/>
-  <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="{StaticResource Line2}"/>
-  <SolidColorBrush x:Key="ControlElevationBorderBrush" Color="{StaticResource Line2}"/>
-  <SolidColorBrush x:Key="SurfaceStrokeColorDefaultBrush" Color="{StaticResource Line2}"/>
-  <SolidColorBrush x:Key="ControlStrongStrokeColorDefaultBrush" Color="{StaticResource Line3}"/>
-  <SolidColorBrush x:Key="DividerStrokeColorDefaultBrush" Color="{StaticResource Line}"/>
-  <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="{StaticResource Bg2}"/>
-  <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="{StaticResource Bg3}"/>
-  <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="{StaticResource Bg3}"/>
-  <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="{StaticResource Bg4}"/>
-  <SolidColorBrush x:Key="SolidBackgroundFillColorQuarternaryBrush" Color="{StaticResource Bg4}"/>
+  <!-- The two runs of a comparison, A and B, as installed: blue for the
+       baseline, orange for the run compared with it, each a step deeper
+       than the dark theme's, for a white page. They say which run a mark
+       belongs to and nothing else; a character's swatch keeps the
+       character's own colour. Each is the user's to set (settings.json:
+       runA, runB), so these are colours only: the brushes a run is drawn
+       with (RunABrush, RunABandBrush, RunAInkBrush and B's three) are made
+       by AppTheme from whichever colour is in use, and are not in this
+       file. The values are those of the first two fallback slots, which
+       this theme's pair has always been. -->
+  <Color x:Key="RunA">#2A78D6</Color>
+  <Color x:Key="RunB">#C94F18</Color>
 
 </ResourceDictionary>

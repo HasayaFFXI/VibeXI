@@ -4,9 +4,9 @@
         xmlns:v="clr-namespace:Zerg.Views"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
         ShowInTaskbar="False" Topmost="True" ShowActivated="False" WindowStartupLocation="Manual"
-        ThemeMode="Dark" Foreground="{DynamicResource Text1Brush}"
-        MinWidth="280" MinHeight="110"
-        FontFamily="{StaticResource TextFont}" UseLayoutRounding="True">
+        Foreground="{DynamicResource Text1Brush}"
+        MinWidth="250" MinHeight="110"
+        FontFamily="{StaticResource TextFont}" FontSize="12" UseLayoutRounding="True">
   <!-- One card, floating over the game.
 
        The window is see-through per pixel: its backdrop is black at the
@@ -16,8 +16,12 @@
        black tint needs light ink.
 
        Every pixel of chrome here is a pixel of the fight nobody can see, so
-       the bar is one short line and the card inside gives up its own frame
-       and heading (the Float.On triggers in App.xaml). -->
+       the bar is one short line that at rest is all figures, and the card
+       inside gives up its own frame and heading (the Float.On trigger of a
+       pane, in Themes/Controls.xaml).
+
+       The least width is Zerg.Core's PanelFit.LeastWidth: the pair, the
+       clock and the total still stand on a bar that wide. -->
   <Window.Resources>
     <ResourceDictionary>
     <!-- The tokens as a panel has them: dark whatever the theme. A card in
@@ -26,71 +30,79 @@
       <ResourceDictionary Source="Themes/Panel.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- The ring round a chart marker is the colour of what the chart sits
-         on. Here that is the tint, whatever is behind it. -->
-    <SolidColorBrush x:Key="ChartSurfaceBrush" Color="#101010"/>
-
     <!-- The main window's pair, sized for a bar one line tall. Still the
-         largest things on it, and the only ones with a colour. -->
+         largest things on it, and the only ones with a fill. -->
+    <!-- 20 tall, as wide as its word, and the word alone: the glyph is
+         left out by taking the main window's content template off. -->
     <Style x:Key="BarStart" TargetType="Button" BasedOn="{StaticResource StartButton}">
       <Setter Property="MinWidth" Value="0"/>
-      <Setter Property="Padding" Value="12,2,12,3"/>
-      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="Padding" Value="9,0"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="ContentTemplate" Value="{x:Null}"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style x:Key="BarSecond" TargetType="Button" BasedOn="{StaticResource SecondButton}">
       <Setter Property="MinWidth" Value="0"/>
-      <Setter Property="Padding" Value="12,2,12,3"/>
-      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="Padding" Value="9,0"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="ContentTemplate" Value="{x:Null}"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- A glyph to press on the bar (Dock): the kit's icon button at the
+         pair's height, with an edge at rest, since on a see-through panel
+         a glyph alone does not read as something to press. -->
+    <Style x:Key="BarTool" TargetType="Button" BasedOn="{StaticResource IconButton}">
+      <Setter Property="Width" Value="22"/>
+      <Setter Property="Height" Value="20"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     </ResourceDictionary>
   </Window.Resources>
 
-  <Border x:Name="Frame" CornerRadius="8" BorderThickness="1" BorderBrush="#33FFFFFF">
+  <!-- The frame's edge is a step stronger while the pointer is over the
+       panel (PanelWindow.xaml.cs, Chrome): which panel the tools belong to. -->
+  <Border x:Name="Frame" CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource Line2Brush}">
     <DockPanel>
 
-      <!-- The bar. Dragging it moves the panel. -->
-      <Border x:Name="Bar" DockPanel.Dock="Top" Height="32" Padding="10,0,6,0" Background="Transparent"
-              BorderThickness="0,0,0,1" BorderBrush="#22FFFFFF">
-        <DockPanel>
-          <!-- Out of the way until the pointer is over the panel: the bar is
-               chrome, the card is the point. -->
-          <!-- Click-through: nothing on the panel can be pressed, so the bar
-               shows nothing that could be. This says why, in the place the
-               tools were. -->
-          <TextBlock x:Name="Locked" DockPanel.Dock="Right" Visibility="Collapsed" VerticalAlignment="Center"
-                     FontFamily="{StaticResource IconFont}" Text="&#xE72E;" FontSize="12" Margin="2,0,4,0"
-                     Foreground="{DynamicResource Text3Brush}"
-                     AutomationProperties.Name="Click-through: clicks pass through this panel"/>
-          <StackPanel x:Name="Tools" DockPanel.Dock="Right" Orientation="Horizontal" Opacity="0.45">
-            <Slider Width="64" MinWidth="0" Minimum="15" Maximum="100" SmallChange="1" LargeChange="10" VerticalAlignment="Center"
-                    IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Opacity}"
-                    AutomationProperties.Name="Panel opacity"
-                    ToolTip="How solid this panel's backdrop is. Drag left to see more of the game through it."/>
-            <TextBlock Text="{Binding Opacity, StringFormat={}{0}%}" FontSize="11" Width="32" TextAlignment="Right"
-                       VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"
-                       Foreground="{DynamicResource Text2Brush}"/>
-            <Button Style="{StaticResource SmallButton}" Command="{Binding DockCommand}" Margin="6,0,0,0"
-                    Padding="6,4" VerticalAlignment="Center" AutomationProperties.Name="Dock"
-                    ToolTip="Dock: return this card to the main window">
-              <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE8BB;" FontSize="10"/>
-            </Button>
-          </StackPanel>
+      <!-- The bar: 30 units from the panel's top to under its rule (the
+           frame's edge, 28 of bar, the rule). Dragging it moves the panel.
+
+           From the left: the pair, the clock, the total; the card's title
+           at the right, quiet. Nothing else at rest: the bar is figures.
+           Opacity and Dock are there only while the pointer is over the
+           panel, at the right, with the title moved left of them while the
+           panel is wide enough for both. -->
+      <Border x:Name="Bar" DockPanel.Dock="Top" Height="29" Background="Transparent"
+              BorderThickness="0,0,0,1" BorderBrush="{DynamicResource LineBrush}">
+        <!-- Every glyph on a panel has a dark halo, so it holds over a
+             bright sky with the backdrop turned down. Here it is one effect
+             on the bar's line: nothing under it but the tint, and nothing in
+             it changes faster than the clock's seconds. -->
+        <Grid x:Name="Line" Margin="7,0,7,0" Effect="{StaticResource PanelHalo}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+          </Grid.ColumnDefinitions>
 
           <!-- Start and Pause are here because a panel is floated over the
                game so a fight can be measured without leaving it, and a
                session that has to be started from another window is started
-               late. Never faded: a Start button at half strength over a
-               battle is not a Start button.
+               late. Never hidden, never faded: a Start button at half
+               strength over a battle is not a Start button.
 
-               The clock and the total sit to the RIGHT of the pair, which is
-               a fixed target aimed at without looking: a readout ahead of it
-               would push both buttons sideways when the clock passes an hour.
-               Elapsed, then total, as the first two tiles of the main window. -->
-          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,10,0">
+               They come first, at the panel's left edge: a fixed target
+               aimed at without looking, with nothing before it that can
+               grow. The clock and the total follow, as the first two
+               figures of the main window. -->
+          <StackPanel x:Name="Lead" Orientation="Horizontal">
             <!-- Gone while clicks pass through; the clock and the total stay. -->
-            <StackPanel x:Name="Pair" Orientation="Horizontal">
+            <StackPanel x:Name="Pair" Orientation="Horizontal" Margin="0,0,10,0">
               <Button Style="{StaticResource BarStart}" Command="{Binding StartCommand}" Content="{Binding View.StartText}"
                       ToolTip="{Binding View.StartTip}" IsEnabled="{Binding View.StartEnabled}" Margin="0,0,4,0"
                       AutomationProperties.AutomationId="Start"/>
@@ -98,27 +110,70 @@
                       ToolTip="{Binding View.SecondTip}" IsEnabled="{Binding View.SecondEnabled}"
                       AutomationProperties.AutomationId="Second"/>
             </StackPanel>
-            <!-- As wide as H:MM:SS from the start, so the hour does not move the total. -->
-            <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}" FontSize="14" MinWidth="58"
-                       TextAlignment="Center" VerticalAlignment="Center" Margin="8,0,6,0" Background="Transparent"
-                       ToolTip="Elapsed session time"/>
-            <!-- Free to grow: it is last, so a seventh digit pushes only the title.
-                 The total of what the card is about: a heal panel is given
-                 the healing total in its place (PanelWindow.xaml.cs). -->
-            <TextBlock x:Name="BarTotal" Text="{Binding TotalText}" Style="{StaticResource Figure}" FontSize="14"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource AccentBrush}" Background="Transparent"
-                       ToolTip="Total damage this session"/>
+            <!-- What is read: the clock in the session's colour, then the
+                 total. Hidden (their room kept, so the pair does not move)
+                 only while the pointer is over a panel too narrow for them
+                 and the tools both. -->
+            <StackPanel x:Name="Readouts" Orientation="Horizontal">
+              <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}" FontSize="12.5"
+                         VerticalAlignment="Center" Background="Transparent"
+                         ToolTip="Elapsed session time"/>
+              <!-- Free to grow: it is last, so a seventh digit pushes only
+                   the title. The total of what the card is about: a heal
+                   panel is given the healing total in its place
+                   (PanelWindow.xaml.cs). -->
+              <TextBlock x:Name="BarTotal" Text="{Binding TotalText}" Style="{StaticResource Figure}" FontSize="12.5"
+                         VerticalAlignment="Center" Margin="10,0,0,0" Background="Transparent"
+                         ToolTip="Total damage this session"/>
+            </StackPanel>
           </StackPanel>
 
-          <!-- The one thing on the bar meant to give way when the panel is narrow. -->
-          <TextBlock x:Name="BarTitle" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Opacity="0.45"
-                     TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Text2Brush}"
+          <!-- The card's name: the one thing on the bar meant to give way
+               when the panel is narrow. -->
+          <TextBlock x:Name="BarTitle" Grid.Column="1" FontSize="11" FontWeight="SemiBold" Margin="12,0,0,0"
+                     HorizontalAlignment="Right" VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Text3Brush}"
                      ToolTip="Drag to move the panel. Drag an edge to resize it."/>
-        </DockPanel>
+
+          <!-- Click-through: nothing on the panel can be pressed, so the bar
+               shows nothing that could be. This says why, at the bar's end. -->
+          <TextBlock x:Name="Locked" Grid.Column="1" Visibility="Collapsed" HorizontalAlignment="Right"
+                     VerticalAlignment="Center" FontFamily="{StaticResource IconFont}" Text="&#xE72E;" FontSize="11"
+                     Margin="0,1,1,0" Foreground="{DynamicResource Text3Brush}"
+                     AutomationProperties.Name="Click-through: clicks pass through this panel"/>
+
+          <!-- The tools. Not seen and not to be pressed until the pointer
+               is over the panel: at rest they are at nothing (Opacity 0) and
+               out of the pointer's way (IsHitTestVisible), so a slider
+               nobody can see cannot be dragged; they are not collapsed, so
+               a script still finds them by name. Gone altogether while
+               clicks pass through. The slider gives up its length first
+               when the panel is too narrow for all of them. -->
+          <Grid x:Name="Tools" Grid.ColumnSpan="2" HorizontalAlignment="Right" Width="125" Margin="0,0,-1,0"
+                Opacity="0" IsHitTestVisible="False">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition MaxWidth="64"/>
+              <ColumnDefinition Width="32"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Slider Minimum="15" Maximum="100" SmallChange="1" LargeChange="10" VerticalAlignment="Center"
+                    IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding Opacity}"
+                    AutomationProperties.Name="Panel opacity"
+                    ToolTip="How solid this panel's backdrop is. Drag left to see more of the game through it."/>
+            <TextBlock Grid.Column="1" Text="{Binding Opacity, StringFormat={}{0}%}" FontSize="10.5" TextAlignment="Right"
+                       VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"
+                       Foreground="{DynamicResource Text2Brush}"/>
+            <Button Grid.Column="2" Style="{StaticResource BarTool}" Command="{Binding DockCommand}" Margin="7,0,0,0"
+                    Content="&#xE73F;" AutomationProperties.Name="Dock"
+                    ToolTip="Dock: return this card to the main window"/>
+          </Grid>
+        </Grid>
       </Border>
 
-      <ContentControl x:Name="Body" Margin="6,4,6,8" v:Float.On="True" Focusable="False"/>
+      <!-- The card. How far it stands from the frame is the card's own
+           (PanelWindow.xaml.cs, Margins): a strip's rows 4 units in, a
+           table edge to edge, a chart inside a margin. -->
+      <ContentControl x:Name="Body" v:Float.On="True" Focusable="False"/>
 
     </DockPanel>
   </Border>

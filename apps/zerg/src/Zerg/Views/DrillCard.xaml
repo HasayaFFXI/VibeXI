@@ -3,77 +3,160 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:c="clr-namespace:Zerg.Charts"
-             xmlns:v="clr-namespace:Zerg.Views"
-             Visibility="{Binding DrillOpen, Converter={StaticResource Visible}}">
+             xmlns:v="clr-namespace:Zerg.Views">
   <UserControl.Resources>
-    <sys:String x:Key="Columns">96,*,140,140</sys:String>
+    <!-- Every hit: the time, the target (which takes what is left), the
+         damage, how far it fell from the average as a mark and then as a
+         figure, and the room the list's scroll bar is drawn in. -->
+    <sys:String x:Key="Columns">60,*,76,84,52,14</sys:String>
+    <!-- The room the six figures need side by side: in less (v:Shed, on
+         the scroll viewer below) they stand in two rows of three. -->
+    <sys:String x:Key="Figures">72,72,72,72,72,72</sys:String>
   </UserControl.Resources>
 
   <!-- One action of one character: its figures, how its hits are spread, and
-       every hit. Only there while an action is picked. It has no panel of
-       its own: docked it is a card under the Actions card, and in the
-       Actions panel it sits under the action's row. -->
-  <Border Style="{StaticResource Card}">
-    <StackPanel>
-      <!-- Docked only. Under its row in a panel, the row already says which
-           action, how many hits and how much, and picking it again closes it. -->
-      <DockPanel Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
-        <Button DockPanel.Dock="Right" VerticalAlignment="Top" Margin="8,0,0,0" Style="{StaticResource SmallButton}"
-                Content="Close" Command="{Binding CloseDrillCommand}" AutomationProperties.Name="Close drill-down"/>
-        <StackPanel>
-          <TextBlock Text="{Binding DrillTitle}" Style="{StaticResource CardTitle}" TextTrimming="CharacterEllipsis"/>
-          <TextBlock Text="{Binding DrillNote}" Style="{StaticResource Label}" Margin="0,2,0,0" TextWrapping="Wrap"
-                     Typography.NumeralAlignment="Tabular"/>
-        </StackPanel>
-      </DockPanel>
+       every hit. It has no panel of its own: it goes where the Actions
+       table goes.
 
-      <ItemsControl ItemsSource="{Binding DrillTiles}" Margin="-4,12,-4,0" Focusable="False">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <UniformGrid Rows="1"/>
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <Border Margin="4,0" Padding="12,8" CornerRadius="6"
-                    Background="{DynamicResource Bg2Brush}">
-              <StackPanel>
-                <TextBlock Text="{Binding Label}" Style="{StaticResource Label}" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Text="{Binding Value}" Style="{StaticResource Figure}" FontSize="20"/>
+       Docked, it is a pane that is always there, with a place of its own
+       beside the tables, so picking an action moves nothing else. With no
+       action picked it is folded to its heading, which says what to do;
+       and while the Actions card floats it is folded too and says where
+       the drill-down is, because the panel shows it under the action's
+       row. (The main window gives the pane a heading's height while it is
+       folded: the Drill pane in MainWindow.xaml.) Open, its heading is a
+       tall one: the action as its title, and under it whose it is, how
+       many hits and how much. Close puts the pick away, and the pane folds
+       by itself.
+
+       In the Actions panel it sits under the action's row, without a
+       heading (the row already says which action, how many hits and how
+       much, and picking it again closes it), as tall as what is in it, and
+       a fold means nothing there. -->
+  <v:Pane>
+    <v:Pane.Style>
+      <Style TargetType="v:Pane" BasedOn="{StaticResource ZPane}">
+        <Setter Property="Title" Value="{Binding DrillTitle}"/>
+        <Setter Property="Note" Value="{Binding DrillNote}"/>
+        <Setter Property="Hint" Value="{Binding DrillNote}"/>
+        <Setter Property="Swatch" Value="{Binding DrillSwatch}"/>
+        <Setter Property="IsTall" Value="True"/>
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding DrillOpen}" Value="False">
+            <Setter Property="IsFolded" Value="True"/>
+            <Setter Property="Title" Value="Drill-down"/>
+            <Setter Property="Note" Value="Select an action to drill down"/>
+            <Setter Property="Hint" Value="{x:Null}"/>
+          </DataTrigger>
+          <!-- After the one above, so that with an action picked and the
+               table floating it is this the heading says. -->
+          <DataTrigger Binding="{Binding Panels[actions].IsOut}" Value="True">
+            <Setter Property="IsFolded" Value="True"/>
+            <Setter Property="Title" Value="Drill-down"/>
+            <Setter Property="Note" Value="Showing in the Actions panel"/>
+            <Setter Property="Hint" Value="{x:Null}"/>
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </v:Pane.Style>
+    <v:Pane.Tools>
+      <!-- Not in a panel: there the row closes it. -->
+      <Button Style="{StaticResource GhostButton}" Height="22" Padding="10,0" FontSize="11" Content="Close"
+              Command="{Binding CloseDrillCommand}" AutomationProperties.Name="Close drill-down"
+              ToolTip="Put the action away. The pane folds to its heading"
+              Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}"/>
+    </v:Pane.Tools>
+
+    <!-- As tall as the pane, scrolling what does not fit; under a row in a
+         panel, as tall as what is in it. Everything is flush with the
+         pane's edges but the chart and its caption. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" v:WheelChain.On="True"
+                  Focusable="False" v:Shed.Full="{StaticResource Figures}">
+      <StackPanel>
+        <!-- The six figures: one row on the raised surface, in equal
+             cells, each ruled off from the one before it. -->
+        <Border Background="{DynamicResource Bg2Brush}">
+          <ItemsControl ItemsSource="{Binding DrillTiles}" Focusable="False" AlternationCount="12">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid>
+                  <UniformGrid.Style>
+                    <Style TargetType="UniformGrid">
+                      <Setter Property="Rows" Value="1"/>
+                      <Style.Triggers>
+                        <Trigger Property="v:Shed.Narrow" Value="True">
+                          <Setter Property="Rows" Value="2"/>
+                        </Trigger>
+                      </Style.Triggers>
+                    </Style>
+                  </UniformGrid.Style>
+                </UniformGrid>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Height="42">
+                  <Rectangle x:Name="Rule" Width="1" HorizontalAlignment="Left" Margin="0,8" SnapsToDevicePixels="True"
+                             Fill="{DynamicResource Line2Brush}"/>
+                  <StackPanel Margin="12,0,4,0" VerticalAlignment="Center">
+                    <v:Caps Text="{Binding Label}" Style="{StaticResource GroupCaps}" Tracking="0.6"
+                            HorizontalAlignment="Left"/>
+                    <TextBlock Text="{Binding Value}" Style="{StaticResource DrillFigure}" TextTrimming="CharacterEllipsis"/>
+                  </StackPanel>
+                </Grid>
+                <DataTemplate.Triggers>
+                  <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}"
+                               Value="0">
+                    <Setter TargetName="Rule" Property="Visibility" Value="Collapsed"/>
+                  </DataTrigger>
+                </DataTemplate.Triggers>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+
+        <!-- Shorter in a panel, so the row, the figures and the chart fit a
+             panel of the height the actions list opens at. 14 on the
+             right: clear of the pane's scroll bar. -->
+        <c:HistogramChart Margin="12,0,14,0" Model="{Binding Histogram}"
+                          AutomationProperties.Name="Damage distribution chart">
+          <c:HistogramChart.Style>
+            <Style TargetType="c:HistogramChart">
+              <Setter Property="Height" Value="170"/>
+              <Setter Property="Fill" Value="{Binding HistogramFill}"/>
+              <Style.Triggers>
+                <Trigger Property="v:Float.On" Value="True">
+                  <Setter Property="Height" Value="160"/>
+                  <Setter Property="Fill" Value="{Binding PanelHistogramFill}"/>
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </c:HistogramChart.Style>
+        </c:HistogramChart>
+        <TextBlock Text="{Binding DrillCaption}" Style="{StaticResource Label}" FontSize="10.5" Margin="12,6,14,8"
+                   TextWrapping="Wrap" HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
+
+        <!-- Every hit, newest first. The heading row says how many and
+             carries the list's two column headings. -->
+        <Expander Style="{StaticResource HitsExpander}" AutomationProperties.Name="Every hit">
+          <Expander.Header>
+            <Grid>
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Every hit" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding DrillHits.Count, StringFormat={}{0:N0}}" Style="{StaticResource Label}"
+                           Margin="8,0,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
               </StackPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-
-      <!-- Shorter in a panel, so the row, the figures and the chart fit a
-           panel of the height the actions list opens at. -->
-      <c:HistogramChart Margin="0,12,0,0" Model="{Binding Histogram}"
-                        AutomationProperties.Name="Damage distribution chart">
-        <c:HistogramChart.Style>
-          <Style TargetType="c:HistogramChart">
-            <Setter Property="Height" Value="210"/>
-            <Setter Property="Fill" Value="{Binding HistogramFill}"/>
-            <Style.Triggers>
-              <Trigger Property="v:Float.On" Value="True">
-                <Setter Property="Height" Value="160"/>
-                <Setter Property="Fill" Value="{Binding PanelHistogramFill}"/>
-              </Trigger>
-            </Style.Triggers>
-          </Style>
-        </c:HistogramChart.Style>
-      </c:HistogramChart>
-      <TextBlock Text="{Binding DrillCaption}" Style="{StaticResource Label}" Margin="0,6,0,0" TextWrapping="Wrap"
-                 HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
-
-      <Expander Header="Every hit" Margin="0,10,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-        <StackPanel>
-          <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,6">
-            <TextBlock Text="Time" Style="{StaticResource Head}"/>
-            <TextBlock Text="Target" Style="{StaticResource HeadText}"/>
-            <TextBlock Text="Damage" Style="{StaticResource Head}"/>
-            <TextBlock Text="vs avg" Style="{StaticResource Head}"/>
-          </v:Cells>
+              <!-- Over the rows' own columns: the heading's content begins
+                   26 units in, after the caret. -->
+              <v:Cells Widths="{StaticResource Columns}" Margin="-26,0,0,0">
+                <Border/>
+                <Border/>
+                <TextBlock Text="Damage" Style="{StaticResource Head}"/>
+                <Border/>
+                <TextBlock Text="vs avg" Style="{StaticResource Head}"/>
+              </v:Cells>
+            </Grid>
+          </Expander.Header>
           <!-- A long fight is thousands of hits, so only the rows in view exist. -->
           <ItemsControl ItemsSource="{Binding DrillHits}" MaxHeight="420" Focusable="False" v:WheelChain.On="True"
                         VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
@@ -93,20 +176,33 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border Style="{StaticResource RowLine}" Height="30" MinHeight="0" Margin="0,0,14,0">
-                  <v:Cells Widths="{StaticResource Columns}">
-                    <TextBlock Text="{Binding Time}" Style="{StaticResource Cell}"/>
-                    <TextBlock Text="{Binding Target}" Style="{StaticResource CellText}"/>
-                    <TextBlock Text="{Binding Damage}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
+                <!-- 20 units, its rule inside it. The time is read as a
+                     string; a critical hit has a spark before its figure;
+                     the mark is how far the hit fell from the average. -->
+                <Grid Height="{StaticResource HitRowHeight}">
+                  <Rectangle Style="{StaticResource RowRule}"/>
+                  <v:Cells Widths="{StaticResource Columns}" Margin="0,0,0,1">
+                    <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text3Brush}"
+                               Padding="12,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Target}" Style="{StaticResource CellText}" Padding="0,0,8,0"
+                               Foreground="{DynamicResource Text2Brush}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
+                      <TextBlock Text="&#x2726;" FontSize="9" Margin="0,0,6,0" VerticalAlignment="Center"
+                                 Foreground="{DynamicResource AccentBrush}" ToolTip="A critical hit"
+                                 Visibility="{Binding Crit, Converter={StaticResource Visible}}"/>
+                      <TextBlock Text="{Binding Damage}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                 Typography.NumeralAlignment="Tabular"/>
+                    </StackPanel>
+                    <v:Deviation Offset="{Binding Offset}"/>
                     <TextBlock Text="{Binding VsAvg}" Style="{StaticResource Cell}"
                                Foreground="{DynamicResource Text2Brush}"/>
                   </v:Cells>
-                </Border>
+                </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-        </StackPanel>
-      </Expander>
-    </StackPanel>
-  </Border>
+        </Expander>
+      </StackPanel>
+    </ScrollViewer>
+  </v:Pane>
 </UserControl>

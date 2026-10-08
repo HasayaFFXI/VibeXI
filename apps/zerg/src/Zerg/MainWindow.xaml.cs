@@ -3,10 +3,12 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
+using System.Windows.Shell;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using Zerg.Core;
 using Zerg.Native;
+using Zerg.Views;
 
 namespace Zerg;
 
@@ -29,6 +31,12 @@ public partial class MainWindow : Window
         this.settings = settings;
         InitializeComponent();
         DataContext = model;
+
+        // Before the saved placement is asked for below: at the moment the
+        // window gets its handle, it is first given its title bar and then
+        // put where it was, in that order.
+        barHeight = (double)FindResource("TitleBarHeight");
+        chrome = TakeTitleBar();
 
         settings.Windows.TryGetValue(PlacementKey, out var saved);
         if (WindowPlacement.IsUsable(saved))
@@ -62,30 +70,168 @@ public partial class MainWindow : Window
         model.Asker = (headline, content) => TaskDialog.Ask(headline, content, TaskDialog.Icon.Warning, this);
         model.Binder = Bind;
 
-        // Once it has been laid out: the card is not there to scroll to until
-        // then. Not while the table it belongs to floats: the drill-down is
-        // in that panel, and there is nothing here to scroll to.
+        // A drill-down that has just opened is brought into view, where it
+        // may be out of view: in a narrow window, whose panes stand in one
+        // column on a page that scrolls. In a wider one the drill-down's
+        // pane is always on screen, and picking an action moves nothing.
+        // Once it has been laid out: the pane is folded until then. Not
+        // while the table it belongs to floats: the drill-down is in that
+        // panel, and there is nothing here to scroll to.
         model.DrillOpened += () =>
         {
-            if (!model.Panels[PanelSet.Actions].IsOut) Dispatcher.BeginInvoke(Drill.BringIntoView, DispatcherPriority.Loaded);
+            if (SplitPanel.GetStacked(Page) && !model.Panels[PanelSet.Actions].IsOut)
+                Dispatcher.BeginInvoke(Drill.BringIntoView, DispatcherPriority.Loaded);
         };
         model.HealDrillOpened += () =>
         {
-            if (!model.Panels[PanelSet.HealActions].IsOut) Dispatcher.BeginInvoke(HealDrill.BringIntoView, DispatcherPriority.Loaded);
+            if (SplitPanel.GetStacked(Page) && !model.Panels[PanelSet.HealActions].IsOut)
+                Dispatcher.BeginInvoke(HealDrill.BringIntoView, DispatcherPriority.Loaded);
         };
-        Body.SizeChanged += (_, _) => FitTiles();
+
+        // The panes' arrangement is the view model's to keep. A section's
+        // panel says what a player asked for (a rule dragged, a pane
+        // folded or put somewhere else) and what it has to say on the
+        // status line meanwhile; both are handed on from here, whichever of
+        // the three panels spoke.
+        AddHandler(SplitPanel.RearrangedEvent, new EventHandler<RearrangedEventArgs>((_, e) =>
+        {
+            model.Rearrange(e.Section, e.Tree, e.What);
+            e.Handled = true;
+        }));
+        AddHandler(SplitPanel.NotedEvent, new EventHandler<NotedEventArgs>((_, e) => model.LayoutNote = e.Note));
 
         menu = new TrayMenu(model, ComeForward, ShowSettings, Close);
+        // Once the menu has gone and Windows has chosen who is in front.
+        menu.Closed += (_, _) => Dispatcher.BeginInvoke(() => HandOn(beforeMenu, "the tray menu closed"), DispatcherPriority.ApplicationIdle);
         SourceInitialized += (_, _) => Attach();
     }
 
-    /// <summary>Five figures in a row need the width for it; a narrower window
-    /// stacks them in threes, then twos. Both sections' rows, so switching
-    /// section never shows one laid out for another width.</summary>
-    void FitTiles() =>
-        Tiles.Columns = HealTiles.Columns = Body.ActualWidth >= 1040 ? 5 : Body.ActualWidth >= 640 ? 3 : 2;
+    // ---------------------------------------------------------- the title bar
+    //
+    // The window's top 36 units are Zerg's own (the first row of
+    // MainWindow.xaml). WPF's WindowChrome makes the whole window the
+    // client area and answers Windows' question "what is under the pointer"
+    // for it: the bar's empty parts are the caption, so Windows itself still
+    // drags the window by them, maximizes on a double-click, snaps it to a
+    // screen edge and opens the window's menu on a right-click or Alt+Space;
+    // and a strip along each edge sizes the window. Placement is untouched:
+    // WindowPlacement still reads and sets the same rectangle, and
+    // minimizing still goes through OnStateChanged.
 
-    void OnCharactersToggle(object sender, RoutedEventArgs e) => model.CharactersOpen = !model.CharactersOpen;
+    /// <summary>How wide the strip along each edge is that sizes the window,
+    /// in units. Inside the window: with the whole window Zerg's to draw,
+    /// Windows keeps no sizing frame outside it.</summary>
+    const double SizingEdge = 6;
+
+    readonly WindowChrome chrome;
+    /// <summary>The title bar's height (TitleBarHeight in App.xaml).</summary>
+    readonly double barHeight;
+    /// <summary>A change to the caption's height is waiting its turn.</summary>
+    bool fitting;
+
+    /// <summary>
+    /// Hands the window's top to the title bar. Call from the constructor,
+    /// before the window has a handle.
+    /// </summary>
+    WindowChrome TakeTitleBar()
+    {
+        var made = new WindowChrome
+        {
+            // Counted from under the top sizing strip: together they are the bar.
+            CaptionHeight = barHeight - SizingEdge,
+            ResizeBorderThickness = new Thickness(SizingEdge),
+            // Zerg draws its own three buttons (and so gets no Snap Layouts
+            // flyout over Maximize; dragging to an edge and Win+arrows still snap).
+            UseAeroCaptionButtons = false,
+            // Not nothing: with any of Windows' frame extended into the
+            // window, Windows 11 goes on giving it round corners, its edge
+            // and its shadow. One unit along the bottom, under the status
+            // line, where Zerg paints over it.
+            GlassFrameThickness = new Thickness(0, 0, 0, 1),
+            CornerRadius = default,
+        };
+        WindowChrome.SetWindowChrome(this, made);
+
+        SourceInitialized += (_, _) =>
+        {
+            HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(Watch);
+            Edge();
+            Fit();
+        };
+        AppTheme.Changed += Edge;
+        DpiChanged += (_, _) => Fit();
+        return made;
+    }
+
+    /// <summary>The edge Windows draws round the window, in the theme's
+    /// strongest rule: the design's window frame.</summary>
+    void Edge() => WindowFrame.Edge(this, AppTheme.Token("Line3", AppTheme.IsDark));
+
+    /// <summary>Every move and resize of the window passes here, maximizing
+    /// and restoring included, after Windows has carried it out.</summary>
+    nint Watch(nint hwnd, int message, nint wParam, nint lParam, ref bool handled)
+    {
+        const int WM_WINDOWPOSCHANGED = 0x0047;
+        if (message == WM_WINDOWPOSCHANGED) Fit();
+        return 0;
+    }
+
+    /// <summary>
+    /// Keeps everything on the screen while the window is maximized.
+    /// Windows makes a maximized window larger than the screen and hangs
+    /// its edges over; the content keeps clear of that by a margin, measured
+    /// each time (WindowFrame.Fit). The window's own top edge is then above
+    /// the screen, so the caption is that much taller, measured from it, to
+    /// reach the bottom of the bar and no further.
+    /// </summary>
+    void Fit()
+    {
+        var (over, top) = WindowFrame.Fit(this);
+        if (Root.Margin != over) Root.Margin = over;
+
+        if (fitting || Math.Abs(chrome.CaptionHeight - (barHeight - SizingEdge + top)) < 0.01) return;
+        // Not from inside Windows' own message about the move: a change to
+        // the chrome makes WPF set the window's frame again, there and then.
+        // Measured again when its turn comes, in case the window has moved on.
+        fitting = true;
+        Dispatcher.BeginInvoke(() =>
+        {
+            fitting = false;
+            chrome.CaptionHeight = barHeight - SizingEdge + WindowFrame.Fit(this).Top;
+        });
+    }
+
+    void OnMinimize(object sender, RoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
+
+    void OnMaximize(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this);
+        else SystemCommands.MaximizeWindow(this);
+    }
+
+    void OnClose(object sender, RoutedEventArgs e) => SystemCommands.CloseWindow(this);
+
+    /// <summary>
+    /// The layout button's menu, hung under the button with its right-hand
+    /// edge under the button's: the button is at the end of the command
+    /// bar, and a menu that began at its left would run off the window.
+    /// The menu's own window is larger than the menu by the room its
+    /// shadow needs (14 units at the sides, 6 above), which is taken off.
+    /// </summary>
+    void OnLayout(object sender, RoutedEventArgs e)
+    {
+        var layout = (System.Windows.Controls.ContextMenu)LayoutButton.FindResource("LayoutMenu");
+        layout.DataContext = model;
+        layout.PlacementTarget = LayoutButton;
+        layout.Placement = PlacementMode.Custom;
+        layout.CustomPopupPlacementCallback = (popup, target, _) =>
+        {
+            double scale = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX;
+            return [new CustomPopupPlacement(new Point(target.Width - popup.Width + 14 * scale, target.Height - 2 * scale),
+                                             PopupPrimaryAxis.Vertical)];
+        };
+        layout.IsOpen = true;
+    }
 
     // ------------------------------------------------- tray icon and hot key
     //
@@ -131,8 +277,37 @@ public partial class MainWindow : Window
         model.IsSettings = true;
     }
 
-    /// <summary>The panels that were out when Zerg was last closed. Once this window is on screen.</summary>
-    public void Reopen() => model.Panels.Reopen();
+    /// <summary>The panels that were out when Zerg was last closed. Once this
+    /// window is on screen. A start leaves this window in front, as a
+    /// start with no panel to bring back does; if one of the panels has
+    /// been given the foreground instead, it is handed here.</summary>
+    public void Reopen()
+    {
+        model.Panels.Reopen();
+        Dispatcher.BeginInvoke(() => HandOn(0, "the start"), DispatcherPriority.ApplicationIdle);
+    }
+
+    /// <summary>What was in front when the tray menu was last asked for.</summary>
+    nint beforeMenu;
+
+    /// <summary>
+    /// A panel must not be left holding the foreground. When the window of
+    /// Zerg's that had it goes away, Windows hands it to another of Zerg's,
+    /// and may pick a panel (seen after the tray menu closed with Zerg in
+    /// front, and after a start with the game in front). If that is how
+    /// things stand now, the foreground goes to <paramref name="to"/> (what
+    /// had it before), or failing that to this window while it can be seen.
+    /// Otherwise nothing is done: whoever has the foreground keeps it.
+    /// </summary>
+    void HandOn(nint to, string after)
+    {
+        if (!model.Panels.Holds(InFront.Window)) return;
+        nint me = new WindowInteropHelper(this).Handle;
+        bool back = to != 0 && to != me && !model.Panels.Holds(to) && InFront.Give(to);
+        bool here = !back && IsVisible && WindowState != WindowState.Minimized && InFront.Give(me);
+        Log.Write($"a panel had the foreground after {after}: " +
+                  (back ? "handed back to what had it before" : here ? "handed to the main window" : "left there, with nothing to hand it to"));
+    }
 
     /// <summary>
     /// In front of everything, from wherever it was: behind other windows,
@@ -154,6 +329,10 @@ public partial class MainWindow : Window
     /// </summary>
     void ShowMenu()
     {
+        // What the keyboard is with now (after a click on the icon, the
+        // taskbar): if a panel is left with it once the menu has gone, it
+        // goes back there (HandOn).
+        beforeMenu = InFront.Window;
         menu.Placement = PlacementMode.MousePoint;
         menu.IsOpen = true;
         if (PresentationSource.FromVisual(menu) is HwndSource popup) TrayIcon.Front(popup.Handle);

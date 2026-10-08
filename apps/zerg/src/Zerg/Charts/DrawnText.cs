@@ -30,9 +30,29 @@ sealed class DrawnText : IDisposable
 
     public double Width => line.WidthIncludingTrailingWhitespace;
     public double Height => line.Height;
+    /// <summary>How far under the line's top its letters stand.</summary>
+    public double Baseline => line.Baseline;
 
     /// <summary>Draws the line with its top-left corner at (x, y).</summary>
     public void Draw(DrawingContext dc, double x, double y) => line.Draw(dc, new Point(x, y), InvertAxes.None);
+
+    /// <summary>
+    /// Draws the line's glyphs, and nothing else of it, in another ink with
+    /// their top-left corner at (x, y): the same glyphs in the same places
+    /// as <see cref="Draw"/> puts them, so a few of these a pixel apart
+    /// under the line itself are a dark outline round it.
+    /// </summary>
+    public void DrawGlyphs(DrawingContext dc, Brush ink, double x, double y)
+    {
+        double at = x, baseline = y + line.Baseline;
+        foreach (var run in Glyphs())
+        {
+            dc.DrawGlyphRun(ink, new GlyphRun(run.GlyphTypeface, run.BidiLevel, run.IsSideways, run.FontRenderingEmSize,
+                pixelsPerDip, run.GlyphIndices, new Point(at, baseline), run.AdvanceWidths, run.GlyphOffsets, run.Characters,
+                run.DeviceFontName, run.ClusterMap, run.CaretStops, run.Language));
+            at += run.AdvanceWidths.Sum();
+        }
+    }
 
     /// <summary>
     /// How wide the line is with <paramref name="tracking"/> more room after

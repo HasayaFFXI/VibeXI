@@ -542,6 +542,102 @@ public class TrackerTests
         Assert.Null(Following().Count(Nobody, true, 1).Best);
     }
 
+    // ------------------------------------------------------- the Party line
+
+    [Fact]
+    public void The_party_line_is_counted_from_everyones_swings_together()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([
+            // Hasaya: four swings, three land; two weaponskills, one lands; closes a chain.
+            Lines.Hit(21, "Hasaya", 100), Lines.Hit(22, "Hasaya", 100), Lines.Hit(23, "Hasaya", 100),
+            Lines.Hit(24, "Hasaya", 0, hit: false),
+            Lines.Hit(25, "Hasaya", 400, kind: "ws", action: "Tachi: Jinpu"),
+            Lines.Hit(26, "Hasaya", 0, kind: "ws", action: "Tachi: Jinpu", hit: false),
+            Lines.Hit(25, "Hasaya", 40, kind: "skillchain", action: "Skillchain: Fusion"),
+            // Tank: two swings, neither lands; one weaponskill; a pet that swings twice and lands once.
+            Lines.Hit(27, "Tank", 0, hit: false), Lines.Hit(28, "Tank", 0, hit: false),
+            Lines.Hit(29, "Tank", 200, kind: "ws", action: "Savage Blade"),
+            Lines.Hit(30, "Fluffikins", 60, actorKind: "pet", owner: "Tank"),
+            Lines.Hit(31, "Fluffikins", 0, actorKind: "pet", owner: "Tank", hit: false),
+        ]);
+        var totals = t.Count(Nobody, true, 40_000).Totals;
+        var party = totals.Party;
+        Assert.Equal(1000, totals.Total);
+
+        // Three of six swings: not the mean of the rows' 75% and 0%.
+        Assert.Equal(0.75, totals.Actors[0].AutoAcc);
+        Assert.Equal(0, totals.Actors[1].AutoAcc);
+        Assert.Equal(0.5, party.AutoAcc);
+
+        Assert.Equal(600, party.WsTotal);
+        Assert.Equal(300, party.WsAvg);                         // over the two that dealt damage
+        Assert.Equal(0.6, party.WsShare);
+        Assert.Equal(2.0 / 3, party.WsAcc);                     // two of three used
+        Assert.Equal(40, party.ScTotal);
+        Assert.Equal(0.04, party.ScShare);
+        Assert.Equal(60, party.PetTotal);
+        Assert.Equal(0.5, party.PetAcc);
+
+        // The sums are the rows' own counts added up, and each row is as it was.
+        Assert.Equal(totals.Actors.Sum(a => a.Split.AutoTries), totals.Split.AutoTries);
+        Assert.Equal(totals.Actors.Sum(a => a.Split.WsTotal), totals.Split.WsTotal);
+        Assert.Equal(totals.Actors.Sum(a => a.Split.PetTotal), totals.Split.PetTotal);
+        Assert.Equal(400, totals.Actors[0].WsTotal);
+        Assert.Equal(0.5, totals.Actors[0].WsAcc);
+        Assert.Null(totals.Actors[0].PetTotal);
+        Assert.Equal(60, totals.Actors[1].PetTotal);
+    }
+
+    [Fact]
+    public void A_party_with_nothing_to_measure_prints_dashes_on_its_line()
+    {
+        var t = Following();
+        t.Start(20_000);
+        // Nobody weaponskilled, closed a chain or had a pet.
+        t.Feed([Lines.Hit(21, "Hasaya", 100), Lines.Hit(22, "Tank", 50), Lines.Hit(23, "Tank", 0, hit: false)]);
+        var party = t.Count(Nobody, true, 30_000).Totals.Party;
+        Assert.Equal(2.0 / 3, party.AutoAcc);
+        Assert.Null(party.WsTotal);
+        Assert.Null(party.WsAvg);
+        Assert.Null(party.WsShare);
+        Assert.Null(party.WsAcc);
+        Assert.Null(party.ScTotal);
+        Assert.Null(party.ScShare);
+        Assert.Null(party.PetTotal);
+        Assert.Null(party.PetAcc);
+
+        // A party of mages: no swings either. And nobody at all.
+        var mages = Following();
+        mages.Start(20_000);
+        mages.Feed([Lines.Hit(21, "Mage", 300, kind: "magic", action: "Thunder III")]);
+        Assert.Null(mages.Count(Nobody, true, 30_000).Totals.Party.AutoAcc);
+        Assert.Equal(default, Following().Count(Nobody, true, 1).Totals.Party);
+    }
+
+    [Fact]
+    public void The_party_line_follows_the_filters_as_the_rows_do()
+    {
+        var t = Following();
+        t.Start(20_000);
+        t.Feed([Lines.Hit(21, "Hasaya", 100, kind: "ws", action: "Tachi: Jinpu"),
+                Lines.Hit(21, "Hasaya", 40, kind: "skillchain", action: "Skillchain: Fusion"),
+                Lines.Hit(22, "Tank", 0, hit: false)]);
+        // One character alone: the party's line is that character's row.
+        var alone = t.Count(new HashSet<string> { "Tank" }, true, 30_000).Totals;
+        var row = alone.Actors[0];
+        Assert.Equal(new SplitFigures(row.AutoAcc, row.WsTotal, row.WsAvg, row.WsShare, row.WsAcc,
+                                      row.ScTotal, row.ScShare, row.PetTotal, row.PetAcc), alone.Party);
+        Assert.Null(alone.Party.AutoAcc);                        // the excluded character's miss is not in it
+
+        // Skillchains off: a dash, as in the rows.
+        var off = t.Count(Nobody, false, 30_000).Totals.Party;
+        Assert.Null(off.ScTotal);
+        Assert.Equal(0, off.AutoAcc);                            // Tank's one swing, which missed
+        Assert.Equal(1, off.WsShare);
+    }
+
     // ---------------------------------------------------------------- heals
 
     [Fact]
@@ -750,6 +846,47 @@ public class TrackerTests
         Assert.False(v.SecondEnabled);
         Assert.Equal("Start", v.StartText);
         Assert.Equal(StartLook.Locked, v.StartLook);
+    }
+
+    [Fact]
+    public void The_state_tag_is_the_sessions_state_or_saved_over_an_imported_parse()
+    {
+        // A session is changed in place, so each state is made afresh.
+        static Session Running() => Session.Arm(5000).Start(6000);
+        Assert.Equal(SessionTag.Idle, SessionView.Of(Session.Idle()).Tag);
+        Assert.Equal(SessionTag.Armed, SessionView.Of(Session.Arm(5000)).Tag);
+        Assert.Equal(SessionTag.Live, SessionView.Of(Running()).Tag);
+        Assert.Equal(SessionTag.Held, SessionView.Of(Running().Pause(9000)).Tag);
+
+        // A question about a restart changes the pair, not the state.
+        Assert.Equal(SessionTag.Live, SessionView.Of(Running(), asking: true).Tag);
+        Assert.Equal(SessionTag.Held, SessionView.Of(Running().Pause(9000), asking: true).Tag);
+        Assert.Equal(SessionTag.Armed, SessionView.Of(Session.Arm(5000), asking: true).Tag);
+
+        // A saved parse's clock is stopped, so its light is Held; nobody is
+        // holding it, and the tag says what it is.
+        var saved = SessionView.Of(Running().Pause(9000), imported: true);
+        Assert.Equal(SessionLight.Held, saved.Light);
+        Assert.Equal(SessionTag.Saved, saved.Tag);
+    }
+
+    [Fact]
+    public void The_tray_menus_heading_is_there_only_while_a_session_is_armed_or_counting()
+    {
+        static Session Running() => Session.Arm(5000).Start(6000);
+        Assert.False(SessionView.Of(Session.Idle()).Underway);
+        Assert.True(SessionView.Of(Session.Arm(5000)).Underway);
+        Assert.True(SessionView.Of(Running()).Underway);
+        Assert.False(SessionView.Of(Running().Pause(9000)).Underway);
+
+        // A restart being asked about leaves it as it was: there over a
+        // session that is counting, not there over one that is held.
+        Assert.True(SessionView.Of(Running(), asking: true).Underway);
+        Assert.False(SessionView.Of(Running().Pause(9000), asking: true).Underway);
+
+        // Never over a saved parse, whatever its session was doing when it was saved.
+        Assert.False(SessionView.Of(Running(), imported: true).Underway);
+        Assert.False(SessionView.Of(Session.Arm(5000), imported: true).Underway);
     }
 
     [Fact]

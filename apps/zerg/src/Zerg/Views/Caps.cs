@@ -108,7 +108,9 @@ public sealed class Caps : FrameworkElement
             return string.IsNullOrEmpty(given) ? owner.Text ?? "" : given;
         }
 
-        protected override bool IsControlElementCore() => true;
-        protected override bool IsContentElementCore() => true;
+        // Whether it is a control and content is left to WPF: yes while it
+        // can be seen, no while it cannot (a label of the section that is
+        // not on screen). Said as always "yes", every hidden label was
+        // listed among what is shown.
     }
 }

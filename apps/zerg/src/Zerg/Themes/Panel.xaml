@@ -13,11 +13,18 @@
        theme's. Under the light theme, without this file, a card in a panel
        would take the application's values: dark ink on a black panel.
 
-       Only brushes, and only these keys (UI-REDESIGN-PLAN.md, section 4.3).
-       Bg0Brush and Bg1Brush are not here: a panel has no window or pane
-       surface of its own. Nor are the tags, the overlays or ShadedDashBrush:
-       nothing in a panel asks for them yet, and what does will get the
-       application's until they are added here. -->
+       Only brushes, and only these keys (UI-REDESIGN-PLAN.md, section 4.3,
+       and Bg1Brush since phase 2; ShadedDashBrush and the two overlays a
+       table row asks for since phase 6). Bg0Brush is not here: a panel has
+       no window surface of its own. Nor are the tags or the other
+       overlays: nothing in a panel asks for them yet, and what does will
+       get the application's until they are added here. -->
+
+  <!-- The pane surface is the tint itself, so it is nothing: what a control
+       fills "in the surface's colour" (the inside of a slider's ring) lets
+       the tint show, as the sheet draws it. Without this the ring would be
+       filled with the application's Bg1, white under the light theme. -->
+  <SolidColorBrush x:Key="Bg1Brush" Color="Transparent"/>
 
   <!-- Surfaces: a heading row, a button or a selected row, under the pointer. -->
   <SolidColorBrush x:Key="Bg2Brush" Color="#12FFFFFF"/>
@@ -35,6 +42,22 @@
   <SolidColorBrush x:Key="Text3Brush" Color="#98A2B6"/>
   <SolidColorBrush x:Key="Text4Brush" Color="#6F798C"/>
 
+  <!-- A dash on a shaded row: halfway from Text3 to Text2, as in the theme
+       files, from this file's own, lighter pair. -->
+  <SolidColorBrush x:Key="ShadedDashBrush" Color="#A9B2C3"/>
+
+  <!-- What a table's rows are laid over with (the dark theme's values:
+       Text1 at 5% under the pointer, at 10% behind a shaded action). The
+       application's are dark ink under the light theme, which on a panel
+       would darken where these lighten. -->
+  <SolidColorBrush x:Key="RowHoverBrush" Color="#E9ECF2" Opacity="0.05"/>
+  <SolidColorBrush x:Key="ActionShadeBrush" Color="#E9ECF2" Opacity="0.10"/>
+
+  <!-- The band behind a histogram's columns, where the middle half of the
+       hits fell (the dark theme's: Text1 at 4%), for the drill-down under
+       a row of the Actions or Heals panel. -->
+  <SolidColorBrush x:Key="HistogramBandBrush" Color="#E9ECF2" Opacity="0.04"/>
+
   <!-- Meaning: Themes/Dark.xaml's values. Keep the two files alike. -->
   <SolidColorBrush x:Key="AccentBrush" Color="#F2A33A"/>
   <SolidColorBrush x:Key="OnAccentBrush" Color="#191004"/>
@@ -47,5 +70,9 @@
        above is see-through, and a card that lets the lines and labels under
        it show through reads as noise. -->
   <SolidColorBrush x:Key="HoverCardBrush" Color="#262D3A"/>
+
+  <!-- The ring round a chart marker is the colour of what the chart sits
+       on. Here that is the tint, whatever is behind it. -->
+  <SolidColorBrush x:Key="ChartSurfaceBrush" Color="#101010"/>
 
 </ResourceDictionary>

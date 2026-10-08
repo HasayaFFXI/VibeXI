@@ -3,76 +3,149 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:c="clr-namespace:Zerg.Charts"
-             xmlns:v="clr-namespace:Zerg.Views"
-             Visibility="{Binding HealDrillOpen, Converter={StaticResource Visible}}">
+             xmlns:v="clr-namespace:Zerg.Views">
   <UserControl.Resources>
-    <sys:String x:Key="Columns">96,*,140,140</sys:String>
+    <!-- Every cast: the time, the target (which takes what is left), what
+         it healed, how far that fell from the average as a mark and then
+         as a figure, and the room the list's scroll bar is drawn in. -->
+    <sys:String x:Key="Columns">60,*,76,84,52,14</sys:String>
+    <!-- The room the six figures need side by side: in less (v:Shed, on
+         the scroll viewer below) they stand in two rows of three. -->
+    <sys:String x:Key="Figures">72,72,72,72,72,72</sys:String>
   </UserControl.Resources>
 
   <!-- One heal of one character: its figures, how its casts are spread, and
-       every cast. Only there while a heal is picked. It has no panel of its
-       own: docked it is a card under the Heals card, and in the Heals panel
-       it sits under the heal's row. -->
-  <Border Style="{StaticResource Card}">
-    <StackPanel>
-      <!-- Docked only. Under its row in a panel, the row already says which
-           heal, how many casts and how much, and picking it again closes it. -->
-      <DockPanel Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
-        <Button DockPanel.Dock="Right" VerticalAlignment="Top" Margin="8,0,0,0" Style="{StaticResource SmallButton}"
-                Content="Close" Command="{Binding CloseHealDrillCommand}" AutomationProperties.Name="Close heal drill-down"/>
-        <StackPanel>
-          <TextBlock Text="{Binding HealDrillTitle}" Style="{StaticResource CardTitle}" TextTrimming="CharacterEllipsis"/>
-          <TextBlock Text="{Binding HealDrillNote}" Style="{StaticResource Label}" Margin="0,2,0,0" TextWrapping="Wrap"
-                     Typography.NumeralAlignment="Tabular"/>
-        </StackPanel>
-      </DockPanel>
+       every cast. The damage drill-down over the heals: it has no panel of
+       its own and goes where the Heals table goes.
 
-      <ItemsControl ItemsSource="{Binding HealDrillTiles}" Margin="-4,12,-4,0" Focusable="False">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <UniformGrid Rows="1"/>
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <Border Margin="4,0" Padding="12,8" CornerRadius="6"
-                    Background="{DynamicResource Bg2Brush}">
-              <StackPanel>
-                <TextBlock Text="{Binding Label}" Style="{StaticResource Label}" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Text="{Binding Value}" Style="{StaticResource Figure}" FontSize="20"/>
+       Docked, it is a pane that is always there, folded to its heading
+       until a heal is picked, and while the Heals card floats (its panel
+       shows the drill-down under the heal's row; the heading here says
+       so). Open, its heading is a tall one, as the damage drill-down's is.
+       In the Heals panel it sits under the heal's row, without a heading,
+       as tall as what is in it. -->
+  <v:Pane>
+    <v:Pane.Style>
+      <Style TargetType="v:Pane" BasedOn="{StaticResource ZPane}">
+        <Setter Property="Title" Value="{Binding HealDrillTitle}"/>
+        <Setter Property="Note" Value="{Binding HealDrillNote}"/>
+        <Setter Property="Hint" Value="{Binding HealDrillNote}"/>
+        <Setter Property="Swatch" Value="{Binding HealDrillSwatch}"/>
+        <Setter Property="IsTall" Value="True"/>
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding HealDrillOpen}" Value="False">
+            <Setter Property="IsFolded" Value="True"/>
+            <Setter Property="Title" Value="Drill-down"/>
+            <Setter Property="Note" Value="Select a heal to drill down"/>
+            <Setter Property="Hint" Value="{x:Null}"/>
+          </DataTrigger>
+          <!-- After the one above, so that with a heal picked and the
+               table floating it is this the heading says. -->
+          <DataTrigger Binding="{Binding Panels[hactions].IsOut}" Value="True">
+            <Setter Property="IsFolded" Value="True"/>
+            <Setter Property="Title" Value="Drill-down"/>
+            <Setter Property="Note" Value="Showing in the Heals panel"/>
+            <Setter Property="Hint" Value="{x:Null}"/>
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </v:Pane.Style>
+    <v:Pane.Tools>
+      <!-- Not in a panel: there the row closes it. -->
+      <Button Style="{StaticResource GhostButton}" Height="22" Padding="10,0" FontSize="11" Content="Close"
+              Command="{Binding CloseHealDrillCommand}" AutomationProperties.Name="Close heal drill-down"
+              ToolTip="Put the heal away. The pane folds to its heading"
+              Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}"/>
+    </v:Pane.Tools>
+
+    <!-- As tall as the pane, scrolling what does not fit; under a row in a
+         panel, as tall as what is in it. Everything is flush with the
+         pane's edges but the chart and its caption. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" v:WheelChain.On="True"
+                  Focusable="False" v:Shed.Full="{StaticResource Figures}">
+      <StackPanel>
+        <!-- The six figures: one row on the raised surface, in equal
+             cells, each ruled off from the one before it. -->
+        <Border Background="{DynamicResource Bg2Brush}">
+          <ItemsControl ItemsSource="{Binding HealDrillTiles}" Focusable="False" AlternationCount="12">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid>
+                  <UniformGrid.Style>
+                    <Style TargetType="UniformGrid">
+                      <Setter Property="Rows" Value="1"/>
+                      <Style.Triggers>
+                        <Trigger Property="v:Shed.Narrow" Value="True">
+                          <Setter Property="Rows" Value="2"/>
+                        </Trigger>
+                      </Style.Triggers>
+                    </Style>
+                  </UniformGrid.Style>
+                </UniformGrid>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Height="42">
+                  <Rectangle x:Name="Rule" Width="1" HorizontalAlignment="Left" Margin="0,8" SnapsToDevicePixels="True"
+                             Fill="{DynamicResource Line2Brush}"/>
+                  <StackPanel Margin="12,0,4,0" VerticalAlignment="Center">
+                    <v:Caps Text="{Binding Label}" Style="{StaticResource GroupCaps}" Tracking="0.6"
+                            HorizontalAlignment="Left"/>
+                    <TextBlock Text="{Binding Value}" Style="{StaticResource DrillFigure}" TextTrimming="CharacterEllipsis"/>
+                  </StackPanel>
+                </Grid>
+                <DataTemplate.Triggers>
+                  <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}"
+                               Value="0">
+                    <Setter TargetName="Rule" Property="Visibility" Value="Collapsed"/>
+                  </DataTrigger>
+                </DataTemplate.Triggers>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Border>
+
+        <!-- Shorter in a panel, as the damage drill-down's is. -->
+        <c:HistogramChart Margin="12,0,14,0" Model="{Binding HealHistogram}"
+                          EmptyText="No casts recorded" AutomationProperties.Name="Healing distribution chart">
+          <c:HistogramChart.Style>
+            <Style TargetType="c:HistogramChart">
+              <Setter Property="Height" Value="170"/>
+              <Setter Property="Fill" Value="{Binding HealHistogramFill}"/>
+              <Style.Triggers>
+                <Trigger Property="v:Float.On" Value="True">
+                  <Setter Property="Height" Value="160"/>
+                  <Setter Property="Fill" Value="{Binding PanelHealHistogramFill}"/>
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </c:HistogramChart.Style>
+        </c:HistogramChart>
+        <TextBlock Text="{Binding HealDrillCaption}" Style="{StaticResource Label}" FontSize="10.5" Margin="12,6,14,8"
+                   TextWrapping="Wrap" HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
+
+        <!-- Every cast, newest first. The heading row says how many and
+             carries the list's two column headings. -->
+        <Expander Style="{StaticResource HitsExpander}" AutomationProperties.Name="Every cast">
+          <Expander.Header>
+            <Grid>
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Every cast" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding HealDrillHits.Count, StringFormat={}{0:N0}}" Style="{StaticResource Label}"
+                           Margin="8,0,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
               </StackPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-
-      <!-- Shorter in a panel, as the damage drill-down's is. -->
-      <c:HistogramChart Margin="0,12,0,0" Model="{Binding HealHistogram}"
-                        EmptyText="No casts recorded" AutomationProperties.Name="Healing distribution chart">
-        <c:HistogramChart.Style>
-          <Style TargetType="c:HistogramChart">
-            <Setter Property="Height" Value="210"/>
-            <Setter Property="Fill" Value="{Binding HealHistogramFill}"/>
-            <Style.Triggers>
-              <Trigger Property="v:Float.On" Value="True">
-                <Setter Property="Height" Value="160"/>
-                <Setter Property="Fill" Value="{Binding PanelHealHistogramFill}"/>
-              </Trigger>
-            </Style.Triggers>
-          </Style>
-        </c:HistogramChart.Style>
-      </c:HistogramChart>
-      <TextBlock Text="{Binding HealDrillCaption}" Style="{StaticResource Label}" Margin="0,6,0,0" TextWrapping="Wrap"
-                 HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
-
-      <Expander Header="Every cast" Margin="0,10,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-        <StackPanel>
-          <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,6">
-            <TextBlock Text="Time" Style="{StaticResource Head}"/>
-            <TextBlock Text="Target" Style="{StaticResource HeadText}"/>
-            <TextBlock Text="Healed" Style="{StaticResource Head}"/>
-            <TextBlock Text="vs avg" Style="{StaticResource Head}"/>
-          </v:Cells>
+              <!-- Over the rows' own columns: the heading's content begins
+                   26 units in, after the caret. -->
+              <v:Cells Widths="{StaticResource Columns}" Margin="-26,0,0,0">
+                <Border/>
+                <Border/>
+                <TextBlock Text="Healed" Style="{StaticResource Head}"/>
+                <Border/>
+                <TextBlock Text="vs avg" Style="{StaticResource Head}"/>
+              </v:Cells>
+            </Grid>
+          </Expander.Header>
           <!-- Only the rows in view exist, as in the damage drill-down. -->
           <ItemsControl ItemsSource="{Binding HealDrillHits}" MaxHeight="420" Focusable="False" v:WheelChain.On="True"
                         VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
@@ -92,20 +165,26 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border Style="{StaticResource RowLine}" Height="30" MinHeight="0" Margin="0,0,14,0">
-                  <v:Cells Widths="{StaticResource Columns}">
-                    <TextBlock Text="{Binding Time}" Style="{StaticResource Cell}"/>
-                    <TextBlock Text="{Binding Target}" Style="{StaticResource CellText}"/>
+                <!-- 20 units, its rule inside it; the mark is how far the
+                     cast fell from the average. A heal has no critical hit. -->
+                <Grid Height="{StaticResource HitRowHeight}">
+                  <Rectangle Style="{StaticResource RowRule}"/>
+                  <v:Cells Widths="{StaticResource Columns}" Margin="0,0,0,1">
+                    <TextBlock Text="{Binding Time}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text3Brush}"
+                               Padding="12,0,0,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Target}" Style="{StaticResource CellText}" Padding="0,0,8,0"
+                               Foreground="{DynamicResource Text2Brush}"/>
                     <TextBlock Text="{Binding Damage}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
+                    <v:Deviation Offset="{Binding Offset}"/>
                     <TextBlock Text="{Binding VsAvg}" Style="{StaticResource Cell}"
                                Foreground="{DynamicResource Text2Brush}"/>
                   </v:Cells>
-                </Border>
+                </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-        </StackPanel>
-      </Expander>
-    </StackPanel>
-  </Border>
+        </Expander>
+      </StackPanel>
+    </ScrollViewer>
+  </v:Pane>
 </UserControl>

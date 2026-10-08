@@ -4,40 +4,90 @@
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:v="clr-namespace:Zerg.Views">
   <UserControl.Resources>
-    <sys:String x:Key="Columns">2.4*,*,*,*,*,*,*,*</sys:String>
+    <!-- Action, Hits, Miss, Total, Avg, Min, Max, the "least, average,
+         greatest" mark, Share, and a blank column that ends the row: the
+         widths the design draws them at in a pane 940 wide, as shares, each
+         with the least it may be (a figure column its longest figure, Share
+         its bar and its figure). So a narrower pane takes the room from the
+         name first; and when even the leasts do not fit, the table drops
+         columns, in two steps (v:Shed, on the scroll viewer below): the
+         mark first, which is how the design draws the table floating over
+         the game; then Miss and Min as well, when what is left without
+         the mark (LessColumns) does not fit either. -->
+    <sys:String x:Key="Columns">278*150,50*40,50*40,76*60,60*48,56*48,60*52,160*112,104*100,32*0</sys:String>
+    <sys:String x:Key="LessColumns">278*150,50*40,50*40,76*60,60*48,56*48,60*52,104*100,32*0</sys:String>
 
-    <!-- A character's heading: who, and what they dealt in all. Picking it
-         shows their actions under it; picking it again puts them away. -->
+    <!-- The small bar beside a heading's share, in the character's colour:
+         in a floating panel, in the colour they have there. -->
+    <Style x:Key="HeadingBar" TargetType="v:SmallBar">
+      <Setter Property="Fill" Value="{Binding Swatch}"/>
+      <Style.Triggers>
+        <Trigger Property="v:Float.On" Value="True">
+          <Setter Property="Fill" Value="{Binding PanelSwatch}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- A character's heading: who, what they dealt in all under Total,
+         and their share of the party under Share. On the raised surface,
+         shaded in their colour to their damage out of the leader's, as
+         their row in the table above is. Picking it shows their actions
+         under it; picking it again puts them away. -->
     <DataTemplate x:Key="Heading">
-      <Border Style="{StaticResource RowLine}" Background="{DynamicResource Bg2Brush}">
-        <Button Style="{StaticResource RowButton}"
-                Command="{Binding DataContext.ToggleActionsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                CommandParameter="{Binding}" AutomationProperties.Name="{Binding Label}"
-                ToolTip="Show or hide this character's actions">
-          <StackPanel Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
-            <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                       Foreground="{DynamicResource Text2Brush}"/>
-            <Rectangle Margin="0,0,8,0">
-              <Rectangle.Style>
-                <Style TargetType="Rectangle" BasedOn="{StaticResource Swatch}">
-                  <Setter Property="Fill" Value="{Binding Swatch}"/>
-                  <Style.Triggers>
-                    <Trigger Property="v:Float.On" Value="True">
-                      <Setter Property="Fill" Value="{Binding PanelSwatch}"/>
-                    </Trigger>
-                  </Style.Triggers>
-                </Style>
-              </Rectangle.Style>
-            </Rectangle>
-            <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"/>
-            <TextBlock Text="—" FontSize="12" Margin="8,0" VerticalAlignment="Center"
-                       Foreground="{DynamicResource Text4Brush}"/>
-            <TextBlock Text="{Binding Total}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
-                       Typography.NumeralAlignment="Tabular"/>
-          </StackPanel>
-        </Button>
-      </Border>
+      <Button Style="{StaticResource RowPick}" Background="{DynamicResource Bg2Brush}"
+              Command="{Binding DataContext.ToggleActionsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              CommandParameter="{Binding}" AutomationProperties.Name="{Binding Label}"
+              ToolTip="Show or hide this character's actions">
+        <Grid>
+          <Rectangle Margin="0,0,0,1" v:Grow.Share="{Binding Fraction}">
+            <Rectangle.Style>
+              <Style TargetType="Rectangle" BasedOn="{StaticResource RowShade}">
+                <Setter Property="Fill" Value="{Binding Shade}"/>
+                <Style.Triggers>
+                  <Trigger Property="v:Float.On" Value="True">
+                    <Setter Property="Fill" Value="{Binding PanelShade}"/>
+                  </Trigger>
+                </Style.Triggers>
+              </Style>
+            </Rectangle.Style>
+          </Rectangle>
+          <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,1">
+            <DockPanel Margin="12,0,8,0" VerticalAlignment="Center">
+              <Path Style="{StaticResource RowCaret}" Margin="0,0,8,0"/>
+              <Rectangle Margin="0,0,6,0">
+                <Rectangle.Style>
+                  <Style TargetType="Rectangle" BasedOn="{StaticResource Swatch}">
+                    <Setter Property="Fill" Value="{Binding Swatch}"/>
+                    <Style.Triggers>
+                      <Trigger Property="v:Float.On" Value="True">
+                        <Setter Property="Fill" Value="{Binding PanelSwatch}"/>
+                      </Trigger>
+                    </Style.Triggers>
+                  </Style>
+                </Rectangle.Style>
+              </Rectangle>
+              <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <!-- The last in the line: it has what is left, and is cut
+                   short with an ellipsis when that is not enough. -->
+              <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}" Foreground="{DynamicResource Text2Brush}"
+                         TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
+            <!-- A heading has nothing under Hits, Miss, Avg, Min, Max or
+                 the mark. The blanks hold the columns' places, and the
+                 three that go in a narrow pane go here too. -->
+            <Border/>
+            <Border Style="{StaticResource ShedsLate}"/>
+            <TextBlock Text="{Binding Total}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
+            <Border/>
+            <Border Style="{StaticResource ShedsLate}"/>
+            <Border/>
+            <Border Style="{StaticResource Sheds}"/>
+            <v:SmallBar For="Character" Length="42" Value="{Binding Fraction}" Style="{StaticResource HeadingBar}">
+              <TextBlock Text="{Binding Share}" Style="{StaticResource Cell}"/>
+            </v:SmallBar>
+          </v:Cells>
+        </Grid>
+      </Button>
     </DataTemplate>
 
     <!-- In a floating panel the drill-down opens under the action it is
@@ -63,95 +113,124 @@
       </Style.Triggers>
     </Style>
 
-    <!-- One action. Picking it opens the drill-down; picking it again closes it. -->
+    <!-- One action: its figures, its least, average and greatest hit on one
+         line, and its share as a small bar beside the figure (or as the
+         row's own shade, while "shade actions and heals" is on). Picking it
+         opens the drill-down, and the row is then on the selected surface
+         with an accent edge at its left; picking it again closes it. -->
+    <Style x:Key="ActionPick" TargetType="Button" BasedOn="{StaticResource RowPick}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Selected}" Value="True">
+          <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
     <DataTemplate x:Key="Action">
       <StackPanel>
-        <Button Command="{Binding DataContext.DrillCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+        <Button Style="{StaticResource ActionPick}"
+                Command="{Binding DataContext.DrillCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                 CommandParameter="{Binding}" AutomationProperties.Name="{Binding Label}" ToolTip="Show every hit">
-          <Button.Style>
-            <Style TargetType="Button" BasedOn="{StaticResource RowButton}">
-              <Style.Triggers>
-                <DataTrigger Binding="{Binding Selected}" Value="True">
-                  <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </Button.Style>
           <Grid>
-            <Border Width="3" CornerRadius="1.5" HorizontalAlignment="Left" Margin="0,5"
-                    Background="{DynamicResource AccentBrush}"
-                    Visibility="{Binding Selected, Converter={StaticResource Visible}}"/>
-            <v:Cells Widths="{StaticResource Columns}">
-              <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" Padding="40,0,8,0"/>
+            <Rectangle Style="{StaticResource SubShade}" Margin="0,0,0,1" v:Grow.Share="{Binding ShareFraction}"/>
+            <Rectangle x:Name="Edge" Width="2" HorizontalAlignment="Left" Margin="0,0,0,1" SnapsToDevicePixels="True"
+                       Fill="{DynamicResource AccentBrush}" Visibility="Collapsed"/>
+            <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,1">
+              <TextBlock x:Name="Name" Text="{Binding Name}" Style="{StaticResource CellText}" Padding="42,0,8,0"/>
               <TextBlock Text="{Binding Hits}" Style="{StaticResource Cell}"/>
-              <TextBlock Text="{Binding Misses}" Style="{StaticResource Cell}"/>
+              <TextBlock Text="{Binding Misses}" Style="{StaticResource SubFigQuietShedsLate}"/>
               <TextBlock Text="{Binding Total}" Style="{StaticResource Cell}" FontWeight="SemiBold"/>
               <TextBlock Text="{Binding Avg}" Style="{StaticResource Cell}"/>
-              <TextBlock Text="{Binding Min}" Style="{StaticResource Cell}"/>
-              <TextBlock Text="{Binding Max}" Style="{StaticResource Cell}"/>
-              <TextBlock Text="{Binding Share}" Style="{StaticResource Cell}"/>
+              <TextBlock Text="{Binding Min}" Style="{StaticResource SubFigQuietShedsLate}"/>
+              <TextBlock Text="{Binding Max}" Style="{StaticResource SubFigQuiet}"/>
+              <v:Spread Style="{StaticResource Sheds}" Min="{Binding SpreadMin}" Avg="{Binding SpreadAvg}"
+                        Max="{Binding SpreadMax}"/>
+              <v:SmallBar For="Action" Length="42" Value="{Binding ShareFraction}" Fill="{DynamicResource Text3Brush}">
+                <TextBlock Text="{Binding Share}" Style="{StaticResource Cell}"/>
+              </v:SmallBar>
             </v:Cells>
           </Grid>
         </Button>
         <ContentControl Content="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                         Style="{StaticResource Under}"/>
       </StackPanel>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding Selected}" Value="True">
+          <Setter TargetName="Edge" Property="Visibility" Value="Visible"/>
+          <Setter TargetName="Name" Property="FontWeight" Value="SemiBold"/>
+        </DataTrigger>
+      </DataTemplate.Triggers>
     </DataTemplate>
 
     <v:ActionRowTemplates x:Key="Templates" Heading="{StaticResource Heading}" Action="{StaticResource Action}"/>
   </UserControl.Resources>
 
-  <!-- Every attack and weaponskill, under the character who used it, once
-       that character's heading is opened. In a floating panel the list takes
-       the panel's height. -->
-  <Border Style="{StaticResource Card}">
-    <DockPanel>
-      <DockPanel DockPanel.Dock="Top">
-        <Button DockPanel.Dock="Right" Style="{StaticResource PopOut}" Command="{Binding Panels[actions].PopOutCommand}"
-                AutomationProperties.Name="Pop out Actions"/>
-        <StackPanel>
-          <TextBlock Text="Actions" Style="{StaticResource CardTitle}"/>
-          <!-- The gap above the table goes with the note when a panel drops it. -->
-          <TextBlock Text="Every attack and weaponskill. Select a character to show theirs, and an action to drill down."
-                     Style="{StaticResource CardNote}"
-                     Margin="0,2,0,10"/>
-        </StackPanel>
-      </DockPanel>
+  <!-- Every attack and weaponskill, under the character it belongs to, once that
+       character's heading is opened. A pane: the column headings stand
+       still and the rows scroll under them, in whatever height the pane
+       has. In a floating panel the list takes the panel's height.
 
+       The pane says how its rows are drawn (v:Shading). The scroll viewer
+       says whether there is room for every column (v:Shed.Full, and
+       v:Shed.Less for the second step): in a pane or a panel too narrow
+       for them all the mark goes, and in a narrower one Miss and Min too.
+       Under the least width the columns that are left can have, it
+       scrolls sideways. -->
+  <v:Pane Title="Actions"
+          Note="Every attack and weaponskill. Select a character to show theirs, and an action to drill down"
+          PopOutCommand="{Binding Panels[actions].PopOutCommand}"
+          v:Shading.Characters="{Binding ShadeCharacters}" v:Shading.Actions="{Binding ShadeActions}">
+    <DockPanel>
       <TextBlock DockPanel.Dock="Top" Text="{Binding EmptyText}" Style="{StaticResource Label}" FontSize="12"
                  Margin="0,18,0,8" HorizontalAlignment="Center"
                  Visibility="{Binding HasActions, Converter={StaticResource Hidden}}"/>
 
-      <ScrollViewer x:Name="Sideways" HorizontalScrollBarVisibility="Auto"
+      <ScrollViewer x:Name="Sideways" HorizontalScrollBarVisibility="Auto" v:Shed.Full="{StaticResource Columns}"
+                    v:Shed.Less="{StaticResource LessColumns}"
                     VerticalScrollBarVisibility="Disabled" v:WheelChain.On="True"
                     Visibility="{Binding HasActions, Converter={StaticResource Visible}}">
-        <Grid MinWidth="620" Width="{Binding ViewportWidth, ElementName=Sideways}" Margin="0,0,0,12">
+        <Grid MinWidth="464" Width="{Binding ViewportWidth, ElementName=Sideways}">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <!-- Room for the scroll bar a very narrow pane brings. -->
+                <DataTrigger Binding="{Binding ComputedHorizontalScrollBarVisibility, ElementName=Sideways}" Value="Visible">
+                  <Setter Property="Margin" Value="0,0,0,12"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
           </Grid.RowDefinitions>
-          <!-- The right margin, here and on the rows, keeps the last column
-               out from under the list's scroll bar. -->
-          <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,6">
-            <TextBlock Text="Action" Style="{StaticResource HeadText}"/>
-            <TextBlock Text="Hits" Style="{StaticResource Head}" ToolTip="Uses that dealt damage"/>
-            <TextBlock Text="Miss" Style="{StaticResource Head}"
-                       ToolTip="Uses that dealt none. A swing taken by shadows is a miss here, though it counts as a hit in Accuracy"/>
-            <TextBlock Text="Total" Style="{StaticResource Head}"/>
-            <TextBlock Text="Avg" Style="{StaticResource Head}"/>
-            <TextBlock Text="Min" Style="{StaticResource Head}"/>
-            <TextBlock Text="Max" Style="{StaticResource Head}"/>
-            <TextBlock Text="Share" Style="{StaticResource Head}" ToolTip="Out of this character's damage"/>
-          </v:Cells>
-          <!-- The rows scroll under their headings. Docked, the list is as
-               tall as it needs, up to a cap; floating, as tall as the panel. -->
+          <!-- 14 units are kept clear at the right of the headings and of
+               every row's cells: the room the list's scroll bar is drawn in. -->
+          <Grid Height="{StaticResource ColumnHeadHeight}">
+            <v:Cells Widths="{StaticResource Columns}" Margin="0,0,14,1">
+              <TextBlock Text="Action" Style="{StaticResource HeadText}" Padding="12,0,8,0"/>
+              <TextBlock Text="Hits" Style="{StaticResource Head}" ToolTip="Uses that dealt damage"/>
+              <TextBlock Text="Miss" Style="{StaticResource HeadShedsLate}"
+                         ToolTip="Uses that dealt none. A swing taken by shadows is a miss here, though it counts as a hit in Accuracy"/>
+              <TextBlock Text="Total" Style="{StaticResource Head}"/>
+              <TextBlock Text="Avg" Style="{StaticResource Head}"/>
+              <TextBlock Text="Min" Style="{StaticResource HeadShedsLate}"/>
+              <TextBlock Text="Max" Style="{StaticResource Head}"/>
+              <TextBlock Text="Min &#xB7; avg &#xB7; max" Style="{StaticResource HeadSheds}" TextAlignment="Left" Padding="16,0,8,0"
+                         ToolTip="This action's least hit, its average and its greatest, on a line as long as this character's biggest hit of any action"/>
+              <TextBlock Text="Share" Style="{StaticResource Head}" ToolTip="Out of this character's damage"/>
+            </v:Cells>
+            <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+          </Grid>
+          <!-- The rows scroll under their headings, in what the pane or the
+               panel has left. In a narrow window, where panes are as tall
+               as they ask to be, the list is as tall as it needs, up to
+               the cap it had as a card on a page. -->
           <Grid Grid.Row="1">
             <Grid.Style>
               <Style TargetType="Grid">
-                <Setter Property="MaxHeight" Value="340"/>
                 <Style.Triggers>
-                  <Trigger Property="v:Float.On" Value="True">
-                    <Setter Property="MaxHeight" Value="Infinity"/>
+                  <Trigger Property="v:SplitPanel.Stacked" Value="True">
+                    <Setter Property="MaxHeight" Value="340"/>
                   </Trigger>
                 </Style.Triggers>
               </Style>
@@ -159,11 +238,11 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                           v:WheelChain.On="True">
               <ItemsControl x:Name="List" ItemsSource="{Binding Actions}" ItemTemplateSelector="{StaticResource Templates}"
-                            Focusable="False" Margin="0,0,14,0"/>
+                            Focusable="False"/>
             </ScrollViewer>
           </Grid>
         </Grid>
       </ScrollViewer>
     </DockPanel>
-  </Border>
+  </v:Pane>
 </UserControl>

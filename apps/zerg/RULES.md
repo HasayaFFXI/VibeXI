@@ -165,9 +165,23 @@ its way, with percentages to one decimal.
   melee must not reach the owner's Accuracy, nor a pet's move WS.
 - **Null means "nothing to measure" and prints as a dash.** A mage with no
   weaponskills has no WS Acc; 0% would say they missed every one.
-- **Nobody at zero** in the bars, the table, the strip or the cumulative
-  lines. Reaching the totals takes an action, not damage. The chips still list
+- **Nobody at zero** in the table, the strip or the cumulative lines.
+  Reaching the totals takes an action, not damage. The chips still list
   them, so they can be excluded, and the Actions table shows what they did.
+- **The Party line is counted from the party's swings, not from the rows'
+  percentages.** The line that closes the table prints the party's own
+  Accuracy, weaponskill, skillchain and pet figures, worked out from every
+  character's counts added together (`Aggregate.Party`, by `Split.Figures`,
+  the one place a split column is worked out, for a row and for the party
+  alike): three swings landed out of six is 50%, whatever the rows above
+  say. An average of the rows' percentages would weigh a character who
+  swung twice like one who swung two hundred times, and would not be the
+  figure Compare prints for the same file (`Compare.Measure` already summed
+  the counts). It is everyone counted, a character at zero included: their
+  misses are the party's swings, though they have no row. The number under
+  Job is the rows above it. A dash where nobody had anything to measure.
+  The party's DPS there is the one in the band of figures, over the session
+  clock.
 - **One known difference from the reference parser:** it leaves melee
   additional effects out of its total and Zerg counts every `addl` row, so
   with enspells up Damage reads a little above it.
@@ -242,9 +256,9 @@ Every number is measured from the session's zero, and there is no other clock
 - **One denominator.** `Counting.Aggregate` divides the party's DPS and each
   character's by the session clock, so the column adds up to the party figure.
 - **DPS decays between polls**: the total holds and the clock grows, so the
-  Elapsed tile, the party DPS and each character's DPS are rewritten at the
-  draw frequency (30 times a second unless set), together. A tile decaying
-  past a frozen column reads as a bug.
+  elapsed time, the party DPS and each character's DPS are rewritten at the
+  draw frequency (30 times a second unless set), together. A party figure
+  decaying past a frozen column reads as a bug.
 - **The chart's left edge is the zero and its right edge is the clock**, paused
   included. A flat line out to the present is a falling DPS, drawn. The axis
   and the DPS beside it must always describe the same span.
@@ -267,6 +281,9 @@ filter does, and credits a pet's heal to its owner.
   and the histogram reuse the damage code on a row-shaped copy
   (`Healing.AsEvents`) where every heal is a hit.
 - HPS ticks with DPS, over the same clock.
+- **The Party line under Healing by character** prints what `Healing.Totals`
+  already has for the party: Healing, casts, total over casts, and what the
+  pets healed, apart. Nothing new is counted for it.
 
 ## Export, import and Compare
 

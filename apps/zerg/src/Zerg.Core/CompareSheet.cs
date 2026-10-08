@@ -69,7 +69,7 @@ public sealed record BarPair(double A, double B, string TextA, string TextB);
 /// <summary>One of the six figures across the top.</summary>
 /// <param name="SubA">A line under A's figure ("12 WS · avg 1,204"), or null.</param>
 public sealed record CompareTile(string Label, string? Tip, string A, string B, string? SubA, string? SubB,
-                                 Change Change, bool Hero = false);
+                                 Change Change);
 
 /// <summary>One time of the cumulative chart, as a table row.</summary>
 public sealed record PaceLine(string Time, string A, string B, string Difference);
@@ -222,13 +222,13 @@ public sealed class CompareSheet
 
     static CompareTile Tile(string label, double? a, double? b, Func<double, string> format, ChangeKind kind, int good,
                             string? tip = null, Func<Measurement, string>? sub = null, Measurement? ma = null,
-                            Measurement? mb = null, bool hero = false) =>
+                            Measurement? mb = null) =>
         new(label, tip, a is double x ? format(x) : Dash, b is double y ? format(y) : Dash,
-            sub != null ? sub(ma!) : null, sub != null ? sub(mb!) : null, Change.Of(a, b, kind, format, good), hero);
+            sub != null ? sub(ma!) : null, sub != null ? sub(mb!) : null, Change.Of(a, b, kind, format, good));
 
     static List<CompareTile> TilesOfDamage(Measurement ma, Measurement mb, bool skillchains) =>
     [
-        Tile("Total damage", ma.Total, mb.Total, Format.Int, ChangeKind.Percent, 1, hero: true),
+        Tile("Total damage", ma.Total, mb.Total, Format.Int, ChangeKind.Percent, 1),
         // Neutral on purpose: a shorter run is not obviously a better one.
         Tile("Length", ma.Duration, mb.Duration, Clock, ChangeKind.Time, 0),
         Tile("Party DPS", ma.Dps, mb.Dps, v => Format.Num(v, 1), ChangeKind.Percent, 1),
@@ -247,7 +247,7 @@ public sealed class CompareSheet
         return
         [
             Tile("Total healing", Of(ma, h => h.Total), Of(mb, h => h.Total), Format.Int, ChangeKind.Percent, 1,
-                 "Every cure, waltz and healing ability. Pet heals are not included", hero: true),
+                 "Every cure, waltz and healing ability. Pet heals are not included"),
             Tile("Length", ma.Duration, mb.Duration, Clock, ChangeKind.Time, 0),
             Tile("Party HPS", Hps(ma), Hps(mb), v => Format.Num(v, 1), ChangeKind.Percent, 1),
             // Neutral: more casts is not better healing.

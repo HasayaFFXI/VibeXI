@@ -58,7 +58,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(IsView), nameof(IsCompare), nameof(ShowsParse),
-                              nameof(HideNamesTip), nameof(IsSettings), nameof(ImportTip))]
+                              nameof(FillsPage), nameof(HideNamesTip), nameof(IsSettings), nameof(ImportTip))]
     private string section;
 
     public const string DamageSection = "Damage", HealingSection = "Healing", ViewSection = "View", CompareSection = "Compare";
@@ -71,6 +71,11 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsCompare => Section == CompareSection;
     /// <summary>A parse's tiles and cards are on screen, either side of it.</summary>
     public bool ShowsParse => IsDamage || IsHealing;
+    /// <summary>The section on screen is made of panes, which take exactly
+    /// what the window leaves under whatever stands above them: a parse's
+    /// four, or Compare's. The Settings page, and the View section with
+    /// nothing open, are as tall as they are.</summary>
+    public bool FillsPage => ShowsParse || IsCompare;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SkillchainsTip))]
@@ -84,9 +89,10 @@ public sealed partial class MainViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(GroupTip))]
     private bool groupSmallLines;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CharactersToggleText), nameof(CharactersToggleTip))]
-    private bool charactersOpen;
+    /// <summary>The characters' line is opened onto every chip, on as many
+    /// lines as they take; otherwise it is one line of as many as fit. The
+    /// chip after the chips flips it.</summary>
+    [ObservableProperty] private bool charactersOpen;
 
     public string SkillchainsTip => Skillchains
         ? "Skillchains counted: credited to the character whose weaponskill closed each one. Click to leave them out."
@@ -105,13 +111,14 @@ public sealed partial class MainViewModel : ObservableObject
         (false, _, _) => "Replace every other character's name with their job, for a screenshot or a stream",
     };
 
+    /// <summary>What the grouping switch does, and, while there is a line
+    /// that stands for several, who is in it: the chart names that line by
+    /// how many they are, and nothing else on screen says who.</summary>
     public string GroupTip => GroupSmallLines
         ? "Characters under 5% of the party's damage share one \"others\" line. Your own line is never grouped. " +
-          "Click to give everyone a line."
+          "Click to give everyone a line." +
+          (GroupMembers is { Length: > 0 } who ? "\n\nIn that line now: " + who + "." : "")
         : "Every character has their own line. Click to group everyone under 5% of the party's damage into one.";
-
-    public string CharactersToggleText => CharactersOpen ? "Hide" : "Show";
-    public string CharactersToggleTip => (CharactersOpen ? "Collapse" : "Expand") + " the character list";
 
     // --------------------------------------------------- session and status
 
@@ -119,6 +126,19 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private StatusLight statusLight = StatusLight.Waiting;
     [ObservableProperty] private string statusFile = "waiting for the addon";
     [ObservableProperty] private string statusDetail = "";
+
+    /// <summary>The right-hand end of the status line: how many cards are
+    /// floating over the game, and whether clicks pass through them. Empty
+    /// with none out, and then that end of the line is not drawn.</summary>
+    public string StatusPanels
+    {
+        get
+        {
+            int n = Panels.OutCount;
+            if (n == 0) return "";
+            return (n == 1 ? "1 panel out" : n + " panels out") + (Panels.ClickThrough ? ", click-through" : "");
+        }
+    }
 
     // --------------------------------------------------------------- filters
 
@@ -139,6 +159,11 @@ public sealed partial class MainViewModel : ObservableObject
         this.feed = feed;
         excluded = new HashSet<string>(settings.Excluded, StringComparer.Ordinal);
         Panels = new PanelSet(settings);
+        Panels.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(PanelSet.OutCount) or nameof(PanelSet.ClickThrough))
+                OnPropertyChanged(nameof(StatusPanels));
+        };
 
         theme = settings.Theme;
         // Not the View section: no parse is open yet, and Import is its way in.
@@ -148,12 +173,19 @@ public sealed partial class MainViewModel : ObservableObject
         hideNames = settings.HideNames;
         groupSmallLines = settings.GroupSmallLines;
         charactersOpen = settings.CharactersOpen;
+        shadeCharacters = settings.ShadeCharacters;
+        shadeActions = settings.ShadeActions;
+        lowAccuracy = LowMark.Clamp(settings.LowAccuracy);
+        // As the file has them; AppTheme was given the same two at startup.
+        runA = RunColours.Normal(settings.RunA);
+        runB = RunColours.Normal(settings.RunB);
         drawFrequency = DrawRate.Clamp(settings.DrawFrequency);
         chord = KeyChord.OrDefault(settings.ClickThroughKey);
         hotKeyText = chord.ToString();
         DescribeFolder();
         view = SessionView.Of(live.Session);
         Compare = new CompareViewModel(settings, this) { Active = IsCompare };
+        ReadLayouts();
 
         feed.Updated += OnUpdated;
         feed.Failed += OnFailed;
@@ -163,6 +195,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             if (snapshot != null) Recount();
             Compare.SharedChanged();
+            ThemeShown();
         };
         Recount();
     }
@@ -173,7 +206,7 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnThemeChanged(string value)
     {
         settings.Theme = value;
-        AppTheme.Apply(settings.ThemeMode);
+        AppTheme.Apply(settings.ThemeChoice);
         settings.Save();
         Log.Write("theme " + value);
     }
@@ -349,7 +382,7 @@ public sealed partial class MainViewModel : ObservableObject
         Recount();
     }
 
-    /// <summary>Folding the list away filters nothing, so nothing is recounted.</summary>
+    /// <summary>How the chips are laid out filters nothing, so nothing is recounted.</summary>
     partial void OnCharactersOpenChanged(bool value)
     {
         settings.CharactersOpen = value;
@@ -419,7 +452,7 @@ public sealed partial class MainViewModel : ObservableObject
         DrawActions(c);
         DrawDrill(c);
         DrawHealing(c);
-        Tick(now, rates: true);
+        Tick(now, damage: true, healing: true);
         DescribeStatus();
     }
 
@@ -439,36 +472,47 @@ public sealed partial class MainViewModel : ObservableObject
     /// <para>The rates are rewritten only while the tiles and tables that
     /// print them are on screen. WPF lays out text it is not showing, and
     /// thirty times a second that was 8% of a core for a window in the
-    /// tray. A count rewrites them whatever is on screen, so they are never
-    /// stale by more than the time since the last event.</para>
+    /// tray. So the beat rewrites the damage section's rates while that
+    /// section is the one on screen, the healing section's while that one
+    /// is, and neither while the window cannot be seen or shows something
+    /// else. A count rewrites both whatever is on screen, and changing
+    /// section is a count, so a section never comes up with figures older
+    /// than the moment it came up.</para>
     /// </summary>
-    public void Tick() => Tick(Session.Now(), rates: Seen && ShowsParse);
+    public void Tick() => Tick(Session.Now(), damage: Seen && IsDamage, healing: Seen && IsHealing);
 
-    void Tick(double now, bool rates)
+    void Tick(double now, bool damage, bool healing)
     {
         var s = Shown.Session;
         double ms = s.Elapsed(now), secs = ms / 1000;
         var agg = snapshot?.Totals;
 
-        Light = View.Light;
+        // The word beside the clock, and the clock's colour. A change only
+        // when the session's state changes: on every other beat this is the
+        // value it already had, and nothing is told or redrawn.
+        Tag = View.Tag;
         ClockText = SessionText.Stopwatch(s, now);
         ClockNote = SessionText.ClockNote(s);
         TotalNote = SessionText.TotalNote(s, agg is { Actors.Count: > 0 }, Viewing);
-        var healing = snapshot?.Healing;
-        HealTotalNote = SessionText.TotalNote(s, healing is { Actors.Count: > 0 }, Viewing, what: "healing");
+        var heals = snapshot?.Healing;
+        HealTotalNote = SessionText.TotalNote(s, heals is { Actors.Count: > 0 }, Viewing, what: "healing");
 
-        if (rates)
+        if (damage)
         {
             // The party's figure and every character's move together or not
             // at all: one falling past a column that stood still would be
             // two right numbers from two different moments.
             DpsText = Format.Num(agg != null && secs > 0 ? agg.Total / secs : 0, 1);
             foreach (var row in Actors) row.Dps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
-
-            // Healing per second is over the same clock, so it falls beside
-            // the DPS it is read against.
-            HpsText = Format.Num(healing != null && secs > 0 ? healing.Total / secs : 0, 1);
+            // The Party line under the rows is the party's figure again.
+            Party.Dps = DpsText;
+        }
+        if (healing)
+        {
+            // Healing per second is over the same clock as the damage's.
+            HpsText = Format.Num(heals != null && secs > 0 ? heals.Total / secs : 0, 1);
             foreach (var row in Healers) row.Hps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
+            HealParty.Hps = HpsText;
         }
 
         // The chart's live edge follows the clock; held, it stays where it
@@ -573,6 +617,49 @@ public sealed partial class MainViewModel : ObservableObject
 
     Brush SwatchOf(string name) => Solid(ColorOf(name));
 
+    // A row's shade: the character's colour at the strength that leaves
+    // the quieter ink legible on it (Zerg.Core/RowShade has the rule).
+    // Frozen and kept, as the solid brushes are: the same few brushes are
+    // handed to every row on every count.
+
+    /// <summary>What a shade lies on, which decides how strong it may be.</summary>
+    enum ShadeOn { Row, Heading, Strip, PanelHeading }
+
+    static readonly Dictionary<(Color Colour, ShadeOn On, bool Dark), SolidColorBrush> ShadeBrushes = [];
+
+    static SolidColorBrush Shade(Color c, ShadeOn on, bool dark)
+    {
+        if (ShadeBrushes.TryGetValue((c, on, dark), out var b)) return b;
+        static (byte, byte, byte) Rgb(Color x) => (x.R, x.G, x.B);
+        // In a panel, against the panel's own backdrop and ink, which are
+        // the same whatever the theme (RowShade.Strip).
+        int percent = on == ShadeOn.Strip ? RowShade.Strip(Rgb(c))
+            : on == ShadeOn.PanelHeading ? RowShade.PanelHeading(Rgb(c))
+            : RowShade.Strength(Rgb(c), Rgb(AppTheme.Token(on == ShadeOn.Heading ? "Bg2" : "Bg1", dark)),
+                                Rgb(AppTheme.Token("Text2", dark)),
+                                dark ? RowShade.DarkTarget : RowShade.LightTarget, dark ? RowShade.DarkCap : RowShade.LightCap);
+        // The strength is the brush's own, so whatever is filled with it
+        // needs no opacity of its own.
+        b = new SolidColorBrush(c) { Opacity = percent / 100.0 };
+        b.Freeze();
+        return ShadeBrushes[(c, on, dark)] = b;
+    }
+
+    /// <summary>The shade behind a character's row in the per-character tables.</summary>
+    Brush ShadeOf(string name) => Shade(ColorOf(name), ShadeOn.Row, AppTheme.IsDark);
+
+    /// <summary>The shade behind a character's heading in the Actions and
+    /// Heals tables, which lies on the raised surface.</summary>
+    Brush HeadingShadeOf(string name) => Shade(ColorOf(name), ShadeOn.Heading, AppTheme.IsDark);
+
+    /// <summary>The same character's shade on a floating panel, behind
+    /// their line of a strip.</summary>
+    Brush PanelShadeOf(string name) => Shade(PanelColorOf(name), ShadeOn.Strip, dark: true);
+
+    /// <summary>And behind their heading in the Actions and Heals panels,
+    /// which lies on the panel's raised surface.</summary>
+    Brush PanelHeadingShadeOf(string name) => Shade(PanelColorOf(name), ShadeOn.PanelHeading, dark: true);
+
     /// <summary>
     /// The name as drawn. Every place that puts a character in front of the
     /// user goes through here, and nothing else does: a name stays real
@@ -604,7 +691,6 @@ public sealed partial class MainViewModel : ObservableObject
             bool included = !excluded.Contains(n);
             var full = Roster.JobTitle(n);
             row.Name = NameOf(n);
-            row.Job = JobBadge(n);
             row.Swatch = SwatchOf(n);
             row.Included = included;
             row.Tip = (included ? "Exclude " : "Include ") + NameOf(n) + (full.Length > 0 ? Dot + full : "");
@@ -616,8 +702,9 @@ public sealed partial class MainViewModel : ObservableObject
             CharactersHint = "";
             return;
         }
-        // Read while the list is folded away, so an exclusion is never
-        // invisible. A long list stops naming names; the count is what matters.
+        // Read while a chip is not on the line (more characters than fit on
+        // it), so an exclusion is never invisible. A long list stops naming
+        // names; the count is what matters.
         var off = listed.Where(excluded.Contains).ToList();
         CharactersLabel = $"Characters {listed.Count - off.Count}/{listed.Count}";
         CharactersHint = off.Count == 0 ? "all included"

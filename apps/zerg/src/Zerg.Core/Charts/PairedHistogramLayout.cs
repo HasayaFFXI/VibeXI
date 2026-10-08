@@ -18,7 +18,8 @@ public sealed record RunMean(int Run, MeanRule Rule);
 /// </summary>
 public sealed class PairedHistogramLayout
 {
-    /// <summary>What a mean's label keeps clear ahead of its text, for the run's swatch.</summary>
+    /// <summary>What a mean's label keeps clear ahead of its text, for the
+    /// run's swatch (<see cref="HoverCard.Swatch"/> square, then a gap).</summary>
     public const double SwatchRoom = 12;
 
     static readonly string Dash = ((char)0x2013).ToString();   // en dash
@@ -101,7 +102,7 @@ public sealed class PairedHistogramLayout
                 var y = By(Part(n, run));
                 var h = plot.Y + plot.H - y;
                 l.Columns.Add(new PairedColumn(i, run, plot.X + slot * i + 2 + run * (cw + 1), y, cw, h,
-                                               Math.Max(0, Math.Min(4, Math.Min(h / 2, cw / 2)))));
+                                               Math.Max(0, Math.Min(HistogramLayout.ColumnRadius, Math.Min(h / 2, cw / 2)))));
             }
         }
 

@@ -10,6 +10,8 @@ public partial class App : Application
     bool showingCrash;
     /// <summary>Another Zerg was already running; this one only told it so.</summary>
     bool second;
+    /// <summary>The main window is up. Until it is, a fault is the start failing.</summary>
+    bool started;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -46,7 +48,9 @@ public partial class App : Application
         }
 
         var settings = Settings.Load();
-        AppTheme.Apply(settings.ThemeMode);
+        // The runs' colours first: the theme's first set is then made with them.
+        AppTheme.Runs(settings.RunA, settings.RunB);
+        AppTheme.Apply(settings.ThemeChoice);
 
         var eventsDir = options.EventsDir ?? MainViewModel.FolderIn(settings);
         Log.Write($"events dir {eventsDir}{(options.EventsDir != null ? " (--events-dir)" : "")}; theme {settings.Theme}");
@@ -55,6 +59,7 @@ public partial class App : Application
         var window = new MainWindow(new MainViewModel(settings, feed), settings);
         MainWindow = window;
         window.Show();
+        started = true;
         // The panels that were out last time, now there is a window to open them beside.
         window.Reopen();
         feed.Start();
@@ -80,10 +85,19 @@ public partial class App : Application
 
     /// <summary>An exception on the UI thread is logged and shown, and Zerg
     /// carries on: most are one bad poll or one bad click, and an app that
-    /// quits mid-fight loses the fight's numbers.</summary>
+    /// quits mid-fight loses the fight's numbers. Before the main window is
+    /// up there is no fight to lose and nothing to carry on with: a Zerg left
+    /// running with no window keeps the single-instance claim, and every
+    /// later launch would signal it and quit without a word.</summary>
     void OnDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         e.Handled = true;
+        if (!started)
+        {
+            Crash(e.Exception, fatal: true);
+            Shutdown(1);
+            return;
+        }
         Crash(e.Exception, fatal: false);
     }
 

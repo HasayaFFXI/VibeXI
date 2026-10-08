@@ -1,51 +1,17 @@
 <UserControl x:Class="Zerg.Views.CompareSection"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-             xmlns:c="clr-namespace:Zerg.Charts"
              xmlns:v="clr-namespace:Zerg.Views"
              x:Name="Section">
+  <!-- The Compare section's bands: what to compare about the two runs, the
+       two slots, and, once both hold a parse, six figures. They are one of
+       the things that stand above a section's panes in the main window's
+       page, as the band of figures and the characters' line do over the
+       live sections: still in a window wide enough for the panes to fill
+       what is left, scrolling with the page in a narrow one. The panes
+       themselves are Views/ComparePanes. The data context of both is the
+       CompareViewModel. -->
   <UserControl.Resources>
-
-    <!-- Each table's columns, shared by its heading and every row. A cell of
-         bars is the widest: it holds two bars and the figure after each. -->
-    <sys:String x:Key="ActorColumns">1.7*,1.3*,3*,1.1*,*,1.1*,*,1.1*,*,1.1*,*</sys:String>
-    <sys:String x:Key="ActionColumns">2.2*,*,*,*,*,*,*,*,*</sys:String>
-    <sys:String x:Key="SpreadColumns">1.5*,*,*,1.3*</sys:String>
-    <sys:String x:Key="HealerColumns">1.7*,3*,1.1*,*,*,1.1*,*,*</sys:String>
-    <sys:String x:Key="HealColumns">2.2*,*,*,*,*,*,*</sys:String>
-    <sys:String x:Key="KindColumns">2*,3*,1.1*,1.1*</sys:String>
-    <sys:String x:Key="TotalColumns">1.5*,3*,1.1*</sys:String>
-    <sys:String x:Key="PaceColumns">*,*,*,*</sys:String>
-
-    <sys:String x:Key="ChangeTip">The change from run A to run B: B − A, and that as a share of A</sys:String>
-
-    <!-- A run's badge: its letter on its colour. -->
-    <ControlTemplate x:Key="TagA" TargetType="Control">
-      <Border CornerRadius="4" Background="{DynamicResource RunABrush}">
-        <TextBlock Text="A" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="{DynamicResource RunInkBrush}"/>
-      </Border>
-    </ControlTemplate>
-    <ControlTemplate x:Key="TagB" TargetType="Control">
-      <Border CornerRadius="4" Background="{DynamicResource RunBBrush}">
-        <TextBlock Text="B" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="{DynamicResource RunInkBrush}"/>
-      </Border>
-    </ControlTemplate>
-    <Style x:Key="Tag" TargetType="Control">
-      <Setter Property="Width" Value="18"/>
-      <Setter Property="Height" Value="18"/>
-      <Setter Property="FontSize" Value="11"/>
-      <Setter Property="Focusable" Value="False"/>
-      <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-    <Style x:Key="SmallTag" TargetType="Control" BasedOn="{StaticResource Tag}">
-      <Setter Property="Width" Value="15"/>
-      <Setter Property="Height" Value="15"/>
-      <Setter Property="FontSize" Value="9.5"/>
-      <Setter Property="Margin" Value="0,2,7,0"/>
-    </Style>
 
     <!-- A line of small print that is not there when it has nothing to say. -->
     <Style x:Key="Quiet" TargetType="TextBlock" BasedOn="{StaticResource Label}">
@@ -57,27 +23,35 @@
       </Style.Triggers>
     </Style>
 
-    <!-- A table row: taller than the live tables', since most cells hold two lines. -->
-    <Style x:Key="PairRow" TargetType="Border" BasedOn="{StaticResource RowLine}">
-      <Setter Property="MinHeight" Value="44"/>
+    <!-- A slot's three buttons, and the section's Swap: quiet until pointed at. -->
+    <Style x:Key="SlotButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Height" Value="22"/>
+      <Setter Property="Padding" Value="9,0"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Margin" Value="7,0,0,0"/>
     </Style>
 
-    <!-- What opens under a row: set in from the row, on a quieter surface. -->
-    <Style x:Key="Under" TargetType="Border">
-      <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
-      <Setter Property="CornerRadius" Value="4"/>
-      <Setter Property="Padding" Value="22,6,0,10"/>
-      <Setter Property="Margin" Value="0,0,0,6"/>
+    <!-- A fact about the parse in a slot: what it is, then its value. -->
+    <Style x:Key="Fact" TargetType="TextBlock" BasedOn="{StaticResource Label}">
+      <Setter Property="Margin" Value="0,0,6,0"/>
+    </Style>
+    <Style x:Key="FactValue" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Margin" Value="0,0,18,0"/>
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
 
-    <!-- A slot: a parse, or the place to put one. -->
+    <!-- A slot: a parse, or the place to put one. One line of what it is
+         with its buttons, and one of facts. -->
     <DataTemplate x:Key="Slot">
-      <Grid Background="Transparent" AllowDrop="True" DragEnter="OnSlotDrag" DragOver="OnSlotDrag"
+      <Grid MinHeight="54" Background="Transparent" AllowDrop="True" DragEnter="OnSlotDrag" DragOver="OnSlotDrag"
             DragLeave="OnSlotLeave" Drop="OnSlotDrop">
-        <!-- Dashed while it is empty: an outline of where a parse goes. -->
-        <Rectangle RadiusX="6" RadiusY="6" StrokeThickness="1">
+        <!-- Dashed while it is empty: an outline of where a parse goes.
+             Whole and amber while a file is held over it. -->
+        <Rectangle RadiusX="5" RadiusY="5" SnapsToDevicePixels="True">
           <Rectangle.Style>
             <Style TargetType="Rectangle">
+              <Setter Property="StrokeThickness" Value="1"/>
               <Setter Property="Stroke" Value="{DynamicResource Line2Brush}"/>
               <Setter Property="Fill" Value="{DynamicResource Bg2Brush}"/>
               <Style.Triggers>
@@ -87,16 +61,17 @@
                   <Setter Property="Fill" Value="Transparent"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsOver}" Value="True">
+                  <Setter Property="StrokeDashArray" Value="{x:Null}"/>
                   <Setter Property="Stroke" Value="{DynamicResource AccentBrush}"/>
                   <Setter Property="StrokeThickness" Value="2"/>
-                  <Setter Property="Fill" Value="{DynamicResource Bg3Brush}"/>
+                  <Setter Property="Fill" Value="{DynamicResource DropZoneFillBrush}"/>
                 </DataTrigger>
               </Style.Triggers>
             </Style>
           </Rectangle.Style>
         </Rectangle>
         <!-- The run's colour down the edge, as on everything else of that run. -->
-        <Border Width="3" HorizontalAlignment="Left" CornerRadius="3,0,0,3" Margin="1">
+        <Border Width="3" HorizontalAlignment="Left" CornerRadius="1.5" Margin="1" SnapsToDevicePixels="True">
           <Border.Style>
             <Style TargetType="Border">
               <Setter Property="Background" Value="{DynamicResource RunBBrush}"/>
@@ -109,680 +84,213 @@
           </Border.Style>
         </Border>
 
-        <StackPanel Margin="16,12,14,12">
-          <DockPanel>
+        <StackPanel Margin="14,8,10,6">
+          <DockPanel Height="22">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-              <Button Style="{StaticResource SmallButton}" Content="{Binding OpenText}" Command="{Binding OpenCommand}"
-                      ToolTip="{Binding OpenTip}" Margin="6,0,0,0"
+              <Button Style="{StaticResource SlotButton}" Content="{Binding OpenText}" Command="{Binding OpenCommand}"
+                      ToolTip="{Binding OpenTip}"
                       AutomationProperties.Name="{Binding Letter, StringFormat='Open a parse into {0}'}"/>
-              <Button Style="{StaticResource SmallButton}" Content="Use current" Command="{Binding UseCurrentCommand}"
-                      ToolTip="{Binding Owner.UseCurrentTip}" ToolTipService.ShowOnDisabled="True" Margin="6,0,0,0"
+              <Button Style="{StaticResource SlotButton}" Content="Use current" Command="{Binding UseCurrentCommand}"
+                      ToolTip="{Binding Owner.UseCurrentTip}" ToolTipService.ShowOnDisabled="True"
                       AutomationProperties.Name="{Binding Letter, StringFormat='Use current for {0}'}"/>
-              <Button Style="{StaticResource SmallButton}" Content="Clear" Command="{Binding ClearCommand}"
-                      ToolTip="Empty this slot" Margin="6,0,0,0"
+              <Button Style="{StaticResource SlotButton}" Content="Clear" Command="{Binding ClearCommand}"
+                      ToolTip="Empty this slot"
                       Visibility="{Binding IsLoaded, Converter={StaticResource Visible}}"
                       AutomationProperties.Name="{Binding Letter, StringFormat='Clear {0}'}"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-              <Control>
-                <Control.Style>
-                  <Style TargetType="Control" BasedOn="{StaticResource Tag}">
-                    <Setter Property="Template" Value="{StaticResource TagB}"/>
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding IsA}" Value="True">
-                        <Setter Property="Template" Value="{StaticResource TagA}"/>
-                      </DataTrigger>
-                    </Style.Triggers>
-                  </Style>
-                </Control.Style>
-              </Control>
-              <TextBlock Text="{Binding Role}" Style="{StaticResource Label}" Margin="8,0,0,0" VerticalAlignment="Center"/>
-            </StackPanel>
+            <Control DockPanel.Dock="Left">
+              <Control.Style>
+                <Style TargetType="Control" BasedOn="{StaticResource RunTag}">
+                  <Setter Property="Template" Value="{StaticResource RunTagB}"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsA}" Value="True">
+                      <Setter Property="Template" Value="{StaticResource RunTagA}"/>
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </Control.Style>
+            </Control>
+            <v:Caps DockPanel.Dock="Left" Text="{Binding Role}" Style="{StaticResource Caps}" Margin="8,0,0,0"/>
+            <TextBlock Text="{Binding Name}" ToolTip="{Binding Tip}" Style="{StaticResource SlotTitle}" Margin="12,0,6,0"
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Background="Transparent"
+                       Visibility="{Binding IsLoaded, Converter={StaticResource Visible}}"/>
           </DockPanel>
 
-          <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="12"
-                     HorizontalAlignment="Center" Margin="0,18,0,10"
+          <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="11.5"
+                     Margin="0,2,0,0" TextTrimming="CharacterEllipsis"
                      Visibility="{Binding IsEmpty, Converter={StaticResource Visible}}"/>
 
           <StackPanel Visibility="{Binding IsLoaded, Converter={StaticResource Visible}}">
-            <TextBlock Text="{Binding Name}" ToolTip="{Binding Tip}" FontFamily="{StaticResource NumberFont}" FontSize="16"
-                       FontWeight="SemiBold" Margin="0,8,0,4" TextTrimming="CharacterEllipsis" Background="Transparent"/>
-            <WrapPanel>
-              <TextBlock Text="Started" Style="{StaticResource Label}" Margin="0,0,6,0"/>
-              <TextBlock Text="{Binding Started}" FontSize="12" Margin="0,0,20,0" Typography.NumeralAlignment="Tabular"/>
-              <TextBlock Text="Length" Style="{StaticResource Label}" Margin="0,0,6,0"/>
-              <TextBlock Text="{Binding Length}" FontSize="12" Margin="0,0,20,0" Typography.NumeralAlignment="Tabular"/>
-              <TextBlock Text="Party" Style="{StaticResource Label}" Margin="0,0,6,0"/>
-              <TextBlock Text="{Binding Party}" FontSize="12"/>
+            <WrapPanel Margin="0,2,0,0">
+              <TextBlock Text="Started" Style="{StaticResource Fact}"/>
+              <TextBlock Text="{Binding Started}" Style="{StaticResource FactValue}"/>
+              <TextBlock Text="Length" Style="{StaticResource Fact}"/>
+              <TextBlock Text="{Binding Length}" Style="{StaticResource FactValue}"/>
+              <TextBlock Text="Party" Style="{StaticResource Fact}"/>
+              <TextBlock Text="{Binding Party}" Style="{StaticResource FactValue}"/>
             </WrapPanel>
-            <TextBlock Text="{Binding Skipped}" Style="{StaticResource Quiet}" Margin="0,6,0,0"/>
+            <!-- What of the file was not understood, when anything was not. -->
+            <TextBlock Text="{Binding Skipped}" Style="{StaticResource Quiet}" Margin="0,4,0,0"/>
           </StackPanel>
 
           <!-- Why the last file would not load. It stays on the slot it was meant for. -->
-          <TextBlock Text="{Binding Error}" Style="{StaticResource Quiet}" Margin="0,6,0,0"
-                     Foreground="{DynamicResource CritBrush}"/>
+          <TextBlock Text="{Binding Error}" Style="{StaticResource Quiet}" Margin="0,5,0,1"
+                     Foreground="{DynamicResource CritBrush}" AutomationProperties.LiveSetting="Polite"/>
         </StackPanel>
       </Grid>
     </DataTemplate>
 
-    <!-- A total under one name, both runs: a target, or a healing spell. -->
-    <DataTemplate x:Key="TotalRow">
-      <Border Style="{StaticResource PairRow}">
-        <v:Cells Widths="{StaticResource TotalColumns}">
-          <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}"/>
-          <v:RunBars Value="{Binding Amount}"/>
-          <v:ChangeText Value="{Binding Change}"/>
-        </v:Cells>
-      </Border>
-    </DataTemplate>
-    <Style x:Key="ByName" TargetType="ContentPresenter">
-      <Setter Property="AutomationProperties.Name" Value="{Binding Name}"/>
+    <!-- A figure's cell is known to a script by what the figure is of. -->
+    <Style x:Key="ByLabel" TargetType="ContentPresenter">
+      <Setter Property="AutomationProperties.Name" Value="{Binding Label}"/>
     </Style>
-
-    <!-- What is under a row is made when the row is opened and thrown away
-         when it is closed: eighteen characters' actions are a few thousand
-         cells, and a closed row's would be read out by a screen reader as
-         though they were there. -->
-    <DataTemplate x:Key="Nothing"/>
-    <DataTemplate x:Key="NoActions">
-      <Border Style="{StaticResource Under}">
-        <TextBlock Text="No actions." Style="{StaticResource Label}" Margin="8,4"/>
-      </Border>
-    </DataTemplate>
-    <DataTemplate x:Key="NoHeals">
-      <Border Style="{StaticResource Under}">
-        <TextBlock Text="No heals." Style="{StaticResource Label}" Margin="8,4"/>
-      </Border>
-    </DataTemplate>
-
-    <!-- An action's hits, or a heal's casts, both runs: how they are spread,
-         on bins the runs share, and the figures of each beside it. -->
-    <DataTemplate x:Key="SpreadDetail">
-      <Border Style="{StaticResource Under}" Padding="22,12,14,12">
-        <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="340"/>
-          </Grid.ColumnDefinitions>
-          <!-- The chart is as tall as the figures beside it, which are a row
-               longer when either run has a crit. -->
-          <DockPanel>
-            <TextBlock DockPanel.Dock="Bottom" Text="{Binding Spread.Caption}" Style="{StaticResource Quiet}"
-                       Margin="0,6,0,0" HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
-            <c:PairedHistogramChart MinHeight="250" Model="{Binding Histogram}"
-                                    AutomationProperties.Name="Distribution chart of both runs"/>
-          </DockPanel>
-          <StackPanel Grid.Column="1" Margin="18,0,0,0" VerticalAlignment="Top">
-            <v:Cells Widths="{StaticResource SpreadColumns}" Margin="0,0,0,4">
-              <!-- The rows name themselves; there is nothing a heading would add. -->
-              <TextBlock/>
-              <Control Style="{StaticResource SmallTag}" Template="{StaticResource TagA}" HorizontalAlignment="Right"
-                       Margin="0,0,8,0"/>
-              <Control Style="{StaticResource SmallTag}" Template="{StaticResource TagB}" HorizontalAlignment="Right"
-                       Margin="0,0,8,0"/>
-              <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-            </v:Cells>
-            <ItemsControl ItemsSource="{Binding Spread.Lines}" Focusable="False">
-              <ItemsControl.ItemContainerStyle>
-                <Style TargetType="ContentPresenter">
-                  <Setter Property="AutomationProperties.Name" Value="{Binding Label}"/>
-                </Style>
-              </ItemsControl.ItemContainerStyle>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Border Style="{StaticResource RowLine}" MinHeight="34" Background="Transparent" ToolTip="{Binding Tip}">
-                    <v:Cells Widths="{StaticResource SpreadColumns}">
-                      <TextBlock Text="{Binding Label}" Style="{StaticResource CellText}"
-                                 Foreground="{DynamicResource Text2Brush}"/>
-                      <TextBlock Text="{Binding A}" Style="{StaticResource Cell}"/>
-                      <TextBlock Text="{Binding B}" Style="{StaticResource Cell}"/>
-                      <v:ChangeText Value="{Binding Change}"/>
-                    </v:Cells>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </Grid>
-      </Border>
-    </DataTemplate>
-    <Style x:Key="UnderSpread" TargetType="ContentControl">
-      <Setter Property="Focusable" Value="False"/>
-      <Setter Property="ContentTemplate" Value="{StaticResource Nothing}"/>
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding Open}" Value="True">
-          <Setter Property="ContentTemplate" Value="{StaticResource SpreadDetail}"/>
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-
-    <!-- A row's actions, paired: what a change of gear or job did. Each
-         opens in its turn, onto how its hits are spread. -->
-    <DataTemplate x:Key="ActorDetail">
-      <Border Style="{StaticResource Under}">
-        <StackPanel>
-          <StackPanel>
-            <v:Cells Widths="{StaticResource ActionColumns}" Margin="0,2,0,4">
-              <TextBlock Text="Action" Style="{StaticResource HeadText}" Padding="22,0,8,0"/>
-              <TextBlock Text="Uses" Style="{StaticResource Head}"/>
-              <TextBlock Text="Accuracy" Style="{StaticResource Head}"/>
-              <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-              <TextBlock Text="Avg" Style="{StaticResource Head}"/>
-              <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-              <TextBlock Text="Max" Style="{StaticResource Head}"/>
-              <TextBlock Text="Total" Style="{StaticResource Head}"/>
-              <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-            </v:Cells>
-            <ItemsControl ItemsSource="{Binding Actions}" Focusable="False">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <StackPanel>
-                    <Border Style="{StaticResource PairRow}" MinHeight="40">
-                      <Button Style="{StaticResource RowButton}" Command="{Binding ToggleCommand}"
-                              AutomationProperties.Name="{Binding Label}"
-                              ToolTip="Compare how this action's hits are spread">
-                        <v:Cells Widths="{StaticResource ActionColumns}">
-                          <DockPanel Margin="8,0" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource Text2Brush}"/>
-                            <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
-                                       VerticalAlignment="Center"/>
-                          </DockPanel>
-                          <v:RunPair Value="{Binding Line.Uses}"/>
-                          <v:RunPair Value="{Binding Line.Accuracy}"/>
-                          <v:ChangeText Value="{Binding Line.AccuracyChange}"/>
-                          <v:RunPair Value="{Binding Line.Avg}"/>
-                          <v:ChangeText Value="{Binding Line.AvgChange}"/>
-                          <v:RunPair Value="{Binding Line.Max}"/>
-                          <v:RunPair Value="{Binding Line.Total}"/>
-                          <v:ChangeText Value="{Binding Line.TotalChange}"/>
-                        </v:Cells>
-                      </Button>
-                    </Border>
-                    <ContentControl Content="{Binding}" Style="{StaticResource UnderSpread}"/>
-                  </StackPanel>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </StackPanel>
-      </Border>
-    </DataTemplate>
-    <Style x:Key="UnderActor" TargetType="ContentControl">
-      <Setter Property="Focusable" Value="False"/>
-      <Setter Property="ContentTemplate" Value="{StaticResource Nothing}"/>
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding Open}" Value="True">
-          <Setter Property="ContentTemplate" Value="{StaticResource ActorDetail}"/>
-        </DataTrigger>
-        <!-- Open, with nothing that did damage in either run. -->
-        <DataTrigger Binding="{Binding NoActions}" Value="True">
-          <Setter Property="ContentTemplate" Value="{StaticResource NoActions}"/>
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-
-    <!-- A healer's heals, paired. Each opens in its turn, onto how its casts are spread. -->
-    <DataTemplate x:Key="HealerDetail">
-      <Border Style="{StaticResource Under}">
-        <StackPanel>
-          <StackPanel>
-            <v:Cells Widths="{StaticResource HealColumns}" Margin="0,2,0,4">
-              <TextBlock Text="Heal" Style="{StaticResource HeadText}" Padding="22,0,8,0"/>
-              <TextBlock Text="Casts" Style="{StaticResource Head}"/>
-              <TextBlock Text="Total" Style="{StaticResource Head}"/>
-              <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-              <TextBlock Text="Avg" Style="{StaticResource Head}"/>
-              <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-              <TextBlock Text="Max" Style="{StaticResource Head}"/>
-            </v:Cells>
-            <ItemsControl ItemsSource="{Binding Heals}" Focusable="False">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <StackPanel>
-                    <Border Style="{StaticResource PairRow}" MinHeight="40">
-                      <Button Style="{StaticResource RowButton}" Command="{Binding ToggleCommand}"
-                              AutomationProperties.Name="{Binding Label}"
-                              ToolTip="Compare how this heal's casts are spread">
-                        <v:Cells Widths="{StaticResource HealColumns}">
-                          <DockPanel Margin="8,0" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource Text2Brush}"/>
-                            <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
-                                       VerticalAlignment="Center"/>
-                          </DockPanel>
-                          <v:RunPair Value="{Binding Line.Casts}"/>
-                          <v:RunPair Value="{Binding Line.Total}"/>
-                          <v:ChangeText Value="{Binding Line.TotalChange}"/>
-                          <v:RunPair Value="{Binding Line.Avg}"/>
-                          <v:ChangeText Value="{Binding Line.AvgChange}"/>
-                          <v:RunPair Value="{Binding Line.Max}"/>
-                        </v:Cells>
-                      </Button>
-                    </Border>
-                    <ContentControl Content="{Binding}" Style="{StaticResource UnderSpread}"/>
-                  </StackPanel>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </StackPanel>
-      </Border>
-    </DataTemplate>
-    <Style x:Key="UnderHealer" TargetType="ContentControl">
-      <Setter Property="Focusable" Value="False"/>
-      <Setter Property="ContentTemplate" Value="{StaticResource Nothing}"/>
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding Open}" Value="True">
-          <Setter Property="ContentTemplate" Value="{StaticResource HealerDetail}"/>
-        </DataTrigger>
-        <DataTrigger Binding="{Binding NoHeals}" Value="True">
-          <Setter Property="ContentTemplate" Value="{StaticResource NoHeals}"/>
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-
-    <!-- The healing table's two kinds of row. -->
-    <DataTemplate x:Key="PartyRow">
-      <Border Style="{StaticResource PairRow}" Background="{DynamicResource Bg2Brush}">
-        <v:Cells Widths="{StaticResource HealerColumns}">
-          <TextBlock Text="{Binding Name}" Style="{StaticResource CellText}" FontWeight="SemiBold" Padding="22,0,8,0"/>
-          <v:RunBars Value="{Binding Line.Healing}"/>
-          <v:ChangeText Value="{Binding Line.HealingChange}"/>
-          <v:RunPair Value="{Binding Line.Casts}"/>
-          <v:RunPair Value="{Binding Line.Avg}"/>
-          <v:ChangeText Value="{Binding Line.AvgChange}"/>
-          <v:RunPair Value="{Binding Line.Biggest}"/>
-          <v:RunPair Value="{Binding Line.Pet}"/>
-        </v:Cells>
-      </Border>
-    </DataTemplate>
-    <DataTemplate x:Key="HealerRow">
-      <StackPanel>
-        <Border Style="{StaticResource PairRow}">
-          <Button Style="{StaticResource RowButton}" Command="{Binding ToggleCommand}"
-                  AutomationProperties.Name="{Binding Name}" ToolTip="Compare the heals behind this row">
-            <v:Cells Widths="{StaticResource HealerColumns}">
-              <DockPanel Margin="8,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                           Foreground="{DynamicResource Text2Brush}"/>
-                <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-              </DockPanel>
-              <v:RunBars Value="{Binding Line.Healing}"/>
-              <v:ChangeText Value="{Binding Line.HealingChange}"/>
-              <v:RunPair Value="{Binding Line.Casts}"/>
-              <v:RunPair Value="{Binding Line.Avg}"/>
-              <v:ChangeText Value="{Binding Line.AvgChange}"/>
-              <v:RunPair Value="{Binding Line.Biggest}"/>
-              <v:RunPair Value="{Binding Line.Pet}"/>
-            </v:Cells>
-          </Button>
-        </Border>
-        <ContentControl Content="{Binding}" Style="{StaticResource UnderHealer}"/>
-      </StackPanel>
-    </DataTemplate>
-    <v:ActionRowTemplates x:Key="HealerRows" Heading="{StaticResource PartyRow}" Action="{StaticResource HealerRow}"/>
 
   </UserControl.Resources>
 
-  <StackPanel>
+  <!-- On the pane surface, each band ruled off from the next. 172 units
+       in all while the slots stand side by side and say nothing more than
+       their facts: 38 to the slots, 54 of slot, 8 and a rule, then a band
+       of figures 72 tall with its two rules. -->
+  <StackPanel x:Name="Bands" Background="{DynamicResource Bg1Brush}">
 
-    <!-- The runs: two slots, and what to compare about them. -->
-    <Border Style="{StaticResource Card}">
-      <StackPanel>
-        <TextBlock Text="Compare runs" Style="{StaticResource CardTitle}"/>
+    <!-- What the section is, and what to compare about the two runs: one
+         line while the two slots stand side by side. Narrower, the
+         switches take a line of their own and wrap. -->
+    <Grid Margin="14,7,12,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+        <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition MinHeight="24"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <DockPanel VerticalAlignment="Center">
+        <TextBlock DockPanel.Dock="Left" Text="Compare runs" Style="{StaticResource PaneTitle}" VerticalAlignment="Center"/>
         <TextBlock Text="Open or drop two exported parses. A is the baseline: every difference reads B against A."
-                   Style="{StaticResource CardNote}"/>
-
-        <WrapPanel Margin="0,10,0,0">
-          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,6"
-                      ToolTip="Compare the damage of the two runs, or their healing">
-            <TextBlock Text="Show" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <RadioButton Style="{StaticResource Segment}" GroupName="compareMode" Content="Damage"
-                         IsChecked="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=Damage}"
-                         AutomationProperties.Name="Compare damage"/>
-            <RadioButton Style="{StaticResource Segment}" GroupName="compareMode" Content="Healing" Margin="0"
-                         IsChecked="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=Healing}"
-                         AutomationProperties.Name="Compare healing"/>
-          </StackPanel>
-          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,6">
-            <TextBlock Text="Compare by" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <RadioButton Style="{StaticResource Segment}" GroupName="compareBy" Content="Character"
-                         IsChecked="{Binding By, Converter={StaticResource Equals}, ConverterParameter=Character}"
-                         ToolTip="One row per character, matched by name across the two runs"
-                         AutomationProperties.Name="Compare by character"/>
-            <RadioButton Style="{StaticResource Segment}" GroupName="compareBy" Content="Job" Margin="0"
-                         IsChecked="{Binding By, Converter={StaticResource Equals}, ConverterParameter=Job}"
-                         ToolTip="One row per main job, every character on it combined: for runs with a different roster"
-                         AutomationProperties.Name="Compare by job"/>
-          </StackPanel>
-          <!-- The one setting the live sections have, shown here because it
-               changes these figures too. Not while healing is compared: it
-               moves no healing figure. -->
-          <ToggleButton Content="Include Skillchains" IsChecked="{Binding Skillchains}" ToolTip="{Binding SkillchainsTip}"
-                        VerticalAlignment="Center" Margin="0,0,6,6"
-                        Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
-          <Button Content="Swap A ↔ B" Command="{Binding SwapCommand}" ToolTip="Make B the baseline"
-                  ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,6,6"
-                  AutomationProperties.Name="Swap A and B"/>
-        </WrapPanel>
-
-        <UniformGrid Columns="{Binding PairColumns, ElementName=Section}" Margin="-6,6,-6,-6">
-          <ContentControl Content="{Binding A}" ContentTemplate="{StaticResource Slot}" Focusable="False" Margin="6"/>
-          <ContentControl Content="{Binding B}" ContentTemplate="{StaticResource Slot}" Focusable="False" Margin="6"/>
-        </UniformGrid>
-      </StackPanel>
-    </Border>
-
-    <!-- Everything below needs both runs. -->
-    <StackPanel Visibility="{Binding Ready, Converter={StaticResource Visible}}">
-
-      <!-- Six figures, each A over B with the change beneath. -->
-      <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False" Margin="-6,6,-6,0">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <UniformGrid Columns="{Binding TileColumns, ElementName=Section}"/>
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemContainerStyle>
-          <Style TargetType="ContentPresenter">
-            <Setter Property="AutomationProperties.Name" Value="{Binding Label}"/>
-          </Style>
-        </ItemsControl.ItemContainerStyle>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <Border Style="{StaticResource Card}" Margin="6" Padding="16,12" ToolTip="{Binding Tip}">
-              <StackPanel>
-                <TextBlock Text="{Binding Label}" Style="{StaticResource Label}"/>
-                <Grid Margin="0,6,0,0">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                  </Grid.ColumnDefinitions>
-                  <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                  </Grid.RowDefinitions>
-                  <Control Style="{StaticResource SmallTag}" Template="{StaticResource TagA}"/>
-                  <TextBlock x:Name="FigureA" Grid.Column="1" Text="{Binding A}" Style="{StaticResource Figure}" FontSize="20"
-                             TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SubA, TargetNullValue=''}"
-                             Style="{StaticResource Quiet}" FontSize="11" Margin="0,-2,0,2"/>
-                  <Control Grid.Row="2" Style="{StaticResource SmallTag}" Template="{StaticResource TagB}"/>
-                  <TextBlock x:Name="FigureB" Grid.Row="2" Grid.Column="1" Text="{Binding B}" Style="{StaticResource Figure}"
-                             FontSize="20" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SubB, TargetNullValue=''}"
-                             Style="{StaticResource Quiet}" FontSize="11" Margin="0,-2,0,0"/>
-                </Grid>
-                <Border BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}"
-                        Margin="0,8,0,0" Padding="0,7,0,0">
-                  <v:ChangeText Value="{Binding Change}" Beside="True"/>
-                </Border>
-              </StackPanel>
-            </Border>
-            <DataTemplate.Triggers>
-              <!-- The total leads, as it does in the live sections. -->
-              <DataTrigger Binding="{Binding Hero}" Value="True">
-                <Setter TargetName="FigureA" Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-                <Setter TargetName="FigureB" Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                   ToolTip="Open or drop two exported parses. A is the baseline: every difference reads B against A."
+                   Style="{StaticResource Label}" Margin="12,0,16,0" VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" Background="Transparent"/>
+      </DockPanel>
+      <WrapPanel>
+        <WrapPanel.Style>
+          <Style TargetType="WrapPanel">
+            <Setter Property="Grid.Column" Value="1"/>
+            <Setter Property="Margin" Value="0,0,-10,-4"/>
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding PairColumns, ElementName=Section}" Value="1">
+                <Setter Property="Grid.Column" Value="0"/>
+                <Setter Property="Grid.ColumnSpan" Value="2"/>
+                <Setter Property="Grid.Row" Value="1"/>
+                <Setter Property="Margin" Value="0,6,-10,-4"/>
               </DataTrigger>
-            </DataTemplate.Triggers>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-
-      <!-- Both runs' running total on one clock. The shorter run's line
-           ends where the run did; it is not carried on flat. -->
-      <Border Style="{StaticResource Card}" Margin="0,6,0,0">
-        <StackPanel>
-          <TextBlock Text="{Binding PaceTitle}" Style="{StaticResource CardTitle}"/>
-          <TextBlock Text="{Binding PaceNote}" Style="{StaticResource CardNote}"/>
-          <ItemsControl ItemsSource="{Binding PaceLegend}" Margin="0,10,0,0" Focusable="False"
-                        ItemContainerStyle="{StaticResource ByName}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <WrapPanel/>
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <StackPanel Orientation="Horizontal" Margin="0,0,14,4">
-                  <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}"/>
-                  <TextBlock Text="{Binding Name}" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-          <c:LineChart Height="320" Margin="0,6,0,0" Model="{Binding Pace}" EmptyText="Nothing to compare"
-                       AutomationProperties.Name="Cumulative chart of both runs"/>
-          <Expander Header="Data table" Margin="0,10,0,0" IsExpanded="{Binding PaceTableOpen}"
-                    AutomationProperties.Name="Data table of both runs"
-                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-            <StackPanel>
-              <v:Cells Widths="{StaticResource PaceColumns}" Margin="0,0,0,6">
-                <TextBlock Text="Time" Style="{StaticResource Head}"/>
-                <TextBlock Text="A" Style="{StaticResource Head}"/>
-                <TextBlock Text="B" Style="{StaticResource Head}"/>
-                <TextBlock Text="B − A" Style="{StaticResource Head}"/>
-              </v:Cells>
-              <ItemsControl ItemsSource="{Binding PaceTable}" Focusable="False">
-                <ItemsControl.ItemContainerStyle>
-                  <Style TargetType="ContentPresenter">
-                    <Setter Property="AutomationProperties.Name" Value="{Binding Time}"/>
-                  </Style>
-                </ItemsControl.ItemContainerStyle>
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <Border Style="{StaticResource RowLine}" MinHeight="28">
-                      <v:Cells Widths="{StaticResource PaceColumns}">
-                        <TextBlock Text="{Binding Time}" Style="{StaticResource Cell}"/>
-                        <TextBlock Text="{Binding A}" Style="{StaticResource Cell}"/>
-                        <TextBlock Text="{Binding B}" Style="{StaticResource Cell}"/>
-                        <TextBlock Text="{Binding Difference}" Style="{StaticResource Cell}"/>
-                      </v:Cells>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
+            </Style.Triggers>
+          </Style>
+        </WrapPanel.Style>
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,4"
+                    ToolTip="Compare the damage of the two runs, or their healing">
+          <TextBlock Text="Show" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+          <Border Style="{StaticResource SegmentGroup}">
+            <StackPanel Orientation="Horizontal">
+              <RadioButton Style="{StaticResource Segment}" GroupName="compareMode" Content="Damage"
+                           IsChecked="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=Damage}"
+                           AutomationProperties.Name="Compare damage"/>
+              <RadioButton Style="{StaticResource Segment}" GroupName="compareMode" Content="Healing"
+                           IsChecked="{Binding Mode, Converter={StaticResource Equals}, ConverterParameter=Healing}"
+                           AutomationProperties.Name="Compare healing"/>
             </StackPanel>
-          </Expander>
+          </Border>
         </StackPanel>
-      </Border>
-
-      <!-- Damage: by character or job, then by type and by target. -->
-      <StackPanel Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
-        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-          <StackPanel>
-            <TextBlock Text="{Binding RowsTitle}" Style="{StaticResource CardTitle}"/>
-            <TextBlock Text="{Binding RowsNote}" Style="{StaticResource CardNote}"/>
-            <ScrollViewer x:Name="ActorScroller" Margin="0,10,0,0" HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Disabled" v:WheelChain.On="True">
-              <StackPanel MinWidth="1080" Width="{Binding ViewportWidth, ElementName=ActorScroller}" Margin="0,0,0,12">
-                <v:Cells Widths="{StaticResource ActorColumns}" Margin="0,0,0,6">
-                  <TextBlock Text="{Binding NameHead}" Style="{StaticResource HeadText}" Padding="22,0,8,0"/>
-                  <TextBlock Text="{Binding JobHead}" Style="{StaticResource HeadText}"/>
-                  <TextBlock Text="Damage" Style="{StaticResource HeadText}"/>
-                  <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-                  <TextBlock Text="DPS" Style="{StaticResource Head}" ToolTip="Damage divided by that run's session clock"/>
-                  <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-                  <TextBlock Text="Accuracy" Style="{StaticResource Head}"
-                             ToolTip="Melee and ranged swings that connected, out of all attempted"/>
-                  <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-                  <TextBlock Text="WS Avg" Style="{StaticResource Head}"
-                             ToolTip="Average damage of the weaponskills that dealt damage"/>
-                  <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-                  <TextBlock Text="Share" Style="{StaticResource Head}" ToolTip="Share of that run's party damage"/>
-                </v:Cells>
-                <ItemsControl ItemsSource="{Binding Actors}" Focusable="False">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <StackPanel>
-                        <Border Style="{StaticResource PairRow}">
-                          <Button Style="{StaticResource RowButton}" Command="{Binding ToggleCommand}"
-                                  AutomationProperties.Name="{Binding Name}" ToolTip="Compare the actions behind this row">
-                            <v:Cells Widths="{StaticResource ActorColumns}">
-                              <DockPanel Margin="8,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Caret}" Width="14" FontSize="10" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource Text2Brush}"/>
-                                <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,8,0"/>
-                                <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"
-                                           VerticalAlignment="Center"/>
-                              </DockPanel>
-                              <!-- By character, the job in each run; by job, who was
-                                   on it. One or the other is there, never an
-                                   empty copy of both. -->
-                              <Grid Background="Transparent" ToolTip="{Binding JobsTip}">
-                                <v:RunPair Value="{Binding Jobs}" Words="True" Foreground="{DynamicResource Text2Brush}"
-                                           Visibility="{Binding Jobs, Converter={StaticResource Present}}"/>
-                                <TextBlock Text="{Binding Members}" Style="{StaticResource Quiet}"
-                                           VerticalAlignment="Center" Margin="8,2"/>
-                              </Grid>
-                              <v:RunBars Value="{Binding Line.Damage}"/>
-                              <v:ChangeText Value="{Binding Line.DamageChange}"/>
-                              <v:RunPair Value="{Binding Line.Dps}"/>
-                              <v:ChangeText Value="{Binding Line.DpsChange}"/>
-                              <v:RunPair Value="{Binding Line.Accuracy}"/>
-                              <v:ChangeText Value="{Binding Line.AccuracyChange}"/>
-                              <v:RunPair Value="{Binding Line.WsAvg}"/>
-                              <v:ChangeText Value="{Binding Line.WsAvgChange}"/>
-                              <v:RunPair Value="{Binding Line.Share}"/>
-                            </v:Cells>
-                          </Button>
-                        </Border>
-                        <ContentControl Content="{Binding}" Style="{StaticResource UnderActor}"/>
-                      </StackPanel>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </ScrollViewer>
-          </StackPanel>
-        </Border>
-
-        <UniformGrid Columns="{Binding PairColumns, ElementName=Section}" Margin="-6,6,-6,0">
-          <Border Style="{StaticResource Card}" Margin="6" VerticalAlignment="Top">
-            <StackPanel>
-              <TextBlock Text="By damage type" Style="{StaticResource CardTitle}"/>
-              <TextBlock Text="Where the party's damage came from. Share is of that run's total."
-                         Style="{StaticResource CardNote}" Margin="0,2,0,10"/>
-              <v:Cells Widths="{StaticResource KindColumns}" Margin="0,0,0,6">
-                <TextBlock Text="Type" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Damage" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-                <TextBlock Text="Share" Style="{StaticResource Head}"/>
-              </v:Cells>
-              <ItemsControl ItemsSource="{Binding Kinds}" Focusable="False">
-                <ItemsControl.ItemContainerStyle>
-                  <Style TargetType="ContentPresenter">
-                    <Setter Property="AutomationProperties.Name" Value="{Binding Label}"/>
-                  </Style>
-                </ItemsControl.ItemContainerStyle>
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <Border Style="{StaticResource PairRow}">
-                      <v:Cells Widths="{StaticResource KindColumns}">
-                        <TextBlock Text="{Binding Label}" Style="{StaticResource CellText}"/>
-                        <v:RunBars Value="{Binding Damage}"/>
-                        <v:ChangeText Value="{Binding Change}"/>
-                        <v:RunPair Value="{Binding Share}"/>
-                      </v:Cells>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
+          <TextBlock Text="Compare by" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+          <Border Style="{StaticResource SegmentGroup}">
+            <StackPanel Orientation="Horizontal">
+              <RadioButton Style="{StaticResource Segment}" GroupName="compareBy" Content="Character"
+                           IsChecked="{Binding By, Converter={StaticResource Equals}, ConverterParameter=Character}"
+                           ToolTip="One row per character, matched by name across the two runs"
+                           AutomationProperties.Name="Compare by character"/>
+              <RadioButton Style="{StaticResource Segment}" GroupName="compareBy" Content="Job"
+                           IsChecked="{Binding By, Converter={StaticResource Equals}, ConverterParameter=Job}"
+                           ToolTip="One row per main job, every character on it combined: for runs with a different roster"
+                           AutomationProperties.Name="Compare by job"/>
             </StackPanel>
           </Border>
-          <Border Style="{StaticResource Card}" Margin="6" VerticalAlignment="Top">
-            <StackPanel>
-              <TextBlock Text="By target" Style="{StaticResource CardTitle}"/>
-              <TextBlock Text="Party damage dealt to each target name, largest first." Style="{StaticResource CardNote}"
-                         Margin="0,2,0,10"/>
-              <v:Cells Widths="{StaticResource TotalColumns}" Margin="0,0,14,6">
-                <TextBlock Text="Target" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Damage" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-              </v:Cells>
-              <ScrollViewer MaxHeight="470" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                            v:WheelChain.On="True">
-                <ItemsControl ItemsSource="{Binding Targets}" ItemTemplate="{StaticResource TotalRow}" Focusable="False"
-                              ItemContainerStyle="{StaticResource ByName}" Margin="0,0,14,0"/>
-              </ScrollViewer>
-            </StackPanel>
-          </Border>
-        </UniformGrid>
-      </StackPanel>
+        </StackPanel>
+        <!-- The one setting the live sections have, shown here because it
+             changes these figures too. Not while healing is compared: it
+             moves no healing figure. -->
+        <ToggleButton Content="Include Skillchains" IsChecked="{Binding Skillchains}" ToolTip="{Binding SkillchainsTip}"
+                      VerticalAlignment="Center" Margin="0,0,10,4"
+                      Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
+        <Button Style="{StaticResource GhostButton}" Height="24" Padding="10,0" FontSize="11.5"
+                Content="Swap A &#x2194; B" Command="{Binding SwapCommand}" ToolTip="Make B the baseline"
+                ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,10,4"
+                AutomationProperties.Name="Swap A and B"/>
+      </WrapPanel>
+    </Grid>
 
-      <!-- Healing: by healer or job, then by spell and by who was healed. -->
-      <StackPanel Visibility="{Binding IsHealing, Converter={StaticResource Visible}}">
-        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-          <StackPanel>
-            <TextBlock Text="{Binding HealTitle}" Style="{StaticResource CardTitle}"/>
-            <TextBlock Text="Each figure shows A over B. Select a row to compare its heals, and a heal to compare how its casts are spread." Style="{StaticResource CardNote}"/>
-            <ScrollViewer x:Name="HealerScroller" Margin="0,10,0,0" HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Disabled" v:WheelChain.On="True"
-                          Visibility="{Binding Healers.Count, Converter={StaticResource Present}}">
-              <StackPanel MinWidth="900" Width="{Binding ViewportWidth, ElementName=HealerScroller}" Margin="0,0,0,12">
-                <v:Cells Widths="{StaticResource HealerColumns}" Margin="0,0,0,6">
-                  <TextBlock Text="{Binding HealerHead}" Style="{StaticResource HeadText}" Padding="22,0,8,0"/>
-                  <TextBlock Text="Healing" Style="{StaticResource HeadText}"/>
-                  <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-                  <TextBlock Text="Casts" Style="{StaticResource Head}" ToolTip="One per cast, however many people it reached"/>
-                  <TextBlock Text="Avg" Style="{StaticResource Head}" ToolTip="Healing divided by casts"/>
-                  <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-                  <TextBlock Text="Biggest" Style="{StaticResource Head}"
-                             ToolTip="The most one target was healed for by one cast"/>
-                  <TextBlock Text="Pet" Style="{StaticResource Head}" ToolTip="Heals by the character's pet. Not part of Healing"/>
-                </v:Cells>
-                <ItemsControl ItemsSource="{Binding Healers}" ItemTemplateSelector="{StaticResource HealerRows}"
-                              Focusable="False"/>
-              </StackPanel>
-            </ScrollViewer>
-            <!-- Why a side is dashes, or that nobody healed. -->
-            <TextBlock Text="{Binding HealNote}" Style="{StaticResource Quiet}" FontSize="12" Margin="0,8,0,0"/>
-          </StackPanel>
-        </Border>
+    <!-- The two slots, side by side; one over the other in a narrow
+         window. Each is as tall as what it has to say: an error adds a line. -->
+    <UniformGrid Columns="{Binding PairColumns, ElementName=Section}" Margin="7,2,7,3">
+      <ContentControl Content="{Binding A}" ContentTemplate="{StaticResource Slot}" Focusable="False" Margin="5"
+                      VerticalAlignment="Top"/>
+      <ContentControl Content="{Binding B}" ContentTemplate="{StaticResource Slot}" Focusable="False" Margin="5"
+                      VerticalAlignment="Top"/>
+    </UniformGrid>
+    <Rectangle Height="1" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
 
-        <UniformGrid Columns="{Binding PairColumns, ElementName=Section}" Margin="-6,6,-6,0">
-          <Border Style="{StaticResource Card}" Margin="6" VerticalAlignment="Top">
-            <StackPanel>
-              <TextBlock Text="By heal" Style="{StaticResource CardTitle}"/>
-              <TextBlock Text="Every healer's casts of each spell or ability, combined. Pet heals included."
-                         Style="{StaticResource CardNote}" Margin="0,2,0,10"/>
-              <v:Cells Widths="{StaticResource TotalColumns}" Margin="0,0,14,6">
-                <TextBlock Text="Heal" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Healing" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-              </v:Cells>
-              <ScrollViewer MaxHeight="470" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                            v:WheelChain.On="True">
-                <ItemsControl ItemsSource="{Binding HealSpells}" ItemTemplate="{StaticResource TotalRow}" Focusable="False"
-                              ItemContainerStyle="{StaticResource ByName}" Margin="0,0,14,0"/>
-              </ScrollViewer>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Card}" Margin="6" VerticalAlignment="Top">
-            <StackPanel>
-              <TextBlock Text="By target" Style="{StaticResource CardTitle}"/>
-              <TextBlock Text="Healing each character received, largest first. Pet heals included."
-                         Style="{StaticResource CardNote}" Margin="0,2,0,10"/>
-              <v:Cells Widths="{StaticResource TotalColumns}" Margin="0,0,14,6">
-                <TextBlock Text="Target" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Healing" Style="{StaticResource HeadText}"/>
-                <TextBlock Text="Δ" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-              </v:Cells>
-              <ScrollViewer MaxHeight="470" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                            v:WheelChain.On="True">
-                <ItemsControl ItemsSource="{Binding HealTargets}" ItemTemplate="{StaticResource TotalRow}" Focusable="False"
-                              ItemContainerStyle="{StaticResource ByName}" Margin="0,0,14,0"/>
-              </ScrollViewer>
-            </StackPanel>
-          </Border>
-        </UniformGrid>
-      </StackPanel>
-
-    </StackPanel>
+    <!-- Six figures, each A over B with its run's badge, and at the
+         cell's right the change in its tone over the plain difference.
+         Everything from here down needs both runs. -->
+    <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False" ItemContainerStyle="{StaticResource ByLabel}"
+                  Visibility="{Binding Ready, Converter={StaticResource Visible}}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <v:FigureBand Six="True" RowHeight="70" Rule="{DynamicResource Line2Brush}"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid Margin="14,0,14,0" Background="Transparent" ToolTip="{Binding Tip}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="23"/>
+              <RowDefinition Height="21"/>
+              <RowDefinition Height="21"/>
+              <RowDefinition/>
+            </Grid.RowDefinitions>
+            <v:Caps Grid.ColumnSpan="3" Text="{Binding Label}" Style="{StaticResource Caps}" HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+            <Control Grid.Row="1" Style="{StaticResource RunTagSmall}" Template="{StaticResource RunTagA}" Margin="0,0,7,0"/>
+            <DockPanel Grid.Row="1" Grid.Column="1">
+              <TextBlock DockPanel.Dock="Left" Text="{Binding A}" Style="{StaticResource TileFigure}"
+                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Text="{Binding SubA, TargetNullValue=''}" Style="{StaticResource Quiet}" FontSize="10"
+                         TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                         Margin="9,2,8,0" Typography.NumeralAlignment="Tabular"/>
+            </DockPanel>
+            <Control Grid.Row="2" Style="{StaticResource RunTagSmall}" Template="{StaticResource RunTagB}" Margin="0,0,7,0"/>
+            <DockPanel Grid.Row="2" Grid.Column="1">
+              <TextBlock DockPanel.Dock="Left" Text="{Binding B}" Style="{StaticResource TileFigure}"
+                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Text="{Binding SubB, TargetNullValue=''}" Style="{StaticResource Quiet}" FontSize="10"
+                         TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                         Margin="9,2,8,0" Typography.NumeralAlignment="Tabular"/>
+            </DockPanel>
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Change.Main}" Style="{StaticResource Tone}"
+                       FontSize="13"/>
+            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding Change.Sub}" FontSize="10.5" TextAlignment="Right"
+                       VerticalAlignment="Center" Foreground="{DynamicResource Text3Brush}"
+                       Typography.NumeralAlignment="Tabular"/>
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <Rectangle Height="1" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"
+               Visibility="{Binding Ready, Converter={StaticResource Visible}}"/>
   </StackPanel>
 </UserControl>

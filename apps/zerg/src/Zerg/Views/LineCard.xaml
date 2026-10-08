@@ -4,82 +4,66 @@
              xmlns:c="clr-namespace:Zerg.Charts"
              xmlns:v="clr-namespace:Zerg.Views">
 
-  <!-- Cumulative damage: a line per character, and its legend.
+  <!-- Cumulative damage: a line per character, each named at its end. A
+       pane: the chart has the whole of it, edge to edge, and keeps its own
+       margins.
 
-       Floating, the chart names every line at its end, so the legend has
-       nothing left to say: it goes, and the chart takes whatever the row
-       with the grouping switch leaves, following the panel when it is
-       dragged larger. -->
-  <Border Style="{StaticResource Card}">
-    <Grid>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-      </Grid.RowDefinitions>
+       "Group under 5%" is in the heading, not the command bar: it changes
+       this chart and nothing else, and it goes wherever the card goes. Its
+       tooltip says who is in the line that stands for several.
 
-      <DockPanel>
-        <Button DockPanel.Dock="Right" Style="{StaticResource PopOut}" Command="{Binding Panels[line].PopOutCommand}"
-                AutomationProperties.Name="Pop out Cumulative damage"/>
-        <!-- In the card's heading, not the filter bar: it changes this chart
-             and nothing else, and it goes wherever the card goes. -->
-        <ToggleButton DockPanel.Dock="Right" VerticalAlignment="Top" Margin="12,0,0,0"
-                      Style="{StaticResource SmallToggle}" Content="Group under 5%"
-                      IsChecked="{Binding GroupSmallLines}" ToolTip="{Binding GroupTip}"/>
-        <StackPanel>
-          <TextBlock Text="Cumulative damage" Style="{StaticResource CardTitle}"/>
-          <TextBlock Text="Running total per character. Hover for every character at one instant."
-                     Style="{StaticResource CardNote}"/>
-        </StackPanel>
-      </DockPanel>
-
-      <ItemsControl Grid.Row="1" ItemsSource="{Binding Legend}" Margin="0,10,0,0" Focusable="False"
-                    Visibility="{Binding Path=(v:Float.On), RelativeSource={RelativeSource Self}, Converter={StaticResource Hidden}}">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <WrapPanel/>
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <!-- A line that stands for several characters says who on hover;
-                 the line itself cannot. -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,14,4" Background="Transparent" ToolTip="{Binding Tip}">
-              <Grid Width="12" Height="10" VerticalAlignment="Center">
-                <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" HorizontalAlignment="Left"/>
-                <Line X1="0" Y1="5" X2="12" Y2="5" StrokeThickness="2" StrokeDashArray="1.5 1.5"
-                      Stroke="{DynamicResource Text3Brush}"
-                      Visibility="{Binding Group, Converter={StaticResource Visible}}"/>
-              </Grid>
-              <TextBlock Text="{Binding Name}" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center"/>
-              <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"/>
-            </StackPanel>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-
-      <c:LineChart Grid.Row="2" Edge="{Binding Edge}" EmptyText="{Binding EmptyText}"
-                   AutomationProperties.Name="Cumulative damage chart">
-        <c:LineChart.Style>
-          <Style TargetType="c:LineChart">
-            <Setter Property="Height" Value="320"/>
-            <Setter Property="Margin" Value="0,6,0,0"/>
-            <Setter Property="Model" Value="{Binding Line}"/>
+       Floating, the pane has no heading and the switch has a line of its
+       own; the chart takes what the switch leaves, following the panel when
+       it is dragged larger. -->
+  <v:Pane Title="Cumulative damage" Note="Running total per character"
+          Hint="Running total per character. Hover for every character at one instant."
+          PopOutCommand="{Binding Panels[line].PopOutCommand}">
+    <v:Pane.Tools>
+      <ToggleButton Content="Group under 5%" IsChecked="{Binding GroupSmallLines}" ToolTip="{Binding GroupTip}">
+        <ToggleButton.Style>
+          <Style TargetType="ToggleButton" BasedOn="{StaticResource SmallToggle}">
             <Style.Triggers>
-              <!-- A panel's backdrop is dark whatever the theme, so it is
-                   handed the lines in the colours made for that. -->
+              <!-- On a floating panel the switch has the halo to itself:
+                   the card it stands on has none, because of the chart. -->
               <Trigger Property="v:Float.On" Value="True">
-                <Setter Property="Height" Value="Auto"/>
-                <Setter Property="MinHeight" Value="120"/>
-                <Setter Property="Margin" Value="0,2,0,0"/>
-                <Setter Property="Model" Value="{Binding PanelLine}"/>
-                <Setter Property="Compact" Value="True"/>
-                <Setter Property="EndLabels" Value="True"/>
+                <Setter Property="Effect" Value="{StaticResource PanelHalo}"/>
               </Trigger>
             </Style.Triggers>
           </Style>
-        </c:LineChart.Style>
-      </c:LineChart>
-    </Grid>
-  </Border>
+        </ToggleButton.Style>
+      </ToggleButton>
+    </v:Pane.Tools>
+
+    <c:LineChart Edge="{Binding Edge}" EmptyText="{Binding EmptyText}" EndLabels="True"
+                 AutomationProperties.Name="Cumulative damage chart">
+      <c:LineChart.Style>
+        <Style TargetType="c:LineChart">
+          <!-- In a pane: as tall as the pane leaves it, and no shorter
+               than a chart can be read at. -->
+          <Setter Property="MinHeight" Value="80"/>
+          <Setter Property="Model" Value="{Binding Line}"/>
+          <Style.Triggers>
+            <!-- In a narrow window the panes stand in one column, each as
+                 tall as it asks to be: the chart is the height it was
+                 when it was a card on a page. -->
+            <Trigger Property="v:SplitPanel.Stacked" Value="True">
+              <Setter Property="Height" Value="320"/>
+            </Trigger>
+            <!-- A panel's backdrop is dark whatever the theme, so it is
+                 handed the lines in the colours made for that. -->
+            <Trigger Property="v:Float.On" Value="True">
+              <Setter Property="Height" Value="Auto"/>
+              <Setter Property="MinHeight" Value="120"/>
+              <Setter Property="Margin" Value="0,2,0,0"/>
+              <Setter Property="Model" Value="{Binding PanelLine}"/>
+              <Setter Property="Compact" Value="True"/>
+              <!-- No effect lies over this chart (its lines are drawn at
+                   the draw frequency): it outlines its own labels. -->
+              <Setter Property="Halo" Value="True"/>
+            </Trigger>
+          </Style.Triggers>
+        </Style>
+      </c:LineChart.Style>
+    </c:LineChart>
+  </v:Pane>
 </UserControl>

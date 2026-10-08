@@ -82,7 +82,6 @@ public class CompareSheetTests
         Assert.Equal(["Total damage", "Length", "Party DPS", "Accuracy", "WS damage", "Skillchain damage"],
                      tiles.Select(t => t.Label));
         Assert.Equal(("300", "600", "+100.0%", "+300"), (tiles[0].A, tiles[0].B, tiles[0].Change.Main, tiles[0].Change.Sub));
-        Assert.True(tiles[0].Hero);
         // Length is neutral: shorter is not obviously better.
         Assert.Equal(("00:20", "00:40", "+20s", ChangeTone.Flat), (tiles[1].A, tiles[1].B, tiles[1].Change.Main, tiles[1].Change.Tone));
         Assert.Equal(("15.0", "15.0", "±0.0%"), (tiles[2].A, tiles[2].B, tiles[2].Change.Main));
