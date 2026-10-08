@@ -1880,12 +1880,17 @@ window on that monitor is the check
 (`%LOCALAPPDATA%\VibeXI\zerg-redesign\phase9\scripts\settings-restart.sh`
 in its `second-monitor` mode runs it by script, and has never been run).
 
-**`dist/Zerg` is still the build from before the redesign**, and the
-desktop shortcut still runs that one. Publishing the new build over it is
-the owner's to do (the command is under "Commands"; close Zerg and empty
-the folder first). The old build reads a `settings.json` the new one has
-written and keeps the keys it does not know (seen for Phase 8's keys; not
-tried for `layouts` and `layoutLocked`).
+**`dist/Zerg` is the redesigned build since 2026-10-08**, published at the
+owner's word, and the desktop shortcut runs it. It was started once after
+the publish (the Release build's first start): it read the owner's settings
+and their saved layouts, followed the newest event file and exited clean.
+Nothing else of the Release build has been looked at; every check in the
+redesign ran on a Debug build. The build from before the redesign (2026-10-05)
+is kept outside the repository, in
+`%LOCALAPPDATA%\VibeXI\zerg-redesign\dist-before-redesign\`: copy its eight
+files back over `dist/Zerg` to return to it. That old build reads a
+`settings.json` the new one has written and keeps the keys it does not know
+(seen for Phase 8's keys; not tried for `layouts` and `layoutLocked`).
 
 Open ideas, none started:
 - **Opening a `.zerg` file by double-click** (a per-user file association,
