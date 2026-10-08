@@ -8,6 +8,8 @@ that never take the keyboard.
 
 - `RULES.md` — the event contract, and the reason behind each counting and
   session rule. Read it before changing any number Zerg prints.
+- `CHANGELOG.md` — what each version was. "Versions", below, says how the
+  number is kept.
 - This file — everything needed to work on the code day to day.
 
 ## Where it sits
@@ -119,9 +121,56 @@ the solution, which builds the app as well), and the app builds into
 another folder (`dotnet build apps/zerg/src/Zerg/Zerg.csproj -o <folder>`),
 though it cannot be started from there either while the other runs.
 
+## Versions
+
+Zerg's version is written in one place, and not here:
+`<Version>` in `apps/zerg/Directory.Build.props`, which MSBuild applies to
+every project under `apps/zerg`: `Zerg.exe`, `Zerg.dll` and `Zerg.Core.dll`
+all carry it as their file and product version (Explorer's Details tab
+shows it). `AppInfo.Version` reads it back out of the running assembly;
+the first line of each run in the log says it (`---- Zerg 0.2.0 starting`),
+and the status line ends with it, in the window's lower right-hand corner
+(`v0.2.0`, `MainViewModel.StatusVersion`; `drive.cs`'s `text` prints it).
+Nothing else may hold a copy: a second place to update is a place that
+goes stale.
+
+It is `major.minor.patch`, and while the major is 0:
+
+- **minor** for anything a player would notice as new or different: a
+  feature, a changed layout, a counting rule, a settings key, a newer
+  `.zerg` format;
+- **patch** for a fix that makes Zerg do what that version already claimed.
+
+Refactors, tests, tools and these notes move nothing. 1.0.0 is the owner's
+to call.
+
+Three other numbers in the repository are not this one and move on their
+own: the addon's `addon.version` in `addons/VibeXI/vibexi.lua` (written to
+each event file's `meta` line as `v`), `ParseFile.Version` (the `.zerg`
+format, a whole number, raised only when an older Zerg could not read the
+file), and `assemblyIdentity version` in `app.manifest` (Windows' side by
+side identity; leave it at 1.0.0.0).
+
+**Cutting a version** (the git steps are the user's):
+
+1. Change `<Version>` in `Directory.Build.props`.
+2. In `CHANGELOG.md`, turn "Unreleased" into `## <version> — <date>` and
+   leave an empty "Unreleased" above it. A change worth a line goes under
+   "Unreleased" when it is made, not at the cut.
+3. `dotnet test apps/zerg/Zerg.slnx`.
+4. Commit, and tag that commit `zerg-v<version>` (`zerg-v0.2.0`). The
+   prefix is there because the repository holds the addon too, which has
+   its own versions.
+5. If the user asks for it, publish over `dist/Zerg` (the command is
+   above).
+
+0.1.0 was never tagged. `dist/Zerg` is 0.2.0, published a second time on
+2026-10-08 once the number had moved and the status line showed it.
+
 ## Layout
 
 ```
+Directory.Build.props      the version, for every project here
 Zerg.slnx
 src/Zerg.Core/             net10.0, no UI, so it is testable without a window
   EventFiles.cs            newest *.jsonl; open shared R|W|Delete; read whole lines from a byte offset

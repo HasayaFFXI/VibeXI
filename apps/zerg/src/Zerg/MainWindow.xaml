@@ -939,11 +939,15 @@
     <!-- The status line: the session's dot, which file (in the face of a
          file name), how much of it and the session; and at the right-hand
          end, while any card floats over the game, how many do, whether
-         clicks pass through them, and the way to bring them all back. -->
+         clicks pass through them, and the way to bring them all back; and
+         last, in the window's corner, the version. -->
     <Border Grid.Row="4" Height="{StaticResource StatusBarHeight}" Background="{DynamicResource Bg0Brush}"
             BorderBrush="{DynamicResource Line2Brush}" BorderThickness="0,1,0,0">
       <DockPanel Margin="12,0,14,0">
         <Ellipse DockPanel.Dock="Left" Style="{StaticResource StatusDot}" VerticalAlignment="Center"/>
+        <!-- The first docked to the right, so the furthest right. -->
+        <TextBlock DockPanel.Dock="Right" Text="{Binding StatusVersion, Mode=OneTime}" Style="{StaticResource Label}"
+                   VerticalAlignment="Center" Margin="16,0,0,0" Typography.NumeralAlignment="Tabular"/>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0"
                     Visibility="{Binding Panels.AnyOut, Converter={StaticResource Visible}}">
           <TextBlock Text="{Binding StatusPanels}" Style="{StaticResource Label}" VerticalAlignment="Center"/>

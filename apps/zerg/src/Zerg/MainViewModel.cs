@@ -140,6 +140,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>The last thing on the status line, in the window's lower
+    /// right-hand corner: which Zerg this is, "v0.2.0".</summary>
+    public string StatusVersion { get; } = "v" + AppInfo.Version;
+
     // --------------------------------------------------------------- filters
 
     public ObservableCollection<ChipRow> Chips { get; } = [];
