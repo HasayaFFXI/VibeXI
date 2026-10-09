@@ -8,7 +8,7 @@ Shared-component app extracted from the single-file Jinpu weaponskill calculator
 ../shared-ui/              beside this folder in tools/ — the design system
   css/ffxi-theme.css       tokens and every shared primitive
   js/theme.js              window.FFXITheme — the same tokens, for canvas
-../../shared-calc/         also at the repo root — the engine, data and components
+../shared-calc/            beside it — the engine, data and components
   lib/damage.js            THE ENGINE                                          (pure)
   lib/buffs.js  lib/mob-stats.js                                               (pure)
   lib/core.js  lib/chart.js  lib/presets.js
@@ -17,7 +17,7 @@ pages/
   ws-calculator.html       the weaponskill calculator — the only file this app owns
 ```
 
-See [`../../shared-calc/README.md`](../../shared-calc) for the shared layer's own
+See [`../shared-calc/README.md`](../shared-calc) for the shared layer's own
 conventions. [`../penta-calculator`](../penta-calculator) is the other page built
 on it.
 
@@ -32,14 +32,14 @@ components:
 
 ```html
 <script src="../../shared-ui/js/theme.js"></script>
-<script src="../../../shared-calc/lib/core.js"></script>
-<script src="../../../shared-calc/data/mob-data.js"></script>
+<script src="../../shared-calc/lib/core.js"></script>
+<script src="../../shared-calc/data/mob-data.js"></script>
 ...
 ```
 
 **Styling is shared with the DPS meter.** The palette and every primitive
 (`.card`, `.field`, `table.data`, `.chart-wrap`, buttons) live in
-[`../shared-ui/`](../shared-ui); `../../shared-calc/css/calc.css` holds the
+[`../shared-ui/`](../shared-ui); `../shared-calc/css/calc.css` holds the
 calculator shell both pages share. Canvas colours are read from the same custom properties
 through `FFXITheme`, so there is no second palette to keep in sync.
 
@@ -84,7 +84,7 @@ requirement isn't met is disabled outright.
 ## Adding a page
 
 Copy the head and script block from `pages/ws-calculator.html`, mount the
-components you need, and supply the callbacks. Nothing in `../../shared-calc/`
+components you need, and supply the callbacks. Nothing in `../shared-calc/`
 or `../shared-ui/` needs to change — that is exactly how
 [`../penta-calculator`](../penta-calculator) was built.
 

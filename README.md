@@ -10,8 +10,8 @@ tools/
   ws-calculator/    Tachi: Jinpu weaponskill Monte-Carlo sim — open pages/ from disk
   penta-calculator/ the same engine aimed at Penta Thrust, plus PentaThrustDamageCalc.md
   shared-ui/        THE design system both calculators load: css/ffxi-theme.css + js/theme.js
+  shared-calc/      THE calculation layer both calculators load: engine, server data, components
 addons/VibeXI/      Ashita addon: reads the game's action packets, writes one JSON line per event
-shared-calc/        THE calculation layer both calculators load: engine, server data, components
 addon-dev/          the addon's plan, API allowlist, checkers and generators — never shipped
 .githooks/          pre-commit hook running addon-dev/check-apis.py
 ```
@@ -46,13 +46,18 @@ reason behind every number it prints.
 
 ## Layout is load-bearing
 
-`shared-ui/` sits in `tools/` beside the calculators; `shared-calc/` stays at the
-repo root. Neither is a tool: one is the design system, the other the
-calculation layer. Both are reached by relative path —
-`../../shared-ui/...` and `../../../shared-calc/...` from `tools/<tool>/pages/`.
-Moving or renaming a calculator, or either shared directory, breaks things
-silently: styling just stops, with no console error, and a moved `shared-calc`
-takes the damage engine with it. Zerg uses neither.
+`shared-ui/` and `shared-calc/` sit in `tools/` beside the calculators.
+Neither is a tool: one is the design system, the other the calculation layer.
+Both are reached by relative path — `../../shared-ui/...` and
+`../../shared-calc/...` from `tools/<tool>/pages/`. Moving or renaming a
+calculator, or either shared directory, breaks things silently: styling just
+stops, with no console error, and a moved `shared-calc` takes the damage
+engine with it. Zerg uses neither.
+
+So `tools/` holds everything a page loads, and a static server rooted there
+serves both calculators. `tools/.claude/launch.json` is that server for a
+Claude session opened on `tools/` (its preview pane cannot load a page's
+scripts over `file://`); nothing else reads it.
 
 They are two directories rather than one because the design system does not
 depend on the damage engine, and can be loaded without it.

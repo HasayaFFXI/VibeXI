@@ -9,12 +9,12 @@ this file is the operational detail.
 ```
 ../shared-ui/css/ffxi-theme.css  THE design system, shared with every app
 ../shared-ui/js/theme.js      window.FFXITheme — the same tokens resolved for <canvas>
-../../shared-calc/            THE engine, data and components — shared with ../penta-calculator
+../shared-calc/               THE engine, data and components — shared with ../penta-calculator
 pages/ws-calculator.html      weaponskill Monte-Carlo sim (currently the only page here)
 ```
 
 Everything this app used to keep under `shared/` now lives in
-[`../../shared-calc/`](../../shared-calc), whose README documents the load order,
+[`../shared-calc/`](../shared-calc), whose README documents the load order,
 the purity rule for `lib/`, and the component contract. This app is one HTML
 file: it owns no formulas.
 
@@ -30,7 +30,7 @@ is deliberately not vendored here. Formula reference lives in the
   on `file://`, which would break double-click-to-open. This is deliberate, not
   an oversight — don't "modernize" it.
 - **Load order: `../../shared-ui/js/theme.js` → `core.js` → `data/` → `lib/` →
-  `components/`**, all from `../../../shared-calc/`, all before the page's inline script. `core.js` creates the
+  `components/`**, all from `../../shared-calc/`, all before the page's inline script. `core.js` creates the
   namespace everything else assigns into; `theme.js` comes first because
   `lib/chart.js` builds its colour view from `FFXITheme` at load time.
   Within `lib/`, `buffs.js` loads before `damage.js` — the engine consumes buff
@@ -51,7 +51,7 @@ is deliberately not vendored here. Formula reference lives in the
   Don't reintroduce a component-owned button — components just expose `render()` /
   `derive()` for the host to call. Anything that writes a field programmatically
   must either fire a bubbling event or call `scheduleRecalc()` itself.
-- **The design system lives in `../shared-ui/`, not here.** `../../shared-calc/css/calc.css`
+- **The design system lives in `../shared-ui/`, not here.** `../shared-calc/css/calc.css`
   loads *after* it and holds only what an app that is not a calculator would never want. Before adding a
   rule, check whether the shared sheet already has the primitive — `.card`,
   `.field`, `table.data`, `.chart-wrap`, `.chart-tip`, `.tile`, `.stat`,
@@ -74,7 +74,7 @@ is deliberately not vendored here. Formula reference lives in the
 
 ## Gotchas
 
-- **Never read `../../shared-calc/data/mob-data.js` with the Read tool** — one 390KB line,
+- **Never read `../shared-calc/data/mob-data.js` with the Read tool** — one 390KB line,
   ~250k tokens. Move/inspect it with shell (`sed -n '1p'`, `head -c`). Same for the
   legacy `jinpu_calculator/ws_damage_calculator.html`, whose line 748 is that blob.
 - **The preview pane caches `file://` snapshots hard.** After editing a shared
@@ -233,5 +233,5 @@ answering "what would this look like on a stock server", not the live one.
   with.
 - `jinpu_calculator/` — outside this repo — holds the unmaintained pre-refactor original
   (`ws_damage_calculator.html`) plus two older `- Copy` snapshots. Each carries its
-  own copy of the engine, so they will drift from `../../shared-calc/lib/damage.js` — treat
+  own copy of the engine, so they will drift from `../shared-calc/lib/damage.js` — treat
   them as reference only, and don't fix bugs there.
