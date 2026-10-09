@@ -44,7 +44,7 @@ public sealed partial class MainViewModel
 
     /// <summary>A parse is open in the View section, whichever section is on screen.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(ShowsParse), nameof(HideNamesTip),
+    [NotifyPropertyChangedFor(nameof(IsDamage), nameof(IsHealing), nameof(ShowsParse), nameof(FillsPage), nameof(HideNamesTip),
                               nameof(ImportTip))]
     private bool hasParse;
 

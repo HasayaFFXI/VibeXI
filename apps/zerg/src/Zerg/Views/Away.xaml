@@ -1,23 +1,40 @@
 <UserControl x:Class="Zerg.Views.Away"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Zerg.Views"
              Visibility="{Binding IsOut, Converter={StaticResource Visible}}">
 
-  <!-- What stands in the main window for a card that is floating: quiet and
-       short, a signpost and not a card. Its data context is the card's
+  <!-- What stands in the main window for a card that is floating: a strip
+       46 units tall with a dashed outline, a signpost and not a pane. The
+       pane it stands in is made that short while the card is out, and its
+       neighbour in the column has the rest. Its data context is the card's
        PanelInfo. It carries "Bring back" and nothing else, since a card can
-       only be away by having been popped out. -->
-  <Border CornerRadius="8" Padding="16,12" BorderThickness="1"
-          BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
-    <DockPanel>
-      <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" VerticalAlignment="Center" Margin="12,0,0,0"
+       only be away by having been popped out.
+
+       The grip is the one a pane's heading has: the place a card will come
+       back to is a pane like any other. The whole strip is the handle it is
+       carried by (v:SplitPanel.Handle), which is how the place the card
+       comes back to is chosen; the grip opens the same menu a heading's
+       does, with Bring back in the place of Fold and Pop out. -->
+  <Grid Height="{StaticResource StandInHeight}" Background="{DynamicResource Bg1Brush}" v:SplitPanel.Handle="True">
+    <Rectangle Margin="8,6,8,7" RadiusX="4" RadiusY="4" StrokeThickness="1" StrokeDashArray="4 3"
+               Stroke="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+    <DockPanel Margin="17,0,18,1">
+      <Button DockPanel.Dock="Right" Style="{StaticResource SmallButton}" Height="22" Padding="12,0" FontSize="11"
+              VerticalAlignment="Center" Margin="12,0,0,0"
               Content="Bring back" Command="{Binding DockCommand}" ToolTip="Return this card to the main window"
               AutomationProperties.Name="{Binding Title, StringFormat='Bring back {0}'}"/>
-      <StackPanel>
-        <TextBlock Text="{Binding Title}" FontFamily="{StaticResource NumberFont}" FontSize="16" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-        <TextBlock Text="Showing in its own panel." Style="{StaticResource Label}" Margin="0,2,0,0"/>
-      </StackPanel>
+      <!-- 14 wide round its 6 units of dots, which stand where they stood. -->
+      <v:PaneGrip DockPanel.Dock="Left" Style="{StaticResource PaneGrip}" Margin="-4,0,0,0" VerticalAlignment="Center"
+                  ToolTip="Drag to move the place this card comes back to. Press for its menu: bring back, move"
+                  AutomationProperties.Name="{Binding Title, StringFormat='Move {0}'}"/>
+      <!-- The Pop out glyph: this is what it did. -->
+      <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource IconFont}" FontSize="13" Text="&#xE8A7;"
+                 Foreground="{DynamicResource Text3Brush}" VerticalAlignment="Center" Margin="5,1,0,0"/>
+      <TextBlock DockPanel.Dock="Left" Text="{Binding Title}" Style="{StaticResource PaneTitle}"
+                 Foreground="{DynamicResource Text2Brush}" VerticalAlignment="Center" Margin="9,0,0,0"/>
+      <TextBlock Text="Showing in its own panel." Style="{StaticResource Label}" VerticalAlignment="Center"
+                 Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
     </DockPanel>
-  </Border>
+  </Grid>
 </UserControl>

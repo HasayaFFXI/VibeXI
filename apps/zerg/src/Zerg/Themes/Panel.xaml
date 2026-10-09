@@ -1,0 +1,78 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- The tokens as a floating panel has them. Merged into PanelWindow's own
+       resources, so a card inside a panel finds these before the
+       application's, by the same keys and with no trigger per brush.
+
+       A panel is dark whatever the theme: its backdrop is black at the
+       opacity its slider says (PanelWindow.Tint, in code), and the game shows
+       through. So its surfaces and rules are white at a strength and not a
+       colour, its ink is the dark theme's with the three quieter steps one
+       step lighter, and the colours that mean something are the dark
+       theme's. Under the light theme, without this file, a card in a panel
+       would take the application's values: dark ink on a black panel.
+
+       Only brushes, and only these keys (UI-REDESIGN-PLAN.md, section 4.3,
+       and Bg1Brush since phase 2; ShadedDashBrush and the two overlays a
+       table row asks for since phase 6). Bg0Brush is not here: a panel has
+       no window surface of its own. Nor are the tags or the other
+       overlays: nothing in a panel asks for them yet, and what does will
+       get the application's until they are added here. -->
+
+  <!-- The pane surface is the tint itself, so it is nothing: what a control
+       fills "in the surface's colour" (the inside of a slider's ring) lets
+       the tint show, as the sheet draws it. Without this the ring would be
+       filled with the application's Bg1, white under the light theme. -->
+  <SolidColorBrush x:Key="Bg1Brush" Color="Transparent"/>
+
+  <!-- Surfaces: a heading row, a button or a selected row, under the pointer. -->
+  <SolidColorBrush x:Key="Bg2Brush" Color="#12FFFFFF"/>
+  <SolidColorBrush x:Key="Bg3Brush" Color="#21FFFFFF"/>
+  <SolidColorBrush x:Key="Bg4Brush" Color="#33FFFFFF"/>
+
+  <!-- Rules: white at 8, 16 and 28%. -->
+  <SolidColorBrush x:Key="LineBrush" Color="#14FFFFFF"/>
+  <SolidColorBrush x:Key="Line2Brush" Color="#29FFFFFF"/>
+  <SolidColorBrush x:Key="Line3Brush" Color="#47FFFFFF"/>
+
+  <!-- Ink. -->
+  <SolidColorBrush x:Key="Text1Brush" Color="#E9ECF2"/>
+  <SolidColorBrush x:Key="Text2Brush" Color="#B9C1CF"/>
+  <SolidColorBrush x:Key="Text3Brush" Color="#98A2B6"/>
+  <SolidColorBrush x:Key="Text4Brush" Color="#6F798C"/>
+
+  <!-- A dash on a shaded row: halfway from Text3 to Text2, as in the theme
+       files, from this file's own, lighter pair. -->
+  <SolidColorBrush x:Key="ShadedDashBrush" Color="#A9B2C3"/>
+
+  <!-- What a table's rows are laid over with (the dark theme's values:
+       Text1 at 5% under the pointer, at 10% behind a shaded action). The
+       application's are dark ink under the light theme, which on a panel
+       would darken where these lighten. -->
+  <SolidColorBrush x:Key="RowHoverBrush" Color="#E9ECF2" Opacity="0.05"/>
+  <SolidColorBrush x:Key="ActionShadeBrush" Color="#E9ECF2" Opacity="0.10"/>
+
+  <!-- The band behind a histogram's columns, where the middle half of the
+       hits fell (the dark theme's: Text1 at 4%), for the drill-down under
+       a row of the Actions or Heals panel. -->
+  <SolidColorBrush x:Key="HistogramBandBrush" Color="#E9ECF2" Opacity="0.04"/>
+
+  <!-- Meaning: Themes/Dark.xaml's values. Keep the two files alike. -->
+  <SolidColorBrush x:Key="AccentBrush" Color="#F2A33A"/>
+  <SolidColorBrush x:Key="OnAccentBrush" Color="#191004"/>
+  <SolidColorBrush x:Key="LiveBrush" Color="#22E05A"/>
+  <SolidColorBrush x:Key="OnLiveBrush" Color="#051306"/>
+  <SolidColorBrush x:Key="CritBrush" Color="#FF5063"/>
+  <SolidColorBrush x:Key="OnCritBrush" Color="#190405"/>
+
+  <!-- A chart's hover card stays solid here (the dark theme's Bg4). Bg4Brush
+       above is see-through, and a card that lets the lines and labels under
+       it show through reads as noise. -->
+  <SolidColorBrush x:Key="HoverCardBrush" Color="#262D3A"/>
+
+  <!-- The ring round a chart marker is the colour of what the chart sits
+       on. Here that is the tint, whatever is behind it. -->
+  <SolidColorBrush x:Key="ChartSurfaceBrush" Color="#101010"/>
+
+</ResourceDictionary>

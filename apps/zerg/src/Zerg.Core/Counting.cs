@@ -14,6 +14,12 @@ public sealed class FilterOptions
     public IReadOnlyDictionary<string, bool>? Actors { get; init; }
     /// <summary>False drops skillchain rows entirely.</summary>
     public bool Skillchains { get; init; } = true;
+    /// <summary>Only rows at one of these targets, by name
+    /// (<see cref="Zerg.Core.Targets"/>). Null or empty: every target.</summary>
+    public IReadOnlySet<string>? Targets { get; init; }
+    /// <summary>Only rows of one of these damage types
+    /// (<see cref="DamageTypes.Of"/>). Null or empty: every type.</summary>
+    public IReadOnlySet<string>? Types { get; init; }
 }
 
 /// <summary>
@@ -60,11 +66,23 @@ public static class Counting
     /// <see cref="FirstCounted"/> both use it, so the clock can never start on
     /// a row that is then not drawn.
     /// </summary>
+    /// <param name="targets">Isolated targets: a row at any other is not
+    /// counted. Asked of the row, before its use is folded, so an area attack
+    /// that reached an isolated target and two others is one use that dealt
+    /// what it dealt to that one. The session's zero and its end are never
+    /// asked with this: a clock belongs to the session, not to a target.</param>
+    /// <param name="types">Isolated damage types: a row of any other is not
+    /// counted. Asked of the row as the file has it, so a pet's row is the
+    /// one type "pet" whoever it is credited to. No clock is asked with
+    /// this either.</param>
     public static CombatEvent? Counted(CombatEvent e, Roster? roster,
-                                       IReadOnlyDictionary<string, bool>? actors, bool skillchains)
+                                       IReadOnlyDictionary<string, bool>? actors, bool skillchains,
+                                       IReadOnlySet<string>? targets = null, IReadOnlySet<string>? types = null)
     {
         if (!IsCombat(e)) return null;
         if (!skillchains && e.Kind == "skillchain") return null;
+        if (targets is { Count: > 0 } && !targets.Contains(e.Target)) return null;
+        if (types is { Count: > 0 } && !types.Contains(DamageTypes.Of(e))) return null;
         // Asked of the row's own actor, so a pet is judged as the pet it is.
         if (roster != null && roster.IsMob(e.Actor)) return null;
         e = Credit(e);
@@ -97,7 +115,7 @@ public static class Counting
                 el = sn.At(row.T);
                 if (el == null) continue;   // before the zero, or in a pause
             }
-            var e = Counted(row, opts.Roster, opts.Actors, opts.Skillchains);
+            var e = Counted(row, opts.Roster, opts.Actors, opts.Skillchains, opts.Targets, opts.Types);
             if (e == null) continue;
             if (el is double t) e = e with { Wall = e.Wall ?? e.T, T = t };
             output.Add(e);
@@ -279,6 +297,7 @@ public static class Counting
         }
 
         var actors = new List<ActorTotals>();
+        var party = new Split();
         double grand = 0, tMin = double.PositiveInfinity, tMax = double.NegativeInfinity;
 
         foreach (var name in order)
@@ -292,6 +311,7 @@ public static class Counting
             a.Duration = duration ?? span;
             a.Dps = a.Duration > 0 ? a.Total / a.Duration : 0;
             a.FinishSplit();
+            party.Add(a.Split);
             grand += a.Total;
             if (a.First is double f && f < tMin) tMin = f;
             if (a.Last is double l && l > tMax) tMax = l;
@@ -313,6 +333,8 @@ public static class Counting
             Duration = duration ?? (none ? 0 : (tMax - tMin) / 1000),
             Events = lines,
             Uses = uses.Count,
+            Split = party,
+            Party = party.Figures(grand),
         };
     }
 

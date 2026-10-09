@@ -165,9 +165,23 @@ its way, with percentages to one decimal.
   melee must not reach the owner's Accuracy, nor a pet's move WS.
 - **Null means "nothing to measure" and prints as a dash.** A mage with no
   weaponskills has no WS Acc; 0% would say they missed every one.
-- **Nobody at zero** in the bars, the table, the strip or the cumulative
-  lines. Reaching the totals takes an action, not damage. The chips still list
+- **Nobody at zero** in the table, the strip or the cumulative lines.
+  Reaching the totals takes an action, not damage. The chips still list
   them, so they can be excluded, and the Actions table shows what they did.
+- **The Party line is counted from the party's swings, not from the rows'
+  percentages.** The line that closes the table prints the party's own
+  Accuracy, weaponskill, skillchain and pet figures, worked out from every
+  character's counts added together (`Aggregate.Party`, by `Split.Figures`,
+  the one place a split column is worked out, for a row and for the party
+  alike): three swings landed out of six is 50%, whatever the rows above
+  say. An average of the rows' percentages would weigh a character who
+  swung twice like one who swung two hundred times, and would not be the
+  figure Compare prints for the same file (`Compare.Measure` already summed
+  the counts). It is everyone counted, a character at zero included: their
+  misses are the party's swings, though they have no row. The number under
+  Job is the rows above it. A dash where nobody had anything to measure.
+  The party's DPS there is the one in the band of figures, over the session
+  clock.
 - **One known difference from the reference parser:** it leaves melee
   additional effects out of its total and Zerg counts every `addl` row, so
   with enspells up Damage reads a little above it.
@@ -242,13 +256,98 @@ Every number is measured from the session's zero, and there is no other clock
 - **One denominator.** `Counting.Aggregate` divides the party's DPS and each
   character's by the session clock, so the column adds up to the party figure.
 - **DPS decays between polls**: the total holds and the clock grows, so the
-  Elapsed tile, the party DPS and each character's DPS are rewritten 4 times a
-  second, together. A tile decaying past a frozen column reads as a bug.
+  elapsed time, the party DPS and each character's DPS are rewritten at the
+  draw frequency (30 times a second unless set), together. A party figure
+  decaying past a frozen column reads as a bug.
 - **The chart's left edge is the zero and its right edge is the clock**, paused
   included. A flat line out to the present is a falling DPS, drawn. The axis
   and the DPS beside it must always describe the same span.
 - **The session is not saved.** A restart returns to idle; a clock restored
   from an earlier run would be measuring time nobody was fighting.
+
+## Isolating targets
+
+The Target button counts only the damage dealt to the targets picked
+(`Targets`, and one line of `Counting.Counted`). None picked is every target.
+
+- **A target is its name.** A row says what it hit by name and nothing else,
+  so three Goblin Pathfinders are one target, as they are one line of
+  Compare's By target table. Telling them apart needs an id from the addon.
+- **Several can be picked**, and the list they are picked from is
+  alphabetical (`Targets.Sorted`), whatever their case. Not by damage: a list
+  in that order moves under the pointer while a session counts.
+- **The list names every target whatever is picked**, each with what it took
+  from the characters who count (exclusions and the skillchain switch
+  apply; the targets picked do not). A target nothing landed on is not
+  listed, and neither are rows that name no target, which cannot be picked.
+  A picked name stays listed, with dashes, while nothing that counts was
+  dealt to it: a filter that could not be seen could not be taken off.
+- **Asked of the row, before its use is folded.** An area attack that reached
+  an isolated target and two others is one use that dealt what it dealt to
+  that one: one hit, that damage, that target's name.
+- **No rate is given while a target is isolated** (`Snapshot.Rate`). The
+  clock is the session's. It ran while the party fought everything else, so
+  damage to one target over it is no DPS anybody dealt, and the event file
+  does not say how long a target was fought. A dash, not a number that reads
+  low: Party DPS and its "running" mark, DPS in every row of the
+  per-character table and on its Party line; in Compare, the Party DPS
+  figure and its change, and DPS and its change in every row.
+- **Everything else is counted as it was, of those rows alone**: totals,
+  shares (of the isolated damage), accuracy (of the swings at those
+  targets), the weaponskill, skillchain and pet columns, the biggest hit,
+  the per 20 s bars and the cumulative lines, which are still drawn over the
+  whole session clock and lie flat while the target was not being hit.
+- **The clock does not move.** The zero and the end are the session's and are
+  asked without the targets (`Counting.FirstCounted`, `LastCounted`), as the
+  end is asked without the viewer's other switches. Elapsed, and Length in
+  Compare, read as they did.
+- **The total says what it is a total of**: "Damage to Kirin", "Damage to 3
+  targets", with its share of the damage to every target under it.
+- **Healing is never isolated.** A heal's target is who it healed.
+- **Whoever acted keeps their chip**, whatever they acted on.
+- **What is picked is not a setting and is not kept.** It is emptied by
+  Start, by a new event file, and when the session and a saved parse change
+  places on screen; in Compare, when a slot is given another parse or
+  cleared. A filter kept for the next pull would count nothing, with nothing
+  listed to untick. It is not in an export: filters are the viewer's.
+- **Compare isolates in both runs at once**, by name, and has a filter of its
+  own: its targets are two files', not the session's. By target goes on
+  listing every target, largest first, with the isolated ones marked.
+
+## Isolating damage types
+
+The Type button, beside the Target button over the Damage section and in
+Compare, counts only the damage of the types picked (`DamageTypes`, and one
+more line of `Counting.Counted`); in Compare the rows of the By damage type
+table pick as well. It is the targets' rule along another cut, and what is
+said above of picking holds here: several, alphabetical by what each is
+called, a list that names them all, nothing kept (emptied when the targets
+are).
+
+- **A type is a line of Compare's By damage type table**, in both sections. A row's type is its
+  `kind`, but a pet's rows are the one type "Pet" whatever the pet did
+  (`DamageTypes.Of`): the table has always summed them so, and a filter has
+  to cut where the table does.
+- **A type takes no rate away.** A type is dealt all through a fight, so its
+  damage over the run's clock is a DPS somebody dealt: melee DPS, magic DPS.
+  The dashes are the targets' alone.
+- **Types and targets isolate together, and each list is of what the other
+  leaves** (`Tracker.Count`, `Compare.Measure`). With Kirin isolated, the
+  types listed are of the damage dealt to Kirin; with Melee isolated, the
+  targets listed are of what melee dealt to each, and "All targets" is the
+  melee total. Neither list is cut by its own filter, or there would be
+  nothing left on it to pick.
+- **A type's Share is of every type's damage**, isolated or not. The run's
+  total is then only the isolated types', and a share of that would put the
+  others over 100%.
+- **Figures with nothing left to measure are dashes, as ever**: with
+  Weaponskills isolated there is no melee swing to have an Accuracy of.
+- **The total says both**: "Melee damage", "Damage of 2 types",
+  "Weaponskills damage to Kirin" (`DamageTypes.Heading`).
+- **With Include Skillchains off there is no Skillchains line**, and one that
+  was picked stays on the menu with dashes, where it can be unticked.
+- **Under the total, its share is of everything**: of the damage of every
+  type to every target, whatever is isolated.
 
 ## Healing
 
@@ -266,6 +365,9 @@ filter does, and credits a pet's heal to its owner.
   and the histogram reuse the damage code on a row-shaped copy
   (`Healing.AsEvents`) where every heal is a hit.
 - HPS ticks with DPS, over the same clock.
+- **The Party line under Healing by character** prints what `Healing.Totals`
+  already has for the party: Healing, casts, total over casts, and what the
+  pets healed, apart. Nothing new is counted for it.
 
 ## Export, import and Compare
 

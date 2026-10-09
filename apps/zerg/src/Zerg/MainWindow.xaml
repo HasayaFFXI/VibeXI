@@ -5,139 +5,990 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Zerg"
         xmlns:v="clr-namespace:Zerg.Views"
+        xmlns:c="clr-namespace:Zerg.Charts"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance local:MainViewModel}"
         Title="Zerg" Icon="zerg.ico"
         Width="1280" Height="900" MinWidth="520" MinHeight="360"
-        FontFamily="{StaticResource TextFont}" UseLayoutRounding="True">
+        Background="{DynamicResource Bg0Brush}" Foreground="{DynamicResource Text1Brush}"
+        FontFamily="{StaticResource TextFont}" FontSize="12" UseLayoutRounding="True"
+        TextOptions.TextRenderingMode="Grayscale">
+  <!-- FontSize is said here so that text with no size of its own does not
+       depend on which theme, if any, is loaded: it is 12 units.
+
+       Grayscale text, said here for the same reason. While the Fluent
+       theme was loaded this window's text was smoothed in grays, as text in
+       a floating panel, a tooltip or a menu always is (a see-through window
+       cannot have ClearType). With no theme loaded WPF goes back to
+       ClearType in this window alone: the same letters in the same places,
+       with coloured fringes. This keeps them as they were, and the same in
+       every window. Take the attribute off to have ClearType here.
+
+       The title bar is Zerg's own: the first row below, 36 units, holding
+       the mark, the sections as tabs, the gear and the three caption
+       buttons. The WindowChrome that hands the window's top to it is made
+       in MainWindow.xaml.cs (TakeTitleBar), beside the code that depends on its
+       numbers. There, the bar's empty parts are the window's caption (they
+       drag it, a double-click maximizes it, a right-click opens the
+       window's menu); whatever in the bar is to be pressed says
+       WindowChrome.IsHitTestVisibleInChrome="True", or the press would
+       drag the window instead. -->
   <Window.Resources>
 
-    <!-- One of the five figures across the top. -->
-    <Style x:Key="Tile" TargetType="Border" BasedOn="{StaticResource Card}">
-      <Setter Property="Margin" Value="6"/>
-      <Setter Property="Padding" Value="16,12"/>
+    <!-- ================================================= the band of figures
+         One cell of the five (v:FigureBand lays them out and rules them
+         off). A cell is a Grid of two columns, 64 units tall: the figure,
+         and whatever stands at the cell's right-hand end (a mark, or the
+         state tag beside the clock). Each piece is put at its own height
+         from the cell's top, where the design's sheets draw it: the label's
+         letters stand 17 units down, the figure's 41, the note's 57. -->
+    <Style x:Key="BandLabel" TargetType="v:Caps" BasedOn="{StaticResource Caps}">
+      <Setter Property="Grid.ColumnSpan" Value="2"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="14,7,0,0"/>
     </Style>
-    <Style x:Key="TileNote" TargetType="TextBlock" BasedOn="{StaticResource Label}">
-      <Setter Property="Margin" Value="0,2,0,0"/>
+    <!-- A figure. Bright once there is a session to have figures of; until
+         then (idle, armed) it is a zero or a dash, and is drawn as a label. -->
+    <Style x:Key="BandFigure" TargetType="TextBlock" BasedOn="{StaticResource Figure}">
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="14,17,12,0"/>
+      <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Tag}" Value="Idle">
+          <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Tag}" Value="Armed">
+          <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The clock: the one figure in a colour, the state's. -->
+    <Style x:Key="BandClock" TargetType="TextBlock" BasedOn="{StaticResource Clock}">
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="14,17,12,0"/>
+    </Style>
+    <Style x:Key="BandNote" TargetType="TextBlock" BasedOn="{StaticResource Label}">
+      <Setter Property="Grid.ColumnSpan" Value="2"/>
+      <Setter Property="FontSize" Value="10.5"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="14,45,14,0"/>
       <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
       <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
 
-    <Style x:Key="StatusDot" TargetType="Ellipse">
+    <!-- A mark beside a figure, with what it is written over it: at the
+         cell's right-hand end, 14 units short of the rule. Not there while
+         the cell is too narrow for it (v:FigureBand.Roomy, which the band
+         sets on each cell), nor before the session has anything to draw.
+         The marks are drawn from a count, when an event arrives, and never
+         on the draw beat. -->
+    <Style x:Key="BandMark" TargetType="Grid">
+      <Setter Property="Grid.Column" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="0,0,14,0"/>
+      <!-- So the room between the bars shows the tooltip too. -->
+      <Setter Property="Background" Value="Transparent"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding HasMarks}" Value="False">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </DataTrigger>
+        <Trigger Property="v:FigureBand.Roomy" Value="False">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The mark beside the party's DPS: gone while a target is isolated,
+         when there is no rate for it to have been. -->
+    <Style x:Key="RateMark" TargetType="Grid" BasedOn="{StaticResource BandMark}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding TargetFilter.IsOn}" Value="True">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The same over the heals, which have marks of their own. -->
+    <Style x:Key="HealBandMark" TargetType="Grid">
+      <Setter Property="Grid.Column" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="0,0,14,0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding HasHealMarks}" Value="False">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </DataTrigger>
+        <Trigger Property="v:FigureBand.Roomy" Value="False">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <!-- What a mark is of: as small as a label, in lower case. -->
+    <Style x:Key="BandCaption" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
+      <Setter Property="FontSize" Value="9.5"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="0,7,0,0"/>
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- The marks themselves, where the sheets draw them: the bars and the
+         line 96 by 26, their feet 46 units down the band; the share bar
+         110 by 8, level with the middle of the figure. -->
+    <Style x:Key="BandSpark" TargetType="c:Spark">
+      <Setter Property="Width" Value="96"/>
+      <Setter Property="Height" Value="26"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="0,20,0,0"/>
+    </Style>
+    <Style x:Key="BandShare" TargetType="c:ShareBar">
+      <Setter Property="Width" Value="110"/>
+      <Setter Property="Height" Value="8"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="0,30,0,0"/>
+    </Style>
+    <!-- The leader's colour, before their name: a 10-unit dot level with
+         the middle of the name. -->
+    <Style x:Key="BandDot" TargetType="Ellipse">
+      <Setter Property="DockPanel.Dock" Value="Left"/>
       <Setter Property="Width" Value="10"/>
       <Setter Property="Height" Value="10"/>
-      <Setter Property="Fill" Value="{DynamicResource SystemFillColorNeutralBrush}"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="Margin" Value="0,11,7,0"/>
+    </Style>
+
+    <!-- The leader's name, after the dot: a figure with no place of its own
+         (the two share one, and the name is what gives way). -->
+    <Style x:Key="BandName" TargetType="TextBlock" BasedOn="{StaticResource BandFigure}">
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="Margin" Value="0"/>
+    </Style>
+
+    <!-- All and None on the characters' line: words to press. -->
+    <Style x:Key="BandLink" TargetType="Button" BasedOn="{StaticResource LinkButton}">
+      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    </Style>
+
+    <Style x:Key="StatusDot" TargetType="Ellipse">
+      <Setter Property="Width" Value="8"/>
+      <Setter Property="Height" Value="8"/>
+      <Setter Property="Fill" Value="{DynamicResource Text3Brush}"/>
       <Style.Triggers>
         <DataTrigger Binding="{Binding StatusLight}" Value="Live">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource LiveBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Armed">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Held">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Waiting">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
         </DataTrigger>
         <DataTrigger Binding="{Binding StatusLight}" Value="Error">
-          <Setter Property="Fill" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+          <Setter Property="Fill" Value="{DynamicResource CritBrush}"/>
         </DataTrigger>
       </Style.Triggers>
     </Style>
 
-    <!-- Armed is the one state that can look stuck (with everyone excluded
-         nothing can start the clock), so it is loud: a ring that keeps
-         spreading from the dot. Thirty frames a second is plenty for it. -->
-    <Style x:Key="ArmedRing" TargetType="Ellipse">
-      <Setter Property="Width" Value="10"/>
-      <Setter Property="Height" Value="10"/>
-      <Setter Property="Opacity" Value="0"/>
-      <Setter Property="StrokeThickness" Value="1.5"/>
-      <Setter Property="Stroke" Value="{DynamicResource SystemFillColorCautionBrush}"/>
-      <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-      <Setter Property="RenderTransform">
-        <Setter.Value>
-          <ScaleTransform/>
-        </Setter.Value>
-      </Setter>
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding StatusLight}" Value="Armed">
-          <DataTrigger.EnterActions>
-            <BeginStoryboard x:Name="Pulse">
-              <Storyboard RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
-                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.9" To="0" Duration="0:0:1.4"/>
-                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleX" From="1" To="2.6" Duration="0:0:1.4"/>
-                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.ScaleY" From="1" To="2.6" Duration="0:0:1.4"/>
-              </Storyboard>
-            </BeginStoryboard>
-          </DataTrigger.EnterActions>
-          <DataTrigger.ExitActions>
-            <StopStoryboard BeginStoryboardName="Pulse"/>
-          </DataTrigger.ExitActions>
-        </DataTrigger>
-      </Style.Triggers>
+    <!-- The View tab's label: the word, then the name of the parse that is
+         open, in the face of a file name. The word has the same unseen
+         SemiBold twin under it as every tab's label (TabLabel in
+         Themes/Controls.xaml), so the tab is as wide picked as not. The name
+         gives way first when the bar runs out of room. -->
+    <DataTemplate x:Key="ViewTabLabel">
+      <DockPanel>
+        <Grid DockPanel.Dock="Left">
+          <v:Room Text="View" FontWeight="SemiBold"/>
+          <TextBlock Text="View"/>
+        </Grid>
+        <TextBlock Text="{Binding ViewedName}" Style="{StaticResource Mono}" FontWeight="Normal" Margin="9,1,0,0"
+                   Foreground="{DynamicResource Text3Brush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   MaxWidth="280" Visibility="{Binding HasParse, Converter={StaticResource Visible}}"/>
+      </DockPanel>
+    </DataTemplate>
+
+    <!-- A section's panes (v:SplitPanel): on the pane surface, which shows
+         where two short panes leave a column empty; ruled off from each
+         other as the bands are; no pane smaller than the design's least.
+         A class of Zerg's own finds no style by its type: both name this. -->
+    <Style x:Key="Panes" TargetType="v:SplitPanel">
+      <Setter Property="Background" Value="{DynamicResource Bg1Brush}"/>
+      <Setter Property="Rule" Value="{DynamicResource Line2Brush}"/>
+      <Setter Property="MinPaneWidth" Value="{StaticResource PaneMinWidth}"/>
+      <Setter Property="MinPaneHeight" Value="{StaticResource PaneMinHeight}"/>
+      <Setter Property="HeadingHeight" Value="{StaticResource PaneHeadingHeight}"/>
+    </Style>
+
+    <!-- The short upright rule between two groups: on the title bar, and on
+         the command bar (20 tall there). -->
+    <Style x:Key="GroupRule" TargetType="Border">
+      <Setter Property="Width" Value="1"/>
+      <Setter Property="Height" Value="16"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Background" Value="{DynamicResource Line2Brush}"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
   </Window.Resources>
 
-  <Grid>
+  <!-- Root: given a margin while the window is maximized, by as much as
+       Windows then hangs it over the screen's edges (Fit, in the code). -->
+  <Grid x:Name="Root">
     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <!-- The command bar: what is measured (the session) at the left end, then
-         a parse out to a file and one in from a file. Which section is on
-         screen, and the toggles, are on the line under it. -->
-    <DockPanel Grid.Row="0" Margin="16,12,16,0">
-      <!-- The way into the Settings page, and back out of it: pressed while
-           the page is on screen. What is set once and left alone is in there
-           (the events folder, the hot key, the theme), off the bar. -->
-      <ToggleButton DockPanel.Dock="Right" VerticalAlignment="Top" Margin="16,0,0,0" Padding="9,7"
-                    IsChecked="{Binding IsSettings}"
-                    ToolTip="Settings: the events folder, the click-through hot key and the theme"
-                    AutomationProperties.Name="Settings">
-        <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE713;" FontSize="16"/>
-      </ToggleButton>
+    <!-- The title bar: the mark and the name; which section is on screen,
+         as tabs; the way into the Settings page; minimize, maximize and
+         close. Everywhere else it is the window's caption. The rule along
+         its bottom edge is drawn first, so a picked tab's line lies on it.
 
-      <WrapPanel VerticalAlignment="Center">
-        <!-- One piece, so a narrow window wraps the pair and never parts it. -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
-          <Button Style="{StaticResource StartButton}" Command="{Binding StartCommand}" Content="{Binding View.StartText}"
-                  ToolTip="{Binding View.StartTip}" IsEnabled="{Binding View.StartEnabled}" Margin="0,0,6,0"
-                  AutomationProperties.AutomationId="Start"/>
-          <Button Style="{StaticResource SecondButton}" Command="{Binding SecondCommand}" Content="{Binding View.SecondText}"
-                  ToolTip="{Binding View.SecondTip}" IsEnabled="{Binding View.SecondEnabled}"
-                  AutomationProperties.AutomationId="Second"/>
+         The Tab key goes through it as it reads, left to right: the tabs,
+         then the gear. They are written the other way round (what is
+         docked right comes first), so the bar is a Tab group of its own
+         and says the order: the tabs' group first, then the gear. -->
+    <Grid Grid.Row="0" Height="{StaticResource TitleBarHeight}" Background="{DynamicResource Bg0Brush}"
+          KeyboardNavigation.TabNavigation="Local">
+      <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+      <DockPanel>
+        <!-- A unit short of the bar: their faces stop at its rule. -->
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="0,0,0,1">
+          <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="OnMinimize" ToolTip="Minimize"
+                  AutomationProperties.Name="Minimize" WindowChrome.IsHitTestVisibleInChrome="True"/>
+          <Button Click="OnMaximize" WindowChrome.IsHitTestVisibleInChrome="True">
+            <Button.Style>
+              <Style TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+                <Setter Property="Content" Value="&#xE922;"/>
+                <Setter Property="ToolTip" Value="Maximize"/>
+                <Setter Property="AutomationProperties.Name" Value="Maximize"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" Value="Maximized">
+                    <Setter Property="Content" Value="&#xE923;"/>
+                    <Setter Property="ToolTip" Value="Restore"/>
+                    <Setter Property="AutomationProperties.Name" Value="Restore"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Button.Style>
+          </Button>
+          <Button Style="{StaticResource CaptionClose}" Content="&#xE8BB;" Click="OnClose" ToolTip="Close"
+                  AutomationProperties.Name="Close" WindowChrome.IsHitTestVisibleInChrome="True"/>
         </StackPanel>
 
-        <!-- The parse on screen saved to a file: the session's, or the one
-             the View section has open. It wakes only while the clock is
-             stopped. -->
-        <!-- A piece of its own, so the note arriving wraps onto the next
-             line by itself and moves no button that was already there. -->
-        <Button Content="Export…" Command="{Binding ExportCommand}" ToolTip="{Binding ExportTip}"
-                ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,6,6"
-                Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}"
-                AutomationProperties.Name="Export"/>
-        <!-- The way into the View section: opens a saved parse and shows it,
-             or goes back to the one left open there. -->
-        <Button Content="Import…" Command="{Binding ImportCommand}" ToolTip="{Binding ImportTip}"
-                VerticalAlignment="Center" Margin="0,0,6,6"
-                AutomationProperties.Name="Import"/>
-        <!-- What the last Export did. It clears itself. -->
-        <TextBlock Text="{Binding ParseNote}" ToolTip="{Binding ParseNote}" FontSize="12" MaxWidth="460"
-                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0,6,6"
-                   Background="Transparent" AutomationProperties.LiveSetting="Polite">
-          <TextBlock.Style>
-            <Style TargetType="TextBlock">
-              <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <!-- The way into the Settings page, and back out of it: lit while
+             the page is on screen, when no tab is. What is set once and left
+             alone is in there, off the bars. -->
+        <ToggleButton DockPanel.Dock="Right" VerticalAlignment="Center" Margin="8,0,12,1" TabIndex="1"
+                      Style="{StaticResource IconToggle}" Content="&#xE713;" FontSize="14" IsChecked="{Binding IsSettings}"
+                      ToolTip="Settings: the events folder, the click-through hot key, the pop-outs' opacity, the draw frequency, row shading, the low accuracy mark, the theme and Compare's colours"
+                      AutomationProperties.Name="Settings" WindowChrome.IsHitTestVisibleInChrome="True"/>
+
+        <!-- The mark: the amber Z on its ink tile, the same in both themes. -->
+        <Grid DockPanel.Dock="Left" Width="18" Height="18" Margin="12,0,0,1" VerticalAlignment="Center">
+          <Border CornerRadius="4" Background="{DynamicResource MarkTileBrush}" BorderBrush="{DynamicResource Line3Brush}"
+                  BorderThickness="1" SnapsToDevicePixels="True"/>
+          <Canvas>
+            <Path Data="M5,5 L13,5 L13,7.2 L8.3,11 L13,11 L13,13.2 L5,13.2 L5,11 L9.7,7.2 L5,7.2 Z"
+                  Fill="{DynamicResource AccentBrush}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="0.8"
+                  StrokeLineJoin="Round"/>
+          </Canvas>
+        </Grid>
+        <TextBlock DockPanel.Dock="Left" Text="Zerg" Style="{StaticResource PaneTitle}" VerticalAlignment="Center"
+                   Margin="8,0,0,1"/>
+        <Border DockPanel.Dock="Left" Style="{StaticResource GroupRule}" Margin="16,0,9,1"/>
+
+        <!-- Which section is on screen. Not the Settings page: the gear is
+             lit for that, and no tab is picked. The last of them, View, is
+             there only while it has something to show: a parse open, or
+             the section itself on screen with none. -->
+        <DockPanel HorizontalAlignment="Left" KeyboardNavigation.TabNavigation="Local" KeyboardNavigation.TabIndex="0">
+          <RadioButton DockPanel.Dock="Left" Style="{StaticResource SectionTab}" GroupName="section" Content="Damage"
+                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Damage}"
+                       ToolTip="The damage dealt in the session being measured"
+                       AutomationProperties.Name="Damage section" WindowChrome.IsHitTestVisibleInChrome="True"/>
+          <RadioButton DockPanel.Dock="Left" Style="{StaticResource SectionTab}" GroupName="section" Content="Healing"
+                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Healing}"
+                       ToolTip="The healing done in the same session"
+                       AutomationProperties.Name="Healing section" WindowChrome.IsHitTestVisibleInChrome="True"/>
+          <RadioButton DockPanel.Dock="Left" Style="{StaticResource SectionTab}" GroupName="section" Content="Compare"
+                       IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Compare}"
+                       ToolTip="Two saved parses side by side. The session goes on being measured underneath"
+                       AutomationProperties.Name="Compare section" WindowChrome.IsHitTestVisibleInChrome="True"/>
+
+          <!-- View: ruled off from the three, because it is not the session.
+               Its label is the word and the open parse's name; the mark
+               after it closes the parse (and with it the tab, unless the
+               section is the one on screen). Import, on the command bar, is
+               still the way to open a parse into it. The mark is written
+               before the tab it closes and reached after it. -->
+          <DockPanel KeyboardNavigation.TabNavigation="Local">
+            <DockPanel.Style>
+              <Style TargetType="DockPanel">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding HasParse}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                  </DataTrigger>
+                  <DataTrigger Binding="{Binding IsView}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </DockPanel.Style>
+            <Border DockPanel.Dock="Left" Style="{StaticResource GroupRule}" Margin="2,0,5,1"/>
+            <!-- Over the tab's own right-hand padding, so the mark is 14
+                 units from the end of the name, as drawn. -->
+            <Button DockPanel.Dock="Right" Style="{StaticResource TabClose}" Content="&#xE8BB;" Margin="-7,0,0,1"
+                    Panel.ZIndex="1" TabIndex="1" Command="{Binding CloseParseCommand}" ToolTip="Close this parse"
+                    Visibility="{Binding HasParse, Converter={StaticResource Visible}}"
+                    AutomationProperties.Name="Close the View tab" WindowChrome.IsHitTestVisibleInChrome="True"/>
+            <RadioButton Style="{StaticResource SectionTab}" GroupName="section" Content="{Binding}" TabIndex="0"
+                         ContentTemplate="{StaticResource ViewTabLabel}"
+                         IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=View}"
+                         ToolTip="A saved parse, opened to look through. The session goes on being measured underneath"
+                         AutomationProperties.Name="View section" WindowChrome.IsHitTestVisibleInChrome="True"/>
+          </DockPanel>
+        </DockPanel>
+      </DockPanel>
+    </Grid>
+
+    <!-- The command bar, one line: what is measured (the session pair); a
+         parse out to a file and one in from a file; the toggles; what the
+         last Export did, against the right-hand end; and the layout button.
+         A window too narrow for the line wraps it group by group, and the
+         bar grows (v:BarWrap). The Tab key reaches the layout button
+         last, where it stands, though it is written first: the bar is a
+         Tab group of its own that says so. -->
+    <Border Grid.Row="1" MinHeight="{StaticResource CommandBarHeight}" Background="{DynamicResource Bg1Brush}"
+            BorderBrush="{DynamicResource Line2Brush}" BorderThickness="0,0,0,1">
+      <DockPanel Margin="12,7,12,0" KeyboardNavigation.TabNavigation="Local">
+        <!-- Where the panes' arrangement is locked and set back from: a
+             press opens a menu under it (OnLayout, in the code). Lock
+             layout is ticked while it is on, and the mark on the button is
+             then in the accent, so a rule that will not drag has a reason
+             on screen. The middle line is about the section whose panes
+             are on screen, and cannot be chosen where there are none (the
+             Settings page). No line is checkable: choosing one runs its
+             command, and the tick follows what the command did. -->
+        <Button x:Name="LayoutButton" DockPanel.Dock="Right" VerticalAlignment="Top" Width="30" Padding="0" TabIndex="1"
+                Margin="12,0,0,6" Click="OnLayout" ToolTip="{Binding LayoutTip}" AutomationProperties.Name="Layout"
+                ContextMenuService.IsEnabled="False">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource GhostButton}">
               <Style.Triggers>
-                <DataTrigger Binding="{Binding ParseNoteBad}" Value="True">
-                  <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                <DataTrigger Binding="{Binding LayoutLocked}" Value="True">
+                  <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
                 </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
+          <Button.Resources>
+            <ContextMenu x:Key="LayoutMenu">
+              <MenuItem Header="Lock layout" IsChecked="{Binding LayoutLocked, Mode=OneWay}"
+                        Command="{Binding ToggleLayoutLockCommand}"/>
+              <Separator/>
+              <MenuItem Header="{Binding ResetLayoutText}" Command="{Binding ResetLayoutCommand}"/>
+              <MenuItem Header="Reset all layouts" Command="{Binding ResetAllLayoutsCommand}"/>
+            </ContextMenu>
+          </Button.Resources>
+          <Canvas Width="13" Height="11">
+            <Rectangle Width="13" Height="11" RadiusX="1.5" RadiusY="1.5" StrokeThickness="1"
+                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+            <Path Data="M6.5,1 V10 M7,5.5 H12" StrokeThickness="1"
+                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+          </Canvas>
+        </Button>
+
+        <v:BarWrap KeyboardNavigation.TabNavigation="Local" KeyboardNavigation.TabIndex="0">
+          <!-- One piece, so a narrow window wraps the pair and never parts it. -->
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+            <Button Style="{StaticResource StartButton}" Command="{Binding StartCommand}" Content="{Binding View.StartText}"
+                    ToolTip="{Binding View.StartTip}" IsEnabled="{Binding View.StartEnabled}" Margin="0,0,6,0"
+                    AutomationProperties.AutomationId="Start"/>
+            <Button Style="{StaticResource SecondButton}" Command="{Binding SecondCommand}" Content="{Binding View.SecondText}"
+                    ToolTip="{Binding View.SecondTip}" IsEnabled="{Binding View.SecondEnabled}"
+                    AutomationProperties.AutomationId="Second"/>
+          </StackPanel>
+
+          <Border Style="{StaticResource GroupRule}" Height="20" Margin="12,0,11,6" v:BarWrap.Rule="True"/>
+
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+            <!-- The parse on screen saved to a file: the session's, or the one
+                 the View section has open. It wakes only while the clock is
+                 stopped. -->
+            <Button Content="Export…" Command="{Binding ExportCommand}" ToolTip="{Binding ExportTip}"
+                    ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,6,0"
+                    Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}"
+                    AutomationProperties.Name="Export"/>
+            <!-- The way into the View section: opens a saved parse and shows it,
+                 or goes back to the one left open there. No face until pointed
+                 at: it stands beside Export and should not compete with it. -->
+            <Button Content="Import…" Command="{Binding ImportCommand}" ToolTip="{Binding ImportTip}"
+                    Style="{StaticResource GhostButton}" VerticalAlignment="Center"
+                    AutomationProperties.Name="Import"/>
+          </StackPanel>
+
+          <Border Style="{StaticResource GroupRule}" Height="20" Margin="12,0,11,6" v:BarWrap.Rule="True"/>
+
+          <!-- Toggles, not actions: the label is fixed and the tick says it is on.
+               One piece, so a narrow window wraps the group and never parts it.
+               The room at its end keeps the note off it. -->
+          <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
+            <!-- Not offered over healing: it moves no healing figure.
+                 In Compare it is on the Compare card, beside what it changes. -->
+            <ToggleButton Style="{StaticResource SmallToggle}" Content="Include Skillchains" IsChecked="{Binding Skillchains}"
+                          ToolTip="{Binding SkillchainsTip}" Margin="0,0,6,0"
+                          Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
+            <!-- Which targets the damage is isolated to, and which damage
+                 types, and the way to pick them: filters on what damage is
+                 counted, as the switch before them is, and like it not
+                 offered over healing. In Compare the two are on the
+                 Compare card too. -->
+            <Grid Margin="0,0,6,0" Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+              <v:PickButton DataContext="{Binding TargetFilter}"/>
+            </Grid>
+            <Grid Margin="0,0,6,0" Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+              <v:PickButton DataContext="{Binding TypeFilter}"/>
+            </Grid>
+            <ToggleButton Style="{StaticResource SmallToggle}" Content="Hide names" IsChecked="{Binding HideNames}"
+                          ToolTip="{Binding HideNamesTip}" Margin="0,0,6,0"/>
+            <!-- About every panel at once. The hot key does the same from inside
+                 the game, and this is where a player finds out which keys those
+                 are: on a keycap after the label (the toggle's Tag), and in the
+                 tooltip. No keycap while the keys are another program's. -->
+            <ToggleButton Style="{StaticResource SmallToggle}" Content="Click-through" IsChecked="{Binding Panels.ClickThrough}"
+                          ToolTip="{Binding Panels.ClickThroughTip}" Tag="{Binding Panels.HotKey}"
+                          AutomationProperties.Name="Click-through panels"/>
+          </StackPanel>
+
+          <!-- What the last Export did. It clears itself. Beside the groups it
+               stands against the bar's right-hand end; in a window too narrow
+               for that it has a line of its own, and moves no button either
+               way. Too long for that line too (why an export was refused,
+               in a narrow window), it goes on to a second: a reason cut
+               short is no reason. A tick before good news, a warning
+               before bad, at the first line. -->
+          <DockPanel v:BarWrap.End="True" Margin="2,0,0,6" ToolTip="{Binding ParseNote}" Background="Transparent">
+            <DockPanel.Style>
+              <Style TargetType="DockPanel">
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding ParseNote}" Value="">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </DockPanel.Style>
+            <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource IconFont}" FontSize="11" VerticalAlignment="Top"
+                       Margin="0,3,7,0">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Text" Value="&#xE73E;"/>
+                  <Setter Property="Foreground" Value="{DynamicResource LiveBrush}"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding ParseNoteBad}" Value="True">
+                      <Setter Property="Text" Value="&#xE7BA;"/>
+                      <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+            <TextBlock Text="{Binding ParseNote}" FontSize="11.5" TextWrapping="Wrap" VerticalAlignment="Center"
+                       AutomationProperties.LiveSetting="Polite">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding ParseNoteBad}" Value="True">
+                      <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+          </DockPanel>
+        </v:BarWrap>
+      </DockPanel>
+    </Border>
+
+    <!-- The View section's band, under the command bar and never
+         scrolling: the parse that is open and which side of it the figures
+         and panes below are showing (they are the Damage and Healing
+         sections' own, drawn from the parse); or, with none open, the place
+         to open one. -->
+    <v:ViewCard Grid.Row="2" Visibility="{Binding IsView, Converter={StaticResource Visible}}"/>
+
+    <!-- The page: the band of figures, the characters' line, then the
+         section, each the window's whole width.
+
+         Over the Damage and Healing sections, in a window wide enough for
+         two columns of panes, the page is exactly as tall as the window
+         leaves it (v:PageStack, Fill): nothing scrolls, the two bands stand
+         still above the panes as if they were outside the page, and each
+         pane scrolls what it holds. They are in the page all the same, so
+         that in a narrow window (under NarrowWidth) they scroll away with
+         it: there the panes stand in one column at their own heights, and
+         bands that stood still would leave a small window nothing else.
+         One instance of each either way; nothing is moved between two
+         places. The Compare section fills the window in the same way
+         (FillsPage): its own bands (v:CompareSection) are in the page
+         where those two are, and stand still over its panes or, in a
+         narrow window, scroll with them. The Settings page is as tall as
+         it is, and scrolls. -->
+    <v:PageView x:Name="Body" Grid.Row="3" Style="{StaticResource ZScrollViewer}" VerticalScrollBarVisibility="Auto">
+    <v:PageStack x:Name="Page" Fill="{Binding FillsPage}" NarrowWidth="{StaticResource NarrowWidth}"
+                 v:SplitPanel.Locked="{Binding LayoutLocked}">
+
+      <!-- The five figures, with a small mark beside three of them. The
+           total first, then the clock beside the total it divides. Only the
+           clock and the rate beside it are rewritten on the draw beat; the
+           tag changes with the session's state, and the marks with a count. -->
+      <Grid Background="{DynamicResource Bg1Brush}"
+            Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}">
+        <v:FigureBand RowHeight="{StaticResource FiguresBandHeight}" Rule="{DynamicResource Line2Brush}"
+                      Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <!-- What the total is a total of: with a target isolated,
+                 "Damage to Kirin". -->
+            <v:Caps Text="{Binding TotalLabel}" Style="{StaticResource BandLabel}" ToolTip="{Binding TotalTip}"/>
+            <TextBlock Text="{Binding TotalText}" Style="{StaticResource BandFigure}"/>
+            <Grid Style="{StaticResource BandMark}"
+                  ToolTip="The party's damage in each stretch of the session, first to last. The last bar is still filling">
+              <TextBlock Text="{Binding TotalMarkCaption}" Style="{StaticResource BandCaption}"/>
+              <c:Spark Style="{StaticResource BandSpark}" Kind="Bars" Values="{Binding TotalMark}"
+                       Ink="{DynamicResource Text3Brush}"/>
+            </Grid>
+            <TextBlock Text="{Binding TotalNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <!-- The clock is a figure, not a caption: it is under every DPS
+               here, and the one number that moves with nothing happening. -->
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Elapsed" Style="{StaticResource BandLabel}"/>
+            <TextBlock Text="{Binding ClockText}" Style="{StaticResource BandClock}"/>
+            <v:StateTag Grid.Column="1" Style="{StaticResource StateTag}" State="{Binding Tag}" VerticalAlignment="Top"
+                        Margin="0,24,14,0"/>
+            <TextBlock Text="{Binding ClockNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Party DPS" Style="{StaticResource BandLabel}"/>
+            <!-- A dash while a target is isolated, and its mark gone: the
+                 tooltip says why. -->
+            <TextBlock Text="{Binding DpsText}" Style="{StaticResource BandFigure}" ToolTip="{Binding DpsTip}"/>
+            <Grid Style="{StaticResource RateMark}"
+                  ToolTip="The party's DPS as it stood through the session: everything dealt so far over the time so far">
+              <TextBlock Text="running" Style="{StaticResource BandCaption}"/>
+              <c:Spark Style="{StaticResource BandSpark}" Kind="Line" Values="{Binding DpsMark}"
+                       Ink="{DynamicResource Text2Brush}"/>
+            </Grid>
+            <TextBlock Text="{Binding DpsNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Top DPS" Style="{StaticResource BandLabel}"/>
+            <DockPanel Margin="14,17,12,0" VerticalAlignment="Top" HorizontalAlignment="Left" ToolTip="{Binding TopTip}"
+                       Background="Transparent">
+              <Ellipse Style="{StaticResource BandDot}" Fill="{Binding TopSwatch}"
+                       Visibility="{Binding HasTop, Converter={StaticResource Visible}}"/>
+              <TextBlock Text="{Binding TopName}" Style="{StaticResource BandName}"/>
+            </DockPanel>
+            <Grid Style="{StaticResource BandMark}"
+                  ToolTip="Each character's share of the party's damage, largest first, in their colour">
+              <TextBlock Text="party share" Style="{StaticResource BandCaption}"/>
+              <c:ShareBar Style="{StaticResource BandShare}" Slices="{Binding TopMark}"/>
+            </Grid>
+            <TextBlock Text="{Binding TopNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Biggest hit" Style="{StaticResource BandLabel}"/>
+            <TextBlock Text="{Binding BigText}" Style="{StaticResource BandFigure}"/>
+            <TextBlock Text="{Binding BigNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+        </v:FigureBand>
+
+        <!-- Over the heals: the same band. The clock is the same clock;
+             there is one session. -->
+        <v:FigureBand RowHeight="{StaticResource FiguresBandHeight}" Rule="{DynamicResource Line2Brush}"
+                      Visibility="{Binding IsHealing, Converter={StaticResource Visible}}">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Total healing" Style="{StaticResource BandLabel}"/>
+            <TextBlock Text="{Binding HealTotalText}" Style="{StaticResource BandFigure}"/>
+            <Grid Style="{StaticResource HealBandMark}"
+                  ToolTip="The party's healing in each stretch of the session, first to last. The last bar is still filling">
+              <TextBlock Text="{Binding HealTotalMarkCaption}" Style="{StaticResource BandCaption}"/>
+              <c:Spark Style="{StaticResource BandSpark}" Kind="Bars" Values="{Binding HealTotalMark}"
+                       Ink="{DynamicResource Text3Brush}"/>
+            </Grid>
+            <TextBlock Text="{Binding HealTotalNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Elapsed" Style="{StaticResource BandLabel}"/>
+            <TextBlock Text="{Binding ClockText}" Style="{StaticResource BandClock}"/>
+            <v:StateTag Grid.Column="1" Style="{StaticResource StateTag}" State="{Binding Tag}" VerticalAlignment="Top"
+                        Margin="0,24,14,0"/>
+            <TextBlock Text="{Binding ClockNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Party HPS" Style="{StaticResource BandLabel}"/>
+            <TextBlock Text="{Binding HpsText}" Style="{StaticResource BandFigure}"/>
+            <Grid Style="{StaticResource HealBandMark}"
+                  ToolTip="The party's HPS as it stood through the session: everything healed so far over the time so far">
+              <TextBlock Text="running" Style="{StaticResource BandCaption}"/>
+              <c:Spark Style="{StaticResource BandSpark}" Kind="Line" Values="{Binding HpsMark}"
+                       Ink="{DynamicResource Text2Brush}"/>
+            </Grid>
+            <TextBlock Text="{Binding HpsNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Top healer" Style="{StaticResource BandLabel}"/>
+            <DockPanel Margin="14,17,12,0" VerticalAlignment="Top" HorizontalAlignment="Left"
+                       ToolTip="{Binding TopHealerTip}" Background="Transparent">
+              <Ellipse Style="{StaticResource BandDot}" Fill="{Binding TopHealerSwatch}"
+                       Visibility="{Binding HasTopHealer, Converter={StaticResource Visible}}"/>
+              <TextBlock Text="{Binding TopHealerName}" Style="{StaticResource BandName}"/>
+            </DockPanel>
+            <Grid Style="{StaticResource HealBandMark}"
+                  ToolTip="Each character's share of the party's healing, largest first, in their colour">
+              <TextBlock Text="party share" Style="{StaticResource BandCaption}"/>
+              <c:ShareBar Style="{StaticResource BandShare}" Slices="{Binding TopHealerMark}"/>
+            </Grid>
+            <TextBlock Text="{Binding TopHealerNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <v:Caps Text="Biggest heal" Style="{StaticResource BandLabel}"/>
+            <TextBlock Text="{Binding BigHealText}" Style="{StaticResource BandFigure}"/>
+            <TextBlock Text="{Binding BigHealNote}" Style="{StaticResource BandNote}"/>
+          </Grid>
+        </v:FigureBand>
+        <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+      </Grid>
+
+      <!-- The characters, on a line of their own: who is counted, and the
+           way to leave one out. Not over Compare: they filter one parse,
+           and it has two. Over the View section they are the characters of
+           the parse open there. v:ChipLine lays the line out; the chips
+           that do not fit on it are behind the chip that says how many,
+           which opens the line onto all of them and folds it again. -->
+      <Grid Background="{DynamicResource Bg1Brush}" ClipToBounds="True"
+            Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}">
+        <v:ChipLine MinHeight="{StaticResource CharactersBandHeight}">
+          <v:Caps v:ChipLine.Part="Label" Text="{Binding CharactersLabel}" Style="{StaticResource Caps}"/>
+
+          <ItemsControl v:ChipLine.Part="Chips" ItemsSource="{Binding Chips}" Focusable="False">
+            <ItemsControl.Template>
+              <ControlTemplate TargetType="ItemsControl">
+                <!-- Opened onto every chip, the list is capped at four
+                     lines (four chips and three gaps) and scrolls past
+                     that, so a narrow window's alliance cannot push the
+                     cards off the screen. The scroll bar is drawn over the
+                     list; v:ChipFit keeps the chips out from under it. -->
+                <ScrollViewer MaxHeight="92" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              v:WheelChain.On="True" Focusable="False">
+                  <ItemsPresenter/>
+                </ScrollViewer>
+              </ControlTemplate>
+            </ItemsControl.Template>
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <v:ChipFit Wrap="{Binding CharactersOpen}"/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <!-- A chip: the character's colour and name. Their job is in
+                   the tooltip. Left out, the swatch is hollow and the name
+                   is struck through. -->
+              <DataTemplate>
+                <ToggleButton Style="{StaticResource Chip}" IsChecked="{Binding Included}" ToolTip="{Binding Tip}"
+                              AutomationProperties.Name="{Binding Name}">
+                  <StackPanel Orientation="Horizontal">
+                    <Rectangle x:Name="Colour" Style="{StaticResource Swatch}" Fill="{Binding Swatch}" Margin="0,0,6,0"
+                               StrokeThickness="1"/>
+                    <TextBlock x:Name="Who" Text="{Binding Name}" VerticalAlignment="Center"/>
+                  </StackPanel>
+                </ToggleButton>
+                <DataTemplate.Triggers>
+                  <DataTrigger Binding="{Binding Included}" Value="False">
+                    <Setter TargetName="Colour" Property="Fill" Value="Transparent"/>
+                    <Setter TargetName="Colour" Property="Stroke" Value="{DynamicResource Text4Brush}"/>
+                    <Setter TargetName="Who" Property="TextDecorations" Value="Strikethrough"/>
+                  </DataTrigger>
+                </DataTemplate.Triggers>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- "+5" while the line holds all but five; a chevron once it is
+               opened onto every chip, to fold it again. A toggle: it acts
+               on being checked, not on the press. -->
+          <ToggleButton v:ChipLine.Part="More" Style="{StaticResource ChipMore}" IsChecked="{Binding CharactersOpen}"
+                        Content="{Binding MoreText, RelativeSource={RelativeSource AncestorType=v:ChipLine}}"
+                        Visibility="{Binding CanFold, RelativeSource={RelativeSource AncestorType=v:ChipLine}, Converter={StaticResource Visible}}"
+                        AutomationProperties.Name="Show or hide the character list"/>
+
+          <StackPanel v:ChipLine.Part="Tail" Orientation="Horizontal">
+            <Border Style="{StaticResource GroupRule}" Height="14"/>
+            <Button Style="{StaticResource BandLink}" Content="All" Command="{Binding IncludeAllCommand}"
+                    ToolTip="Include every character listed" Margin="9,0,0,0" AutomationProperties.Name="Include all"/>
+            <Button Style="{StaticResource BandLink}" Content="None" Command="{Binding IncludeNoneCommand}"
+                    ToolTip="Exclude every character listed" Margin="10,0,0,0" AutomationProperties.Name="Include none"/>
+          </StackPanel>
+
+          <!-- Says who is out, also while their chip is not on the line. -->
+          <TextBlock v:ChipLine.Part="Hint" Text="{Binding CharactersHint}" Style="{StaticResource Label}"
+                     TextTrimming="CharacterEllipsis" ToolTip="{Binding CharactersHint}"/>
+        </v:ChipLine>
+        <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+      </Grid>
+
+      <!-- The Compare section's own bands, in the place of the two above:
+           what to compare, the two slots, six figures. -->
+      <v:CompareSection DataContext="{Binding Compare}"
+                        Visibility="{Binding Active, Converter={StaticResource Visible}}"/>
+
+      <!-- The section. -->
+      <Grid>
+
+      <!-- The Damage section's panes, flush against each other and ruled
+           off, arranged as its tree of splits says (v:SplitPanel): the
+           tables in the left-hand column, the chart over the drill-down in
+           the right. Each pane is a Grid with the pane's key, holding the
+           card and what stands in for it while the card floats over the
+           game in a panel of its own; a pane whose card is out is as tall
+           as that stand-in, and its neighbour in the column has the rest.
+           Where each goes is the tree's to say, not the order they are
+           written in, and the tree is the player's to change: a rule
+           dragged, a pane folded by the mark in its heading or carried by
+           its heading to another place (the panel says what was asked for,
+           and the window's code hands it to the view model, which keeps
+           and saves the tree). Each pane says what it is called where a
+           name that does not change is wanted (v:SplitPanel.Title). -->
+      <v:SplitPanel Tree="{Binding DamageLayout}" Section="Damage" Style="{StaticResource Panes}"
+                    Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+
+        <Grid v:SplitPanel.Key="bars" v:SplitPanel.Title="Damage by character">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[bars].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:BarsCard Visibility="{Binding Panels[bars].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[bars]}"/>
+        </Grid>
+
+        <Grid v:SplitPanel.Key="actions" v:SplitPanel.Title="Actions">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[actions].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:ActionsCard Visibility="{Binding Panels[actions].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[actions]}"/>
+        </Grid>
+
+        <Grid v:SplitPanel.Key="line" v:SplitPanel.Title="Cumulative damage">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[line].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:LineCard Visibility="{Binding Panels[line].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[line]}"/>
+        </Grid>
+
+        <!-- The drill-down: always a pane, with a place of its own. It is
+             folded to its heading until an action is picked, and while the
+             Actions card floats (its panel shows the drill-down under the
+             action; the heading here says so): then it is as tall as a
+             heading, and the chart above it has the column (or, moved into
+             a column of its own, as wide as one: a rail). The card folds
+             itself; this says so to the panel that arranges it. -->
+        <Grid x:Name="Drill" v:SplitPanel.Key="drill" v:SplitPanel.Title="Drill-down">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding DrillOpen}" Value="False">
+                  <Setter Property="v:SplitPanel.SelfFolded" Value="True"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Panels[actions].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.SelfFolded" Value="True"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:DrillCard/>
+        </Grid>
+
+      </v:SplitPanel>
+
+      <!-- The Healing section: the same panes over the heals, in an
+           arrangement of its own. -->
+      <v:SplitPanel Tree="{Binding HealingLayout}" Section="Healing" Style="{StaticResource Panes}"
+                    Visibility="{Binding IsHealing, Converter={StaticResource Visible}}">
+
+        <Grid v:SplitPanel.Key="hbars" v:SplitPanel.Title="Healing by character">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[hbars].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:HealBarsCard Visibility="{Binding Panels[hbars].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[hbars]}"/>
+        </Grid>
+
+        <Grid v:SplitPanel.Key="hactions" v:SplitPanel.Title="Heals">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[hactions].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:HealActionsCard Visibility="{Binding Panels[hactions].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[hactions]}"/>
+        </Grid>
+
+        <Grid v:SplitPanel.Key="hline" v:SplitPanel.Title="Cumulative healing">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[hline].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:HealLineCard Visibility="{Binding Panels[hline].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[hline]}"/>
+        </Grid>
+
+        <Grid x:Name="HealDrill" v:SplitPanel.Key="hdrill" v:SplitPanel.Title="Heal drill-down">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding HealDrillOpen}" Value="False">
+                  <Setter Property="v:SplitPanel.SelfFolded" Value="True"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Panels[hactions].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.SelfFolded" Value="True"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:HealDrillCard/>
+        </Grid>
+
+      </v:SplitPanel>
+
+      <!-- The Compare section's panes, under its bands (above): two
+           saved parses side by side, in an arrangement of its own. The
+           panel and its four panes are one file (Views/ComparePanes); they
+           are there once both slots hold a parse. -->
+      <v:ComparePanes DataContext="{Binding Compare}" Tree="{Binding Layout}" Section="Compare" Style="{StaticResource Panes}"
+                      Visibility="{Binding ShowsPanes, Converter={StaticResource Visible}}"/>
+
+      <!-- The Settings page, in the place of whichever section it was opened
+           over: the pane's surface edge to edge, as tall as its rows (the
+           page scrolls) or as what the window has left, whichever is more. -->
+      <v:SettingsPage Visibility="{Binding IsSettings, Converter={StaticResource Visible}}"/>
+      </Grid>
+    </v:PageStack>
+    </v:PageView>
+
+    <!-- The status line: the session's dot, which file (in the face of a
+         file name), how much of it and the session; and at the right-hand
+         end, while any card floats over the game, how many do, whether
+         clicks pass through them, and the way to bring them all back; and
+         last, in the window's corner, the version. -->
+    <Border Grid.Row="4" Height="{StaticResource StatusBarHeight}" Background="{DynamicResource Bg0Brush}"
+            BorderBrush="{DynamicResource Line2Brush}" BorderThickness="0,1,0,0">
+      <DockPanel Margin="12,0,14,0">
+        <Ellipse DockPanel.Dock="Left" Style="{StaticResource StatusDot}" VerticalAlignment="Center"/>
+        <!-- The first docked to the right, so the furthest right. -->
+        <TextBlock DockPanel.Dock="Right" Text="{Binding StatusVersion, Mode=OneTime}" Style="{StaticResource Label}"
+                   VerticalAlignment="Center" Margin="16,0,0,0" Typography.NumeralAlignment="Tabular"/>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0"
+                    Visibility="{Binding Panels.AnyOut, Converter={StaticResource Visible}}">
+          <TextBlock Text="{Binding StatusPanels}" Style="{StaticResource Label}" VerticalAlignment="Center"/>
+          <TextBlock Text=" · " Style="{StaticResource Label}" VerticalAlignment="Center"/>
+          <Button Style="{StaticResource LinkButton}" Content="Dock all" Command="{Binding Panels.DockAllCommand}"
+                  ToolTip="Every floating panel back into this window" AutomationProperties.Name="Dock all"
+                  WindowChrome.IsHitTestVisibleInChrome="True"/>
+        </StackPanel>
+        <!-- While the arrangement is in someone's hand, what is happening
+             and the way out of it: "Moving Cumulative damage · Esc
+             cancels", "Double-click a divider to set it back". The panes'
+             panel says it; the window's code puts it here. -->
+        <TextBlock DockPanel.Dock="Right" Text="{Binding LayoutNote}" VerticalAlignment="Center"
+                   Margin="16,0,0,0" AutomationProperties.LiveSetting="Polite">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Label}">
+              <Style.Triggers>
                 <Trigger Property="Text" Value="">
                   <Setter Property="Visibility" Value="Collapsed"/>
                 </Trigger>
@@ -145,249 +996,21 @@
             </Style>
           </TextBlock.Style>
         </TextBlock>
-      </WrapPanel>
-    </DockPanel>
-
-    <StackPanel Grid.Row="1" Margin="16,4,16,0">
-    <!-- Which side of the fight is on screen: a line of its own, in the small
-         print of the characters' line under it, because everything below
-         changes with it. The View section has no segment here: Import, on
-         the command bar, is the way into it. The toggles follow on the same
-         line. -->
-    <WrapPanel>
-      <TextBlock Text="Section" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,6"/>
-      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Damage"
-                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Damage}"
-                   ToolTip="The damage dealt in the session being measured"
-                   AutomationProperties.Name="Damage section"/>
-      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Healing"
-                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Healing}"
-                   ToolTip="The healing done in the same session"
-                   AutomationProperties.Name="Healing section"/>
-      <RadioButton Style="{StaticResource SmallSegment}" GroupName="section" Content="Compare"
-                   IsChecked="{Binding Section, Converter={StaticResource Equals}, ConverterParameter=Compare}"
-                   ToolTip="Two saved parses side by side. The session goes on being measured underneath"
-                   AutomationProperties.Name="Compare section"/>
-      <!-- The gap between the two groups. -->
-      <Border Width="20"/>
-
-      <!-- Toggles, not actions: the label is fixed and the pressed look says it is on.
-           One piece, so a narrow window wraps the group and never parts it. -->
-      <StackPanel Orientation="Horizontal">
-        <TextBlock Text="Toggles" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,6"/>
-        <!-- Not offered over healing: it moves no healing figure.
-             In Compare it is on the Compare card, beside what it changes. -->
-        <ToggleButton Style="{StaticResource SmallToggle}" Content="Include Skillchains" IsChecked="{Binding Skillchains}"
-                      ToolTip="{Binding SkillchainsTip}" Margin="0,0,4,6"
-                      Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
-        <ToggleButton Style="{StaticResource SmallToggle}" Content="Hide names" IsChecked="{Binding HideNames}"
-                      ToolTip="{Binding HideNamesTip}" Margin="0,0,4,6"/>
-        <!-- About every panel at once. The hot key does the same from inside
-             the game, and this is where a player finds out which keys those
-             are. -->
-        <ToggleButton Style="{StaticResource SmallToggle}" Content="Click-through" IsChecked="{Binding Panels.ClickThrough}"
-                      ToolTip="{Binding Panels.ClickThroughTip}" Margin="0,0,4,6"
-                      AutomationProperties.Name="Click-through panels"/>
-      </StackPanel>
-    </WrapPanel>
-
-    <!-- The characters, on a line of their own: an alliance is eighteen names.
-         Not over Compare: they filter one parse, and it has two. Over the
-         View section they are the characters of the parse open there. -->
-    <StackPanel Visibility="{Binding ShowsParse, Converter={StaticResource Visible}}">
-      <WrapPanel>
-        <TextBlock Text="{Binding CharactersLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
-                   Margin="0,0,10,6" Typography.NumeralAlignment="Tabular"/>
-        <Button Style="{StaticResource SmallButton}" Content="{Binding CharactersToggleText}"
-                ToolTip="{Binding CharactersToggleTip}" Click="OnCharactersToggle" Margin="0,0,10,6"
-                AutomationProperties.Name="Show or hide the character list"/>
-        <Button Style="{StaticResource SmallButton}" Content="All" Command="{Binding IncludeAllCommand}"
-                ToolTip="Include every character listed" Margin="0,0,4,6" AutomationProperties.Name="Include all"/>
-        <Button Style="{StaticResource SmallButton}" Content="None" Command="{Binding IncludeNoneCommand}"
-                ToolTip="Exclude every character listed" Margin="0,0,12,6" AutomationProperties.Name="Include none"/>
-        <!-- Says who is out even while the list is folded away. -->
-        <TextBlock Text="{Binding CharactersHint}" Style="{StaticResource Label}" VerticalAlignment="Center"
-                   Margin="0,0,0,6" TextTrimming="CharacterEllipsis"/>
-      </WrapPanel>
-      <!-- Capped, and scrolling past the cap, so a narrow window's list can't
-           push the cards off the screen. -->
-      <ScrollViewer MaxHeight="92" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                    v:WheelChain.On="True"
-                    Visibility="{Binding CharactersOpen, Converter={StaticResource Visible}}">
-        <ItemsControl ItemsSource="{Binding Chips}" Focusable="False">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <WrapPanel/>
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <ToggleButton Style="{StaticResource Chip}" IsChecked="{Binding Included}" ToolTip="{Binding Tip}"
-                            AutomationProperties.Name="{Binding Name}">
-                <StackPanel Orientation="Horizontal">
-                  <Rectangle Style="{StaticResource Swatch}" Fill="{Binding Swatch}" RadiusX="5" RadiusY="5"
-                             Margin="0,0,7,0"/>
-                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-                  <TextBlock Text="{Binding Job}" Style="{StaticResource Badge}"/>
-                </StackPanel>
-              </ToggleButton>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
-    </StackPanel>
-    </StackPanel>
-
-    <ScrollViewer x:Name="Body" Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">
-      <StackPanel Margin="16,0,16,16">
-      <!-- The View section's head: the place to open one saved parse, and
-           which side of it the tiles and cards below are showing. They are
-           the Damage and Healing sections' own, drawn from the parse. -->
-      <v:ViewCard Margin="0,0,0,6" Visibility="{Binding IsView, Converter={StaticResource Visible}}"/>
-      <Grid>
-      <StackPanel Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
-
-        <!-- One hero figure, then the clock beside the total it divides. -->
-        <UniformGrid x:Name="Tiles" Columns="5" Margin="-6,0">
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Total damage" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding TotalText}" Style="{StaticResource Figure}" FontSize="36"
-                         Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
-              <TextBlock Text="{Binding TotalNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <!-- The clock is a figure, not a caption: it is under every DPS
-               here, and the one number that moves with nothing happening. -->
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Elapsed" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}" FontSize="36"/>
-              <TextBlock Text="{Binding ClockNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Party DPS" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding DpsText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
-              <TextBlock Text="{Binding DpsNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Top DPS" Style="{StaticResource Label}"/>
-              <DockPanel Margin="0,8,0,0" ToolTip="{Binding TopTip}" Background="Transparent">
-                <Ellipse Width="12" Height="12" Fill="{Binding TopSwatch}" VerticalAlignment="Center" Margin="0,2,10,0"
-                         Visibility="{Binding HasTop, Converter={StaticResource Visible}}"/>
-                <TextBlock Text="{Binding TopName}" Style="{StaticResource Figure}" TextTrimming="CharacterEllipsis"/>
-              </DockPanel>
-              <TextBlock Text="{Binding TopNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Biggest hit" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding BigText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
-              <TextBlock Text="{Binding BigNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-        </UniformGrid>
-
-        <!-- Each card, or what stands in for it while it floats over the
-             game in a panel of its own. -->
-        <v:LineCard Margin="0,6,0,0" Visibility="{Binding Panels[line].IsOut, Converter={StaticResource Hidden}}"/>
-        <v:Away Margin="0,6,0,0" DataContext="{Binding Panels[line]}"/>
-        <v:BarsCard Margin="0,12,0,0" Visibility="{Binding Panels[bars].IsOut, Converter={StaticResource Hidden}}"/>
-        <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[bars]}"/>
-        <v:ActionsCard Margin="0,12,0,0" Visibility="{Binding Panels[actions].IsOut, Converter={StaticResource Hidden}}"/>
-        <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[actions]}"/>
-        <!-- Only there while an action is picked (the card hides itself). It
-             goes where the Actions card goes: while that floats, its panel
-             shows the drill-down under the action, and nothing is left here. -->
-        <StackPanel x:Name="Drill" Visibility="{Binding Panels[actions].IsOut, Converter={StaticResource Hidden}}">
-          <v:DrillCard Margin="0,12,0,0"/>
-        </StackPanel>
-
-      </StackPanel>
-
-      <!-- The Healing section: the same layout over the heals. The clock is
-           the same clock; there is one session. -->
-      <StackPanel Visibility="{Binding IsHealing, Converter={StaticResource Visible}}">
-
-        <UniformGrid x:Name="HealTiles" Columns="5" Margin="-6,0">
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Total healing" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding HealTotalText}" Style="{StaticResource Figure}" FontSize="36"
-                         Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
-              <TextBlock Text="{Binding HealTotalNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Elapsed" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding ClockText}" Style="{StaticResource Clock}" FontSize="36"/>
-              <TextBlock Text="{Binding ClockNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Party HPS" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding HpsText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
-              <TextBlock Text="{Binding HpsNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Top healer" Style="{StaticResource Label}"/>
-              <DockPanel Margin="0,8,0,0" ToolTip="{Binding TopHealerTip}" Background="Transparent">
-                <Ellipse Width="12" Height="12" Fill="{Binding TopHealerSwatch}" VerticalAlignment="Center" Margin="0,2,10,0"
-                         Visibility="{Binding HasTopHealer, Converter={StaticResource Visible}}"/>
-                <TextBlock Text="{Binding TopHealerName}" Style="{StaticResource Figure}" TextTrimming="CharacterEllipsis"/>
-              </DockPanel>
-              <TextBlock Text="{Binding TopHealerNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource Tile}">
-            <StackPanel>
-              <TextBlock Text="Biggest heal" Style="{StaticResource Label}"/>
-              <TextBlock Text="{Binding BigHealText}" Style="{StaticResource Figure}" Margin="0,8,0,0"/>
-              <TextBlock Text="{Binding BigHealNote}" Style="{StaticResource TileNote}"/>
-            </StackPanel>
-          </Border>
-        </UniformGrid>
-
-        <v:HealLineCard Margin="0,6,0,0" Visibility="{Binding Panels[hline].IsOut, Converter={StaticResource Hidden}}"/>
-        <v:Away Margin="0,6,0,0" DataContext="{Binding Panels[hline]}"/>
-        <v:HealBarsCard Margin="0,12,0,0" Visibility="{Binding Panels[hbars].IsOut, Converter={StaticResource Hidden}}"/>
-        <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[hbars]}"/>
-        <v:HealActionsCard Margin="0,12,0,0" Visibility="{Binding Panels[hactions].IsOut, Converter={StaticResource Hidden}}"/>
-        <v:Away Margin="0,12,0,0" DataContext="{Binding Panels[hactions]}"/>
-        <StackPanel x:Name="HealDrill" Visibility="{Binding Panels[hactions].IsOut, Converter={StaticResource Hidden}}">
-          <v:HealDrillCard Margin="0,12,0,0"/>
-        </StackPanel>
-
-      </StackPanel>
-
-      <!-- The Compare section: two saved parses side by side. -->
-      <v:CompareSection DataContext="{Binding Compare}" Visibility="{Binding Active, Converter={StaticResource Visible}}"/>
-
-      <!-- The Settings page, in the place of whichever section it was opened over. -->
-      <v:SettingsPage Visibility="{Binding IsSettings, Converter={StaticResource Visible}}"/>
-      </Grid>
-      </StackPanel>
-    </ScrollViewer>
-
-    <!-- The status line: which file, how much of it, and the session. -->
-    <DockPanel Grid.Row="3" Margin="16,6,16,10">
-      <Grid DockPanel.Dock="Left" Width="26" Height="26" Margin="-6,-6,2,-6">
-        <Ellipse Style="{StaticResource ArmedRing}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        <Ellipse Style="{StaticResource StatusDot}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-      </Grid>
-      <TextBlock Text="{Binding StatusFile}" FontSize="12" VerticalAlignment="Center"/>
-      <TextBlock Text="  ·  " Style="{StaticResource Label}" VerticalAlignment="Center"/>
-      <TextBlock Text="{Binding StatusDetail}" Style="{StaticResource Label}" VerticalAlignment="Center"
-                 Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis"/>
-    </DockPanel>
+        <TextBlock DockPanel.Dock="Left" Text="{Binding StatusFile}" VerticalAlignment="Center" Margin="10,0,0,0">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Mono}">
+              <Style.Triggers>
+                <!-- An event file that cannot be read turns the line red. -->
+                <DataTrigger Binding="{Binding StatusLight}" Value="Error">
+                  <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+        <TextBlock Text="{Binding StatusDetail}" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="10,0,0,0"
+                   Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+    </Border>
   </Grid>
 </Window>

@@ -16,11 +16,32 @@ public interface ILineSeries
 public sealed record EndMarker(int Series, double X, double Y);
 
 /// <summary>
-/// The label at a line's end. With <see cref="Swatch"/> it is the named form
-/// (a swatch at <see cref="X"/>, the text 15 px to its right); without, the
-/// text starts at <see cref="X"/>. <see cref="Y"/> is the text's middle.
+/// The thin line from a marker to a label that was moved clear of its
+/// neighbours: out from the marker at (<see cref="X0"/>, <see cref="Y0"/>),
+/// across to the label's height at <see cref="X1"/>, then level to
+/// <see cref="X2"/>, just short of the text.
 /// </summary>
-public sealed record EndLabel(int Series, double X, double Y, string Text, bool Swatch);
+public readonly record struct Elbow(double X0, double Y0, double X1, double X2, double Y1);
+
+/// <summary>
+/// The label at a line's end: its text starts at <see cref="X"/>, and
+/// <see cref="Y"/> is the text's middle. <see cref="Named"/> is the form that
+/// stands in for a legend, a name in the margin right of the plot; without
+/// it the text is the line's total alone, beside its own marker.
+/// </summary>
+public sealed record EndLabel(int Series, double X, double Y, string Text, bool Named)
+{
+    /// <summary>The line's total, printed after the name where the chart is
+    /// wide enough to give up the room; empty where it is not.</summary>
+    public string Total { get; init; } = "";
+    /// <summary>Where the total ends: the totals are a column of their own,
+    /// set against its right-hand edge.</summary>
+    public double TotalRight { get; init; }
+    /// <summary>The leading line's label, which is drawn stronger.</summary>
+    public bool Lead { get; init; }
+    /// <summary>From the marker to the label, when the label is not level with it.</summary>
+    public Elbow? Elbow { get; init; }
+}
 
 /// <summary>What the crosshair reads at one grid time.</summary>
 public sealed class LineHover
@@ -45,17 +66,38 @@ public sealed class LineHover
 ///
 /// <para>All series share one time grid, so the crosshair reads every line at
 /// the same instant.</para>
+///
+/// <para>Only the time axis depends on the grid's last time. A live chart
+/// steps that time many times a second (<see cref="Retime"/>), and the plot,
+/// the value axis, the markers and the labels are left as a count made
+/// them.</para>
 /// </summary>
 public sealed class LineLayout
 {
     /// <summary>The dot at a line's end, and on the crosshair.</summary>
-    public const double MarkerRadius = 4.5;
-    /// <summary>The swatch leading a named end label.</summary>
-    public const double SwatchWidth = 10, SwatchHeight = 3, SwatchToText = 15;
-    /// <summary>From the plot's edge to an axis label.</summary>
-    public const double LabelGap = 10;
+    public const double MarkerRadius = 3;
+    /// <summary>From the plot's left edge to a value label, and from its floor
+    /// to the top of a time label.</summary>
+    public const double YLabelGap = 6, XLabelGap = 4;
+    /// <summary>How far a time's tick hangs under the baseline.</summary>
+    public const double TickLength = 3;
+    /// <summary>The least run of plot a time label is given.</summary>
+    public const double TimeLabelRoom = 45;
     /// <summary>The longest a name may run in an end label before it is cut.</summary>
-    public const double NameWidth = 104;
+    public const double NameWidth = 96;
+    /// <summary>From the plot's right edge to a named label, and from one
+    /// label's middle to the next when they are moved apart.</summary>
+    public const double LabelLead = 14, LabelPitch = 12;
+    /// <summary>Between the names and the column of totals.</summary>
+    public const double TotalGap = 6;
+    /// <summary>The narrowest plot that still gives up room for the totals
+    /// after the names. Under it the labels are names alone.</summary>
+    public const double TotalsFrom = 400;
+    /// <summary>A label this far from level with its marker, or further, gets
+    /// a line back to it.</summary>
+    public const double ElbowFrom = 2;
+    /// <summary>From a marker's middle to a total printed beside it.</summary>
+    public const double BesideMarker = 9;
 
     double[] times = [];
     IReadOnlyList<ILineSeries> series = [];
@@ -75,6 +117,10 @@ public sealed class LineLayout
     public double AxisY { get; private set; }
     public List<EndMarker> Markers { get; } = [];
     public List<EndLabel> Labels { get; } = [];
+    /// <summary>The line that leads, drawn stronger than the pack: the
+    /// largest that is one character's. -1 on a chart with no named labels,
+    /// whose lines are equals (two runs compared).</summary>
+    public int Leader { get; private set; } = -1;
 
     public double Px(double t) => Plot.X + (t - T0) / (T1 - T0) * Plot.W;
     public double Py(double v) => Plot.Y + Plot.H - v / YTop * Plot.H;
@@ -95,39 +141,69 @@ public sealed class LineLayout
     }
 
     /// <param name="compact">Tighter margins, for a chart floating over the game.</param>
-    /// <param name="endLabels">Print every line's name and total at its end, in
-    /// place of a legend. Without it, a chart of four lines or fewer gets its
-    /// totals alone, and only when they don't collide.</param>
-    /// <param name="labelWidth">The width of a string in the end labels' type.</param>
+    /// <param name="endLabels">Name every line at its end, in place of a
+    /// legend. Without it, a chart of four lines or fewer gets its totals
+    /// alone, and only when they don't collide.</param>
+    /// <param name="labelWidth">The width of a string in the end labels' type;
+    /// the second argument asks for the stronger weight the leader's is drawn in.</param>
     public static LineLayout Compute(double width, double height, double[] times,
                                      IReadOnlyList<ILineSeries> series, bool compact, bool endLabels,
-                                     Func<string, double> labelWidth)
+                                     Func<string, bool, double> labelWidth)
     {
         var l = new LineLayout { times = times, series = series, Width = width, Height = height };
 
-        double padTop = compact ? 10 : 18, padRight = compact ? 12 : 76,
-               padBottom = compact ? 24 : 34, padLeft = compact ? 46 : 68;
+        double padTop = compact ? 10 : 14, padRight = compact ? 12 : 60, padBottom = 22, padLeft = compact ? 40 : 42;
+        // Between a label's end and the chart's own edge. A panel's body has
+        // a margin of its own outside the chart.
+        double air = compact ? 4 : 10;
+        double plotH = Math.Max(10, height - padTop - padBottom);
 
-        string LabelText(ILineSeries s) =>
-            TextFit.Clip(s.Name, NameWidth, labelWidth) + " " + Format.Compact(LastValue(s.Values));
-
-        // The right margin is sized to the widest label, so a long name costs
-        // plot width instead of being cut off by the edge.
+        // Who is named, when the lines are: as many as the plot's height has
+        // room for at one pitch each, the largest first. An alliance in a
+        // short chart keeps its leaders' names; the rest are still lines,
+        // and the hover card still reads them all.
+        var named = new List<int>();
+        var names = new string[series.Count];
+        double nameW = 0, totalW = 0;
+        bool totals = false;
         if (endLabels && series.Count > 0)
         {
-            double widest = 0;
-            foreach (var s in series) widest = Math.Max(widest, labelWidth(LabelText(s)));
-            padRight = Math.Ceiling(widest) + 34;   // gap, swatch, gap, text, air
+            for (int i = 0; i < series.Count; i++)
+            {
+                if (LastIndex(series[i].Values) < 0) continue;
+                named.Add(i);
+                if (!series[i].Group && (l.Leader < 0 || LastValue(series[i].Values) >= LastValue(series[l.Leader].Values)))
+                    l.Leader = i;
+            }
+            Js.StableSort(named, (a, b) => LastValue(series[b].Values) - LastValue(series[a].Values));
+            int room = (int)Math.Floor(plotH / LabelPitch) + 1;
+            if (named.Count > room) named.RemoveRange(room, named.Count - room);
+
+            foreach (var i in named)
+            {
+                bool lead = i == l.Leader;
+                names[i] = TextFit.Clip(series[i].Name, NameWidth, s => labelWidth(s, lead));
+                nameW = Math.Max(nameW, labelWidth(names[i], lead));
+                totalW = Math.Max(totalW, labelWidth(Format.Compact(LastValue(series[i].Values)), false));
+            }
+            nameW = Math.Ceiling(nameW);
+            totalW = Math.Ceiling(totalW);
+
+            // The right margin is sized to the widest label, so a long name
+            // costs plot width instead of being cut off by the edge. The
+            // totals are printed too where the plot can spare their column.
+            double withNames = LabelLead + nameW + air, withTotals = withNames + TotalGap + totalW;
+            totals = named.Count > 0 && width - padLeft - withTotals >= TotalsFrom;
+            padRight = totals ? withTotals : withNames;
         }
 
-        l.Plot = new Box(padLeft, padTop,
-                         Math.Max(10, width - padLeft - padRight),
-                         Math.Max(10, height - padTop - padBottom));
+        l.Plot = new Box(padLeft, padTop, Math.Max(10, width - padLeft - padRight), plotH);
         var plot = l.Plot;
 
         if (times.Length == 0 || series.Count == 0)
         {
             l.Empty = true;
+            l.Leader = -1;
             return l;
         }
 
@@ -150,10 +226,7 @@ public sealed class LineLayout
         foreach (var v in yTicks)
             l.YTicks.Add(new AxisTick(v, Js.Round(l.Py(v)) + 0.5, Format.Compact(v)));
 
-        // At least three: asked for two over a 4:58 pull, the step rounds up
-        // to five minutes and the only tick left is 0:00.
-        foreach (var t in Ticks.Time(l.T0, l.T1, Math.Max(3, Math.Floor(plot.W / 90))))
-            l.XTicks.Add(new AxisTick(t, Js.Round(l.Px(t)) + 0.5, Format.Elapsed(t)));
+        l.XTicks = l.TimeTicks();
 
         l.AxisY = Js.Round(plot.Y + plot.H) + 0.5;
 
@@ -166,25 +239,41 @@ public sealed class LineLayout
 
         if (endLabels)
         {
-            // Every line is printed, so where two would collide they are nudged
-            // apart instead of dropped: downwards in order, then settled back
-            // up from the floor if that pushed the last one off the plot.
-            const double gap = 13;
+            // Where two would collide they are moved apart instead of
+            // dropped: downwards in order, then settled back up from the
+            // floor if that pushed the last one off the plot. There is room:
+            // no more are named than the plot has pitches for.
             var floor = plot.Y + plot.H;
-            var tags = new List<(int Series, double Y, string Text)>();
-            for (int i = 0; i < series.Count; i++)
-                tags.Add((i, l.Py(LastValue(series[i].Values)), LabelText(series[i])));
+            var tags = named.Select(i => (Series: i, Y: l.Py(LastValue(series[i].Values)))).ToList();
             Js.StableSort(tags, (a, b) => a.Y - b.Y);
             for (int i = 1; i < tags.Count; i++)
-                tags[i] = tags[i] with { Y = Math.Max(tags[i].Y, tags[i - 1].Y + gap) };
-            if (tags[^1].Y > floor)
+                tags[i] = tags[i] with { Y = Math.Max(tags[i].Y, tags[i - 1].Y + LabelPitch) };
+            if (tags.Count > 0 && tags[^1].Y > floor)
             {
                 tags[^1] = tags[^1] with { Y = floor };
                 for (int i = tags.Count - 2; i >= 0; i--)
-                    tags[i] = tags[i] with { Y = Math.Min(tags[i].Y, tags[i + 1].Y - gap) };
+                    tags[i] = tags[i] with { Y = Math.Min(tags[i].Y, tags[i + 1].Y - LabelPitch) };
             }
-            var tx = plot.X + plot.W + 11;
-            foreach (var t in tags) l.Labels.Add(new EndLabel(t.Series, tx, t.Y, t.Text, Swatch: true));
+
+            double edge = plot.X + plot.W, tx = edge + LabelLead;
+            foreach (var t in tags)
+            {
+                var v = series[t.Series].Values;
+                // A line back to the marker for a label that was moved, but
+                // only from a marker at the plot's edge: a line that stopped
+                // early has its marker somewhere inside the plot.
+                double my = l.Py(LastValue(v));
+                bool atEdge = LastIndex(v) == times.Length - 1;
+                l.Labels.Add(new EndLabel(t.Series, tx, t.Y, names[t.Series], Named: true)
+                {
+                    Total = totals ? Format.Compact(LastValue(v)) : "",
+                    TotalRight = totals ? tx + nameW + TotalGap + totalW : 0,
+                    Lead = t.Series == l.Leader,
+                    Elbow = atEdge && Math.Abs(t.Y - my) > ElbowFrom
+                        ? new Elbow(edge + MarkerRadius + 1, my, edge + 8, edge + LabelLead - 2, t.Y)
+                        : null,
+                });
+            }
         }
         else if (series.Count <= 4)
         {
@@ -199,12 +288,43 @@ public sealed class LineLayout
             Js.StableSort(labels, (a, b) => a.Y - b.Y);
             bool collide = false;
             for (int i = 1; i < labels.Count; i++)
-                if (labels[i].Y - labels[i - 1].Y < 14) { collide = true; break; }
+                if (labels[i].Y - labels[i - 1].Y < LabelPitch) { collide = true; break; }
             if (!collide)
-                foreach (var t in labels) l.Labels.Add(new EndLabel(t.Series, t.X + 11, t.Y, t.Text, Swatch: false));
+                foreach (var t in labels) l.Labels.Add(new EndLabel(t.Series, t.X + BesideMarker, t.Y, t.Text, Named: false));
         }
 
         return l;
+    }
+
+    /// <summary>
+    /// The grid's times have changed and nothing else has: a live chart's
+    /// edge has stepped on. Only the time axis is worked out again (the
+    /// span, and so <see cref="Px"/>, the time labels and what the crosshair
+    /// reads). The plot, the value axis, the markers and the labels stand,
+    /// which is right while every line runs to the grid's last time, as
+    /// every line of a live chart does: its marker is at the plot's edge
+    /// whatever that time is.
+    /// </summary>
+    public void Retime(double[] times)
+    {
+        this.times = times;
+        if (Empty || times.Length == 0) return;
+        T0 = times[0];
+        T1 = times[^1];
+        if (T1 == T0) T1 = T0 + 1000;
+        XTicks = TimeTicks();
+    }
+
+    List<AxisTick> TimeTicks()
+    {
+        // A label to every 45 units or more of plot: the longest ("1:00:00")
+        // still has air either side. At least three: asked for two over a
+        // 4:58 pull, the step rounds up to five minutes and the only tick
+        // left is 0:00.
+        var ticks = new List<AxisTick>();
+        foreach (var t in Ticks.Time(T0, T1, Math.Max(3, Math.Floor(Plot.W / TimeLabelRoom))))
+            ticks.Add(new AxisTick(t, Js.Round(Px(t)) + 0.5, Format.Elapsed(t)));
+        return ticks;
     }
 
     /// <summary>

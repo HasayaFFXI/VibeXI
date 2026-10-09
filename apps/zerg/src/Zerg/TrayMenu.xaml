@@ -1,55 +1,162 @@
 <ContextMenu x:Class="Zerg.TrayMenu"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Zerg.Views"
              Style="{DynamicResource {x:Type ContextMenu}}"
              FontFamily="{StaticResource TextFont}">
-  <!-- The style is named because this is a class of its own: the Fluent
-       theme's styles are found by a control's exact type, and a menu that
-       is not exactly a ContextMenu would be drawn in Windows' old colours
-       with the theme's ink on top. -->
+  <!-- The style is named because this is a class of its own: a style is
+       found by a control's exact type, and a menu that is not exactly a
+       ContextMenu would be drawn as WPF draws one unasked: a pale square
+       box, whatever Zerg's theme is. -->
   <!-- The tray icon's menu: what a player reaches for with the game in front
        and the main window put away. Its data context is the main view model,
        so every line here is the same command, worded and enabled the same,
        as the control it stands for in the main window. -->
   <ContextMenu.Resources>
-    <!-- Every line draws its own tick, in a column every line has, ticked
-         or not. The theme's own tick is not used: it indents the lines
-         around a tickable one and leaves a line with a submenu where it
-         was, so the two kinds stop lining up. -->
-    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
-      <Setter Property="HeaderTemplate">
-        <Setter.Value>
-          <DataTemplate>
-            <StackPanel Orientation="Horizontal">
-              <Border Width="24">
-                <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE73E;" FontSize="12" VerticalAlignment="Center"
-                           Visibility="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=MenuItem},
-                                        Converter={StaticResource Visible}}"/>
-              </Border>
-              <TextBlock Text="{Binding}"/>
-            </StackPanel>
-          </DataTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
+    <!-- Every line has the tick column, ticked or not: the menu's own look
+         (ZMenuItem in Themes/Controls.xaml) draws it, so a ticked line and
+         a line with a submenu line up with the plain ones. A line is ticked
+         by IsChecked alone; none is IsCheckable, because choosing one runs
+         its command and the tick follows what the command did. A line's
+         Icon is drawn in the same column: the session's two lines and
+         Settings have a glyph there. -->
 
     <!-- One card: ticked while it floats; choosing it sends it out or brings
          it back. Its data context is the card's PanelInfo. -->
-    <Style x:Key="PanelItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+    <Style x:Key="PanelItem" TargetType="MenuItem" BasedOn="{StaticResource ZMenuItem}">
       <Setter Property="Header" Value="{Binding Title}"/>
       <Setter Property="IsChecked" Value="{Binding IsOut, Mode=OneWay}"/>
       <Setter Property="Command" Value="{Binding ToggleCommand}"/>
     </Style>
+
+    <!-- The heading: not a line of the menu. It cannot be pointed at,
+         pressed or reached with the keys, and has nothing of a line's look
+         (no slab under the pointer, no tick column): only what it holds. A
+         menu makes a line of anything put in it that is not one already,
+         so it is a line, with a look of its own that draws nothing. -->
+    <Style x:Key="Heading" TargetType="MenuItem">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="IsHitTestVisible" Value="False"/>
+      <Setter Property="IsTabStop" Value="False"/>
+      <Setter Property="StaysOpenOnClick" Value="True"/>
+      <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="MenuItem">
+            <ContentPresenter ContentSource="Header"/>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- A glyph in a line's tick column, in the icon font. -->
+    <Style x:Key="Glyph" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="TextAlignment" Value="Center"/>
+      <Style.Triggers>
+        <!-- With its line, when the line can do nothing. -->
+        <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource AncestorType=MenuItem}}" Value="False">
+          <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The session's two lines wear the glyph the main window's pair
+         wears (StartFace and SecondFace in App.xaml), by the same looks. -->
+    <Style x:Key="StartGlyph" TargetType="TextBlock" BasedOn="{StaticResource Glyph}">
+      <!-- Restart, the look of two of the five. -->
+      <Setter Property="Text" Value="&#xE72C;"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding View.StartLook}" Value="Idle">
+          <Setter Property="Text" Value="&#xE768;"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding View.StartLook}" Value="Locked">
+          <Setter Property="Text" Value="&#xE768;"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding View.StartLook}" Value="Confirm">
+          <Setter Property="Text" Value="&#xE73E;"/>
+          <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="SecondGlyph" TargetType="TextBlock" BasedOn="{StaticResource Glyph}">
+      <!-- Pause, the look of two of the four. -->
+      <Setter Property="Text" Value="&#xE769;"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding View.SecondLook}" Value="Cancel">
+          <Setter Property="Text" Value="&#xE711;"/>
+        </DataTrigger>
+        <DataTrigger Binding="{Binding View.SecondLook}" Value="Held">
+          <Setter Property="Text" Value="&#xE768;"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- Start's line: Confirm is written in the colour of something lost,
+         as the button is filled with it. -->
+    <Style x:Key="StartItem" TargetType="MenuItem" BasedOn="{StaticResource ZMenuItem}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding View.StartLook}" Value="Confirm">
+          <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
   </ContextMenu.Resources>
+
+  <!-- The heading: is anything being measured, for how long, how much. The
+       mark and the name; under the name the clock and the party's total;
+       at the right the state tag, as it stands beside the clock in the main
+       window. There only while a session is armed or counting
+       (SessionView.Underway): idle, held, or with a saved parse on screen,
+       the menu begins at Show Zerg. 41 units, from the menu's padding to
+       its own rule, which has no room above it. -->
+  <MenuItem Style="{StaticResource Heading}" AutomationProperties.Name="Session"
+            Visibility="{Binding View.Underway, Converter={StaticResource Visible}}">
+    <MenuItem.Header>
+      <Grid Height="41">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <!-- The mark: the amber Z on its ink tile, as in the title bar. -->
+        <Grid Width="18" Height="18" Margin="8,0,8,0" VerticalAlignment="Center">
+          <Border CornerRadius="4" Background="{DynamicResource MarkTileBrush}" BorderBrush="{DynamicResource Line3Brush}"
+                  BorderThickness="1" SnapsToDevicePixels="True"/>
+          <Canvas>
+            <Path Data="M5,5 L13,5 L13,7.2 L8.3,11 L13,11 L13,13.2 L5,13.2 L5,11 L9.7,7.2 L5,7.2 Z"
+                  Fill="{DynamicResource AccentBrush}" Stroke="{DynamicResource AccentBrush}" StrokeThickness="0.8"
+                  StrokeLineJoin="Round"/>
+          </Canvas>
+        </Grid>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+          <TextBlock Text="Zerg" Style="{StaticResource PaneTitle}"/>
+          <TextBlock FontSize="11" Foreground="{DynamicResource Text3Brush}" Typography.NumeralAlignment="Tabular"
+                     TextTrimming="CharacterEllipsis"><Run Text="{Binding ClockText, Mode=OneWay}"/><Run Text=" &#xB7; "/><Run Text="{Binding TotalText, Mode=OneWay}"/><Run Text=" damage"/></TextBlock>
+        </StackPanel>
+        <v:StateTag Grid.Column="2" Style="{StaticResource StateTag}" State="{Binding Tag}" Margin="12,0,8,0"/>
+      </Grid>
+    </MenuItem.Header>
+  </MenuItem>
+  <Separator Margin="-3,0,-3,4" Visibility="{Binding View.Underway, Converter={StaticResource Visible}}"/>
 
   <MenuItem Header="Show Zerg" FontWeight="SemiBold" Click="OnShow"/>
   <Separator/>
   <!-- A Restart that asks first keeps the menu open: the answer is this
        line and the next, where the question was put. -->
-  <MenuItem Header="{Binding View.StartText}" Command="{Binding StartCommand}" IsEnabled="{Binding View.StartEnabled}"
-            StaysOpenOnClick="{Binding View.StartAsks}" AutomationProperties.AutomationId="Start"/>
+  <MenuItem Header="{Binding View.StartText}" Style="{StaticResource StartItem}" Command="{Binding StartCommand}"
+            IsEnabled="{Binding View.StartEnabled}" StaysOpenOnClick="{Binding View.StartAsks}"
+            AutomationProperties.AutomationId="Start">
+    <MenuItem.Icon>
+      <TextBlock Style="{StaticResource StartGlyph}"/>
+    </MenuItem.Icon>
+  </MenuItem>
   <MenuItem Header="{Binding View.SecondText}" Command="{Binding SecondCommand}" IsEnabled="{Binding View.SecondEnabled}"
-            AutomationProperties.AutomationId="Second"/>
+            AutomationProperties.AutomationId="Second">
+    <MenuItem.Icon>
+      <TextBlock Style="{StaticResource SecondGlyph}"/>
+    </MenuItem.Icon>
+  </MenuItem>
   <Separator/>
   <!-- The way back when the hot key is another program's, or forgotten:
        a click-through panel cannot be clicked to say so. -->
@@ -66,6 +173,10 @@
   </MenuItem>
   <MenuItem Header="Dock all panels" Command="{Binding Panels.DockAllCommand}"/>
   <Separator/>
-  <MenuItem Header="Settings…" Click="OnSettings"/>
+  <MenuItem Header="Settings&#x2026;" Click="OnSettings">
+    <MenuItem.Icon>
+      <TextBlock Style="{StaticResource Glyph}" Text="&#xE713;"/>
+    </MenuItem.Icon>
+  </MenuItem>
   <MenuItem Header="Exit" Click="OnExit"/>
 </ContextMenu>

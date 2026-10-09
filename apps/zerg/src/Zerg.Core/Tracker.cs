@@ -22,6 +22,45 @@ public sealed record Snapshot(IReadOnlyList<CombatEvent> Events, Aggregate Total
     /// <summary>The party's healing, over those heals.</summary>
     public HealTotals Healing { get; init; } = new();
 
+    /// <summary>The targets damage is isolated to, by name; none while every
+    /// target counts. Healing is never isolated: a heal's target is who it
+    /// healed.</summary>
+    public IReadOnlyList<string> Isolated { get; init; } = [];
+
+    /// <summary>What each target took from the characters who count, every
+    /// target, isolated or not, in the order they are picked from
+    /// (<see cref="Zerg.Core.Targets.Sorted"/>). Of the damage types
+    /// isolated, where any are: each list is of what the other filter leaves.</summary>
+    public IReadOnlyList<TargetTotal> Targets { get; init; } = [];
+    /// <summary>What those add up to, rows that name no target included:
+    /// the figure of "All targets".</summary>
+    public double AllTargets { get; init; }
+
+    /// <summary>The damage types isolated, by key, in the order they are
+    /// picked from; none while every type counts.</summary>
+    public IReadOnlyList<string> IsolatedTypes { get; init; } = [];
+    /// <summary>What each damage type came to, every type, isolated or not,
+    /// by its key, in the order they are picked from
+    /// (<see cref="DamageTypes.Sorted"/>). Of the damage dealt to the
+    /// targets isolated, where any are.</summary>
+    public IReadOnlyList<TargetTotal> Types { get; init; } = [];
+    /// <summary>What those add up to: the figure of "All types".</summary>
+    public double AllTypes { get; init; }
+
+    /// <summary>The damage of every type to every target: what
+    /// <see cref="Totals"/> would total with nothing isolated.</summary>
+    public double Whole { get; init; }
+
+    /// <summary>
+    /// An amount of damage per second of the session clock, or null while
+    /// targets are isolated: there is no rate to give then. The clock is the
+    /// session's. It ran while the party fought everything else, so damage
+    /// to one target over it is no DPS anybody dealt, and the event file
+    /// does not say how long a target was fought.
+    /// </summary>
+    public double? Rate(double total, double seconds) =>
+        Isolated.Count > 0 ? null : seconds > 0 ? total / seconds : 0;
+
     /// <summary>Every character who healed in the session, largest first,
     /// excluded or not: who a chip is shown for in the Healing section.</summary>
     public IReadOnlyList<HealerTotals> Healers { get; init; } = [];
@@ -316,7 +355,14 @@ public sealed class Tracker
     /// and never moved.</para>
     /// </summary>
     /// <param name="excluded">Characters switched off, by name.</param>
-    public Snapshot Count(IReadOnlySet<string> excluded, bool skillchains, double? now = null)
+    /// <param name="targets">Targets to isolate, by name: only damage dealt
+    /// to these is counted. Null or empty: every target. It moves no clock
+    /// (the zero and the end are asked without it) and no healing figure.</param>
+    /// <param name="types">Damage types to isolate (<see cref="DamageTypes"/>):
+    /// only damage of these is counted. It moves no clock or healing figure
+    /// either, and unlike a target takes no rate away.</param>
+    public Snapshot Count(IReadOnlySet<string> excluded, bool skillchains, double? now = null,
+                          IReadOnlySet<string>? targets = null, IReadOnlySet<string>? types = null)
     {
         var all = Reader.Events;
         var roster = Reader.Roster;
@@ -340,10 +386,24 @@ public sealed class Tracker
         // No session here: these rows are on its clock already.
         var shown = Counting.Filter(scoped, new FilterOptions { Actors = actors });
 
+        // What each target took and what each type came to, each before
+        // its own filter and after the other's: a list goes on naming
+        // everything it is picked from, of what the other filter leaves.
+        double whole = 0;
+        foreach (var e in shown)
+            if (e.Hit && !double.IsNaN(e.Dmg)) whole += e.Dmg;
+        var only = Targets.Only(targets);
+        var onlyTypes = Targets.Only(types);
+        var byTarget = Targets.Totals(onlyTypes != null ? Counting.Filter(shown, new FilterOptions { Types = onlyTypes }) : shown);
+        var byType = DamageTypes.Totals(only != null ? Counting.Filter(shown, new FilterOptions { Targets = only }) : shown);
+        if (only != null || onlyTypes != null)
+            shown = Counting.Filter(shown, new FilterOptions { Targets = only, Types = onlyTypes });
+
         // The session clock is what every DPS is divided by, read once so the
         // party's figure and each character's cannot differ by a moment.
         var elapsed = Session.Elapsed(now);
         var totals = Counting.Aggregate(shown, elapsed / 1000);
+        // Whoever acted has a chip, whatever they acted on.
         var listed = shown.Count == scoped.Count ? totals : Counting.Aggregate(scoped, elapsed / 1000);
 
         // Healing, over the same window and the same exclusions. Heals are
@@ -358,6 +418,13 @@ public sealed class Tracker
         return new Snapshot(shown, totals, listed.Actors, elapsed, latched)
         {
             Heals = healShown, Healing = healing, Healers = healers.Actors,
+            Isolated = only != null ? Targets.Sorted(only) : [],
+            Targets = Targets.Pickable(byTarget.Keys).Select(n => new TargetTotal(n, byTarget[n])).ToList(),
+            AllTargets = byTarget.Values.Sum(),
+            IsolatedTypes = onlyTypes != null ? DamageTypes.Sorted(onlyTypes) : [],
+            Types = DamageTypes.Sorted(byType.Keys).Select(k => new TargetTotal(k, byType[k])).ToList(),
+            AllTypes = byType.Values.Sum(),
+            Whole = whole,
         };
     }
 }
