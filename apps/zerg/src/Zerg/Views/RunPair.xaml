@@ -1,41 +1,35 @@
 <UserControl x:Class="Zerg.Views.RunPair"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Name="Self" Focusable="False" IsTabStop="False">
+             x:Name="Self" Focusable="False" IsTabStop="False" FontSize="11.5">
   <UserControl.Resources>
+    <!-- One of the two lines: 14 units of the cell each, whatever the
+         face's own line is, so A and B stand at the same heights in every
+         cell of a row. Its size, weight and ink are the cell's (set where
+         the pair is used, and inherited); nothing to measure is a dash, in
+         the ink a dash has on a shaded row. -->
     <Style x:Key="Figure" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="LineHeight" Value="14"/>
+      <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+      <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
       <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-    </Style>
-    <!-- Which run a line is: a short tick in the run's colour ahead of it,
-         so the order never has to be remembered. -->
-    <Style x:Key="Tick" TargetType="Rectangle">
-      <Setter Property="Width" Value="5"/>
-      <Setter Property="Height" Value="2"/>
-      <Setter Property="RadiusX" Value="1"/>
-      <Setter Property="RadiusY" Value="1"/>
-      <Setter Property="Margin" Value="0,1,5,0"/>
-      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Style.Triggers>
+        <Trigger Property="Text" Value="&#x2014;">
+          <Setter Property="Foreground" Value="{DynamicResource ShadedDashBrush}"/>
+        </Trigger>
+      </Style.Triggers>
     </Style>
   </UserControl.Resources>
 
   <!-- One figure for each run in one cell, A over B. Figures sit at the
-       right like any column of them; words (a job) at the left. -->
-  <Grid x:Name="Lines" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,2">
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="Auto"/>
-      <ColumnDefinition Width="Auto"/>
-    </Grid.ColumnDefinitions>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
-    <Rectangle Style="{StaticResource Tick}" Fill="{DynamicResource RunABrush}"/>
-    <TextBlock Grid.Column="1" Text="{Binding Value.A, ElementName=Self}" Style="{StaticResource Figure}"
+       right like any column of them; words (a job) at the left. Which line
+       is which run is not marked here: the order is always A over B, a
+       row's bands and the mark in its Job column say it once for the whole
+       row, and the headings of what has neither carry the runs' badges. -->
+  <StackPanel x:Name="Lines" VerticalAlignment="Center" HorizontalAlignment="Right">
+    <TextBlock Text="{Binding A, ElementName=Self}" Style="{StaticResource Figure}"
                HorizontalAlignment="{Binding HorizontalAlignment, ElementName=Lines}"/>
-    <Rectangle Grid.Row="1" Style="{StaticResource Tick}" Fill="{DynamicResource RunBBrush}"/>
-    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Value.B, ElementName=Self}" Style="{StaticResource Figure}"
+    <TextBlock Text="{Binding B, ElementName=Self}" Style="{StaticResource Figure}"
                HorizontalAlignment="{Binding HorizontalAlignment, ElementName=Lines}"/>
-  </Grid>
+  </StackPanel>
 </UserControl>

@@ -142,10 +142,19 @@ public sealed partial class PanelSet : ObservableObject
         if (open.TryGetValue(panel.Key, out var window)) window.Close();
     }
 
+    /// <summary>Whether a window, by its handle, is one of the panels that are
+    /// out: for telling that a panel has ended up with the foreground, which
+    /// it is never meant to have.</summary>
+    public bool Holds(nint handle) =>
+        handle != 0 && open.Values.Any(w => new System.Windows.Interop.WindowInteropHelper(w).Handle == handle);
+
     /// <summary>At least one card is floating.</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(DockAllCommand))]
     private bool anyOut;
+
+    /// <summary>How many cards are floating: the main window's status line says.</summary>
+    [ObservableProperty] private int outCount;
 
     /// <summary>Every panel back into the main window.</summary>
     [RelayCommand(CanExecute = nameof(AnyOut))]
@@ -157,6 +166,7 @@ public sealed partial class PanelSet : ObservableObject
     /// <summary>Writes down which panels are out, for the next start.</summary>
     void Remember()
     {
+        OutCount = open.Count;
         AnyOut = open.Count > 0;
         if (keeping) return;
         settings.OpenPanels = [.. listed.Where(p => open.ContainsKey(p.Key)).Select(p => p.Key)];

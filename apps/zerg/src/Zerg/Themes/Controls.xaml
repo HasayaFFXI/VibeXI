@@ -1,0 +1,1421 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:v="clr-namespace:Zerg.Views">
+
+  <!-- Zerg's own look for every stock control (UI-REDESIGN-PLAN.md, phase 2;
+       drawn on apps/zerg-mockup/08-kit.svg). Merged in App.xaml. No theme of
+       Windows' is loaded (ThemeMode="None"), so a control type that is not
+       styled here is drawn as WPF draws it unasked: pale, square, and in
+       Windows' colours whatever Zerg's theme is.
+
+       Each look has a key (ZButton, TickToggle, ZSlider, ...), and at the
+       end of the file each control type is given its look, so a Button with
+       no Style is a ZButton.
+
+       Three rules for whoever adds to this file:
+
+       - Colours are tokens, asked for with DynamicResource. So are the fonts
+         and the radii, which App.xaml defines: this file is read before
+         they are. A key that is mistyped draws nothing and says nothing;
+         after an edit, list the keys asked for against the keys defined.
+       - A look's states (under the pointer, pressed, disabled, on) are
+         triggers on the style, which set the control's own Background,
+         BorderBrush and Foreground. The templates only draw those. A style
+         based on another can then change one state without a template of
+         its own, and its triggers outrank the triggers of the style it is
+         based on.
+       - A floating panel has its own values for the tokens
+         (Themes/Panel.xaml). A token asked for here that the panel's file
+         lacks is the application's there, which under the light theme is
+         the light one. -->
+
+  <!-- ============================================================= focus
+       The ring round whatever has the keyboard: accent, a little outside the
+       control's edge. WPF shows it only when the keyboard moved the focus.
+       Every style here names it; a control whose style does not gets
+       Windows' dotted rectangle. -->
+  <Style x:Key="ZFocus">
+    <Setter Property="Control.Template">
+      <Setter.Value>
+        <ControlTemplate>
+          <Border Margin="-3" BorderThickness="1.5" CornerRadius="6" SnapsToDevicePixels="True"
+                  BorderBrush="{DynamicResource AccentBrush}"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <!-- The same ring inside the edge, for what has neighbours touching it: a
+       table row, a segment in its frame, a menu's heading row. -->
+  <Style x:Key="ZFocusInset">
+    <Setter Property="Control.Template">
+      <Setter.Value>
+        <ControlTemplate>
+          <Border Margin="1" BorderThickness="1.5" CornerRadius="3" SnapsToDevicePixels="True"
+                  BorderBrush="{DynamicResource AccentBrush}"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================ buttons -->
+
+  <!-- A face, an edge, and what is on it. Every button and toggle but the
+       session pair is drawn by this; what differs is in the styles. -->
+  <ControlTemplate x:Key="ZFace" TargetType="ButtonBase">
+    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource ControlRadius}"
+            SnapsToDevicePixels="True">
+      <ContentPresenter Margin="{TemplateBinding Padding}"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+    </Border>
+  </ControlTemplate>
+
+  <!-- The plain button: Export, Browse, Done. -->
+  <Style x:Key="ZButton" TargetType="ButtonBase">
+    <Setter Property="Height" Value="26"/>
+    <Setter Property="Padding" Value="12,0"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocus}"/>
+    <Setter Property="Template" Value="{StaticResource ZFace}"/>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg4Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- No face until it is pointed at: for what is beside the thing to press
+       and should not compete with it. -->
+  <Style x:Key="GhostButton" TargetType="ButtonBase" BasedOn="{StaticResource ZButton}">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg4Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- The one to press: one per place at most. The sheet draws it at rest
+       only; under the pointer and pressed it dims, as the session pair does. -->
+  <Style x:Key="FilledButton" TargetType="ButtonBase" BasedOn="{StaticResource ZButton}">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Opacity" Value="0.88"/>
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Opacity" Value="0.72"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- A glyph alone, 26 square: its content is a code point of the icon
+       font. No face until pointed at. -->
+  <Style x:Key="IconButton" TargetType="ButtonBase" BasedOn="{StaticResource ZButton}">
+    <Setter Property="Width" Value="26"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="FontFamily" Value="{DynamicResource IconFont}"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg4Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+  <!-- The same as a toggle: it keeps a face while it is on. -->
+  <Style x:Key="IconToggle" TargetType="ToggleButton" BasedOn="{StaticResource IconButton}">
+    <Style.Triggers>
+      <Trigger Property="IsChecked" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <MultiTrigger>
+        <MultiTrigger.Conditions>
+          <Condition Property="IsChecked" Value="True"/>
+          <Condition Property="IsMouseOver" Value="True"/>
+        </MultiTrigger.Conditions>
+        <Setter Property="Background" Value="{DynamicResource Bg4Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+      </MultiTrigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- ============================================================= keycap
+       A key, or a chord of them, as a key: on the Click-through toggle, in a
+       menu, on the Settings page. 18 tall; 16 on a toggle. The sheet's
+       second rule along the bottom is the heavier bottom edge here. -->
+  <Style x:Key="Keycap" TargetType="ContentControl">
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="Height" Value="18"/>
+    <Setter Property="MinWidth" Value="18"/>
+    <Setter Property="Padding" Value="6,0"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}"/>
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    <Setter Property="Background" Value="{DynamicResource Bg1Brush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+    <Setter Property="BorderThickness" Value="1,1,1,2"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContentControl">
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource ChipRadius}"
+                  SnapsToDevicePixels="True">
+            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================= toggle
+       A tick box and its label in one bordered piece. On: a face, a stronger
+       edge, an accent box with a tick. Off: no face, an empty box. The label
+       is Regular: the design's Medium is a weight these faces lack, and WPF
+       would draw SemiBold for it (the plan's Q19).
+
+       Tag, when it is given, is drawn as a keycap after the label: the hot
+       key that does what the toggle does.
+
+       It acts on IsChecked. UI Automation flips a toggle without clicking
+       it, so a Click handler or a Command on one never runs. -->
+  <Style x:Key="TickToggle" TargetType="ToggleButton">
+    <Setter Property="Height" Value="24"/>
+    <Setter Property="Padding" Value="7,0,8,0"/>
+    <Setter Property="FontSize" Value="11.5"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocus}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource ControlRadius}"
+                  SnapsToDevicePixels="True">
+            <StackPanel Orientation="Horizontal" Margin="{TemplateBinding Padding}" VerticalAlignment="Center">
+              <Grid Width="12" Height="12" VerticalAlignment="Center">
+                <Border x:Name="Box" CornerRadius="2.5" BorderThickness="1" BorderBrush="{DynamicResource Text3Brush}"/>
+                <Border x:Name="Fill" CornerRadius="2.5" Background="{DynamicResource AccentBrush}" Visibility="Collapsed"/>
+                <Path x:Name="Tick" Data="M2.6,6.2 l2.6,2.6 l4.6,-5" StrokeThickness="1.6" StrokeLineJoin="Round"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"
+                      Stroke="{DynamicResource OnAccentBrush}"/>
+              </Grid>
+              <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"/>
+              <ContentControl x:Name="Key" Style="{StaticResource Keycap}" Height="16" Margin="8,0,-3,0"
+                              Content="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"/>
+            </StackPanel>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Box" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Fill" Property="Visibility" Value="Visible"/>
+              <Setter TargetName="Tick" Property="Visibility" Value="Visible"/>
+            </Trigger>
+            <Trigger Property="Tag" Value="{x:Null}">
+              <Setter TargetName="Key" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource Text4Brush}"/>
+              <Setter TargetName="Fill" Property="Background" Value="{DynamicResource Text4Brush}"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsChecked" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg4Brush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- =========================================================== segments
+       One choice of a few. The frame is the row's, not a segment's: wrap a
+       row of segments in a Border of this style, and the picked one is a
+       slab inside it. -->
+  <Style x:Key="SegmentGroup" TargetType="Border">
+    <Setter Property="Height" Value="24"/>
+    <Setter Property="Padding" Value="1"/>
+    <Setter Property="Background" Value="{DynamicResource Bg1Brush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="{DynamicResource ControlRadius}"/>
+    <Setter Property="HorizontalAlignment" Value="Left"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="SnapsToDevicePixels" Value="True"/>
+  </Style>
+  <Style x:Key="ZSegment" TargetType="RadioButton">
+    <Setter Property="Height" Value="20"/>
+    <Setter Property="Padding" Value="9,0"/>
+    <Setter Property="FontSize" Value="11.5"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocusInset}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RadioButton">
+          <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ChipRadius}"
+                  SnapsToDevicePixels="True">
+            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsChecked" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg4Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- ========================================================== title bar
+       The main window's own bar (MainWindow.xaml): the sections as tabs, and
+       the three caption buttons at its right-hand end. -->
+
+  <!-- A tab's label when it is a word. The picked tab is SemiBold, which is
+       a unit or two wider than Regular: the same word in SemiBold lies under
+       the label, unseen (v:Room), and keeps its place, so picking a tab
+       moves no other. A tab whose label is more than a word (the View tab)
+       gives a template of its own with the same pair in it. -->
+  <DataTemplate x:Key="TabLabel">
+    <Grid>
+      <v:Room Text="{Binding}" FontWeight="SemiBold"/>
+      <TextBlock Text="{Binding}"/>
+    </Grid>
+  </DataTemplate>
+
+  <!-- A section's tab: the label, and under the picked one an accent line
+       as wide as the label, lying on the rule along the bar's bottom edge.
+       The tab is as tall as the bar and 12 units wider than its label on
+       either side, all of which can be pressed; two labels are 24 apart. -->
+  <Style x:Key="SectionTab" TargetType="RadioButton">
+    <Setter Property="FontSize" Value="12.5"/>
+    <Setter Property="Padding" Value="12,0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    <Setter Property="VerticalAlignment" Value="Stretch"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocusInset}"/>
+    <Setter Property="ContentTemplate" Value="{StaticResource TabLabel}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RadioButton">
+          <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+            <Grid>
+              <!-- A unit up: the label is centred in the bar above its rule. -->
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,1"/>
+              <Border x:Name="Underline" Height="2" CornerRadius="1" VerticalAlignment="Bottom" Visibility="Collapsed"
+                      Background="{DynamicResource AccentBrush}"/>
+            </Grid>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Underline" Property="Visibility" Value="Visible"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsChecked" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- The mark that closes a tab: an icon button 18 square with a small
+       glyph, dim until it is pointed at. -->
+  <Style x:Key="TabClose" TargetType="Button" BasedOn="{StaticResource IconButton}">
+    <Setter Property="Width" Value="18"/>
+    <Setter Property="Height" Value="18"/>
+    <Setter Property="FontSize" Value="8"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+  </Style>
+
+  <!-- Minimize, maximize or restore, close: 46 wide, as tall as the bar
+       above its rule, a glyph of the icon font and no edge. A face only
+       under the pointer. They are not stops for the Tab key and never take
+       the keyboard, as Windows' own are not and do not (Alt+Space opens the
+       window's menu, which has all three). -->
+  <Style x:Key="CaptionButton" TargetType="Button">
+    <Setter Property="Width" Value="46"/>
+    <Setter Property="FontFamily" Value="{DynamicResource IconFont}"/>
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocusInset}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border Background="{TemplateBinding Background}">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+  <!-- Close is red under the pointer, as Windows' is. -->
+  <Style x:Key="CaptionClose" TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource CloseHoverBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource OnCloseHoverBrush}"/>
+      </Trigger>
+      <Trigger Property="IsPressed" Value="True">
+        <Setter Property="Background" Value="{DynamicResource CloseHoverBrush}"/>
+        <Setter Property="Opacity" Value="0.8"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- ================================================================ link
+       Words to press, in a line of small print: "Dock all" on the status
+       line. No face and no edge; brighter and underlined under the pointer. -->
+  <Style x:Key="LinkButton" TargetType="Button">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocus}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <!-- Transparent, so the room between the letters can be pressed. -->
+          <Border Background="{TemplateBinding Background}">
+            <TextBlock x:Name="Words" Text="{TemplateBinding Content}"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Words" Property="TextDecorations" Value="Underline"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- ============================================================= slider
+       A 4-unit track, accent up to the thumb, and a ring for a thumb. Drawn
+       lying down only: Zerg has no upright slider. No width of its own, so
+       MinWidth="0" is not needed to make one narrow. -->
+  <Style x:Key="ZSliderRest" TargetType="RepeatButton">
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RepeatButton">
+          <Border Background="Transparent"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <!-- The part before the thumb. It runs on under the thumb to its middle,
+       which shows where the thumb's own fill is see-through (in a panel). -->
+  <Style x:Key="ZSliderFill" TargetType="RepeatButton" BasedOn="{StaticResource ZSliderRest}">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RepeatButton">
+          <Grid Background="Transparent">
+            <Border Height="4" CornerRadius="2" VerticalAlignment="Center" Margin="0,0,-8,0"
+                    Background="{TemplateBinding Foreground}"/>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="ZSliderThumb" TargetType="Thumb">
+    <Setter Property="Width" Value="16"/>
+    <Setter Property="Height" Value="16"/>
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Thumb">
+          <Grid>
+            <Ellipse Fill="{TemplateBinding Background}" Stroke="{TemplateBinding Foreground}" StrokeThickness="2"/>
+            <Ellipse Width="5" Height="5" Fill="{TemplateBinding Foreground}"/>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="ZSlider" TargetType="Slider">
+    <Setter Property="MinHeight" Value="16"/>
+    <!-- The track; the fill and the ring; inside the ring. -->
+    <Setter Property="BorderBrush" Value="{DynamicResource Bg4Brush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="Background" Value="{DynamicResource Bg1Brush}"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocus}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Slider">
+          <!-- Transparent, so a press anywhere in its height reaches the track. -->
+          <Grid Background="Transparent">
+            <Border Height="4" CornerRadius="2" VerticalAlignment="Center" Background="{TemplateBinding BorderBrush}"/>
+            <Track x:Name="PART_Track">
+              <Track.DecreaseRepeatButton>
+                <RepeatButton Style="{StaticResource ZSliderFill}" Command="Slider.DecreaseLarge"
+                              Foreground="{TemplateBinding Foreground}"/>
+              </Track.DecreaseRepeatButton>
+              <Track.IncreaseRepeatButton>
+                <RepeatButton Style="{StaticResource ZSliderRest}" Command="Slider.IncreaseLarge"/>
+              </Track.IncreaseRepeatButton>
+              <Track.Thumb>
+                <Thumb Style="{StaticResource ZSliderThumb}" Background="{TemplateBinding Background}"
+                       Foreground="{TemplateBinding Foreground}"/>
+              </Track.Thumb>
+            </Track>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- ======================================================== scroll bars
+       A thumb and nothing else: no track, no arrows. 6 units wide in a bar
+       of 12, so 3 from the edge; 10 wide under the pointer or held. The
+       viewer draws its bars over the content, which is why a list that
+       scrolls keeps a 14-unit right margin and a table that scrolls
+       sideways a 12-unit bottom one.
+
+       The thumb is marked as something to press even where it lies in the
+       main window's sizing edge (the outer 6 units of a window whose title
+       bar is Zerg's own: MainWindow.xaml.cs): a bar at the window's
+       right-hand edge would otherwise lose the outer half of its thumb to
+       the edge. Only the thumb: above and below it the edge still sizes the
+       window. The mark means nothing in a window with Windows' own frame. -->
+  <Style x:Key="ZScrollRest" TargetType="RepeatButton">
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RepeatButton">
+          <Border Background="Transparent"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="ZScrollThumb" TargetType="Thumb">
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Thumb">
+          <!-- A radius of half the wider width: WPF brings it down to fit. -->
+          <Border Background="{TemplateBinding Background}" CornerRadius="5"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <ControlTemplate x:Key="ZScrollBarUpright" TargetType="ScrollBar">
+    <Grid Background="{TemplateBinding Background}">
+      <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="0,3">
+        <Track.DecreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ZScrollRest}" Command="ScrollBar.PageUpCommand"/>
+        </Track.DecreaseRepeatButton>
+        <Track.IncreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ZScrollRest}" Command="ScrollBar.PageDownCommand"/>
+        </Track.IncreaseRepeatButton>
+        <Track.Thumb>
+          <Thumb x:Name="Thumb" Style="{StaticResource ZScrollThumb}" Width="6" MinHeight="20"
+                 HorizontalAlignment="Center" Background="{DynamicResource Line3Brush}"
+                 WindowChrome.IsHitTestVisibleInChrome="True"/>
+        </Track.Thumb>
+      </Track>
+    </Grid>
+    <ControlTemplate.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter TargetName="Thumb" Property="Width" Value="10"/>
+        <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource Text3Brush}"/>
+      </Trigger>
+      <Trigger SourceName="Thumb" Property="IsDragging" Value="True">
+        <Setter TargetName="Thumb" Property="Width" Value="10"/>
+        <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource Text3Brush}"/>
+      </Trigger>
+    </ControlTemplate.Triggers>
+  </ControlTemplate>
+  <ControlTemplate x:Key="ZScrollBarFlat" TargetType="ScrollBar">
+    <Grid Background="{TemplateBinding Background}">
+      <Track x:Name="PART_Track" Margin="3,0">
+        <Track.DecreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ZScrollRest}" Command="ScrollBar.PageLeftCommand"/>
+        </Track.DecreaseRepeatButton>
+        <Track.IncreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ZScrollRest}" Command="ScrollBar.PageRightCommand"/>
+        </Track.IncreaseRepeatButton>
+        <Track.Thumb>
+          <Thumb x:Name="Thumb" Style="{StaticResource ZScrollThumb}" Height="6" MinWidth="20"
+                 VerticalAlignment="Center" Background="{DynamicResource Line3Brush}"
+                 WindowChrome.IsHitTestVisibleInChrome="True"/>
+        </Track.Thumb>
+      </Track>
+    </Grid>
+    <ControlTemplate.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter TargetName="Thumb" Property="Height" Value="10"/>
+        <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource Text3Brush}"/>
+      </Trigger>
+      <Trigger SourceName="Thumb" Property="IsDragging" Value="True">
+        <Setter TargetName="Thumb" Property="Height" Value="10"/>
+        <Setter TargetName="Thumb" Property="Background" Value="{DynamicResource Text3Brush}"/>
+      </Trigger>
+    </ControlTemplate.Triggers>
+  </ControlTemplate>
+  <Style x:Key="ZScrollBar" TargetType="ScrollBar">
+    <!-- Transparent and not nothing: the whole 12 units see the pointer. -->
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Width" Value="12"/>
+    <Setter Property="MinWidth" Value="12"/>
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+    <Setter Property="Template" Value="{StaticResource ZScrollBarUpright}"/>
+    <Style.Triggers>
+      <Trigger Property="Orientation" Value="Horizontal">
+        <Setter Property="Width" Value="Auto"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Height" Value="12"/>
+        <Setter Property="MinHeight" Value="12"/>
+        <Setter Property="Template" Value="{StaticResource ZScrollBarFlat}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="ZScrollViewer" TargetType="ScrollViewer">
+    <!-- A viewer can hold the keyboard (that is how the arrow and page keys
+         scroll one with nothing in it to hold it). It draws nothing for
+         that: left alone it would get Windows' dotted rectangle. -->
+    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ScrollViewer">
+          <!-- One cell: the content takes all of it and the bars lie over
+               its right and bottom edges. -->
+          <Grid Background="{TemplateBinding Background}">
+            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Margin="{TemplateBinding Padding}"
+                                    CanContentScroll="{TemplateBinding CanContentScroll}"/>
+            <ScrollBar x:Name="PART_VerticalScrollBar" Style="{StaticResource ZScrollBar}" Orientation="Vertical"
+                       HorizontalAlignment="Right" Maximum="{TemplateBinding ScrollableHeight}"
+                       ViewportSize="{TemplateBinding ViewportHeight}"
+                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+            <ScrollBar x:Name="PART_HorizontalScrollBar" Style="{StaticResource ZScrollBar}" Orientation="Horizontal"
+                       VerticalAlignment="Bottom" Maximum="{TemplateBinding ScrollableWidth}"
+                       ViewportSize="{TemplateBinding ViewportWidth}"
+                       Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                       Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"/>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ============================================================ tooltip
+       Solid, edged, with a soft shadow under it. Its fill is the hover
+       card's (HoverCardBrush: Bg4 in the main window): in a floating panel
+       Bg4Brush is see-through, and a tooltip over the game must not be.
+
+       A tooltip takes its font and its text alignment from the element it
+       is on, and a column of figures is right-aligned and a total SemiBold.
+       A tooltip always reads from the left, in Regular.
+
+       The shadow is cast by a plain shape behind the box, not by the box:
+       an effect on the box would draw its text through a bitmap. The margin
+       is the room the shadow needs inside the tooltip's own window. -->
+  <Style x:Key="ZToolTip" TargetType="ToolTip">
+    <Setter Property="HasDropShadow" Value="False"/>
+    <Setter Property="MaxWidth" Value="340"/>
+    <Setter Property="Padding" Value="10,6,10,7"/>
+    <Setter Property="FontFamily" Value="{DynamicResource TextFont}"/>
+    <Setter Property="FontSize" Value="11.5"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="FontStyle" Value="Normal"/>
+    <Setter Property="TextBlock.TextAlignment" Value="Left"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="Background" Value="{DynamicResource HoverCardBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToolTip">
+          <Grid Margin="10,4,10,14">
+            <Border Background="{TemplateBinding Background}" CornerRadius="5">
+              <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.55" BlurRadius="12" ShadowDepth="4" Direction="270"/>
+              </Border.Effect>
+            </Border>
+            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5"
+                    Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+              <ContentPresenter>
+                <ContentPresenter.Resources>
+                  <!-- A tooltip given as text is one TextBlock: let it wrap. -->
+                  <Style TargetType="TextBlock">
+                    <Setter Property="TextWrapping" Value="Wrap"/>
+                  </Style>
+                </ContentPresenter.Resources>
+              </ContentPresenter>
+            </Border>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- =========================================================== text box
+       A well in the window's own colour; the edge turns accent while it has
+       the keyboard, so it has no ring. What Zerg puts in one is a path, so
+       the face is the monospace one. -->
+  <Style x:Key="ZTextBox" TargetType="TextBox">
+    <Setter Property="Height" Value="28"/>
+    <Setter Property="Padding" Value="7,0"/>
+    <Setter Property="FontFamily" Value="{DynamicResource MonoFont}"/>
+    <Setter Property="FontSize" Value="11.5"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="Background" Value="{DynamicResource Bg0Brush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CaretBrush" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="SelectionBrush" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="TextBox">
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource ControlRadius}"
+                  SnapsToDevicePixels="True">
+            <!-- No margin from Padding here: a text box applies its Padding to
+                 its text itself, and a margin as well would count it twice. -->
+            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                          HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+      </Trigger>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- =========================================================== expander
+       A heading row with a caret, and under it what the heading opens. The
+       whole row is the thing to press. The row tells UI Automation the
+       expander's own name when it was given one ("Data table of both runs"),
+       and otherwise its heading: a script, or a screen reader, finds the
+       thing to press under the name the expander is known by. (HeaderSite
+       is the name WPF itself looks for the toggle under.) -->
+  <Style x:Key="ZExpanderHeader" TargetType="ToggleButton">
+    <Setter Property="Height" Value="24"/>
+    <Setter Property="Padding" Value="4,0,8,0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocusInset}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ChipRadius}"
+                  Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}">
+              <Grid Width="12" Height="12" VerticalAlignment="Center">
+                <Path x:Name="Caret" Data="M4,2 l4,4 l-4,4" StrokeThickness="1.3" StrokeLineJoin="Round"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Text2Brush}"/>
+              </Grid>
+              <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Caret" Property="Data" Value="M2.5,4 l3.5,4 l3.5,-4"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+  <Style x:Key="ZExpander" TargetType="Expander">
+    <Setter Property="Padding" Value="0,6,0,0"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Expander">
+          <DockPanel>
+            <ToggleButton x:Name="HeaderSite" DockPanel.Dock="Top" Style="{StaticResource ZExpanderHeader}"
+                          FontSize="12" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}"
+                          Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}"
+                          AutomationProperties.Name="{Binding (AutomationProperties.Name), RelativeSource={RelativeSource TemplatedParent}}"
+                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+            <ContentPresenter x:Name="ExpandSite" Visibility="Collapsed" Focusable="False"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+          </DockPanel>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsExpanded" Value="True">
+              <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- The expander over a drill-down's list ("Every hit", "Every cast"). Its
+       heading is a row of the pane, flush with its edges: 24 units, ruled
+       off above by the stronger rule and below by a row's, with a caret at
+       its left and then whatever the expander's Header holds (the title,
+       how many, and the list's column headings, which stay when the list
+       is put away). It is open unless it is in a floating panel, where the
+       drill-down sits under a row and a list of every hit would bury the
+       table; either way the heading opens and shuts it. -->
+  <Style x:Key="HitsHeader" TargetType="ToggleButton">
+    <Setter Property="Height" Value="24"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocusInset}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Border Background="{TemplateBinding Background}" BorderBrush="{DynamicResource Line2Brush}"
+                  BorderThickness="0,1,0,0" SnapsToDevicePixels="True">
+            <Grid>
+              <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource LineBrush}" SnapsToDevicePixels="True"/>
+              <Path x:Name="Caret" Width="8" Height="8" HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Margin="12,0,0,1" Data="M2,0.5 L6,4 L2,7.5" StrokeThickness="1.3" StrokeLineJoin="Round"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stroke="{DynamicResource Text3Brush}"/>
+              <ContentPresenter Margin="26,0,0,1"/>
+            </Grid>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Caret" Property="Data" Value="M0.5,2 L4,6 L7.5,2"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+  <Style x:Key="HitsExpander" TargetType="Expander">
+    <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    <Setter Property="IsTabStop" Value="False"/>
+    <Setter Property="IsExpanded" Value="True"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Expander">
+          <DockPanel>
+            <ToggleButton x:Name="HeaderSite" DockPanel.Dock="Top" Style="{StaticResource HitsHeader}"
+                          Foreground="{TemplateBinding Foreground}" Content="{TemplateBinding Header}"
+                          AutomationProperties.Name="{Binding (AutomationProperties.Name), RelativeSource={RelativeSource TemplatedParent}}"
+                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+            <ContentPresenter x:Name="ExpandSite" Visibility="Collapsed" Focusable="False"/>
+          </DockPanel>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsExpanded" Value="True">
+              <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="v:Float.On" Value="True">
+        <Setter Property="IsExpanded" Value="False"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- ============================================================== menus
+       A raised sheet with a strong edge and a shadow. Each line is 28 tall
+       and is its own slab under the pointer, inset 4 from the menu's edge.
+       Every line has the same column at its left, ticked or not: an accent
+       tick while the line is checked, or the line's Icon. So a tickable
+       line does not push the plain ones beside it sideways, and a line
+       with a submenu lines up with the rest. A line's keys
+       (InputGestureText) are a keycap at its right.
+
+       The margins are the room the shadow needs inside the menu's own
+       window, as for a tooltip. -->
+  <Style x:Key="ZSeparator" TargetType="Separator">
+    <Setter Property="Height" Value="1"/>
+    <!-- Out to the menu's edge, through its padding. -->
+    <Setter Property="Margin" Value="-3,4"/>
+    <Setter Property="Background" Value="{DynamicResource Line2Brush}"/>
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Separator">
+          <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="ZMenuItem" TargetType="MenuItem">
+    <Setter Property="Height" Value="28"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="MenuItem">
+          <Grid SnapsToDevicePixels="True">
+            <Border x:Name="Slab" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlRadius}"/>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="32"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="ZMenuKeys"/>
+              </Grid.ColumnDefinitions>
+              <ContentPresenter x:Name="Icon" ContentSource="Icon" Width="16" Margin="8,0,0,0" HorizontalAlignment="Left"
+                                VerticalAlignment="Center" TextElement.Foreground="{DynamicResource Text2Brush}"/>
+              <TextBlock x:Name="Tick" Width="16" Margin="8,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                         TextAlignment="Center" FontFamily="{DynamicResource IconFont}" FontSize="11" FontWeight="Normal"
+                         Text="&#xE73E;" Visibility="Collapsed" Foreground="{DynamicResource AccentBrush}"/>
+              <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" Margin="0,0,16,0"/>
+              <ContentControl x:Name="Keys" Grid.Column="2" Style="{StaticResource Keycap}" HorizontalAlignment="Right"
+                              Margin="0,0,8,0" Content="{TemplateBinding InputGestureText}"/>
+              <Path x:Name="Chevron" Grid.Column="2" Data="M0,0 l4,4 l-4,4" StrokeThickness="1.3" StrokeLineJoin="Round"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Right"
+                    VerticalAlignment="Center" Margin="0,0,10,0" Visibility="Collapsed"
+                    Stroke="{DynamicResource Text2Brush}"/>
+            </Grid>
+            <!-- The lines under this one, when it has any. Laid beside it,
+                 a little over its menu's edge, its first line level with
+                 this line. -->
+            <Popup x:Name="PART_Popup" AllowsTransparency="True" Focusable="False" Placement="Right"
+                   HorizontalOffset="-12" VerticalOffset="-10" PopupAnimation="None"
+                   IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
+              <Grid Margin="14,6,14,26" Grid.IsSharedSizeScope="True">
+                <Border Background="{DynamicResource Bg2Brush}" CornerRadius="{DynamicResource WindowRadius}">
+                  <Border.Effect>
+                    <DropShadowEffect Color="Black" Opacity="0.6" BlurRadius="22" ShadowDepth="8" Direction="270"/>
+                  </Border.Effect>
+                </Border>
+                <Border Background="{DynamicResource Bg2Brush}" BorderBrush="{DynamicResource Line3Brush}"
+                        BorderThickness="1" CornerRadius="{DynamicResource WindowRadius}" Padding="3" MinWidth="160">
+                  <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                </Border>
+              </Grid>
+            </Popup>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+              <Setter TargetName="Slab" Property="Background" Value="{DynamicResource Bg4Brush}"/>
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Tick" Property="Visibility" Value="Visible"/>
+              <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+            <Trigger Property="InputGestureText" Value="">
+              <Setter TargetName="Keys" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+            <Trigger Property="InputGestureText" Value="{x:Null}">
+              <Setter TargetName="Keys" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+            <Trigger Property="Role" Value="SubmenuHeader">
+              <Setter TargetName="Chevron" Property="Visibility" Value="Visible"/>
+              <Setter TargetName="Keys" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="ZContextMenu" TargetType="ContextMenu">
+    <Setter Property="HasDropShadow" Value="False"/>
+    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    <Setter Property="MinWidth" Value="208"/>
+    <Setter Property="Padding" Value="3"/>
+    <Setter Property="FontFamily" Value="{DynamicResource TextFont}"/>
+    <Setter Property="FontSize" Value="12.5"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="FontStyle" Value="Normal"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+    <Setter Property="Background" Value="{DynamicResource Bg2Brush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Grid.IsSharedSizeScope" Value="True"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContextMenu">
+          <Grid Margin="14,6,14,26">
+            <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource WindowRadius}">
+              <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.6" BlurRadius="22" ShadowDepth="8" Direction="270"/>
+              </Border.Effect>
+            </Border>
+            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource WindowRadius}"
+                    Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+              <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+            </Border>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ====================================================== the arrangement
+       What a player arranges a section's panes with (the design's sheet
+       10): the grip in a heading, the mark that folds a pane, and the
+       divider between two panes. -->
+
+  <!-- The grip (Views/PaneGrip): six dots at the left of a heading, in a
+       block 6 by 10. Brighter under the pointer; the pane's own template
+       makes it so anywhere on the heading. Dragged, it moves the pane, as
+       the whole heading does; pressed, it opens the heading's menu. The
+       cursor says the first, except in a window too narrow to move anything
+       in. While the arrangement is locked it is not drawn, and keeps its
+       room so no title shifts. -->
+  <Style x:Key="PaneGrip" TargetType="v:PaneGrip">
+    <Setter Property="Width" Value="14"/>
+    <Setter Property="Height" Value="18"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+    <Setter Property="Cursor" Value="SizeAll"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocus}"/>
+    <Setter Property="ToolTip" Value="Drag to move this pane. Press for its menu: fold, pop out, move"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="v:PaneGrip">
+          <Border Background="{TemplateBinding Background}">
+            <Path Width="6" Height="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  Fill="{TemplateBinding Foreground}" SnapsToDevicePixels="True"
+                  Data="M0,1 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0 M4,1 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0 M0,5 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0 M4,5 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0 M0,9 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0 M4,9 a1,1 0 1,0 2,0 a1,1 0 1,0 -2,0"/>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True">
+        <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+      </Trigger>
+      <Trigger Property="v:SplitPanel.Stacked" Value="True">
+        <Setter Property="Cursor" Value="Arrow"/>
+        <Setter Property="ToolTip" Value="Press for this pane's menu: fold, pop out"/>
+      </Trigger>
+      <Trigger Property="v:SplitPanel.Locked" Value="True">
+        <Setter Property="Visibility" Value="Hidden"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- The fold mark's button: a chevron in a heading, 18 by 22. Quiet at
+       rest, as the mark was while it was only drawn; a face under the
+       pointer, as every icon button has. Its content is the chevron. -->
+  <Style x:Key="PaneFold" TargetType="Button" BasedOn="{StaticResource IconButton}">
+    <Setter Property="Width" Value="18"/>
+    <Setter Property="Height" Value="22"/>
+    <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
+    <Style.Triggers>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Opacity" Value="0.55"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <!-- The divider (Views/DividerThumb): what lies over the rule between
+       two panes to move it by. It paints itself (the grip at its middle,
+       3 by 22; under the pointer or with the keyboard the rule 3 units
+       thick and a grip 5 by 26; in the hand the rule solid), in these
+       three brushes. The template is only so that it has one: a Thumb
+       without is drawn as Windows draws it. Lit, it is its own sign of
+       where the keyboard is, so it has no ring. -->
+  <Style x:Key="Divider" TargetType="v:DividerThumb">
+    <Setter Property="Grip" Value="{DynamicResource Line3Brush}"/>
+    <Setter Property="Hot" Value="{DynamicResource DividerHoverBrush}"/>
+    <Setter Property="Held" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="IsTabStop" Value="True"/>
+    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    <Setter Property="SnapsToDevicePixels" Value="True"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="v:DividerThumb">
+          <Border Background="{TemplateBinding Background}"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- =============================================================== pane
+       A pane of a section (Views/Pane): a heading 30 units tall, ruled off
+       along its bottom edge by a rule that lies inside it, and under it
+       what the pane holds. The heading, as the design's sheets draw it: six
+       dots at its left (the grip: the heading is the handle a pane is
+       moved by), the title 22 units in, a note 12 after it, and from the
+       right-hand end Pop out (its glyph 18 units in), the mark that folds
+       the pane (39 in), then whatever tools the pane has.
+
+       The grip and the fold mark are controls: the grip opens the
+       heading's menu, the mark folds the pane, and both take the keyboard.
+       What they do is done by whatever arranges the pane (Views/SplitPanel).
+
+       Folded, the pane is its heading: the title steps back, the mark
+       points down, the tools go, and what the pane holds is collapsed.
+       Folded where it stands alone in its column, it is a rail (below).
+
+       Tall (IsTall: a drill-down while it is open), the heading is 44
+       units: the title larger, the note on a line of its own under it
+       with a swatch before it, the grip beside the title, and an accent
+       edge down the heading's left. The title and the note are the same
+       two text blocks either way, moved by the trigger, so nothing is
+       said twice to a script that reads what is hidden too. A folded
+       pane, and a pane in a floating panel, is never tall.
+
+       In a floating panel (v:Float.On) the heading goes, since the panel's
+       bar names the card; the tools stay, on a line of their own at the
+       right, and a fold means nothing. The last trigger says all of that,
+       and is last so that it outranks the others. -->
+  <Style x:Key="ZPane" TargetType="v:Pane">
+    <Setter Property="Background" Value="{DynamicResource Bg1Brush}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="v:Pane">
+          <Grid Background="{TemplateBinding Background}">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition/>
+            </Grid.RowDefinitions>
+            <!-- The whole heading takes the pointer (its surface is
+                 transparent, not absent): it is the handle the pane is
+                 carried by, and says so to whatever arranges the pane. -->
+            <Grid x:Name="Heading" Height="{DynamicResource PaneHeadingHeight}" Background="Transparent"
+                  v:SplitPanel.Handle="True">
+              <Rectangle x:Name="Under" Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource LineBrush}"
+                         SnapsToDevicePixels="True"/>
+              <Rectangle x:Name="Edge" Width="2" HorizontalAlignment="Left" Fill="{DynamicResource AccentBrush}"
+                         SnapsToDevicePixels="True" Visibility="Collapsed"/>
+              <!-- Left to right, and written in that order, which is the
+                   order the Tab key goes through them: the grip, the title
+                   and the note, the tools, the fold mark, Pop out. -->
+              <Grid x:Name="Line" Margin="0,0,0,1">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <v:PaneGrip x:Name="Grip" Style="{StaticResource PaneGrip}" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                <!-- The title and, after it on the same line, the note;
+                     in a tall heading the note goes under the title. -->
+                <Grid x:Name="Words" Grid.Column="1" Margin="4,0,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                  </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition Height="Auto"/>
+                  </Grid.RowDefinitions>
+                  <TextBlock x:Name="Title" Text="{TemplateBinding Title}" Style="{DynamicResource PaneTitle}"
+                             VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{TemplateBinding Hint}"/>
+                  <DockPanel x:Name="NoteLine" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <Rectangle x:Name="Swatch" DockPanel.Dock="Left" Width="8" Height="8" RadiusX="2" RadiusY="2"
+                               Margin="0,0,6,0" VerticalAlignment="Center" Fill="{TemplateBinding Swatch}"
+                               Visibility="Collapsed"/>
+                    <TextBlock x:Name="Note" Text="{TemplateBinding Note}" Style="{DynamicResource Label}"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               Typography.NumeralAlignment="Tabular" ToolTip="{TemplateBinding Hint}"/>
+                  </DockPanel>
+                </Grid>
+                <ContentPresenter x:Name="Tools" Grid.Column="2" Content="{TemplateBinding Tools}"
+                                  VerticalAlignment="Center" Margin="12,0,15,0"/>
+                <!-- The mark that folds the pane to its heading, and opens
+                     it again. What it is called ("Fold Actions") and
+                     whether it can be pressed is the pane's to say
+                     (Views/Pane); pressing it is heard by whatever arranges
+                     the pane. -->
+                <Button x:Name="Fold" Grid.Column="3" Style="{StaticResource PaneFold}" VerticalAlignment="Center">
+                  <Path x:Name="FoldMark" Data="M0.65,4.15 L4.15,0.65 L7.65,4.15" Width="8.3" Height="4.8"
+                        Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="1.3" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                </Button>
+                <Button x:Name="PopOut" Grid.Column="4" Style="{StaticResource IconButton}" Width="24" Height="22"
+                        FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center" Content="&#xE8A7;"
+                        Command="{TemplateBinding PopOutCommand}"
+                        ToolTip="Float this card in a panel of its own, always on top, to lay over the game"
+                        AutomationProperties.Name="{Binding Title, RelativeSource={RelativeSource TemplatedParent}, StringFormat='Pop out {0}'}"/>
+              </Grid>
+            </Grid>
+            <ContentPresenter x:Name="Held" Grid.Row="1"/>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <!-- A drill-down has no Pop out: the fold mark ends the heading.
+                 The button that is not there has no name either: a script
+                 reads the names of hidden things too, and "Pop out
+                 Drill-down" would be one. -->
+            <Trigger Property="PopOutCommand" Value="{x:Null}">
+              <Setter TargetName="PopOut" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="PopOut" Property="AutomationProperties.Name" Value=""/>
+              <Setter TargetName="Fold" Property="Margin" Value="0,0,9,0"/>
+            </Trigger>
+            <!-- Under the pointer the grip is brighter: this is the handle.
+                 Not while the arrangement is locked (the grip is gone), nor
+                 in a window too narrow to move anything in. -->
+            <MultiTrigger>
+              <MultiTrigger.Conditions>
+                <Condition SourceName="Heading" Property="IsMouseOver" Value="True"/>
+                <Condition Property="v:SplitPanel.Stacked" Value="False"/>
+              </MultiTrigger.Conditions>
+              <Setter TargetName="Grip" Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+            </MultiTrigger>
+            <Trigger Property="Tools" Value="{x:Null}">
+              <Setter TargetName="Tools" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+            <!-- Tall: only while the pane is open, and never in a panel. -->
+            <MultiTrigger>
+              <MultiTrigger.Conditions>
+                <Condition Property="IsTall" Value="True"/>
+                <Condition Property="IsFolded" Value="False"/>
+                <Condition Property="v:SplitPanel.Folded" Value="False"/>
+                <Condition Property="v:Float.On" Value="False"/>
+              </MultiTrigger.Conditions>
+              <Setter TargetName="Heading" Property="Height" Value="44"/>
+              <Setter TargetName="Edge" Property="Visibility" Value="Visible"/>
+              <Setter TargetName="Grip" Property="VerticalAlignment" Value="Top"/>
+              <Setter TargetName="Grip" Property="Margin" Value="6,6,0,0"/>
+              <Setter TargetName="Title" Property="FontSize" Value="14"/>
+              <Setter TargetName="Title" Property="Grid.ColumnSpan" Value="2"/>
+              <Setter TargetName="Title" Property="VerticalAlignment" Value="Bottom"/>
+              <Setter TargetName="NoteLine" Property="Grid.Row" Value="1"/>
+              <Setter TargetName="NoteLine" Property="Grid.Column" Value="0"/>
+              <Setter TargetName="NoteLine" Property="Grid.ColumnSpan" Value="2"/>
+              <Setter TargetName="NoteLine" Property="Margin" Value="0,0,0,4"/>
+              <Setter TargetName="Swatch" Property="Visibility" Value="Visible"/>
+            </MultiTrigger>
+            <!-- Folded: by itself, or because what arranges it says so. -->
+            <Trigger Property="IsFolded" Value="True">
+              <Setter TargetName="Held" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Tools" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Title" Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+              <Setter TargetName="FoldMark" Property="Data" Value="M0.65,0.65 L4.15,4.15 L7.65,0.65"/>
+            </Trigger>
+            <Trigger Property="v:SplitPanel.Folded" Value="True">
+              <Setter TargetName="Held" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Tools" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Title" Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+              <Setter TargetName="FoldMark" Property="Data" Value="M0.65,0.65 L4.15,4.15 L7.65,0.65"/>
+            </Trigger>
+            <!-- A rail: folded sideways, where the pane stands alone in its
+                 column and has nobody over or under it to give its room to
+                 (whatever arranges it says so: v:SplitPanel.Rail). The
+                 heading is the whole of the pane, a heading's height wide,
+                 turned a quarter: from the top, the grip, the mark that
+                 opens it again, and the title reading down. No note, no
+                 Pop out (the heading's menu still has it) and no rule under
+                 it: the rule beside it is the split's. -->
+            <Trigger Property="v:SplitPanel.Rail" Value="True">
+              <Setter TargetName="Heading" Property="Height" Value="Auto"/>
+              <Setter TargetName="Heading" Property="Grid.RowSpan" Value="2"/>
+              <Setter TargetName="Under" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Line" Property="Margin" Value="0"/>
+              <Setter TargetName="Line" Property="LayoutTransform">
+                <Setter.Value>
+                  <RotateTransform Angle="90"/>
+                </Setter.Value>
+              </Setter>
+              <Setter TargetName="Fold" Property="Grid.Column" Value="0"/>
+              <Setter TargetName="Fold" Property="Margin" Value="22,0,0,0"/>
+              <Setter TargetName="FoldMark" Property="Data" Value="M0.65,4.15 L4.15,0.65 L7.65,4.15"/>
+              <Setter TargetName="Words" Property="Margin" Value="6,0,8,0"/>
+              <Setter TargetName="NoteLine" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="PopOut" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+            <Trigger Property="v:Float.On" Value="True">
+              <Setter Property="Background" Value="Transparent"/>
+              <Setter TargetName="Heading" Property="Height" Value="Auto"/>
+              <!-- Nothing is carried by a heading there: it takes no press. -->
+              <Setter TargetName="Heading" Property="Background" Value="{x:Null}"/>
+              <Setter TargetName="Line" Property="Margin" Value="0"/>
+              <Setter TargetName="Under" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Grip" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Words" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Title" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Note" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Fold" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="PopOut" Property="Visibility" Value="Collapsed"/>
+              <Setter TargetName="Tools" Property="Margin" Value="12,0,0,0"/>
+              <Setter TargetName="Tools" Property="Visibility" Value="Visible"/>
+              <Setter TargetName="Held" Property="Visibility" Value="Visible"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- ====================================================== by control type
+       Each control type's look, for a control that names no style. A style
+       is found by a control's exact type: a class of its own (TrayMenu, a
+       ContextMenu) must name its style. RadioButton has none on purpose:
+       every one in Zerg is a Segment or a SectionTab, and one that names
+       neither should look wrong. A pane is a class of Zerg's own with no
+       subclasses, so its type finds its look. -->
+  <Style TargetType="v:Pane" BasedOn="{StaticResource ZPane}"/>
+  <Style TargetType="v:DividerThumb" BasedOn="{StaticResource Divider}"/>
+  <Style TargetType="v:PaneGrip" BasedOn="{StaticResource PaneGrip}"/>
+  <Style TargetType="Button" BasedOn="{StaticResource ZButton}"/>
+  <Style TargetType="ToggleButton" BasedOn="{StaticResource TickToggle}"/>
+  <Style TargetType="Slider" BasedOn="{StaticResource ZSlider}"/>
+  <Style TargetType="ScrollBar" BasedOn="{StaticResource ZScrollBar}"/>
+  <Style TargetType="ScrollViewer" BasedOn="{StaticResource ZScrollViewer}"/>
+  <Style TargetType="ToolTip" BasedOn="{StaticResource ZToolTip}"/>
+  <Style TargetType="TextBox" BasedOn="{StaticResource ZTextBox}"/>
+  <Style TargetType="Expander" BasedOn="{StaticResource ZExpander}"/>
+  <Style TargetType="ContextMenu" BasedOn="{StaticResource ZContextMenu}"/>
+  <Style TargetType="MenuItem" BasedOn="{StaticResource ZMenuItem}"/>
+  <Style TargetType="Separator" BasedOn="{StaticResource ZSeparator}"/>
+  <!-- A separator in a menu does not look for its style by its type: the
+       menu gives it this key to look under. Without the line below it is
+       drawn as Windows draws one, a pale line on the dark menu (seen, the
+       first time the tray menu was opened with no theme loaded). -->
+  <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator" BasedOn="{StaticResource ZSeparator}"/>
+
+</ResourceDictionary>

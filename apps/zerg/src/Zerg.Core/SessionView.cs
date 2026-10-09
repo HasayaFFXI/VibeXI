@@ -11,6 +11,14 @@ public enum SecondLook { Off, Cancel, Live, Held }
 public enum SessionLight { Idle, Armed, Live, Held }
 
 /// <summary>
+/// The word in the state tag beside the clock: the session's state, or
+/// Saved over a parse that is only being looked at. A saved parse's light
+/// is Held (its clock is stopped for good), which is not what the tag says
+/// of it: nobody is holding it.
+/// </summary>
+public enum SessionTag { Idle, Armed, Live, Held, Saved }
+
+/// <summary>
 /// The two session buttons and the status dot, as plain data: what each says,
 /// what it explains on hover, and which state it wears. Worked out in one place
 /// and drawn wherever the pair appears (the main window, and every floating
@@ -43,6 +51,27 @@ public sealed record SessionView(
 {
     const string Dash = " — ";
 
+    /// <summary>What the state tag says: Saved over an imported parse,
+    /// otherwise the light under its own name.</summary>
+    public SessionTag Tag { get; private init; }
+
+    /// <summary>
+    /// A session is armed or counting: something is being measured, or is
+    /// about to be. What the tray menu's heading waits for (the state, the
+    /// clock and the total, over the menu's lines): idle, held, or over a
+    /// saved parse the menu has no heading. A restart that is only being
+    /// asked about changes nothing here, as it changes nothing in the tag.
+    /// </summary>
+    public bool Underway => Tag is SessionTag.Armed or SessionTag.Live;
+
+    static SessionTag TagOf(SessionLight light) => light switch
+    {
+        SessionLight.Armed => SessionTag.Armed,
+        SessionLight.Live => SessionTag.Live,
+        SessionLight.Held => SessionTag.Held,
+        _ => SessionTag.Idle,
+    };
+
     /// <param name="imported">An imported parse is a finished recording: both
     /// buttons are held off everywhere they appear.</param>
     /// <param name="asking">Start was pressed over a measurement and waits
@@ -53,7 +82,10 @@ public sealed record SessionView(
         {
             const string why = "Viewing a saved parse. Switch to Damage or Healing to measure your own.";
             return new SessionView("Start", why, StartLook.Locked, false, false,
-                                   "Pause", why, SecondLook.Off, false, false, false, SessionLight.Held);
+                                   "Pause", why, SecondLook.Off, false, false, false, SessionLight.Held)
+            {
+                Tag = SessionTag.Saved,
+            };
         }
 
         bool armed = session.Armed, started = session.StartedAt != null, paused = session.PausedAt != null;
@@ -66,8 +98,12 @@ public sealed record SessionView(
                 StartLook.Confirm, true, false,
                 "Cancel", "Cancel" + Dash + "keep this pull. Nothing is dropped.",
                 SecondLook.Cancel, true, false, false,
-                paused ? SessionLight.Held : SessionLight.Live);
+                paused ? SessionLight.Held : SessionLight.Live)
+            {
+                Tag = paused ? SessionTag.Held : SessionTag.Live,
+            };
 
+        var light = armed ? SessionLight.Armed : !started ? SessionLight.Idle : paused ? SessionLight.Held : SessionLight.Live;
         return new SessionView(
             StartText: armed || started ? "Restart" : "Start",
             StartTip: armed ? "Armed" + Dash + "the clock starts on the first counted hit. Press again to re-arm."
@@ -90,7 +126,10 @@ public sealed record SessionView(
             SecondPressed: paused,
             SecondIsToggle: !armed,
 
-            Light: armed ? SessionLight.Armed : !started ? SessionLight.Idle : paused ? SessionLight.Held : SessionLight.Live);
+            Light: light)
+        {
+            Tag = TagOf(light),
+        };
     }
 }
 

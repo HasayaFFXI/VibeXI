@@ -12,14 +12,10 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Built by tools/make-icon.ps1 from assets/icon-source.webp. -->
     <ApplicationIcon>zerg.ico</ApplicationIcon>
-    <!-- Application.ThemeMode (the Fluent theme) is still marked experimental. -->
-    <NoWarn>$(NoWarn);WPF0001</NoWarn>
 
-    <Version>0.1.0</Version>
+    <!-- The version is in apps/zerg/Directory.Build.props, for every project. -->
     <Product>Zerg</Product>
     <AssemblyTitle>Zerg</AssemblyTitle>
-    <!-- The version string is shown to players; keep the git hash out of it. -->
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

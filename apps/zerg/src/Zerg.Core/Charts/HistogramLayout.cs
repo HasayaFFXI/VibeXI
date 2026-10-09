@@ -14,18 +14,31 @@ public sealed record HistogramLabel(string Text, double X, LabelAlign Align);
 /// <summary>The rule marking the mean, and its label.</summary>
 public sealed record MeanRule(double X, double Top, double Bottom, string Label, double LabelX, LabelAlign Align);
 
+/// <summary>The tick marking the median: a short stroke across the baseline,
+/// on a pixel centre.</summary>
+public sealed record MedianTick(double X, double Top, double Bottom);
+
 /// <summary>What the pointer reads over one bin.</summary>
 public sealed record HistogramHover(int Bin, string Head, List<HoverRow> Rows);
 
 /// <summary>
 /// Where everything on a histogram goes. One colour for every column (a value
-/// ramp would say height twice), with the mean called out by a rule.
+/// ramp would say height twice), with the mean called out by a rule, the
+/// middle half of the values by a band behind the columns, and the median by
+/// a tick on the baseline.
 /// </summary>
 public sealed class HistogramLayout
 {
     /// <summary>From the plot's left edge to a count label, and from its floor
-    /// to a value label.</summary>
-    public const double YLabelGap = 8, XLabelGap = 10;
+    /// to the top of a value label.</summary>
+    public const double YLabelGap = 6, XLabelGap = 4;
+    /// <summary>How far the mean's rule stands above the plot, and from the
+    /// rule to its label.</summary>
+    public const double MeanRise = 4, MeanLabelGap = 5;
+    /// <summary>How far the median's tick reaches above the baseline and below it.</summary>
+    public const double MedianAbove = 5, MedianBelow = 4;
+    /// <summary>The rounding of a column's top, and of a column's of two runs.</summary>
+    public const double ColumnRadius = 2;
 
     static readonly string Dash = ((char)0x2013).ToString();   // en dash
 
@@ -41,12 +54,45 @@ public sealed class HistogramLayout
     public List<HistogramLabel> XLabels { get; } = [];
     public double BaselineY { get; private set; }
     public MeanRule? Mean { get; private set; }
+    /// <summary>The middle half of the values, lower quartile to upper, the
+    /// plot's whole height: drawn behind the columns. Null when the
+    /// quartiles were not given or have no width between them.</summary>
+    public Box? Band { get; private set; }
+    /// <summary>Null when the median was not given or is outside the plot.</summary>
+    public MedianTick? Median { get; private set; }
 
     /// <param name="count">How many values the bins hold between them.</param>
-    public static HistogramLayout Compute(double width, double height, IReadOnlyList<Bin>? bins, double avg, int count)
+    /// <param name="q1">The lower quartile, with <paramref name="q3"/> the
+    /// ends of the band; null for no band.</param>
+    /// <param name="median">Where the tick goes; null for none.</param>
+    /// <param name="labelWidth">How wide a count is drawn on the value axis,
+    /// so the left margin fits the longest; and how wide the mean's label
+    /// is (the second argument asks for its stronger weight), so it turns
+    /// round before it runs off the chart. Without it the margin is a fixed
+    /// one that fits a count in the thousands.</param>
+    public static HistogramLayout Compute(double width, double height, IReadOnlyList<Bin>? bins, double avg, int count,
+                                          double? q1 = null, double? q3 = null, double? median = null,
+                                          Func<string, bool, double>? labelWidth = null)
     {
         var l = new HistogramLayout { bins = bins ?? [], total = count };
-        const double padTop = 22, padRight = 16, padBottom = 34, padLeft = 46;
+        const double padTop = 20, padRight = 2, padBottom = 22, leastLeft = 26, fixedLeft = 36;
+
+        double cmax = 0;
+        if (bins != null)
+            foreach (var b in bins) cmax = Math.Max(cmax, b.Count);
+        if (cmax == 0) cmax = 1;
+        var yTicks = Ticks.Nice(0, cmax, 4);
+
+        // The left margin holds the counts: as wide as the longest of them
+        // needs, and never narrower than a count of two figures does.
+        double padLeft = fixedLeft;
+        if (labelWidth != null)
+        {
+            double widest = 0;
+            foreach (var v in yTicks) widest = Math.Max(widest, labelWidth(Format.Int(v), false));
+            padLeft = Math.Max(leastLeft, Math.Ceiling(widest) + YLabelGap + 2);
+        }
+
         l.Plot = new Box(padLeft, padTop,
                          Math.Max(10, width - padLeft - padRight),
                          Math.Max(10, height - padTop - padBottom));
@@ -61,28 +107,24 @@ public sealed class HistogramLayout
         double lo = bins[0].Lo, hi = bins[^1].Hi;
         if (hi <= lo) hi = lo + 1;
 
-        double cmax = 0;
-        foreach (var b in bins) cmax = Math.Max(cmax, b.Count);
-        if (cmax == 0) cmax = 1;
-
         double Bx(double v) => plot.X + (v - lo) / (hi - lo) * plot.W;
         double By(double c) => plot.Y + plot.H - c / cmax * plot.H;
 
-        foreach (var v in Ticks.Nice(0, cmax, 4))
+        foreach (var v in yTicks)
             l.YTicks.Add(new AxisTick(v, Js.Round(By(v)) + 0.5, Format.Int(v)));
 
         // A column fills its bin: its width is the bin's interval, which is
         // data, so a categorical bar's thickness cap must not apply. Only a
-        // 2 px gap separates neighbours.
+        // 1 px gap separates neighbours.
         var slot = l.Slot = plot.W / bins.Count;
-        var bw = Math.Max(1, slot - 2);
+        var bw = Math.Max(1, slot - 1);
         for (int i = 0; i < bins.Count; i++)
         {
             if (bins[i].Count == 0) continue;
             var y = By(bins[i].Count);
             var h = plot.Y + plot.H - y;
-            l.Columns.Add(new HistogramColumn(i, plot.X + slot * i + 1, y, bw, h,
-                                              Math.Max(0, Math.Min(4, Math.Min(h / 2, bw / 2)))));
+            l.Columns.Add(new HistogramColumn(i, plot.X + slot * i + 0.5, y, bw, h,
+                                              Math.Max(0, Math.Min(ColumnRadius, Math.Min(h / 2, bw / 2)))));
         }
 
         l.BaselineY = Js.Round(plot.Y + plot.H) + 0.5;
@@ -93,9 +135,25 @@ public sealed class HistogramLayout
         if (mx >= plot.X && mx <= plot.X + plot.W)
         {
             // The label flips to the rule's left near the right edge.
-            bool flip = mx > plot.X + plot.W - 46;
-            l.Mean = new MeanRule(mx, plot.Y - 6, plot.Y + plot.H, "avg " + Format.Int(avg),
-                                  mx + (flip ? -4 : 4), flip ? LabelAlign.Right : LabelAlign.Left);
+            var text = "avg " + Format.Int(avg);
+            bool flip = labelWidth != null ? mx + MeanLabelGap + labelWidth(text, true) > width : mx > plot.X + plot.W - 46;
+            l.Mean = new MeanRule(mx, plot.Y - MeanRise, plot.Y + plot.H, text,
+                                  mx + (flip ? -MeanLabelGap : MeanLabelGap), flip ? LabelAlign.Right : LabelAlign.Left);
+        }
+
+        // The middle half: from the lower quartile to the upper, kept to
+        // the plot. Hits that are all alike have no middle half to show.
+        if (q1 is double a && q3 is double b3 && double.IsFinite(a) && double.IsFinite(b3) && b3 > a)
+        {
+            double left = Math.Max(plot.X, Bx(a)), right = Math.Min(plot.X + plot.W, Bx(b3));
+            if (right > left) l.Band = new Box(left, plot.Y, right - left, plot.H);
+        }
+
+        if (median is double m && double.IsFinite(m))
+        {
+            var x = Js.Round(Bx(m)) + 0.5;
+            if (x >= plot.X && x <= plot.X + plot.W)
+                l.Median = new MedianTick(x, plot.Y + plot.H - MedianAbove, plot.Y + plot.H + MedianBelow);
         }
         return l;
     }

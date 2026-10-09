@@ -4,55 +4,42 @@
              xmlns:core="clr-namespace:Zerg.Core;assembly=Zerg.Core"
              x:Name="Self" Focusable="False" IsTabStop="False">
 
-  <!-- B against A. The sign is in the text; the colour only repeats it, in
-       the theme's own colours for good and bad news, so a reader who cannot
-       tell the two apart still reads "+" and "−". In a table the plain
-       difference sits under the percentage; on a tile, beside it. -->
-  <StackPanel VerticalAlignment="Center">
-    <StackPanel.Style>
-      <Style TargetType="StackPanel">
-        <Setter Property="HorizontalAlignment" Value="Right"/>
-        <Setter Property="Margin" Value="8,2"/>
-        <Style.Triggers>
-          <DataTrigger Binding="{Binding Beside, ElementName=Self}" Value="True">
-            <Setter Property="Orientation" Value="Horizontal"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="Margin" Value="0"/>
-          </DataTrigger>
-        </Style.Triggers>
-      </Style>
-    </StackPanel.Style>
-    <TextBlock Text="{Binding Value.Main, ElementName=Self}" FontSize="13" HorizontalAlignment="Right"
-               VerticalAlignment="Center" Typography.NumeralAlignment="Tabular">
+  <!-- B against A, in a table cell: the change, and under it the plain
+       difference where the change is a percentage. The sign is in the text;
+       the colour only repeats it, in the theme's own colours for good and
+       bad news, so a reader who cannot tell the two apart still reads "+"
+       and "−". A change that is neither better nor worse keeps its weight
+       in the quieter ink; nothing to compare is a dash, as quiet as a dash
+       is on a plain row. The two lines are 14 and 13 units of the cell, so
+       they stand beside the two figures they are about. -->
+  <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right">
+    <TextBlock Text="{Binding Value.Main, ElementName=Self}" FontSize="11.5" HorizontalAlignment="Right"
+               LineHeight="14" LineStackingStrategy="BlockLineHeight" Typography.NumeralAlignment="Tabular">
       <TextBlock.Style>
         <Style TargetType="TextBlock">
           <Setter Property="FontWeight" Value="SemiBold"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+          <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
           <Style.Triggers>
             <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.Better}">
-              <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}"/>
+              <Setter Property="Foreground" Value="{DynamicResource LiveBrush}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.Worse}">
-              <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+              <Setter Property="Foreground" Value="{DynamicResource CritBrush}"/>
             </DataTrigger>
             <DataTrigger Binding="{Binding Value.Tone, ElementName=Self}" Value="{x:Static core:ChangeTone.None}">
               <Setter Property="FontWeight" Value="Normal"/>
-              <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+              <Setter Property="Foreground" Value="{DynamicResource Text4Brush}"/>
             </DataTrigger>
           </Style.Triggers>
         </Style>
       </TextBlock.Style>
     </TextBlock>
-    <TextBlock Text="{Binding Value.Sub, ElementName=Self}" FontSize="10.5" VerticalAlignment="Center"
-               Typography.NumeralAlignment="Tabular">
+    <TextBlock Text="{Binding Value.Sub, ElementName=Self}" FontSize="10" HorizontalAlignment="Right"
+               LineHeight="13" LineStackingStrategy="BlockLineHeight" Typography.NumeralAlignment="Tabular"
+               Foreground="{DynamicResource Text2Brush}">
       <TextBlock.Style>
         <Style TargetType="TextBlock">
-          <Setter Property="HorizontalAlignment" Value="Right"/>
-          <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
           <Style.Triggers>
-            <DataTrigger Binding="{Binding Beside, ElementName=Self}" Value="True">
-              <Setter Property="Margin" Value="8,1,0,0"/>
-            </DataTrigger>
             <Trigger Property="Text" Value="">
               <Setter Property="Visibility" Value="Collapsed"/>
             </Trigger>

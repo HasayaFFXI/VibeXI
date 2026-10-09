@@ -13,16 +13,28 @@ namespace Zerg;
 public sealed partial class MainViewModel
 {
     const char KeyGap = (char)1;
-    const string OthersKey = "*others";
 
     // ----------------------------------------------------------------- tiles
 
     [ObservableProperty] private string totalText = "0";
     [ObservableProperty] private string totalNote = "";
+    /// <summary>What the total is a total of: "Total damage", or with
+    /// targets isolated "Damage to Kirin", "Damage to 3 targets"; with
+    /// damage types, "Melee damage"; with both, "Melee damage to Kirin".</summary>
+    [ObservableProperty] private string totalLabel = Targets.Heading([]);
+    /// <summary>With anything isolated, every one of them by name, for the
+    /// pointer: the label cuts a long name and counts several.</summary>
+    [ObservableProperty] private string? totalTip;
+    /// <summary>With anything isolated, what leads the note under the total:
+    /// how much of all the damage this is ("48.1% of 227,587 · ").</summary>
+    string totalShare = "";
+    /// <summary>With targets isolated, why the party's DPS is a dash.</summary>
+    [ObservableProperty] private string? dpsTip;
     [ObservableProperty] private string clockText = "00:00";
     [ObservableProperty] private string clockNote = None;
-    /// <summary>The session's state, for the colour of the clock.</summary>
-    [ObservableProperty] private SessionLight light;
+    /// <summary>The word in the tag beside the clock, which also colours the
+    /// clock: the session's state, or Saved over a parse in the View section.</summary>
+    [ObservableProperty] private SessionTag tag;
     [ObservableProperty] private string dpsText = "0.0";
     [ObservableProperty] private string dpsNote = None;
     [ObservableProperty] private string topName = None;
@@ -33,12 +45,67 @@ public sealed partial class MainViewModel
     [ObservableProperty] private string bigText = "0";
     [ObservableProperty] private string bigNote = None;
 
+    // The marks beside three of the figures. Drawn from a count, as the
+    // figures' notes are, and never on the draw beat: between two events
+    // they stand still, while the rate beside one of them falls.
+
+    /// <summary>There is something for the marks to draw: the clock has
+    /// started and damage has been dealt.</summary>
+    [ObservableProperty] private bool hasMarks;
+    /// <summary>Beside the total: the party's damage in each stretch of the session.</summary>
+    [ObservableProperty] private IReadOnlyList<double> totalMark = [];
+    /// <summary>How long a stretch is: "per 20 s", longer in a long session.</summary>
+    [ObservableProperty] private string totalMarkCaption = BandMarks.Caption(BandMarks.ShortestBucket);
+    /// <summary>Beside Party DPS: the party's DPS as it stood at the end of each stretch.</summary>
+    [ObservableProperty] private IReadOnlyList<double> dpsMark = [];
+    /// <summary>Beside Top DPS: every character's share, largest first, in their colour.</summary>
+    [ObservableProperty] private IReadOnlyList<ShareSlice> topMark = [];
+
+    /// <summary>
+    /// What a mark is given: the list it already has when the new one says
+    /// the same, so a count that changed nothing in it (a toggle, a section
+    /// switched) does not redraw it.
+    /// </summary>
+    static IReadOnlyList<T> Kept<T>(IReadOnlyList<T> had, IReadOnlyList<T>? now) =>
+        now is null ? (had.Count == 0 ? had : []) : had.SequenceEqual(now) ? had : now;
+
+    /// <summary>
+    /// The Target and Type buttons' lists, and what isolating changes in the
+    /// band of figures: the total's label and what it is a share of, and,
+    /// with a target isolated, the reason the rate beside it is a dash.
+    /// </summary>
+    void DrawTargets(Snapshot c)
+    {
+        TargetFilter.Draw(c.Targets, c.AllTargets, NameOf);
+        TypeFilter.Draw(c.Types, c.AllTypes, n => n);
+        bool isolated = c.Isolated.Count > 0, any = isolated || c.IsolatedTypes.Count > 0;
+        TotalLabel = DamageTypes.Heading(c.IsolatedTypes, c.Isolated);
+        TotalTip = DamageTypes.Told(c.IsolatedTypes, c.Isolated.Select(NameOf).ToList());
+        totalShare = any && c.Whole > 0
+            ? Format.Num(c.Totals.Total / c.Whole * 100, 1) + "% of " + Format.Int(c.Whole) + Dot
+            : "";
+        DpsTip = isolated ? "No DPS while a target is isolated: the clock is the session’s, not the time that target was fought"
+            : null;
+    }
+
     void DrawTiles(Snapshot c)
     {
         var agg = c.Totals;
         int n = agg.Actors.Count;
+        bool isolated = c.Isolated.Count > 0;
         TotalText = Format.Int(agg.Total);
-        DpsNote = n > 0 ? n + " character" + (n == 1 ? "" : "s") : None;
+        DpsNote = isolated ? "no rate for a target" : n > 0 ? n + " character" + (n == 1 ? "" : "s") : None;
+
+        // Nothing before the clock starts. The rows are the ones the
+        // cumulative chart is drawn from, so the bars add up to its lines.
+        var pulse = Shown.Session.StartedAt != null ? BandMarks.Pulse(c.Events, c.Elapsed) : null;
+        HasMarks = pulse != null;
+        TotalMark = Kept(TotalMark, pulse?.Bars);
+        if (pulse != null) TotalMarkCaption = BandMarks.Caption(pulse.Bucket);
+        // No running rate either while a target is isolated: the mark goes.
+        DpsMark = Kept(DpsMark, isolated ? null : pulse?.Running);
+        TopMark = Kept(TopMark, pulse is null ? null
+            : agg.Actors.Where(a => a.Total > 0).Select(a => new ShareSlice(a.Total, SwatchOf(a.Name))).ToList());
 
         // The count lists characters largest first, so the leader is the first.
         // The dot is the hue that character has on every chart.
@@ -76,11 +143,18 @@ public sealed partial class MainViewModel
     [ObservableProperty] private double edge = double.NaN;
     /// <summary>What an empty chart says: why there is nothing to draw.</summary>
     [ObservableProperty] private string emptyText = "";
-    public ObservableCollection<LegendRow> Legend { get; } = [];
+
+    /// <summary>Who the line that stands for several is made of just now, as
+    /// their names are drawn; null while there is no such line. The chart
+    /// names the line "3 others" and cannot say who: the switch's tooltip
+    /// does (<see cref="GroupTip"/>).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(GroupTip))]
+    private string? groupMembers;
 
     /// <summary>One line as it is drawn, with the real name it is keyed by
-    /// (null for the line that stands for several) and who is in it.</summary>
-    sealed record Drawn(string? Real, LineSeries Series, string? Members = null);
+    /// (null for the line that stands for several).</summary>
+    sealed record Drawn(string? Real, LineSeries Series);
 
     void DrawLine(Snapshot c)
     {
@@ -97,6 +171,7 @@ public sealed partial class MainViewModel
         var cum = Counting.Cumulative(c.Events, names, 0, now);
 
         var lines = cum.Series.Select(s => new Drawn(s.Name, new LineSeries(NameOf(s.Name), s.Values, ColorOf(s.Name)))).ToList();
+        string? members = null;
         if (GroupSmallLines && SmallLines.Pick(agg, Roster.Owner) is { Count: > 0 } small)
         {
             var parts = lines.Where(l => small.Contains(l.Real!)).ToList();
@@ -104,37 +179,30 @@ public sealed partial class MainViewModel
             foreach (var p in parts)
                 for (int i = 0; i < sum.Length; i++) sum[i] += p.Series.Values[i];
             lines.RemoveAll(parts.Contains);
-            lines.Add(new Drawn(null, new LineSeries(SmallLines.Name(parts.Count), sum, default, Group: true),
-                                string.Join(", ", parts.Select(p => p.Series.Name))));
+            lines.Add(new Drawn(null, new LineSeries(SmallLines.Name(parts.Count), sum, default, Group: true)));
+            // Largest first, as the table lists them.
+            members = string.Join(", ", parts.OrderByDescending(p => p.Series.Values.Length > 0 ? p.Series.Values[^1] : 0)
+                                             .Select(p => p.Series.Name));
         }
+        GroupMembers = members;
         // Largest total last, so the leading line is drawn on top of the pack.
         lines = lines.OrderBy(l => l.Series.Values.Length > 0 ? l.Series.Values[^1] : 0).ToList();
-        Line = new LineModel(cum.Times, lines.Select(l => l.Series).ToList(), cum.Live == true);
+        // Counting, and the edge is the clock: the chart rules its edge to
+        // say so. Every change of the session's state is followed by a count.
+        Line = new LineModel(cum.Times, lines.Select(l => l.Series).ToList(), cum.Live == true,
+                             Running: cum.Live == true && Shown.Session.Running);
         PanelLine = AppTheme.IsDark ? Line : Line with
         {
             Series = lines.Select(l => l.Real != null ? l.Series with { Color = PanelColorOf(l.Real) } : l.Series).ToList(),
         };
-
-        // The legend, leader first. With one line the card's title says it.
-        // The job is there as text: it is what makes job colours safe, since
-        // two warriors differ by a shade in the swatch and by name beside it.
-        lines.Reverse();
-        Rows.Sync(Legend, lines.Count < 2 ? [] : lines, l => l.Real ?? OthersKey, l => new LegendRow(l.Real ?? OthersKey), (row, l) =>
-        {
-            row.Name = l.Series.Name;
-            row.Group = l.Series.Group;
-            row.Job = l.Real != null ? JobBadge(l.Real) : "";
-            row.Swatch = l.Series.Group ? null : Solid(l.Series.Color);
-            row.Tip = l.Members;
-        });
     }
 
     // --------------------------------------------------- damage by character
 
-    [ObservableProperty] private IReadOnlyList<BarRow> bars = [];
-    [ObservableProperty] private double barsHeight = BarsLayout.HeightFor(0);
     public ObservableCollection<ActorRow> Actors { get; } = [];
     [ObservableProperty] private bool hasActors;
+    /// <summary>The line that closes the table: the party as a whole.</summary>
+    public PartyRow Party { get; } = new();
     /// <summary>
     /// The Job column is dropped while names are hidden, not printed twice or
     /// blanked: every character but the owner already has their job where
@@ -154,25 +222,33 @@ public sealed partial class MainViewModel
         // excluded, and the actions table still shows what they did.
         var actors = c.Totals.Actors.Where(a => a.Total > 0).ToList();
 
-        Bars = actors.Select(a =>
+        // The row is the bar: each is shaded to its damage out of the
+        // leader's, not out of the party's. With ten to eighteen characters
+        // nobody is over a fifth of the party, and bars to that scale would
+        // all end inside the first two columns; the Damage % beside it
+        // carries the share of the whole.
+        double top = RowMarks.Largest(actors.Select(a => a.Total));
+
+        // What the pointer resting on a row is told: who, their job in
+        // full, and the one figure the table has no column for.
+        string Tip(ActorTotals a)
         {
-            // No DPS here. It is the one figure that falls with the clock,
-            // and a hover card is written once per count: it would drift out
-            // of step with the same character's live cell in the table below.
-            var hover = new List<CardRow>();
-            if (!Aliased(a.Name) && Roster.JobTitle(a.Name) is { Length: > 0 } job) hover.Add(new CardRow("Job", job));
-            hover.Add(new CardRow("Damage", Format.Int(a.Total)));
-            hover.Add(new CardRow("Share", Format.Num(a.Share * 100, 1) + "%"));
-            hover.Add(new CardRow("Avg / action", Format.Int(a.Avg)));
-            return new BarRow(NameOf(a.Name), a.Total, ColorOf(a.Name), hover, Key: a.Name);
-        }).ToList();
-        BarsHeight = BarsLayout.HeightFor(actors.Count);
+            var full = Aliased(a.Name) ? "" : Roster.JobTitle(a.Name);
+            return NameOf(a.Name) + (full.Length > 0 ? Dot + full : "") + Dot + Format.Int(a.Avg) + " avg per action";
+        }
 
         ShowJob = !HideNames;
         HasActors = actors.Count > 0;
         Rows.Sync(Actors, actors, a => a.Name, a => new ActorRow(a.Name), (row, a) =>
         {
             row.Total = a.Total;
+            row.Shade = ShadeOf(a.Name);
+            row.Fraction = RowMarks.Fraction(a.Total, top);
+            row.IsOwner = a.Name == Roster.Owner;
+            row.Tip = Tip(a);
+            row.AccuracyRate = a.AutoAcc;
+            row.WsAccuracyRate = a.WsAcc;
+            row.PetAccuracyRate = a.PetAcc;
             row.Name = NameOf(a.Name);
             row.Swatch = SwatchOf(a.Name);
             row.Job = Roster.JobLabel(a.Name) is { Length: > 0 } job ? job : None;
@@ -180,7 +256,7 @@ public sealed partial class MainViewModel
             row.ShowJob = ShowJob;
             row.Damage = Format.Int(a.Total);
             row.Share = Percent(a.Share);
-            row.Dps = Format.Num(a.Dps, 1);
+            row.Dps = Rate(a.Total, c.Elapsed / 1000);
             row.Accuracy = Percent(a.AutoAcc);
             row.WsDamage = Whole(a.WsTotal);
             row.WsAvg = Whole(a.WsAvg);
@@ -192,24 +268,43 @@ public sealed partial class MainViewModel
             row.PetAccuracy = Percent(a.PetAcc);
         });
 
-        // Floating, the card is a strip: the bar behind the name, and the
+        // The Party line, under the columns it sums. The split columns are
+        // the party's own (Aggregate.Party): everyone's swings together,
+        // the characters at zero included, not an average of the rows. The
+        // number under Job is how many rows stand above it. Its DPS is the
+        // party's, written by the draw beat with every row's.
+        var party = c.Totals.Party;
+        Party.Count = Format.Int(actors.Count);
+        Party.Damage = Format.Int(c.Totals.Total);
+        Party.Share = c.Totals.Total > 0 ? Percent(1) : None;
+        Party.Accuracy = Percent(party.AutoAcc);
+        Party.WsDamage = Whole(party.WsTotal);
+        Party.WsAvg = Whole(party.WsAvg);
+        Party.WsShare = Percent(party.WsShare);
+        Party.WsAccuracy = Percent(party.WsAcc);
+        Party.ScDamage = Whole(party.ScTotal);
+        Party.ScShare = Percent(party.ScShare);
+        Party.PetDamage = Whole(party.PetTotal);
+        Party.PetAccuracy = Percent(party.PetAcc);
+
+        // Floating, the card is a strip: the row shaded to the share as in
+        // the table, at the strength a panel allows the colour, and the
         // three figures a glance during a fight is for. The other eleven
         // columns, DPS among them, stay on the table, so nothing in the strip
         // moves with the clock: every figure in it is a running total that
         // only a new event can change.
-        double top = actors.Count > 0 ? actors.Max(a => a.Total) : 0;
         Rows.Sync(Strip, actors, a => a.Name, a => new StripRow(a.Name), (row, a) =>
         {
-            var full = Aliased(a.Name) ? "" : Roster.JobTitle(a.Name);
             row.Name = NameOf(a.Name);
             row.Job = JobBadge(a.Name);
-            row.Fill = Solid(PanelColorOf(a.Name));
-            row.Fraction = top > 0 ? a.Total / top : 0;
+            row.Fill = PanelShadeOf(a.Name);
+            row.Edge = Solid(PanelColorOf(a.Name));
+            row.Fraction = RowMarks.Fraction(a.Total, top);
             row.Damage = Format.Int(a.Total);
             row.Share = Format.Num(a.Share * 100, 1) + "%";
             row.Accuracy = Percent(a.AutoAcc);
             row.IsOwner = a.Name == Roster.Owner;
-            row.Tip = NameOf(a.Name) + (full.Length > 0 ? Dot + full : "") + Dot + Format.Int(a.Avg) + " avg per action";
+            row.Tip = Tip(a);
         });
     }
 
@@ -240,28 +335,38 @@ public sealed partial class MainViewModel
 
     void DrawActions(Snapshot c)
     {
-        var items = new List<(ActorTotals Actor, ActionTotals? Action)>();
+        // One scale, shaded or not: a row's share is drawn to its value
+        // over the largest of its siblings. A heading's is the character's
+        // damage out of the leader's, as in the table above; an action's is
+        // its total out of that character's largest action (Most).
+        var items = new List<(ActorTotals Actor, ActionTotals? Action, double Most)>();
+        double top = RowMarks.Largest(c.Totals.Actors.Select(a => a.Total));
         foreach (var a in c.Totals.Actors)
         {
-            items.Add((a, null));
+            items.Add((a, null, top));
             if (!openActions.Contains(a.Name)) continue;
-            foreach (var act in a.ActionList) items.Add((a, act));
+            double most = RowMarks.Largest(a.ActionList.Select(x => x.Total));
+            foreach (var act in a.ActionList) items.Add((a, act, most));
         }
         HasActions = items.Count > 0;
 
-        static string Key((ActorTotals Actor, ActionTotals? Action) i) =>
+        static string Key((ActorTotals Actor, ActionTotals? Action, double Most) i) =>
             i.Action == null ? i.Actor.Name : i.Actor.Name + KeyGap + i.Action.Name;
 
         Rows.Sync(Actions, items, Key, i => new ActionRow(Key(i), i.Actor.Name, i.Action?.Name), (row, i) =>
         {
-            var (a, act) = i;
+            var (a, act, most) = i;
             if (act == null)
             {
                 row.Name = NameOf(a.Name);
                 row.Swatch = SwatchOf(a.Name);
                 row.PanelSwatch = Solid(PanelColorOf(a.Name));
+                row.Shade = HeadingShadeOf(a.Name);
+                row.PanelShade = PanelHeadingShadeOf(a.Name);
+                row.Fraction = RowMarks.Fraction(a.Total, most);
                 row.Job = JobBadge(a.Name);
                 row.Total = Format.Int(a.Total);
+                row.Share = Format.Num(a.Share * 100, 1) + "%";
                 row.Open = openActions.Contains(a.Name);
                 row.Label = "Actions of " + NameOf(a.Name);
                 return;
@@ -274,6 +379,10 @@ public sealed partial class MainViewModel
             row.Min = Format.Int(act.Min);
             row.Max = Format.Int(act.Max);
             row.Share = Format.Num(a.Total != 0 ? act.Total / a.Total * 100 : 0, 1) + "%";
+            row.ShareFraction = RowMarks.Fraction(act.Total, most);
+            // Least to greatest with the average between, on a line as long
+            // as the character's biggest hit of any action.
+            (row.SpreadMin, row.SpreadAvg, row.SpreadMax) = RowMarks.Spread(act.Min, act.Avg, act.Max, a.Max);
             row.Selected = drill is { } d && d.Actor == a.Name && d.Action == act.Name;
             row.Label = NameOf(a.Name) + ", " + act.Name;
         });
@@ -290,6 +399,8 @@ public sealed partial class MainViewModel
     [ObservableProperty] private bool drillOpen;
     [ObservableProperty] private string drillTitle = "";
     [ObservableProperty] private string drillNote = "";
+    /// <summary>Whose action it is, as a swatch before the note.</summary>
+    [ObservableProperty] private Brush? drillSwatch;
     [ObservableProperty] private IReadOnlyList<StatTile> drillTiles = [];
     [ObservableProperty] private HistogramModel? histogram;
     [ObservableProperty] private Color histogramFill = Colors.Gray;
@@ -306,7 +417,11 @@ public sealed partial class MainViewModel
         bool same = drill is { } d && d.Actor == row.Actor && d.Action == row.Action;
         drill = same ? null : (row.Actor, row.Action);
         Recount();
-        if (drill != null) DrillOpened?.Invoke();
+        if (drill != null)
+        {
+            OpenDrillPane(Zerg.Core.Layout.PaneLayouts.DamageSection, Zerg.Core.Layout.PaneLayouts.Drill);
+            DrillOpened?.Invoke();
+        }
     }
 
     [RelayCommand]
@@ -329,6 +444,7 @@ public sealed partial class MainViewModel
         var d = Counting.Distribution(c.Events, on.Actor, on.Action);
         DrillOpen = true;
         DrillTitle = on.Action;
+        DrillSwatch = SwatchOf(on.Actor);
         DrillNote = NameOf(on.Actor) + Dot + Format.Int(d.Count) + " hit" + (d.Count == 1 ? "" : "s") +
                     (d.Misses != 0 ? Dot + d.Misses.ToString(CultureInfo.InvariantCulture) + " miss" + (d.Misses == 1 ? "" : "es") : "") +
                     Dot + Format.Int(d.Total) + " total damage";
@@ -363,7 +479,9 @@ public sealed partial class MainViewModel
                        (d.Crits != 0 ? Dot + Format.Num(d.CritRate * 100, 0) + "% crit" : "") +
                        (d.Bursts != 0 ? Dot + d.Bursts.ToString(CultureInfo.InvariantCulture) + " magic burst" : "");
 
-        // Newest first.
+        // Newest first. Each with how far it fell from the average, out of
+        // the furthest any of them fell: the length of the small bar beside it.
+        double furthest = RowMarks.Furthest(d.Events.Select(e => e.Dmg), d.Avg);
         var hits = new List<HitRow>(d.Events.Count);
         for (int i = d.Events.Count - 1; i >= 0; i--)
         {
@@ -371,8 +489,9 @@ public sealed partial class MainViewModel
             var delta = e.Dmg - d.Avg;
             hits.Add(new HitRow(Format.Elapsed(e.T),
                                 e.Target.Length > 0 ? NameOf(e.Target) : None,
-                                Format.Int(e.Dmg) + (e.Crit ? " ✦" : ""),
-                                (delta >= 0 ? "+" : "−") + Format.Int(Math.Abs(delta))));
+                                Format.Int(e.Dmg),
+                                (delta >= 0 ? "+" : "−") + Format.Int(Math.Abs(delta)),
+                                RowMarks.Offset(e.Dmg, d.Avg, furthest), e.Crit));
         }
         DrillHits = hits;
     }

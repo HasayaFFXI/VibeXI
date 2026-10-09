@@ -4,10 +4,11 @@ using System.Windows.Controls;
 namespace Zerg.Views;
 
 /// <summary>
-/// The head of the View section: the place to open one exported parse, and,
-/// once it is open, what it is and the Damage | Healing switch over the cards
-/// below. Its data context is the <see cref="MainViewModel"/>, which draws
-/// the parse with the tiles and cards that draw the session.
+/// The View section's band, under the command bar: the place to open one
+/// exported parse, and, once it is open, one line saying what it is, with
+/// the Damage | Healing switch over the figures and cards below. Its data
+/// context is the <see cref="MainViewModel"/>, which draws the parse with
+/// the band of figures and the cards that draw the session.
 /// </summary>
 public partial class ViewCard : UserControl
 {
@@ -17,7 +18,7 @@ public partial class ViewCard : UserControl
 
     // ------------------------------------------------------ dropping a file
 
-    /// <summary>Only a file can be dropped on the card; anything else is turned away.</summary>
+    /// <summary>Only a file can be dropped on the band; anything else is turned away.</summary>
     void OnDrag(object sender, DragEventArgs e)
     {
         bool file = CompareSection.FileIn(e) != null;

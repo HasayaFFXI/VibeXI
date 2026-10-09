@@ -1,11 +1,12 @@
 <UserControl x:Class="Zerg.Views.ViewCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Zerg.Views">
   <UserControl.Resources>
 
     <!-- A line of small print that is not there when it has nothing to say. -->
     <Style x:Key="Quiet" TargetType="TextBlock" BasedOn="{StaticResource Label}">
-      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
       <Style.Triggers>
         <Trigger Property="Text" Value="">
           <Setter Property="Visibility" Value="Collapsed"/>
@@ -13,81 +14,147 @@
       </Style.Triggers>
     </Style>
 
+    <!-- A fact about the parse: what it is, then its value. -->
+    <Style x:Key="Fact" TargetType="TextBlock" BasedOn="{StaticResource Label}">
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0,0,6,0"/>
+    </Style>
+    <Style x:Key="FactValue" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0,0,16,0"/>
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+
+    <!-- The band's two buttons: ghost buttons, a size down to stand in a
+         band 38 tall. -->
+    <Style x:Key="BandButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+      <Setter Property="Height" Value="22"/>
+      <Setter Property="Padding" Value="10,0"/>
+      <Setter Property="FontSize" Value="11"/>
+    </Style>
+
+    <!-- Why the last file would not open: red, behind a warning. Not there
+         with nothing to say. Whatever was open is still open. -->
+    <Style x:Key="Refusal" TargetType="DockPanel">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding ViewError}" Value="">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
   </UserControl.Resources>
 
-  <!-- The whole card takes a dropped file, open or empty. -->
-  <Border AllowDrop="True" DragEnter="OnDrag" DragOver="OnDrag" DragLeave="OnLeave" Drop="OnDrop">
-    <Border.Style>
-      <Style TargetType="Border" BasedOn="{StaticResource Card}">
-        <Style.Triggers>
-          <DataTrigger Binding="{Binding ViewOver}" Value="True">
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-          </DataTrigger>
-        </Style.Triggers>
-      </Style>
-    </Border.Style>
-    <StackPanel>
+  <!-- The whole band takes a dropped file, a parse open in it or not. -->
+  <Grid AllowDrop="True" DragEnter="OnDrag" DragOver="OnDrag" DragLeave="OnLeave" Drop="OnDrop">
 
-      <!-- Nothing open: what the section is for, and the place to put a parse. -->
-      <StackPanel Visibility="{Binding HasParse, Converter={StaticResource Hidden}}">
-        <TextBlock Text="View a parse" Style="{StaticResource CardTitle}"/>
+    <!-- Nothing open: what the section is for, and the place to put a parse. -->
+    <Border Background="{DynamicResource Bg1Brush}" BorderBrush="{DynamicResource Line2Brush}" BorderThickness="0,0,0,1"
+            Padding="16,11,16,31" Visibility="{Binding HasParse, Converter={StaticResource Hidden}}">
+      <StackPanel>
+        <TextBlock Text="View a parse" Style="{StaticResource SlotTitle}"/>
         <TextBlock Text="Open or drop a parse exported from Zerg to look through its damage and its healing. The session goes on being measured underneath, and Damage and Healing return to it."
-                   Style="{StaticResource CardNote}"/>
-        <Grid Margin="0,12,0,0">
-          <!-- Dashed: an outline of where a parse goes. -->
-          <Rectangle RadiusX="6" RadiusY="6" StrokeThickness="1" StrokeDashArray="4 3"
-                     Stroke="{DynamicResource ControlStrongStrokeColorDefaultBrush}" Fill="Transparent"/>
-          <StackPanel Margin="16,18" HorizontalAlignment="Center">
-            <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="13"
+                   Style="{StaticResource Label}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+        <!-- An outline of where a parse goes: dashed, and whole and amber
+             while a file is held over the band. Never wider than the
+             narrowest window has room for. -->
+        <Grid Width="458" Height="74" HorizontalAlignment="Left" Margin="0,12,0,0">
+          <Rectangle RadiusX="6" RadiusY="6" SnapsToDevicePixels="True">
+            <Rectangle.Style>
+              <Style TargetType="Rectangle">
+                <Setter Property="StrokeThickness" Value="1"/>
+                <Setter Property="StrokeDashArray" Value="4 3"/>
+                <Setter Property="Stroke" Value="{DynamicResource Line3Brush}"/>
+                <Setter Property="Fill" Value="Transparent"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding ViewOver}" Value="True">
+                    <Setter Property="StrokeThickness" Value="2"/>
+                    <Setter Property="StrokeDashArray" Value="{x:Null}"/>
+                    <Setter Property="Stroke" Value="{DynamicResource AccentBrush}"/>
+                    <Setter Property="Fill" Value="{DynamicResource DropZoneFillBrush}"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Rectangle.Style>
+          </Rectangle>
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="Drop an exported parse here, or open one" Style="{StaticResource Label}" FontSize="12"
                        HorizontalAlignment="Center"/>
-            <Button Content="Open…" Command="{Binding OpenParseCommand}" Style="{DynamicResource AccentButtonStyle}"
-                    ToolTip="Open an exported parse" HorizontalAlignment="Center" Margin="0,10,0,0"
+            <Button Content="Open…" Command="{Binding OpenParseCommand}" Style="{StaticResource FilledButton}" Height="24"
+                    ToolTip="Open an exported parse" HorizontalAlignment="Center" Margin="0,9,0,0"
                     AutomationProperties.Name="Open a parse to view"/>
           </StackPanel>
         </Grid>
-      </StackPanel>
-
-      <!-- A parse: what it is, and which side of it is on screen below. -->
-      <StackPanel Visibility="{Binding HasParse, Converter={StaticResource Visible}}">
-        <DockPanel>
-          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-            <Button Style="{StaticResource SmallButton}" Content="Replace…" Command="{Binding OpenParseCommand}"
-                    ToolTip="Open another parse in this one's place" Margin="6,0,0,0"
-                    AutomationProperties.Name="Open another parse to view"/>
-            <Button Style="{StaticResource SmallButton}" Content="Close" Command="{Binding CloseParseCommand}"
-                    ToolTip="Close this parse and empty the section" Margin="6,0,0,0"
-                    AutomationProperties.Name="Close the viewed parse"/>
-          </StackPanel>
-          <TextBlock Text="{Binding ViewedName}" ToolTip="{Binding ViewedTip}" Style="{StaticResource CardTitle}"
-                     TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Background="Transparent"/>
+        <DockPanel Style="{StaticResource Refusal}" Margin="0,10,0,0">
+          <TextBlock DockPanel.Dock="Left" Text="&#xE7BA;" FontFamily="{StaticResource IconFont}" FontSize="11"
+                     Foreground="{DynamicResource CritBrush}" VerticalAlignment="Top" Margin="0,2,7,0"/>
+          <TextBlock Text="{Binding ViewError}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource CritBrush}"
+                     AutomationProperties.LiveSetting="Polite"/>
         </DockPanel>
-
-        <WrapPanel Margin="0,10,0,0">
-          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0"
-                      ToolTip="Look through the damage of this parse, or its healing">
-            <TextBlock Text="Show" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <RadioButton Style="{StaticResource Segment}" GroupName="viewMode" Content="Damage"
-                         IsChecked="{Binding ViewMode, Converter={StaticResource Equals}, ConverterParameter=Damage}"
-                         AutomationProperties.Name="View damage"/>
-            <RadioButton Style="{StaticResource Segment}" GroupName="viewMode" Content="Healing" Margin="0"
-                         IsChecked="{Binding ViewMode, Converter={StaticResource Equals}, ConverterParameter=Healing}"
-                         AutomationProperties.Name="View healing"/>
-          </StackPanel>
-          <TextBlock Text="Started" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-          <TextBlock Text="{Binding ViewedStarted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,20,0"
-                     Typography.NumeralAlignment="Tabular"/>
-          <TextBlock Text="Length" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-          <TextBlock Text="{Binding ViewedLength}" FontSize="12" VerticalAlignment="Center" Margin="0,0,20,0"
-                     Typography.NumeralAlignment="Tabular"/>
-          <TextBlock Text="Party" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-          <TextBlock Text="{Binding ViewedParty}" FontSize="12" VerticalAlignment="Center"/>
-        </WrapPanel>
-        <TextBlock Text="{Binding ViewedSkipped}" Style="{StaticResource Quiet}" Margin="0,6,0,0"/>
       </StackPanel>
+    </Border>
 
-      <!-- Why the last file would not open. Whatever was open is still open. -->
-      <TextBlock Text="{Binding ViewError}" Style="{StaticResource Quiet}" Margin="0,8,0,0"
-                 Foreground="{DynamicResource SystemFillColorCriticalBrush}" AutomationProperties.LiveSetting="Polite"/>
-    </StackPanel>
-  </Border>
+    <!-- A parse: its name, which side of it is on screen below, when it was
+         and how long, and the way to put another in its place or close it.
+         An amber edge at the left says this band is not the session. In a
+         window too narrow for the line, it wraps group by group and the
+         band grows. -->
+    <Grid Background="{DynamicResource Bg2Brush}" MinHeight="{StaticResource ViewBandHeight}"
+          Visibility="{Binding HasParse, Converter={StaticResource Visible}}">
+      <Rectangle Width="2" HorizontalAlignment="Left" Fill="{DynamicResource AccentBrush}"/>
+      <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+      <DockPanel Margin="14,7,12,7">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="12,1,0,0">
+          <Button Style="{StaticResource BandButton}" Content="Replace…" Command="{Binding OpenParseCommand}"
+                  ToolTip="Open another parse in this one's place"
+                  AutomationProperties.Name="Open another parse to view"/>
+          <Button Style="{StaticResource BandButton}" Content="Close" Command="{Binding CloseParseCommand}"
+                  ToolTip="Close this parse and empty the section" Margin="7,0,0,0"
+                  AutomationProperties.Name="Close the viewed parse"/>
+        </StackPanel>
+
+        <v:BarWrap>
+          <TextBlock Text="{Binding ViewedName}" ToolTip="{Binding ViewedTip}" Style="{StaticResource SlotTitle}"
+                     TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Background="Transparent" MaxWidth="360"
+                     Margin="0,0,18,0"/>
+          <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
+                      ToolTip="Look through the damage of this parse, or its healing">
+            <TextBlock Text="Show" Style="{StaticResource Fact}" Margin="0,0,8,0"/>
+            <Border Style="{StaticResource SegmentGroup}">
+              <StackPanel Orientation="Horizontal">
+                <RadioButton Style="{StaticResource Segment}" GroupName="viewMode" Content="Damage"
+                             IsChecked="{Binding ViewMode, Converter={StaticResource Equals}, ConverterParameter=Damage}"
+                             AutomationProperties.Name="View damage"/>
+                <RadioButton Style="{StaticResource Segment}" GroupName="viewMode" Content="Healing"
+                             IsChecked="{Binding ViewMode, Converter={StaticResource Equals}, ConverterParameter=Healing}"
+                             AutomationProperties.Name="View healing"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" MinHeight="24">
+            <TextBlock Text="Started" Style="{StaticResource Fact}"/>
+            <TextBlock Text="{Binding ViewedStarted}" Style="{StaticResource FactValue}"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" MinHeight="24">
+            <TextBlock Text="Length" Style="{StaticResource Fact}"/>
+            <TextBlock Text="{Binding ViewedLength}" Style="{StaticResource FactValue}"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" MinHeight="24">
+            <TextBlock Text="Party" Style="{StaticResource Fact}"/>
+            <TextBlock Text="{Binding ViewedParty}" Style="{StaticResource FactValue}"/>
+          </StackPanel>
+          <!-- What of the file was not understood, when anything was not. -->
+          <TextBlock Text="{Binding ViewedSkipped}" Style="{StaticResource Quiet}" Margin="0,0,16,0"/>
+          <DockPanel Style="{StaticResource Refusal}" MinHeight="24">
+            <TextBlock DockPanel.Dock="Left" Text="&#xE7BA;" FontFamily="{StaticResource IconFont}" FontSize="11"
+                       Foreground="{DynamicResource CritBrush}" VerticalAlignment="Center" Margin="0,1,7,0"/>
+            <TextBlock Text="{Binding ViewError}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource CritBrush}" ToolTip="{Binding ViewError}"
+                       AutomationProperties.LiveSetting="Polite"/>
+          </DockPanel>
+        </v:BarWrap>
+      </DockPanel>
+    </Grid>
+  </Grid>
 </UserControl>

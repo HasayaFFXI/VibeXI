@@ -1,0 +1,13 @@
+<Project>
+
+  <!-- Zerg's version, and the only place it is written. Every project under
+       apps/zerg is stamped with it, and AppInfo.Version reads it back out of
+       the exe. CHANGELOG.md says what each version was; CLAUDE.md, "Versions",
+       says when the number moves. -->
+  <PropertyGroup>
+    <Version>0.2.1</Version>
+    <!-- The version string is shown to players; keep the git hash out of it. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+</Project>

@@ -69,7 +69,7 @@ public sealed record BarPair(double A, double B, string TextA, string TextB);
 /// <summary>One of the six figures across the top.</summary>
 /// <param name="SubA">A line under A's figure ("12 WS · avg 1,204"), or null.</param>
 public sealed record CompareTile(string Label, string? Tip, string A, string B, string? SubA, string? SubB,
-                                 Change Change, bool Hero = false);
+                                 Change Change);
 
 /// <summary>One time of the cumulative chart, as a table row.</summary>
 public sealed record PaceLine(string Time, string A, string B, string Difference);
@@ -104,10 +104,19 @@ public sealed record HealerLine(string? Key, BarPair Healing, Change HealingChan
                                 AB Biggest, AB Pet, IReadOnlyList<HealLine> Heals);
 
 /// <summary>One damage type, both runs.</summary>
-public sealed record KindLine(string Label, BarPair Damage, Change Change, AB Share);
+public sealed record KindLine(string Label, BarPair Damage, Change Change, AB Share)
+{
+    /// <summary>The type it is keyed by (<see cref="DamageTypes.Of"/>): "ws" for "Weaponskills".</summary>
+    public string Key { get; init; } = Label;
+}
 
 /// <summary>A total for both runs under one name: a target, or a healing spell.</summary>
-public sealed record TotalLine(string Name, BarPair Amount, Change Change);
+public sealed record TotalLine(string Name, BarPair Amount, Change Change)
+{
+    /// <summary>The name it is keyed by, where that is not the name as
+    /// drawn: "" for the rows that name no target, drawn as a dash.</summary>
+    public string Key { get; init; } = Name;
+}
 
 /// <summary>
 /// Who a row is: what it is called, the job (or jobs) behind it, and which
@@ -159,6 +168,18 @@ public sealed class CompareSheet
     public IReadOnlyList<ActorLine> Actors { get; private init; } = [];
     public IReadOnlyList<KindLine> Kinds { get; private init; } = [];
     public IReadOnlyList<TotalLine> Targets { get; private init; } = [];
+    /// <summary>The targets the damage of both runs is isolated to, in the
+    /// order they are picked from; none while every target counts.</summary>
+    public IReadOnlyList<string> Isolated { get; private init; } = [];
+    /// <summary>Every target of either run, in the order they are picked
+    /// from, with what it took in each (0 where a run never hit it).</summary>
+    public IReadOnlyList<PairTotal> TargetList { get; private init; } = [];
+    /// <summary>The damage types both runs are isolated to, in the order
+    /// they are picked from; none while every type counts.</summary>
+    public IReadOnlyList<string> IsolatedTypes { get; private init; } = [];
+    /// <summary>Every damage type of either run, by its key, in the order
+    /// they are picked from, with what it came to in each.</summary>
+    public IReadOnlyList<PairTotal> TypeList { get; private init; } = [];
 
     /// <summary>The whole party's healing, which leads the healing table.</summary>
     public HealerLine Party { get; private init; } = null!;
@@ -191,21 +212,40 @@ public sealed class CompareSheet
     /// <param name="skillchains">Whether skillchain damage counts, in both runs alike.</param>
     /// <param name="hideNames">Draw every character as their job. Every one:
     /// a comparison has no owner, since the two files may be two people's.</param>
-    public static CompareSheet Of(ImportedParse a, ImportedParse b, bool byJob, bool skillchains, bool hideNames)
+    /// <param name="targets">Targets to isolate in both runs, by name; null
+    /// or empty for every target. The damage figures, tables and line are
+    /// then of the damage dealt to those. <see cref="Targets"/> is not: it
+    /// goes on listing every target, so one is seen among the rest. No DPS
+    /// is given meanwhile (<see cref="Snapshot.Rate"/>): a dash, in the
+    /// figures and in every row.</param>
+    /// <param name="types">Damage types to isolate in both runs
+    /// (<see cref="DamageTypes"/>); null or empty for every type.
+    /// <see cref="Kinds"/> goes on listing them all, each list being of what
+    /// the other filter leaves, and the rates stay.</param>
+    public static CompareSheet Of(ImportedParse a, ImportedParse b, bool byJob, bool skillchains, bool hideNames,
+                                  IReadOnlySet<string>? targets = null, IReadOnlySet<string>? types = null)
     {
-        var ma = Compare.Measure(a, skillchains, byJob);
-        var mb = Compare.Measure(b, skillchains, byJob);
+        var ma = Compare.Measure(a, skillchains, byJob, targets, types);
+        var mb = Compare.Measure(b, skillchains, byJob, targets, types);
         var d = Compare.Diff(ma, mb);
         var names = new Naming(d, ma, mb, byJob, hideNames);
+        IReadOnlyList<string> isolated = Zerg.Core.Targets.Only(targets) is { } only ? Zerg.Core.Targets.Sorted(only) : [];
+        IReadOnlyList<string> isolatedTypes = Zerg.Core.Targets.Only(types) is { } onlyTypes ? DamageTypes.Sorted(onlyTypes) : [];
+        var byName = d.Targets.ToDictionary(t => t.Key, StringComparer.Ordinal);
+        var byType = d.Kinds.ToDictionary(k => k.Key, StringComparer.Ordinal);
 
         return new CompareSheet
         {
             A = ma, B = mb, ByJob = byJob,
-            DamageTiles = TilesOfDamage(ma, mb, skillchains),
+            Isolated = isolated,
+            TargetList = Zerg.Core.Targets.Pickable(byName.Keys).Select(n => byName[n]).ToList(),
+            IsolatedTypes = isolatedTypes,
+            TypeList = DamageTypes.Sorted(byType.Keys).Select(k => new PairTotal(k, byType[k].A, byType[k].B)).ToList(),
+            DamageTiles = TilesOfDamage(ma, mb, skillchains, isolated, isolatedTypes),
             HealTiles = TilesOfHealing(ma, mb),
             DamagePace = Compare.Pace(ma, mb),
             HealPace = HealingPace(ma, mb),
-            Actors = d.Rows.Select(r => ActorOf(r, d)).ToList(),
+            Actors = d.Rows.Select(r => ActorOf(r, d, rates: isolated.Count == 0)).ToList(),
             Kinds = KindsOf(d, ma, mb),
             Targets = TotalsOf(d.Targets, true, true, n => n),
             Party = HealerOf(null, ma, mb, Side.Of(ma, ma.Heal), Side.Of(mb, mb.Heal), HealMax(d), []),
@@ -222,16 +262,22 @@ public sealed class CompareSheet
 
     static CompareTile Tile(string label, double? a, double? b, Func<double, string> format, ChangeKind kind, int good,
                             string? tip = null, Func<Measurement, string>? sub = null, Measurement? ma = null,
-                            Measurement? mb = null, bool hero = false) =>
+                            Measurement? mb = null) =>
         new(label, tip, a is double x ? format(x) : Dash, b is double y ? format(y) : Dash,
-            sub != null ? sub(ma!) : null, sub != null ? sub(mb!) : null, Change.Of(a, b, kind, format, good), hero);
+            sub != null ? sub(ma!) : null, sub != null ? sub(mb!) : null, Change.Of(a, b, kind, format, good));
 
-    static List<CompareTile> TilesOfDamage(Measurement ma, Measurement mb, bool skillchains) =>
+    /// <summary>Why a rate is a dash while targets are isolated.</summary>
+    public const string NoRate = "No DPS while a target is isolated: the clock is the whole run’s, not the time that " +
+                                 "target was fought";
+
+    static List<CompareTile> TilesOfDamage(Measurement ma, Measurement mb, bool skillchains, IReadOnlyList<string> isolated,
+                                           IReadOnlyList<string> types) =>
     [
-        Tile("Total damage", ma.Total, mb.Total, Format.Int, ChangeKind.Percent, 1, hero: true),
+        Tile(DamageTypes.Heading(types, isolated), ma.Total, mb.Total, Format.Int, ChangeKind.Percent, 1,
+             DamageTypes.Told(types, isolated)),
         // Neutral on purpose: a shorter run is not obviously a better one.
         Tile("Length", ma.Duration, mb.Duration, Clock, ChangeKind.Time, 0),
-        Tile("Party DPS", ma.Dps, mb.Dps, v => Format.Num(v, 1), ChangeKind.Percent, 1),
+        Tile("Party DPS", ma.Dps, mb.Dps, v => Format.Num(v, 1), ChangeKind.Percent, 1, isolated.Count > 0 ? NoRate : null),
         Tile("Accuracy", ma.Accuracy, mb.Accuracy, v => Percent(v), ChangeKind.Points, 1,
              "Party melee and ranged swings that connected, out of all attempted: the character table's Accuracy, for everyone"),
         Tile("WS damage", ma.WsTotal, mb.WsTotal, Format.Int, ChangeKind.Percent, 1,
@@ -247,7 +293,7 @@ public sealed class CompareSheet
         return
         [
             Tile("Total healing", Of(ma, h => h.Total), Of(mb, h => h.Total), Format.Int, ChangeKind.Percent, 1,
-                 "Every cure, waltz and healing ability. Pet heals are not included", hero: true),
+                 "Every cure, waltz and healing ability. Pet heals are not included"),
             Tile("Length", ma.Duration, mb.Duration, Clock, ChangeKind.Time, 0),
             Tile("Party HPS", Hps(ma), Hps(mb), v => Format.Num(v, 1), ChangeKind.Percent, 1),
             // Neutral: more casts is not better healing.
@@ -284,17 +330,19 @@ public sealed class CompareSheet
 
     // ---------------------------------------------------------------- damage
 
-    static ActorLine ActorOf(Pair<ActorTotals> r, CompareRows d)
+    /// <param name="rates">False while targets are isolated: the row's DPS is a dash.</param>
+    static ActorLine ActorOf(Pair<ActorTotals> r, CompareRows d, bool rates)
     {
         double max = 0;
         foreach (var x in d.Rows) max = Math.Max(max, Math.Max(x.A?.Total ?? 0, x.B?.Total ?? 0));
         var (a, b) = (r.A, r.B);
+        double? dpsA = rates ? a?.Dps : null, dpsB = rates ? b?.Dps : null;
         return new ActorLine(r.Key, a != null, b != null,
             Bars(a?.Total, b?.Total, max),
             // Missing from one run, the total there is nothing: the row reads "new", or as all lost.
             Change.Of(a != null ? a.Total : 0, b != null ? b.Total : 0, ChangeKind.Percent, Format.Int, 1),
-            new AB(Rate(a?.Dps), Rate(b?.Dps)),
-            Change.Of(a?.Dps, b?.Dps, ChangeKind.Percent, v => Format.Num(v, 1), 1),
+            new AB(Rate(dpsA), Rate(dpsB)),
+            Change.Of(dpsA, dpsB, ChangeKind.Percent, v => Format.Num(v, 1), 1),
             new AB(Percent(a?.AutoAcc), Percent(b?.AutoAcc)),
             Change.Of(a?.AutoAcc, b?.AutoAcc, ChangeKind.Points, v => Percent(v), 1),
             new AB(Whole(a?.WsAvg), Whole(b?.WsAvg)),
@@ -401,9 +449,13 @@ public sealed class CompareSheet
         double max = 0;
         foreach (var k in d.Kinds) max = Math.Max(max, Math.Max(k.A, k.B));
         static double? Part(double v, double total) => total != 0 && !double.IsNaN(total) ? v / total : null;
+        // A share is of every type's damage, whichever are isolated: the
+        // run's total is then only the isolated types', and a share of that
+        // would put the others over 100%.
+        double wholeA = ma.Kinds.Values.Sum(), wholeB = mb.Kinds.Values.Sum();
         return d.Kinds.Select(k => new KindLine(k.Label, Bars(k.A, k.B, max),
             Change.Of(k.A, k.B, ChangeKind.Percent, Format.Int, 1),
-            new AB(Percent(Part(k.A, ma.Total)), Percent(Part(k.B, mb.Total))))).ToList();
+            new AB(Percent(Part(k.A, wholeA)), Percent(Part(k.B, wholeB)))) { Key = k.Key }).ToList();
     }
 
     /// <param name="hasA">Whether run A could have this figure at all; without, its side is a dash.</param>
@@ -416,7 +468,7 @@ public sealed class CompareSheet
             double? a = hasA ? k.A : null, b = hasB ? k.B : null;
             var name = draw(k.Key);
             return new TotalLine(name.Length > 0 ? name : Dash, Bars(a, b, max),
-                                 Change.Of(a, b, ChangeKind.Percent, Format.Int, 1));
+                                 Change.Of(a, b, ChangeKind.Percent, Format.Int, 1)) { Key = k.Key };
         }).ToList();
     }
 

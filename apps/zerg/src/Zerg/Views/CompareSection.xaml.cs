@@ -4,15 +4,17 @@ using System.Windows.Controls;
 namespace Zerg.Views;
 
 /// <summary>
-/// The Compare section: the two slots and their switches, then, once both
-/// hold a parse, the tiles, the cumulative chart and the tables. Its data
-/// context is the <see cref="CompareViewModel"/>.
+/// The Compare section's bands: what to compare about the two runs, the two
+/// slots and, once both hold a parse, six figures. The panes under them are
+/// <see cref="ComparePanes"/>. Its data context is the
+/// <see cref="CompareViewModel"/>.
+///
+/// <para>It is one of the things that stand above a section's panes in the
+/// main window's page (<see cref="PageStack"/>), so it is as tall as it
+/// asks to be and the panes have what is left.</para>
 /// </summary>
 public partial class CompareSection : UserControl
 {
-    public static readonly DependencyProperty TileColumnsProperty =
-        DependencyProperty.Register(nameof(TileColumns), typeof(int), typeof(CompareSection), new PropertyMetadata(6));
-
     public static readonly DependencyProperty PairColumnsProperty =
         DependencyProperty.Register(nameof(PairColumns), typeof(int), typeof(CompareSection), new PropertyMetadata(2));
 
@@ -22,17 +24,12 @@ public partial class CompareSection : UserControl
         SizeChanged += (_, e) => Fit(e.NewSize.Width);
     }
 
-    /// <summary>How many tiles sit in a row: six, or threes, or twos as the window narrows.</summary>
-    public int TileColumns { get => (int)GetValue(TileColumnsProperty); set => SetValue(TileColumnsProperty, value); }
-
-    /// <summary>Whether the two slots, and the cards that come in twos, sit side by side or stack.</summary>
+    /// <summary>Whether the two slots stand side by side, with the switches
+    /// on the title's line (2); or one over the other, with the switches on
+    /// a line of their own (1).</summary>
     public int PairColumns { get => (int)GetValue(PairColumnsProperty); set => SetValue(PairColumnsProperty, value); }
 
-    void Fit(double width)
-    {
-        TileColumns = width >= 1200 ? 6 : width >= 640 ? 3 : 2;
-        PairColumns = width >= 760 ? 2 : 1;
-    }
+    void Fit(double width) => PairColumns = width >= 760 ? 2 : 1;
 
     // ------------------------------------------------------ dropping a file
 

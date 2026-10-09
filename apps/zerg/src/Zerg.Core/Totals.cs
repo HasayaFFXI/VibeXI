@@ -129,7 +129,53 @@ public sealed class Split
             ScTotal += dmg;
         }
     }
+
+    /// <summary>Adds another's counts to these: a party's split is the sum
+    /// of its characters'.</summary>
+    internal void Add(Split other)
+    {
+        AutoTries += other.AutoTries;
+        AutoHits += other.AutoHits;
+        WsTotal += other.WsTotal;
+        WsTries += other.WsTries;
+        WsHits += other.WsHits;
+        ScTotal += other.ScTotal;
+        ScRows += other.ScRows;
+        PetTotal += other.PetTotal;
+        PetRows += other.PetRows;
+        PetTries += other.PetTries;
+        PetHits += other.PetHits;
+    }
+
+    /// <summary>
+    /// The split columns these counts print as, for whoever dealt
+    /// <paramref name="total"/> in all: one character, or the party. The one
+    /// place they are worked out, so the Party line under the table is
+    /// counted exactly as the rows above it are.
+    /// </summary>
+    internal SplitFigures Figures(double total)
+    {
+        bool whole = total != 0 && !double.IsNaN(total);
+        return new SplitFigures(
+            AutoAcc: AutoTries != 0 ? (double)AutoHits / AutoTries : null,
+            WsTotal: WsTries != 0 ? WsTotal : null,
+            WsAvg: WsHits != 0 ? WsTotal / WsHits : null,
+            WsShare: WsTries != 0 && whole ? WsTotal / total : null,
+            WsAcc: WsTries != 0 ? (double)WsHits / WsTries : null,
+            ScTotal: ScRows != 0 ? ScTotal : null,
+            ScShare: ScRows != 0 && whole ? ScTotal / total : null,
+            PetTotal: PetRows != 0 ? PetTotal : null,
+            PetAcc: PetTries != 0 ? (double)PetHits / PetTries : null);
+    }
 }
+
+/// <summary>
+/// The per-character table's split columns, worked out from a
+/// <see cref="Split"/>. A column is null, not zero, when there is nothing to
+/// measure, and is drawn as a dash.
+/// </summary>
+public readonly record struct SplitFigures(double? AutoAcc, double? WsTotal, double? WsAvg, double? WsShare, double? WsAcc,
+                                           double? ScTotal, double? ScShare, double? PetTotal, double? PetAcc);
 
 /// <summary>
 /// One character: totals, the per-action breakdown, and the per-character
@@ -167,16 +213,16 @@ public sealed class ActorTotals : Bucket
 
     internal void FinishSplit()
     {
-        var s = Split;
-        AutoAcc = s.AutoTries != 0 ? (double)s.AutoHits / s.AutoTries : null;
-        WsTotal = s.WsTries != 0 ? s.WsTotal : null;
-        WsAvg = s.WsHits != 0 ? s.WsTotal / s.WsHits : null;
-        WsShare = s.WsTries != 0 && Total != 0 && !double.IsNaN(Total) ? s.WsTotal / Total : null;
-        WsAcc = s.WsTries != 0 ? (double)s.WsHits / s.WsTries : null;
-        ScTotal = s.ScRows != 0 ? s.ScTotal : null;
-        ScShare = s.ScRows != 0 && Total != 0 && !double.IsNaN(Total) ? s.ScTotal / Total : null;
-        PetTotal = s.PetRows != 0 ? s.PetTotal : null;
-        PetAcc = s.PetTries != 0 ? (double)s.PetHits / s.PetTries : null;
+        var f = Split.Figures(Total);
+        AutoAcc = f.AutoAcc;
+        WsTotal = f.WsTotal;
+        WsAvg = f.WsAvg;
+        WsShare = f.WsShare;
+        WsAcc = f.WsAcc;
+        ScTotal = f.ScTotal;
+        ScShare = f.ScShare;
+        PetTotal = f.PetTotal;
+        PetAcc = f.PetAcc;
     }
 }
 
@@ -196,6 +242,19 @@ public sealed class Aggregate
     public int Events { get; set; }
     /// <summary>The uses they folded to.</summary>
     public int Uses { get; set; }
+
+    /// <summary>The party's own split: every character's counts added up,
+    /// the ones at zero included.</summary>
+    public Split Split { get; set; } = new();
+    /// <summary>
+    /// The split columns for the party as a whole, which the Party line
+    /// under the per-character table prints: worked out from the summed
+    /// counts as each character's are from their own, so the party's
+    /// Accuracy is over everyone's swings together and not an average of
+    /// the rows' percentages. Null, a dash, where nobody had anything to
+    /// measure.
+    /// </summary>
+    public SplitFigures Party { get; set; }
 }
 
 /// <summary>One line of a cumulative chart: a running total per grid time.</summary>

@@ -1,0 +1,223 @@
+<UserControl x:Class="Zerg.Views.PickButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:z="clr-namespace:Zerg"
+             x:Name="Self" Focusable="False" VerticalAlignment="Center">
+  <!-- A pick button: what damage is isolated to, and the way to pick it.
+       "Target", for which targets; "Type", for which damage types. One
+       bordered piece, as tall as the toggles it stands among: the word,
+       what is picked ("All", "Kirin", "Genbu +2") and a chevron, which
+       open the menu; and, while anything is isolated, a mark that clears.
+       Lit in the accent then, so a total that is not everything has a
+       reason on screen.
+
+       Its data context is a PickFilter, which says which word it is. The menu
+       is a context menu of this control, made of the picker's rows each
+       time it opens (PickButton.xaml.cs), alphabetical, and it stays open
+       while lines are ticked. -->
+  <UserControl.Resources>
+
+    <!-- A part of the piece to press: no face of its own (the piece has
+         the face), brighter under the pointer. -->
+    <Style x:Key="Part" TargetType="Button">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text2Brush}"/>
+      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="FocusVisualStyle" Value="{StaticResource ZFocus}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+              <ContentPresenter VerticalAlignment="Center"/>
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- A figure in a line of the menu. -->
+    <Style x:Key="Amount" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="11.5"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="TextAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <Style x:Key="Named" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      <Setter Property="Margin" Value="0,0,8,0"/>
+    </Style>
+    <Style x:Key="Heading" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Foreground" Value="{DynamicResource Text3Brush}"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- A line over one parse: what it is, its damage, that out of the
+         damage to them all, and the same as a small bar out of the largest. -->
+    <DataTemplate x:Key="OneLine" DataType="{x:Type z:PickRow}">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition/>
+          <ColumnDefinition Width="72"/>
+          <ColumnDefinition Width="52"/>
+          <ColumnDefinition Width="46"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding Name}" Style="{StaticResource Named}"/>
+        <TextBlock Grid.Column="1" Text="{Binding Damage}" Style="{StaticResource Amount}"/>
+        <TextBlock Grid.Column="2" Text="{Binding Share}" Style="{StaticResource Amount}" FontWeight="Normal"
+                   Foreground="{DynamicResource Text2Brush}"/>
+        <Grid x:Name="Bar" Grid.Column="3" Width="34" Height="4" HorizontalAlignment="Right" VerticalAlignment="Center"
+              SnapsToDevicePixels="True">
+          <Rectangle RadiusX="1" RadiusY="1" Fill="{DynamicResource Line2Brush}"/>
+          <Rectangle RadiusX="1" RadiusY="1" Fill="{DynamicResource Text2Brush}" HorizontalAlignment="Left"
+                     Width="{Binding Bar}"/>
+        </Grid>
+      </Grid>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding IsAll}" Value="True">
+          <Setter TargetName="Bar" Property="Visibility" Value="Hidden"/>
+        </DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!-- A line over two runs: what it is, and its damage in each. -->
+    <DataTemplate x:Key="PairLine" DataType="{x:Type z:PickRow}">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition/>
+          <ColumnDefinition Width="84"/>
+          <ColumnDefinition Width="88"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding Name}" Style="{StaticResource Named}"/>
+        <TextBlock Grid.Column="1" Text="{Binding A}" Style="{StaticResource Amount}"/>
+        <TextBlock Grid.Column="2" Text="{Binding B}" Style="{StaticResource Amount}"/>
+      </Grid>
+    </DataTemplate>
+
+    <!-- The menu: a context menu as every other, 372 units wide, with a
+         line of headings that is not a line to choose, and a list that
+         scrolls past twelve lines. Its data context is the picker. The
+         margins are the room its shadow needs, as for every menu. -->
+    <Style x:Key="TargetMenu" TargetType="ContextMenu" BasedOn="{StaticResource ZContextMenu}">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ContextMenu">
+            <Grid Margin="14,6,14,26">
+              <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource WindowRadius}">
+                <Border.Effect>
+                  <DropShadowEffect Color="Black" Opacity="0.6" BlurRadius="22" ShadowDepth="8" Direction="270"/>
+                </Border.Effect>
+              </Border>
+              <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource WindowRadius}"
+                      Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True" Width="372">
+                <DockPanel>
+                  <!-- Over the lines' own columns: a line's words begin 32
+                       units in (the tick's column) and end 16 short. -->
+                  <Grid DockPanel.Dock="Top" Height="24" Margin="32,0,16,0">
+                    <Grid Visibility="{Binding Paired, Converter={StaticResource Hidden}}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="72"/>
+                        <ColumnDefinition Width="52"/>
+                        <ColumnDefinition Width="46"/>
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Text="{Binding Word}" Style="{StaticResource Heading}"/>
+                      <TextBlock Grid.Column="1" Text="Damage" Style="{StaticResource Heading}" TextAlignment="Right"/>
+                      <TextBlock Grid.Column="2" Text="Share" Style="{StaticResource Heading}" TextAlignment="Right"/>
+                    </Grid>
+                    <Grid Visibility="{Binding Paired, Converter={StaticResource Visible}}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="84"/>
+                        <ColumnDefinition Width="88"/>
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Text="{Binding Word}" Style="{StaticResource Heading}"/>
+                      <Control Grid.Column="1" Style="{StaticResource RunTagSmall}" Template="{StaticResource RunTagA}"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                      <Control Grid.Column="2" Style="{StaticResource RunTagSmall}" Template="{StaticResource RunTagB}"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+                  </Grid>
+                  <Rectangle DockPanel.Dock="Top" Height="1" Margin="-3,0,-3,3" Fill="{DynamicResource Line2Brush}"
+                             SnapsToDevicePixels="True"/>
+                  <ScrollViewer Style="{StaticResource ZScrollViewer}" VerticalScrollBarVisibility="Auto"
+                                HorizontalScrollBarVisibility="Disabled" MaxHeight="373" Focusable="False">
+                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                  </ScrollViewer>
+                </DockPanel>
+              </Border>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <ContextMenu x:Key="Menu" Style="{StaticResource TargetMenu}"/>
+
+  </UserControl.Resources>
+
+  <Border x:Name="Piece" Height="24" BorderThickness="1" CornerRadius="{DynamicResource ControlRadius}"
+          SnapsToDevicePixels="True">
+    <Border.Style>
+      <Style TargetType="Border">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line2Brush}"/>
+        <Style.Triggers>
+          <Trigger Property="IsMouseOver" Value="True">
+            <Setter Property="Background" Value="{DynamicResource Bg4Brush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+          </Trigger>
+          <DataTrigger Binding="{Binding IsOpen, ElementName=Self}" Value="True">
+            <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Line3Brush}"/>
+          </DataTrigger>
+          <DataTrigger Binding="{Binding IsOn}" Value="True">
+            <Setter Property="Background" Value="{DynamicResource Bg3Brush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </Border.Style>
+    <StackPanel Orientation="Horizontal">
+      <Button x:Name="Open" Style="{StaticResource Part}" Padding="8,0,8,0" Click="OnOpen" ToolTip="{Binding Tip}"
+              AutomationProperties.Name="{Binding Word}" AutomationProperties.HelpText="{Binding Label}"
+              ContextMenuService.IsEnabled="False">
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="{Binding Word}" VerticalAlignment="Center"/>
+          <TextBlock x:Name="Picked" Text="{Binding Label}" VerticalAlignment="Center" Margin="6,0,0,0" MaxWidth="150"
+                     TextTrimming="CharacterEllipsis">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource Text1Brush}"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding IsOn}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+          <Path Data="M0,0 l3.5,3.5 l3.5,-3.5" StrokeThickness="1.3" StrokeLineJoin="Round" StrokeStartLineCap="Round"
+                StrokeEndLineCap="Round" VerticalAlignment="Center" Margin="8,2,0,0"
+                Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+        </StackPanel>
+      </Button>
+      <Rectangle Width="1" Margin="0,4" Fill="{DynamicResource Line3Brush}" SnapsToDevicePixels="True"
+                 Visibility="{Binding IsOn, Converter={StaticResource Visible}}"/>
+      <Button Style="{StaticResource Part}" Padding="7,0,7,0" Command="{Binding ClearCommand}" FontSize="8"
+              FontFamily="{StaticResource IconFont}" Content="&#xE8BB;" ToolTip="{Binding ClearTip}"
+              AutomationProperties.Name="{Binding ClearName}"
+              Visibility="{Binding IsOn, Converter={StaticResource Visible}}"/>
+    </StackPanel>
+  </Border>
+</UserControl>

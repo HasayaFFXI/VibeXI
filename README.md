@@ -5,11 +5,12 @@ build on, and Zerg, a native Windows app fed by an in-game addon.
 
 ```
 apps/
+  zerg/             Zerg: live damage and healing over the addon's events — a native Windows app (C#, WPF)
+tools/
   ws-calculator/    Tachi: Jinpu weaponskill Monte-Carlo sim — open pages/ from disk
   penta-calculator/ the same engine aimed at Penta Thrust, plus PentaThrustDamageCalc.md
-  zerg/             Zerg: live damage and healing over the addon's events — a native Windows app (C#, WPF)
+  shared-ui/        THE design system both calculators load: css/ffxi-theme.css + js/theme.js
 addons/VibeXI/      Ashita addon: reads the game's action packets, writes one JSON line per event
-shared-ui/          THE design system both calculators load: css/ffxi-theme.css + js/theme.js
 shared-calc/        THE calculation layer both calculators load: engine, server data, components
 addon-dev/          the addon's plan, API allowlist, checkers and generators — never shipped
 .githooks/          pre-commit hook running addon-dev/check-apis.py
@@ -45,10 +46,10 @@ reason behind every number it prints.
 
 ## Layout is load-bearing
 
-`shared-ui/` and `shared-calc/` stay at the repo root, siblings of `apps/` rather
-than members of it. Neither is an app: one is the design system, the other the
+`shared-ui/` sits in `tools/` beside the calculators; `shared-calc/` stays at the
+repo root. Neither is a tool: one is the design system, the other the
 calculation layer. Both are reached by relative path —
-`../../../shared-ui/...` and `../../../shared-calc/...` from `apps/<app>/pages/`.
+`../../shared-ui/...` and `../../../shared-calc/...` from `tools/<tool>/pages/`.
 Moving or renaming a calculator, or either shared directory, breaks things
 silently: styling just stops, with no console error, and a moved `shared-calc`
 takes the damage engine with it. Zerg uses neither.
@@ -62,5 +63,5 @@ The LandSandBoat-derivative server source that every damage formula is validated
 against is a separate upstream checkout, kept outside this repo at
 `C:\Users\thadl\OneDrive\Documents\Claude\resources\server\`.
 
-`apps/penta-calculator/PentaThrustDamageCalc.md` is the worked example of reading
+`tools/penta-calculator/PentaThrustDamageCalc.md` is the worked example of reading
 it: one weaponskill traced to `file:line`, with every input tabulated.

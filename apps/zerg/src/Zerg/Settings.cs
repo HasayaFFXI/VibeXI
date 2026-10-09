@@ -1,7 +1,6 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Windows;
 
 namespace Zerg;
 
@@ -48,8 +47,39 @@ public sealed class Settings
     /// <summary>The cumulative chart folds everyone under 5% into one line.</summary>
     public bool GroupSmallLines { get; set; } = true;
 
-    /// <summary>The character list in the filter bar is shown, not folded away.</summary>
-    public bool CharactersOpen { get; set; } = true;
+    /// <summary>The characters' line is opened onto every chip, on as many
+    /// lines as they take. As installed it is not: one line of as many chips
+    /// as fit, and a chip that says how many do not ("+5"), which opens it.
+    /// A file that has the key keeps what it says.</summary>
+    public bool CharactersOpen { get; set; }
+
+    /// <summary>A character's row is shaded in their colour to the length of
+    /// their share: in the two per-character tables, on their heading in the
+    /// Actions and Heals tables. On as installed. Off, the row is plain and a
+    /// small bar stands beside the share's figure. A file from before the
+    /// key existed has none and gets the installed look.</summary>
+    public bool ShadeCharacters { get; set; } = true;
+
+    /// <summary>The rows under a character (an action, a heal) are shaded
+    /// to their share, without a colour. Off as installed: the share is a
+    /// small bar beside its figure.</summary>
+    public bool ShadeActions { get; set; }
+
+    /// <summary>The low accuracy mark's threshold, in percent: Accuracy, WS
+    /// Acc and Pet Acc under it are marked in red, more strongly the lower
+    /// they fall. 50 to 100; 90 as installed.</summary>
+    public int LowAccuracy { get; set; } = Core.LowMark.Installed;
+
+    /// <summary>The colour of Compare's run A, the baseline, as it is
+    /// written ("#3987E5"). Null, as installed: the colour the theme in use
+    /// has for it (blue). Once set, the one colour serves both themes. It
+    /// belongs to the slot: Swap exchanges the parses, not the colours. A
+    /// file from before the key existed has none and gets the installed
+    /// colour; so does a value that is not a colour.</summary>
+    public string? RunA { get; set; }
+
+    /// <summary>The same for run B, the run compared with it (orange as installed).</summary>
+    public string? RunB { get; set; }
 
     /// <summary>What a floating panel's backdrop is drawn at until its own
     /// slider is moved, 15 to 100 percent. Set on the Settings page.</summary>
@@ -83,17 +113,44 @@ public sealed class Settings
     /// for each floating panel.</summary>
     public Dictionary<string, Placement> Windows { get; set; } = [];
 
+    /// <summary>
+    /// How each section's panes are arranged, where that is not as
+    /// installed: an object with a tree of splits per section ("Damage",
+    /// "Healing", "Compare"), each split a share of its room and each pane
+    /// by its key, with which are folded. Zerg.Core/Layout/SplitTree.Json
+    /// has the form and reads it (PaneLayouts.Read, PaneLayouts.Write).
+    ///
+    /// <para>Null, as installed, and then the key is not written at all: a
+    /// file from before arrangements were saved has none, and gets the
+    /// installed ones. A section it does not mention is as installed.</para>
+    ///
+    /// <para>Kept as whatever JSON it is, and made sense of by the view
+    /// model. Typed any more exactly, one wrong value under it (a file
+    /// edited by hand, or cut short) would make the whole settings file
+    /// unreadable, and every other setting would be lost with it.</para>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JsonElement? Layouts { get; set; }
+
+    /// <summary>The arrangement is locked: no rule can be dragged and no
+    /// pane moved, and the headings' grips are not drawn. Remembered,
+    /// because an arrangement locked for being settled should stay locked.
+    /// Not as installed.</summary>
+    public bool LayoutLocked { get; set; }
+
     /// <summary>Keys this build doesn't know, written by a newer one, kept
     /// as they were so going back a version and forward again loses nothing.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Unknown { get; set; }
 
+    /// <summary><see cref="Theme"/> as the choice it names; anything else is
+    /// "follow Windows". Not saved: computed.</summary>
     [JsonIgnore]
-    public ThemeMode ThemeMode => Theme switch
+    internal ThemeChoice ThemeChoice => Theme switch
     {
-        "Light" => ThemeMode.Light,
-        "Dark" => ThemeMode.Dark,
-        _ => ThemeMode.System,
+        "Light" => ThemeChoice.Light,
+        "Dark" => ThemeChoice.Dark,
+        _ => ThemeChoice.System,
     };
 
     // ---------------------------------------------------------------- file

@@ -2,14 +2,16 @@ using Zerg.Core.Charts;
 
 namespace Zerg.Core.Tests;
 
-/// <summary>Where the charts put things: ticks, end labels, hover readouts, bars and bins.</summary>
+/// <summary>Where the charts put things: ticks, end labels, hover readouts and bins.</summary>
 public class ChartLayoutTests
 {
     sealed record Line(string Name, double[] Values, bool Group = false) : ILineSeries;
-    sealed record Bar(string Label, double Value) : IBarRow;
 
     /// <summary>Seven pixels a character: enough to make widths matter.</summary>
     static double Width(string s) => s.Length * 7;
+
+    /// <summary>The same in either weight, unless a test says the stronger is wider.</summary>
+    static double Width(string s, bool bold) => Width(s);
 
     static LineLayout Layout(double w, double h, double[] times, Line[] lines, bool compact = false, bool endLabels = false) =>
         LineLayout.Compute(w, h, times, lines, compact, endLabels, Width);
@@ -61,6 +63,70 @@ public class ChartLayoutTests
         Assert.Equal((4, 4), HoverCard.Place(100, 100, 300, 400, 320, 300));      // too big: top-left corner
     }
 
+    [Fact]
+    public void A_hover_card_is_a_heading_ruled_off_from_a_row_each()
+    {
+        // The card the design draws: ten characters at one instant.
+        var rows = Enumerable.Range(0, 10).Select(i => (Label: i == 2 ? 55.0 : 40.0, Value: 36.0)).ToList();
+        var l = HoverCard.Arrange(headWidth: 22, headSwatch: false, rows, swatches: true, chartHeight: 266, compact: false);
+
+        // A swatch and its gap, the widest label, the least gap, the widest value, and 10 either side.
+        Assert.Equal(12 + 55 + 14 + 36 + 20, l.Width);
+        // The heading's band, the rule and what is under it, ten rows of 15, and the foot.
+        Assert.Equal(23 + 3 + 150 + 2, l.Height);
+        Assert.Equal(23, l.RuleY);
+        Assert.Equal(11.5, l.HeadMid);
+        Assert.Equal(10, l.HeadX);
+        Assert.Equal(15, l.RowHeight);
+        Assert.Equal(new CardRowPlace(10, 22, l.Width - 10, 26), l.Rows[0]);
+        Assert.Equal(26 + 9 * 15, l.Rows[9].Top);
+        Assert.All(l.Rows, r => Assert.Equal(l.Width - 10, r.ValueRight));
+    }
+
+    [Fact]
+    public void A_hover_card_with_more_rows_than_the_chart_is_tall_runs_them_in_columns()
+    {
+        // An alliance over a chart floating in a small window.
+        var rows = Enumerable.Range(0, 18).Select(i => (Label: 50.0 + i, Value: 30.0)).ToList();
+        var l = HoverCard.Arrange(22, false, rows, swatches: true, chartHeight: 120, compact: true);
+
+        // 120 less the air, the heading and the foot holds six rows of 13: three columns.
+        Assert.Equal([23.0, 36, 49, 62, 75, 88], l.Rows.Take(6).Select(r => r.Top));
+        Assert.Equal(l.Rows[0].Top, l.Rows[6].Top);
+        Assert.Equal(l.Rows[0].Top, l.Rows[12].Top);
+        Assert.Equal(20 + 3 + 6 * 13 + 2, l.Height);
+        // Each column is as wide as its own widest row, and they stand 18 apart.
+        Assert.Equal(8, l.Rows[0].SwatchX);
+        Assert.Equal(8 + 12 + 55 + 14 + 30, l.Rows[0].ValueRight);
+        Assert.Equal(l.Rows[0].ValueRight + 18, l.Rows[6].SwatchX);
+        Assert.Equal(l.Rows[6].SwatchX + 12 + 61 + 14 + 30, l.Rows[6].ValueRight);
+        Assert.Equal(l.Rows[17].ValueRight + 8, l.Width);
+
+        // Never more than three, however short the chart.
+        var cramped = HoverCard.Arrange(22, false, rows, true, chartHeight: 40, compact: true);
+        Assert.Equal(6, cramped.Rows.Count(r => r.Top == cramped.Rows[0].Top) * 2);
+    }
+
+    [Fact]
+    public void A_hover_card_is_never_narrower_than_its_heading_and_may_have_no_rows()
+    {
+        var wide = HoverCard.Arrange(200, headSwatch: true, [(30, 20)], swatches: false, chartHeight: 300, compact: false);
+        Assert.Equal(12 + 200 + 20, wide.Width);
+        Assert.Equal(22, wide.HeadX);                       // after its swatch
+        Assert.Equal(10, wide.Rows[0].LabelX);              // no swatch, no room kept for one
+        Assert.Equal(wide.Width - 10, wide.Rows[0].ValueRight);
+
+        var bare = HoverCard.Arrange(30, false, [], false, 300, compact: false);
+        Assert.Null(bare.RuleY);
+        Assert.Equal((118, 23), (bare.Width, bare.Height));
+        Assert.Equal(96, HoverCard.Arrange(30, false, [], false, 300, compact: true).Width);
+
+        // The size is put on whole pixels when the caller says how.
+        var snapped = HoverCard.Arrange(22, false, [(40.3, 36.4)], true, 266, false, v => Math.Ceiling(v));
+        Assert.Equal(Math.Ceiling(12 + 40.3 + 14 + 36.4 + 20), snapped.Width);
+        Assert.Equal(snapped.Width - 10, snapped.Rows[0].ValueRight);
+    }
+
     // ----------------------------------------------------------------- line
 
     [Fact]
@@ -91,19 +157,49 @@ public class ChartLayoutTests
     }
 
     [Fact]
-    public void End_labels_are_named_kept_apart_and_never_dropped()
+    public void End_labels_name_every_line_and_are_kept_apart()
     {
         var times = new double[] { 0, 1000 };
         var lines = Enumerable.Range(0, 8).Select(i => new Line("Name" + i, [0, 1000 + i])).ToArray();
         var l = Layout(460, 264, times, lines, compact: true, endLabels: true);
 
         Assert.Equal(8, l.Labels.Count);
-        Assert.All(l.Labels, x => Assert.True(x.Swatch));
-        Assert.Contains(l.Labels, x => x.Text == "Name7 1,007");
+        Assert.All(l.Labels, x => Assert.True(x.Named));
+        Assert.Equal("Name7", l.Labels[0].Text);            // the largest at the top
         var ys = l.Labels.Select(x => x.Y).ToList();
-        for (int i = 1; i < ys.Count; i++) Assert.True(ys[i] - ys[i - 1] >= 13 - 1e-9);
-        // The right margin is as wide as the widest label needs.
-        Assert.Equal(460 - 46 - (Math.Ceiling(Width("Name0 1,000")) + 34), l.Plot.W);
+        for (int i = 1; i < ys.Count; i++) Assert.True(ys[i] - ys[i - 1] >= LineLayout.LabelPitch - 1e-9);
+        // The right margin is as wide as the widest name needs: the gap
+        // from the plot, the name, and the air after it.
+        Assert.Equal(460 - 40 - (14 + Width("Name0") + 4), l.Plot.W);
+        Assert.All(l.Labels, x => Assert.Equal(l.Plot.Right + 14, x.X));
+        // Too narrow a chart to give up a column for the totals as well.
+        Assert.All(l.Labels, x => Assert.Equal("", x.Total));
+    }
+
+    [Fact]
+    public void At_the_width_the_design_draws_the_labels_are_names_alone()
+    {
+        // The pane of the design's sheet: 499 wide, 266 under its heading.
+        var lines = new[] { new Line("Mireille", [0, 6433]), new Line("Parabellum", [0, 19226]), new Line("Hasaya", [0, 27256]) };
+        var l = Layout(499, 266, [0, 866000], lines, endLabels: true);
+        Assert.All(l.Labels, x => Assert.Equal("", x.Total));
+        Assert.Equal(new Box(42, 14, 499 - 42 - (14 + Width("Parabellum") + 10), 230), l.Plot);
+    }
+
+    [Fact]
+    public void A_chart_wide_enough_prints_each_total_after_the_name_in_a_column_of_its_own()
+    {
+        var lines = new[] { new Line("Mireille", [0, 6433]), new Line("Parabellum", [0, 19226]), new Line("Hasaya", [0, 27256]) };
+        var l = Layout(900, 266, [0, 866000], lines, endLabels: true);
+        Assert.Equal(["27.3K", "19.2K", "6,433"], l.Labels.Select(x => x.Total));
+        // Names, a gap, then the totals against one right-hand edge.
+        double right = l.Plot.Right + 14 + Width("Parabellum") + 6 + Width("27.3K");
+        Assert.All(l.Labels, x => Assert.Equal(right, x.TotalRight));
+        Assert.Equal(900 - 10, right);
+        // The narrowest that still does: the plot keeps 400.
+        double margins = 42 + 14 + Width("Parabellum") + 6 + Width("27.3K") + 10;
+        Assert.NotEqual("", Layout(margins + 400, 266, [0, 866000], lines, endLabels: true).Labels[0].Total);
+        Assert.Equal("", Layout(margins + 399, 266, [0, 866000], lines, endLabels: true).Labels[0].Total);
     }
 
     [Fact]
@@ -114,14 +210,106 @@ public class ChartLayoutTests
             .Concat(Enumerable.Range(0, 6).Select(i => new Line("Low" + i, [0, i]))).ToArray();
         var l = Layout(460, 264, times, lines, compact: true, endLabels: true);
         Assert.Equal(l.Plot.Bottom, l.Labels[^1].Y, 9);
-        Assert.Equal(l.Plot.Bottom - 13, l.Labels[^2].Y, 9);
+        Assert.Equal(l.Plot.Bottom - 12, l.Labels[^2].Y, 9);
+    }
+
+    [Fact]
+    public void A_label_moved_clear_of_its_neighbours_is_joined_to_its_marker()
+    {
+        // Two lines ending together and one far above them.
+        var lines = new[] { new Line("Under", [0, 50000]), new Line("Over", [0, 50100]), new Line("Top", [0, 100000]) };
+        var l = Layout(499, 266, [0, 1000], lines, endLabels: true);
+        var (top, over, under) = (l.Labels[0], l.Labels[1], l.Labels[2]);
+        Assert.Equal(["Top", "Over", "Under"], [top.Text, over.Text, under.Text]);
+
+        // Level with their own markers: no line.
+        Assert.Null(top.Elbow);
+        Assert.Null(over.Elbow);
+        Assert.Equal(l.Py(50100), over.Y, 9);
+        // Moved down a pitch from the one above: out from the marker's
+        // rim, across to the label's height, and level to just short of it.
+        Assert.Equal(over.Y + 12, under.Y, 9);
+        var e = under.Elbow!.Value;
+        Assert.Equal((l.Plot.Right + 4, l.Plot.Right + 8, l.Plot.Right + 12), (e.X0, e.X1, e.X2));
+        Assert.Equal(l.Py(50000), e.Y0, 9);
+        Assert.Equal(under.Y, e.Y1, 9);
+        Assert.True(e.X2 < under.X);
+    }
+
+    [Fact]
+    public void A_chart_too_short_for_every_name_keeps_the_largest()
+    {
+        // An alliance in the least pane: 100 tall leaves a plot of 64,
+        // which has six pitches of 12 in it.
+        var lines = Enumerable.Range(0, 18).Select(i => new Line("N" + i, [0, 1000.0 * (i + 1)])).ToArray();
+        var l = Layout(499, 100, [0, 1000], lines, endLabels: true);
+        Assert.Equal(64, l.Plot.H);
+        Assert.Equal(["N17", "N16", "N15", "N14", "N13", "N12"], l.Labels.Select(x => x.Text));
+        Assert.True(l.Labels[0].Y >= l.Plot.Y - 1e-9);
+        Assert.True(l.Labels[^1].Y <= l.Plot.Bottom + 1e-9);
+        // Every line still has its marker, and the crosshair still reads them all.
+        Assert.Equal(18, l.Markers.Count);
+        Assert.Equal(18, l.Hover(l.Plot.Right, 50)!.Rows.Count);
+        // The margin is sized to the names that are printed.
+        Assert.Equal(499 - 42 - (14 + Width("N17") + 10), l.Plot.W);
+    }
+
+    [Fact]
+    public void The_leader_is_the_largest_line_that_is_one_characters()
+    {
+        var lines = new[] { new Line("Small", [0, 10]), new Line("Big", [0, 900]), new Line("3 others", [0, 2000], Group: true) };
+        var l = Layout(499, 266, [0, 1000], lines, endLabels: true);
+        Assert.Equal(1, l.Leader);
+        Assert.Equal(["3 others", "Big", "Small"], l.Labels.Select(x => x.Text));
+        Assert.Equal([false, true, false], l.Labels.Select(x => x.Lead));
+
+        // Its name is measured in the stronger weight it is drawn in.
+        var wider = LineLayout.Compute(499, 266, [0, 1000], [new Line("Solo", [0, 5])], false, true, (s, bold) => s.Length * (bold ? 9 : 7));
+        Assert.Equal(499 - 42 - (14 + 4 * 9 + 10), wider.Plot.W);
+
+        // Two runs compared are equals: no names, so no leader.
+        Assert.Equal(-1, Layout(499, 266, [0, 1000], lines).Leader);
+        Assert.Equal(-1, Layout(499, 266, [], [], endLabels: true).Leader);
     }
 
     [Fact]
     public void A_long_name_is_cut_with_an_ellipsis()
     {
         var l = Layout(600, 264, [0, 1000], [new("An extraordinarily long name", [0, 5])], endLabels: true);
-        Assert.Equal("An extraordin" + TextFit.Ellipsis + " 5", l.Labels[0].Text);
+        Assert.Equal("An extraordi" + TextFit.Ellipsis, l.Labels[0].Text);
+    }
+
+    [Fact]
+    public void A_stepped_edge_moves_the_time_axis_and_nothing_else()
+    {
+        // A live chart: the last grid time is the clock, and it moves on.
+        var lines = new[] { new Line("A", [0, 400, 900, 900]), new Line("B", [0, 100, 2500, 2500]) };
+        var l = Layout(499, 266, [0, 60000, 120000, 121000], lines, endLabels: true);
+        var (plot, yTicks, markers, labels) = (l.Plot, l.YTicks.ToList(), l.Markers.ToList(), l.Labels.ToList());
+        // A plot of 426 has room for nine labels: every 15 seconds of 2:01.
+        Assert.Equal(["0:00", "0:15", "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00"], l.XTicks.Select(t => t.Label));
+
+        double[] later = [0, 60000, 120000, 185000];
+        l.Retime(later);
+
+        // What stands: the plot, the value axis, the markers and the names.
+        Assert.Equal(plot, l.Plot);
+        Assert.Equal(yTicks, l.YTicks);
+        Assert.Equal(markers, l.Markers);
+        Assert.Equal(labels, l.Labels);
+        Assert.All(l.Markers, m => Assert.Equal(l.Plot.Right, m.X, 9));
+        // What moves: the span, the time labels, and what the crosshair reads.
+        Assert.Equal(185000, l.T1);
+        Assert.Equal(l.Plot.Right, l.Px(185000), 9);
+        Assert.Equal(["0:00", "0:30", "1:00", "1:30", "2:00", "2:30", "3:00"], l.XTicks.Select(t => t.Label));
+        Assert.Equal("3:05", l.Hover(l.Plot.Right, 50)!.Head);
+
+        // The same as working it all out again at the new time.
+        var fresh = Layout(499, 266, later, lines, endLabels: true);
+        Assert.Equal(fresh.XTicks, l.XTicks);
+        Assert.Equal(fresh.Markers, l.Markers);
+        Assert.Equal(fresh.Labels, l.Labels);
+        Assert.Equal(fresh.YTicks, l.YTicks);
     }
 
     [Fact]
@@ -130,7 +318,7 @@ public class ChartLayoutTests
         var times = new double[] { 0, 1000 };
         var apart = Layout(800, 320, times, [new("A", [0, 100]), new("B", [0, 50000])]);
         Assert.Equal(["100", "50.0K"], apart.Labels.OrderBy(x => x.Series).Select(x => x.Text));
-        Assert.All(apart.Labels, x => Assert.False(x.Swatch));
+        Assert.All(apart.Labels, x => Assert.False(x.Named));
 
         Assert.Empty(Layout(800, 320, times, [new("A", [0, 50000]), new("B", [0, 50100])]).Labels);       // too close
         Assert.Empty(Layout(800, 320, times, Enumerable.Range(1, 5).Select(i => new Line("L" + i, [0, i * 1000.0])).ToArray()).Labels);
@@ -144,7 +332,8 @@ public class ChartLayoutTests
         var mark = l.Markers.Single(m => m.Series == 0);
         Assert.Equal(l.Px(1000), mark.X, 9);
         Assert.Equal(l.Py(500), mark.Y, 9);
-        Assert.Equal(l.Px(1000) + 11, l.Labels.Single(x => x.Series == 0).X, 9);
+        Assert.Equal(l.Px(1000) + LineLayout.BesideMarker, l.Labels.Single(x => x.Series == 0).X, 9);
+        Assert.All(l.Labels, x => Assert.Null(x.Elbow));
         Assert.Equal(1, LineLayout.LastIndex([0, 500, double.NaN, double.NaN]));
         Assert.Equal(-1, LineLayout.LastIndex([double.NaN]));
     }
@@ -155,8 +344,9 @@ public class ChartLayoutTests
         var l = Layout(868, 320, [0, 60000, 120000, 180000, 240000],
                        [new("Small", [0, 10, 20, 30, 40]), new("Gone", [0, 5, double.NaN, double.NaN, double.NaN]),
                         new("Big", [0, 1000, 2500.4, 3000, 4000])]);
-        // The plot is 68..792; halfway is the third grid time.
-        var h = l.Hover(68 + 724 / 2.0 + 20, 100)!;
+        // The plot is 42..808; halfway is the third grid time.
+        Assert.Equal((42, 808), (l.Plot.X, l.Plot.Right));
+        var h = l.Hover(42 + 766 / 2.0 + 20, 100)!;
         Assert.Equal(2, h.Index);
         Assert.Equal("2:00", h.Head);
         Assert.Equal([("Big", "2,500", 2), ("Small", "20", 0)], h.Rows.Select(r => (r.Label, r.Value, r.Series)));
@@ -168,10 +358,10 @@ public class ChartLayoutTests
     public void The_crosshair_reaches_eight_pixels_past_the_plot_and_no_further()
     {
         var l = Layout(868, 320, [0, 1000], [new("A", [0, 10])]);
-        Assert.NotNull(l.Hover(60, 100));
-        Assert.Null(l.Hover(59, 100));
-        Assert.NotNull(l.Hover(800, l.Plot.Bottom + 8));
-        Assert.Null(l.Hover(801, 100));
+        Assert.NotNull(l.Hover(l.Plot.X - 8, 100));
+        Assert.Null(l.Hover(l.Plot.X - 9, 100));
+        Assert.NotNull(l.Hover(l.Plot.Right + 8, l.Plot.Bottom + 8));
+        Assert.Null(l.Hover(l.Plot.Right + 9, 100));
         Assert.Null(l.Hover(400, l.Plot.Bottom + 9));
     }
 
@@ -202,43 +392,6 @@ public class ChartLayoutTests
         Assert.Empty(SmallLines.Pick(Party(("Big", 900), ("Tiny", 30), ("Mid", 400)), null));
     }
 
-    // ----------------------------------------------------------------- bars
-
-    [Fact]
-    public void Bars_are_scaled_to_the_largest_capped_in_thickness_and_never_vanish()
-    {
-        var rows = new[] { new Bar("Hasaya", 1000), new Bar("Clarice", 500), new Bar("Selene", 0) };
-        var l = BarsLayout.Compute(626, BarsLayout.HeightFor(3), rows, Width);
-        Assert.Equal(120, BarsLayout.HeightFor(3));
-        Assert.Equal(152, BarsLayout.HeightFor(4));
-
-        double w = 626 - 70 - 126;
-        Assert.Equal([w, w / 2, 2], l.Rows.Select(b => b.BarW));
-        Assert.All(l.Rows, b => Assert.Equal(24, b.BarH));
-        Assert.Equal(["1,000", "500", "0"], l.Rows.Select(b => b.ValueText));
-        Assert.Equal(126 + w + 8, l.Rows[0].ValueX);
-    }
-
-    [Fact]
-    public void A_bar_is_picked_by_its_whole_band()
-    {
-        var l = BarsLayout.Compute(600, 120, [new Bar("A", 1), new Bar("B", 2), new Bar("C", 3)], Width);
-        Assert.Equal(0, l.RowAt(0));
-        Assert.Equal(0, l.RowAt(39.9));
-        Assert.Equal(1, l.RowAt(40));
-        Assert.Equal(2, l.RowAt(119));
-        Assert.Equal(-1, l.RowAt(120));
-        Assert.Equal(-1, l.RowAt(-1));
-    }
-
-    [Fact]
-    public void A_long_bar_label_is_cut_to_its_column()
-    {
-        var l = BarsLayout.Compute(600, 120, [new Bar("An extraordinarily long name", 1)], Width);
-        Assert.Equal("An extraordinar" + TextFit.Ellipsis, l.Rows[0].Label);
-        Assert.True(BarsLayout.Compute(600, 120, [], Width).Empty);
-    }
-
     // ------------------------------------------------------------ histogram
 
     static List<Bin> Bins(double lo, double width, params int[] counts) =>
@@ -247,10 +400,15 @@ public class ChartLayoutTests
     [Fact]
     public void Columns_fill_their_bins_and_empty_bins_draw_nothing()
     {
-        var l = HistogramLayout.Compute(462, 210, Bins(0, 100, 4, 0, 8, 2), 180, 14);
+        // 438 wide: a margin of 36 for the counts and 2 at the right leave a plot of 400.
+        var l = HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14);
+        Assert.Equal(new Box(36, 20, 400, 128), l.Plot);
         Assert.Equal(100, l.Slot);
         Assert.Equal([0, 2, 3], l.Columns.Select(c => c.Bin));
-        Assert.All(l.Columns, c => Assert.Equal(98, c.W));
+        // A pixel between neighbours, half of it either side of the slot's edge.
+        Assert.All(l.Columns, c => Assert.Equal(99, c.W));
+        Assert.Equal([36.5, 236.5, 336.5], l.Columns.Select(c => c.X));
+        Assert.All(l.Columns, c => Assert.Equal(2, c.Radius));
         Assert.Equal(l.Plot.Y, l.Columns.Single(c => c.Bin == 2).Y, 9);      // the tallest reaches the top
         Assert.Equal(["0", "2", "4", "6", "8"], l.YTicks.Select(t => t.Label));
     }
@@ -268,26 +426,72 @@ public class ChartLayoutTests
     [Fact]
     public void The_mean_is_marked_and_its_label_flips_near_the_right_edge()
     {
-        var left = HistogramLayout.Compute(462, 210, Bins(0, 100, 1, 1, 1, 1), 100, 4).Mean!;
+        var whole = HistogramLayout.Compute(462, 210, Bins(0, 100, 1, 1, 1, 1), 100, 4);
+        var left = whole.Mean!;
         Assert.Equal(("avg 100", LabelAlign.Left), (left.Label, left.Align));
-        Assert.Equal(left.X + 4, left.LabelX);
+        Assert.Equal(left.X + 5, left.LabelX);
+        // The rule stands a little above the plot, where its label is.
+        Assert.Equal((whole.Plot.Y - 4, whole.Plot.Bottom), (left.Top, left.Bottom));
 
         var right = HistogramLayout.Compute(462, 210, Bins(0, 100, 1, 1, 1, 1), 390, 4).Mean!;
         Assert.Equal(LabelAlign.Right, right.Align);
-        Assert.Equal(right.X - 4, right.LabelX);
+        Assert.Equal(right.X - 5, right.LabelX);
 
         Assert.Null(HistogramLayout.Compute(462, 210, Bins(0, 100, 1, 1), 999, 2).Mean);
+
+        // Told how wide the label is, it turns round exactly when the label
+        // would run off the chart (the plot here is 26 to 436).
+        var fits = HistogramLayout.Compute(438, 170, Bins(0, 100, 1, 1, 1, 1), 340, 4, labelWidth: (s, _) => s.Length * 7).Mean!;
+        Assert.Equal((375.5, LabelAlign.Left), (fits.X, fits.Align));         // 375.5 + 5 + 49 is inside 438
+        var runsOff = HistogramLayout.Compute(438, 170, Bins(0, 100, 1, 1, 1, 1), 350, 4, labelWidth: (s, _) => s.Length * 7).Mean!;
+        Assert.Equal((385.5, LabelAlign.Right), (runsOff.X, runsOff.Align));  // 385.5 + 5 + 49 is not
+    }
+
+    [Fact]
+    public void The_middle_half_is_a_band_the_height_of_the_plot()
+    {
+        var l = HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, q1: 100, q3: 250, median: 200);
+        Assert.Equal(new Box(136, 20, 150, 128), l.Band);
+
+        // Kept to the plot; and hits that are all alike, or quartiles not given, have none.
+        Assert.Equal(new Box(36, 20, 400, 128), HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, -50, 900).Band);
+        Assert.Null(HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, 200, 200).Band);
+        Assert.Null(HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, double.NaN, 200).Band);
+        Assert.Null(HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14).Band);
+        Assert.Null(HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, 450, 500).Band);
+    }
+
+    [Fact]
+    public void The_median_is_a_tick_across_the_baseline()
+    {
+        var l = HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, q1: 100, q3: 250, median: 200);
+        // On a pixel centre, five above the floor and four below it.
+        Assert.Equal(new MedianTick(236.5, l.Plot.Bottom - 5, l.Plot.Bottom + 4), l.Median);
+        Assert.Null(HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14).Median);
+        Assert.Null(HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, median: 999).Median);
+    }
+
+    [Fact]
+    public void The_left_margin_is_as_wide_as_the_longest_count()
+    {
+        static double Seven(string s, bool bold) => s.Length * 7;
+        // Counts of one figure: the least margin.
+        Assert.Equal(26, HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14, labelWidth: Seven).Plot.X);
+        // Counts in the thousands: "1,200" and the gap to the plot.
+        Assert.Equal(35 + 6 + 2, HistogramLayout.Compute(438, 170, Bins(0, 100, 400, 0, 1200, 2), 180, 1602, labelWidth: Seven).Plot.X);
+        // Not told: a margin that fits those too.
+        Assert.Equal(36, HistogramLayout.Compute(438, 170, Bins(0, 100, 4, 0, 8, 2), 180, 14).Plot.X);
     }
 
     [Fact]
     public void The_pointer_reads_a_bin()
     {
         var l = HistogramLayout.Compute(462, 210, Bins(1000, 250, 4, 0, 8, 2), 1500, 14);
-        var h = l.Hover(46 + 250, 100)!;
+        var h = l.Hover(l.Plot.X + 2.5 * l.Slot, 100)!;
         Assert.Equal(2, h.Bin);
         Assert.Equal("1,500 " + (char)0x2013 + " 1,750", h.Head);
         Assert.Equal([("Hits", "8"), ("Share", "57.1%")], h.Rows.Select(r => (r.Label, r.Value)));
-        Assert.Null(l.Hover(45, 100));
+        Assert.Null(l.Hover(l.Plot.X - 1, 100));
         Assert.Null(l.Hover(200, 0));
     }
 
@@ -296,7 +500,7 @@ public class ChartLayoutTests
     {
         var l = HistogramLayout.Compute(462, 210, [new Bin(500, 500) { Count = 3 }], 500, 3);
         Assert.Single(l.Columns);
-        Assert.Equal(400, l.Columns[0].W + 2);   // the one bin is the whole plot
+        Assert.Equal(l.Plot.W, l.Columns[0].W + 1);   // the one bin is the whole plot
         Assert.Equal(("500", "501"), (l.XLabels[^2].Text, l.XLabels[^1].Text));
         Assert.True(HistogramLayout.Compute(462, 210, [], 0, 0).Empty);
         Assert.True(HistogramLayout.Compute(462, 210, null, 0, 0).Empty);

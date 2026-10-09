@@ -1,5 +1,5 @@
 /* ws-calculator page styling.
-   Loads AFTER ../../../../shared-ui/css/ffxi-theme.css, which supplies the palette
+   Loads AFTER tools/shared-ui/css/ffxi-theme.css, which supplies the palette
    and every primitive the app draws with: .wrap, .card, .field, inputs, buttons,
    .stat, table.data, .chart-wrap, .chart-tip, footer.
 

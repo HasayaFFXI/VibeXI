@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
+using Zerg.Core;
 using Zerg.Core.Charts;
 
 namespace Zerg.Charts;
@@ -52,7 +53,7 @@ public sealed class PairedHistogramChart : Chart
         if (w < 1 || h < 1) return;
         var m = Model;
         var l = layout = PairedHistogramLayout.Compute(w, h, m?.Bins, m?.AvgA, m?.AvgB, m?.CountA ?? 0, m?.CountB ?? 0,
-                                                       s => Text(s, 11, true, Ink2).Width, m?.Unit ?? "hit");
+                                                       s => Text(s, AxisSize, true, Ink2).Width, m?.Unit ?? "hit");
         if (l.Empty)
         {
             DrawEmpty(dc, w, h, "No " + (m?.Unit ?? "hit") + "s in either run");
@@ -65,7 +66,7 @@ public sealed class PairedHistogramChart : Chart
         {
             var y = SnapLine(t.Pos);
             dc.DrawLine(grid, new Point(plot.X, y), new Point(plot.Right, y));
-            var text = Text(t.Label, 11, false, Muted);
+            var text = Text(t.Label, AxisSize, false, Muted);
             Draw(dc, text, plot.X - HistogramLayout.YLabelGap - text.Width, y - text.Height / 2);
         }
 
@@ -81,14 +82,14 @@ public sealed class PairedHistogramChart : Chart
 
         foreach (var x in l.XLabels)
         {
-            var text = Text(x.Text, 11, false, Muted);
+            var text = Text(x.Text, AxisSize, false, Muted);
             double left = x.Align switch
             {
                 LabelAlign.Left => x.X,
                 LabelAlign.Right => x.X - text.Width,
                 _ => x.X - text.Width / 2,
             };
-            Draw(dc, text, left, plot.Bottom + HistogramLayout.XLabelGap - 2);
+            Draw(dc, text, left, plot.Bottom + HistogramLayout.XLabelGap);
         }
 
         // The rules are in the text's ink, not the runs': a rule in a run's
@@ -99,16 +100,23 @@ public sealed class PairedHistogramChart : Chart
             var rule = mean.Rule;
             var x = SnapLine(rule.X);
             dc.DrawLine(Hairline(Ink2), new Point(x, rule.Top), new Point(x, rule.Bottom));
-            var text = Text(rule.Label, 11, true, Ink2);
-            const double swatch = 8;
+            var text = Text(rule.Label, AxisSize, true, Ink2);
             double left = rule.Align == LabelAlign.Right
                 ? rule.LabelX - text.Width - PairedHistogramLayout.SwatchRoom
                 : rule.LabelX;
             double top = rule.Top - text.Height + 2;
-            dc.DrawRoundedRectangle(FillOf(mean.Run), null,
-                new Rect(SnapEdge(left), SnapEdge(top + (text.Height - swatch) / 2), swatch, swatch), 2, 2);
+            DrawSwatch(dc, FillOf(mean.Run), left, top + text.Height / 2);
             Draw(dc, text, left + PairedHistogramLayout.SwatchRoom, top);
         }
+    }
+
+    protected override string Summary()
+    {
+        string unit = Model?.Unit ?? "hit";
+        if (Model is not { Bins.Count: > 0 } m || m.CountA + m.CountB == 0) return Nothing("No " + unit + "s in either run");
+        string Run(string run, int count, double? avg) =>
+            $"{run}: {Format.Int(count)} {unit}{(count == 1 ? "" : "s")}" + (avg is { } a ? ", average " + Format.Int(a) : "");
+        return Run("Run A", m.CountA, m.AvgA) + ". " + Run("Run B", m.CountB, m.AvgB);
     }
 
     protected override Readout? ReadoutAt(Point p)

@@ -18,9 +18,10 @@ components/         mob-selector.js  fstr-panel.js  attack-panel.js  histogram.j
 css/calc.css        the calculator shell — mob grid, buff table, presets, run bar, results
 ```
 
-This lives at the repo root, a sibling of `apps/` and of `shared-ui/`, and its
+This lives at the repo root, a sibling of `tools/` (which holds the calculators
+and `shared-ui/`), and its
 position is load-bearing: both calculator pages reach it by relative path,
-`../../../shared-calc/...` from `apps/<app>/pages/`. Moving or renaming it breaks
+`../../../shared-calc/...` from `tools/<tool>/pages/`. Moving or renaming it breaks
 both pages silently.
 
 `shared-ui/` is the *design system*; `shared-calc/` is the *math and components*.
@@ -31,7 +32,7 @@ is not a calculator can load the design system alone.
 
 Every formula here is a port of the LandSandBoat-derivative server kept **outside
 this repo** at `C:\Users\thadl\OneDrive\Documents\Claude\resources\server\`.
-`apps/penta-calculator/PentaThrustDamageCalc.md` cites the exact file and line
+`tools/penta-calculator/PentaThrustDamageCalc.md` cites the exact file and line
 for each one; start there rather than re-deriving from a wiki.
 
 The live server runs `USE_ADOULIN_WEAPON_SKILL_CHANGES = false`, contradicting the
@@ -48,7 +49,7 @@ double-clicking a page has to keep working. There is no build step.
 **Load order matters**, and is the same for every page:
 
 ```html
-<script src="../../../shared-ui/js/theme.js"></script>   <!-- first: chart.js reads it at load -->
+<script src="../../shared-ui/js/theme.js"></script>      <!-- first: chart.js reads it at load -->
 <script src="../../../shared-calc/lib/core.js"></script>  <!-- creates the namespace -->
 <script src="../../../shared-calc/data/…"></script>
 <script src="../../../shared-calc/lib/buffs.js"></script> <!-- before damage.js -->
