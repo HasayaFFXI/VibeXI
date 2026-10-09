@@ -222,6 +222,18 @@
         <ToggleButton Content="Include Skillchains" IsChecked="{Binding Skillchains}" ToolTip="{Binding SkillchainsTip}"
                       VerticalAlignment="Center" Margin="0,0,10,4"
                       Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
+        <!-- Which targets, and which damage types, the damage of both
+             runs is isolated to: the section's own, picked here or by
+             pressing a row of the By target or the By damage type table.
+             Not while healing is compared. -->
+        <Grid Margin="0,0,6,4" VerticalAlignment="Center"
+              Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+          <v:PickButton DataContext="{Binding TargetFilter}"/>
+        </Grid>
+        <Grid Margin="0,0,10,4" VerticalAlignment="Center"
+              Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+          <v:PickButton DataContext="{Binding TypeFilter}"/>
+        </Grid>
         <Button Style="{StaticResource GhostButton}" Height="24" Padding="10,0" FontSize="11.5"
                 Content="Swap A &#x2194; B" Command="{Binding SwapCommand}" ToolTip="Make B the baseline"
                 ToolTipService.ShowOnDisabled="True" VerticalAlignment="Center" Margin="0,0,10,4"

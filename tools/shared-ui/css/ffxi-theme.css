@@ -1,13 +1,13 @@
 /* =============================================================================
    FFXI shared design system
    -----------------------------------------------------------------------------
-   One stylesheet, shared by every app under apps/. The look is ws-calculator's:
+   One stylesheet, shared by every page under tools/. The look is ws-calculator's:
    a dark ink field, bone text, blade-red and brass accents, Shippori Mincho for
    headings and JetBrains Mono for anything numeric.
 
    Consumed by:
-     apps/ws-calculator  pages/*.html    <link href="../../../shared-ui/css/ffxi-theme.css">
-     apps/penta-calculator  pages/*.html  the same path
+     tools/ws-calculator  pages/*.html    <link href="../../shared-ui/css/ffxi-theme.css">
+     tools/penta-calculator  pages/*.html  the same path
 
    Each app then links its OWN stylesheet after this one for rules nothing else
    needs. Anything a second app could plausibly want belongs here instead.

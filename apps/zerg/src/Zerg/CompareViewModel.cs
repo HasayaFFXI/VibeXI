@@ -161,6 +161,36 @@ public sealed class CompareHealRow : CompareSpreadRow
     public HealLine Line { get; }
 }
 
+/// <summary>
+/// One line of the By target or the By damage type table while damage is
+/// compared: what it came to in each run, and a row to press, which
+/// isolates it (or, isolated, lets it go).
+/// </summary>
+/// <param name="line">The line as the sheet has it: a <see cref="TotalLine"/>, or a <see cref="KindLine"/>.</param>
+/// <param name="key">What it is picked by: a target's name, a type's key. "" for a line that cannot be picked.</param>
+/// <param name="isolated">Damage is isolated to this one, alone or among others.</param>
+/// <param name="dimmed">Damage is isolated to others and not this one.</param>
+/// <param name="pick">What the pointer is told a press does while nothing is isolated.</param>
+/// <param name="flip">Told the key when the row is pressed.</param>
+public sealed partial class ComparePickRow(object line, string key, string name, bool isolated, bool dimmed, string pick,
+                                           Action<string> flip)
+{
+    public object Line { get; } = line;
+    public bool Isolated { get; } = isolated;
+    public bool Dimmed { get; } = dimmed;
+    public string Name { get; } = name;
+    public override string ToString() => Name;
+    /// <summary>The rows that name no target are a line of the table, with nothing to isolate.</summary>
+    public bool CanPick => key.Length > 0;
+    public string Tip => !CanPick ? "Damage that named no target"
+        : Isolated ? "Isolated: only this is counted. Press to let it go"
+        : Dimmed ? "Isolate " + Name + " as well"
+        : pick;
+
+    [RelayCommand(CanExecute = nameof(CanPick))]
+    void Pick() => flip(key);
+}
+
 /// <summary>One character, or one job, in the damage table.</summary>
 public sealed partial class CompareActorRow : CompareRow
 {
@@ -286,9 +316,36 @@ public sealed partial class CompareViewModel : ObservableObject
     /// nothing here knows what a dialog is.</summary>
     public Func<ParseText?>? Picker { get; set; }
 
+    /// <summary>
+    /// Which targets the damage of both runs is isolated to: the Target
+    /// button beside Include Skillchains, and the rows of the By target
+    /// table. The section's own, not the Damage section's: its targets are
+    /// two files', not the session's. Emptied when a slot is given another
+    /// parse or cleared.
+    /// </summary>
+    public PickFilter TargetFilter { get; } = PickFilter.OfTargets(paired: true);
+
+    /// <summary>
+    /// Which damage types both runs are isolated to: the Type button beside
+    /// the Target button, and the rows of the By damage type table. It and
+    /// the targets cut together, and each table is of what the other filter
+    /// leaves. Emptied with the targets, when a slot changes.
+    /// </summary>
+    public PickFilter TypeFilter { get; } = PickFilter.OfTypes(paired: true);
+
     public CompareViewModel(Settings settings, MainViewModel host)
     {
         (this.settings, this.host) = (settings, host);
+        TargetFilter.Changed += () =>
+        {
+            Log.Write("compare targets " + (TargetFilter.IsOn ? TargetFilter.Names : "all"));
+            Redraw();
+        };
+        TypeFilter.Changed += () =>
+        {
+            Log.Write("compare types " + (TypeFilter.IsOn ? TypeFilter.Names : "all"));
+            Redraw();
+        };
         A = new RunSlot(this, isA: true);
         B = new RunSlot(this, isA: false);
         mode = settings.CompareMode == Healing ? Healing : Damage;
@@ -444,6 +501,9 @@ public sealed partial class CompareViewModel : ObservableObject
             if (source() is not { } file) return;
             slot.Show(ParseFile.Import(file.Text), ParseDialog.Title(file.Name));
             Forget();
+            // Another run has targets of its own, and types.
+            TargetFilter.Reset();
+            TypeFilter.Reset();
         }
         catch (ParseImportException e)
         {
@@ -460,6 +520,8 @@ public sealed partial class CompareViewModel : ObservableObject
     {
         slot.Empty();
         Forget();
+        TargetFilter.Reset();
+        TypeFilter.Reset();
         Redraw();
     }
 
@@ -497,8 +559,11 @@ public sealed partial class CompareViewModel : ObservableObject
     [ObservableProperty] private string nameHead = "";
     [ObservableProperty] private string jobHead = "";
     [ObservableProperty] private IReadOnlyList<CompareActorRow> actors = [];
-    [ObservableProperty] private IReadOnlyList<KindLine> kinds = [];
-    [ObservableProperty] private IReadOnlyList<TotalLine> targets = [];
+    /// <summary>The By damage type table's rows: every type, each a row to press.</summary>
+    [ObservableProperty] private IReadOnlyList<ComparePickRow> kindRows = [];
+    /// <summary>The By target table's rows while damage is compared: every
+    /// target, each a row to press.</summary>
+    [ObservableProperty] private IReadOnlyList<ComparePickRow> targetRows = [];
 
     [ObservableProperty] private string healerHead = "";
     [ObservableProperty] private string healNote = "";
@@ -518,7 +583,8 @@ public sealed partial class CompareViewModel : ObservableObject
         }
         stale = false;
         Ready = A.Run != null && B.Run != null;
-        sheet = Ready ? CompareSheet.Of(A.Run!, B.Run!, ByJob, host.Skillchains, host.HideNames) : null;
+        sheet = Ready ? CompareSheet.Of(A.Run!, B.Run!, ByJob, host.Skillchains, host.HideNames, TargetFilter.Only,
+                                        TypeFilter.Only) : null;
         Show();
     }
 
@@ -532,8 +598,11 @@ public sealed partial class CompareViewModel : ObservableObject
             PaceLegend = [];
             PaceTable = [];
             Actors = [];
-            Kinds = [];
-            Targets = HealSpells = HealTargets = [];
+            KindRows = [];
+            HealSpells = HealTargets = [];
+            TargetRows = [];
+            TargetFilter.Draw(Array.Empty<PairTotal>(), 0, 0);
+            TypeFilter.Draw(Array.Empty<PairTotal>(), 0, 0);
             Healers = [];
             return;
         }
@@ -569,17 +638,32 @@ public sealed partial class CompareViewModel : ObservableObject
                 : "Matched by name. Each figure shows A over B; a dash is a character who was not in that run. ") +
               "Select a row to compare its actions, and an action to compare how its hits are spread.";
         KindsTitle = heal ? "By heal" : "By damage type";
-        KindsNote = heal
-            ? "Every healer’s casts of each spell or ability, combined. Pet heals included"
-            : "Where the party’s damage came from. Share is of that run’s total";
-        TargetsNote = heal
-            ? "Healing each character received, largest first. Pet heals included"
-            : "Party damage dealt to each target name, largest first";
+        // By damage type lists every type whatever is isolated, as By
+        // target does every target; each is of what the other filter leaves.
+        var types = TypeFilter.Picked;
+        TypeFilter.Draw(s.TypeList, s.A.Kinds.Values.Sum(), s.B.Kinds.Values.Sum());
+        KindsNote = heal ? "Every healer’s casts of each spell or ability, combined. Pet heals included"
+            : types.Count > 0 ? types.Count + " of " + s.TypeList.Count + " isolated. Select another to add it"
+            : "Where the party’s damage came from. Select a type to isolate it";
+        // By target lists every target whatever is isolated (it is measured
+        // before the filter): where one is seen among the rest, and where
+        // the next is picked.
+        var picked = TargetFilter.Picked;
+        TargetFilter.Draw(s.TargetList, s.A.Targets.Values.Sum(), s.B.Targets.Values.Sum());
+        TargetsNote = heal ? "Healing each character received, largest first. Pet heals included"
+            : picked.Count > 0 ? picked.Count + " of " + s.TargetList.Count + " isolated. Select another to add it"
+            : "Party damage dealt to each target name. Select one to isolate it";
         Actors = heal ? [] : s.Actors.Select(r => new CompareActorRow(r, s.Ids[r.Key], SwatchOf(s.Ids[r.Key]), job,
                                                                       open.Contains(r.Key), (k, on) => Flip(open, k, on),
                                                                       x => ActionOf(s, r.Key, x))).ToList();
-        Kinds = heal ? [] : s.Kinds;
-        Targets = heal ? [] : s.Targets;
+        KindRows = heal ? [] : s.Kinds.Select(k => new ComparePickRow(k, k.Key, k.Label, types.Contains(k.Key),
+                                                                     types.Count > 0 && !types.Contains(k.Key),
+                                                                     "Count only " + k.Label + " damage",
+                                                                     TypeFilter.Toggle)).ToList();
+        TargetRows = heal ? [] : s.Targets.Select(t => new ComparePickRow(t, t.Key, t.Name, picked.Contains(t.Key),
+                                                                       picked.Count > 0 && !picked.Contains(t.Key),
+                                                                       "Count only the damage dealt to " + t.Name,
+                                                                       TargetFilter.Toggle)).ToList();
 
         HealerHead = job ? "Job" : "Healer";
         HealNote = s.HealNote;

@@ -199,19 +199,90 @@
         <Rectangle Style="{StaticResource RowRule}"/>
       </Grid>
     </DataTemplate>
-    <!-- One kind of damage, both runs, and its share of each. -->
-    <DataTemplate x:Key="KindRow">
-      <Grid Height="28">
-        <Rectangle Style="{StaticResource SideBandA}" v:Grow.Share="{Binding Damage.A}"/>
-        <Rectangle Style="{StaticResource SideBandB}" v:Grow.Share="{Binding Damage.B}"/>
-        <v:Cells Style="{StaticResource KindCells}" Margin="0,0,14,1">
-          <TextBlock Text="{Binding Label}" Style="{StaticResource CellText}" Padding="14,0,8,0"/>
-          <ContentControl Content="{Binding Damage}" Style="{StaticResource Amount}"/>
-          <v:ChangeText Value="{Binding Change}"/>
-          <v:RunPair Value="{Binding Share}" Padding="2,0,5,0"/>
-        </v:Cells>
-        <Rectangle Style="{StaticResource RowRule}"/>
-      </Grid>
+    <!-- A row of a side table that is pressed to isolate it: a target, a
+         damage type. The Target and Type buttons' menus do the same.
+         Isolated, it has the accent down its left edge and its name is
+         stronger; while others are isolated and it is not, it is dimmed: it
+         is still listed, with what it came to, and is in no other figure.
+         The row's cells are the template's that names this style. -->
+    <Style x:Key="SidePick" TargetType="Button" BasedOn="{StaticResource RowPick}">
+      <Setter Property="Height" Value="28"/>
+      <Setter Property="ToolTip" Value="{Binding Tip}"/>
+      <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+      <Setter Property="Command" Value="{Binding PickCommand}"/>
+      <Setter Property="AutomationProperties.Name" Value="{Binding Name}"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Isolated}" Value="True">
+          <Setter Property="AutomationProperties.ItemStatus" Value="isolated"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The accent down an isolated row's left edge. -->
+    <Style x:Key="PickEdge" TargetType="Rectangle">
+      <Setter Property="Width" Value="3"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="Margin" Value="0,0,0,1"/>
+      <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
+      <Setter Property="Visibility" Value="Collapsed"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Isolated}" Value="True">
+          <Setter Property="Visibility" Value="Visible"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- What is dimmed of a row that is not among the isolated. -->
+    <Style x:Key="PickCells" TargetType="Grid">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Dimmed}" Value="True">
+          <Setter Property="Opacity" Value="0.5"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="PickName" TargetType="TextBlock" BasedOn="{StaticResource CellText}">
+      <Setter Property="Padding" Value="14,0,8,0"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Isolated}" Value="True">
+          <Setter Property="FontWeight" Value="SemiBold"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- One target while damage is compared: TotalRow's cells, to press. -->
+    <DataTemplate x:Key="TargetPick">
+      <Button Style="{StaticResource SidePick}">
+        <Grid>
+          <Grid Style="{StaticResource PickCells}">
+            <Rectangle Style="{StaticResource SideBandA}" v:Grow.Share="{Binding Line.Amount.A}"/>
+            <Rectangle Style="{StaticResource SideBandB}" v:Grow.Share="{Binding Line.Amount.B}"/>
+            <v:Cells Style="{StaticResource KindCells}" Margin="0,0,14,1">
+              <TextBlock Text="{Binding Name}" Style="{StaticResource PickName}"/>
+              <ContentControl Content="{Binding Line.Amount}" Style="{StaticResource Amount}"/>
+              <v:ChangeText Value="{Binding Line.Change}"/>
+            </v:Cells>
+          </Grid>
+          <Rectangle Style="{StaticResource PickEdge}"/>
+        </Grid>
+      </Button>
+    </DataTemplate>
+    <!-- One kind of damage, the same way: both runs and its share of each,
+         to press. The share is of every type's damage, isolated or not. -->
+    <DataTemplate x:Key="KindPick">
+      <Button Style="{StaticResource SidePick}">
+        <Grid>
+          <Grid Style="{StaticResource PickCells}">
+            <Rectangle Style="{StaticResource SideBandA}" v:Grow.Share="{Binding Line.Damage.A}"/>
+            <Rectangle Style="{StaticResource SideBandB}" v:Grow.Share="{Binding Line.Damage.B}"/>
+            <v:Cells Style="{StaticResource KindCells}" Margin="0,0,14,1">
+              <TextBlock Text="{Binding Name}" Style="{StaticResource PickName}"/>
+              <ContentControl Content="{Binding Line.Damage}" Style="{StaticResource Amount}"/>
+              <v:ChangeText Value="{Binding Line.Change}"/>
+              <v:RunPair Value="{Binding Line.Share}" Padding="2,0,5,0"/>
+            </v:Cells>
+          </Grid>
+          <Rectangle Style="{StaticResource PickEdge}"/>
+        </Grid>
+      </Button>
     </DataTemplate>
     <Style x:Key="ByName" TargetType="ContentPresenter">
       <Setter Property="AutomationProperties.Name" Value="{Binding Name}"/>
@@ -802,6 +873,16 @@
 
     <!-- By damage type; comparing healing, by heal. -->
     <v:Pane v:SplitPanel.Key="ckinds" Title="{Binding KindsTitle}" Note="{Binding KindsNote}">
+      <!-- While a type is isolated: the way back to them all, where they
+           were picked. Not over the heals, which this pane lists while
+           healing is compared. -->
+      <v:Pane.Tools>
+        <Grid Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+          <Button Style="{StaticResource LinkButton}" Content="Clear" Command="{Binding TypeFilter.ClearCommand}"
+                  ToolTip="Count every type of damage again" AutomationProperties.Name="Clear the isolated types"
+                  Visibility="{Binding TypeFilter.IsOn, Converter={StaticResource Visible}}"/>
+        </Grid>
+      </v:Pane.Tools>
       <Grid>
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto"/>
@@ -814,7 +895,8 @@
             <TextBlock Text="Type" Style="{StaticResource HeadText}" Padding="14,0,8,0"/>
             <TextBlock Text="Damage" Style="{StaticResource Head}"/>
             <TextBlock Text="&#x394;" Style="{StaticResource Head}" ToolTip="{StaticResource ChangeTip}"/>
-            <TextBlock Text="Share" Style="{StaticResource Head}" Padding="2,0,5,0" ToolTip="Share of that run's party damage"/>
+            <TextBlock Text="Share" Style="{StaticResource Head}" Padding="2,0,5,0"
+                       ToolTip="Share of that run's party damage, of every type"/>
           </v:Cells>
           <!-- Healing. -->
           <v:Cells Style="{StaticResource KindCells}" Margin="0,0,14,1"
@@ -828,8 +910,7 @@
         <Grid Grid.Row="1" Style="{StaticResource SideList}">
           <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" v:WheelChain.On="True">
             <StackPanel>
-              <ItemsControl ItemsSource="{Binding Kinds}" ItemTemplate="{StaticResource KindRow}" Focusable="False"
-                            ItemContainerStyle="{StaticResource ByLabel}"/>
+              <ItemsControl ItemsSource="{Binding KindRows}" ItemTemplate="{StaticResource KindPick}" Focusable="False"/>
               <ItemsControl ItemsSource="{Binding HealSpells}" ItemTemplate="{StaticResource TotalRow}" Focusable="False"
                             ItemContainerStyle="{StaticResource ByName}"/>
             </StackPanel>
@@ -841,6 +922,15 @@
     <!-- By target: what each target took; comparing healing, what each
          character received. -->
     <v:Pane v:SplitPanel.Key="ctargets" Title="By target" Note="{Binding TargetsNote}">
+      <!-- While a target is isolated: the way back to them all, where
+           they were picked. -->
+      <v:Pane.Tools>
+        <Grid Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+          <Button Style="{StaticResource LinkButton}" Content="Clear" Command="{Binding TargetFilter.ClearCommand}"
+                  ToolTip="Count every target again" AutomationProperties.Name="Clear the isolated targets"
+                  Visibility="{Binding TargetFilter.IsOn, Converter={StaticResource Visible}}"/>
+        </Grid>
+      </v:Pane.Tools>
       <Grid>
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto"/>
@@ -862,8 +952,7 @@
         <Grid Grid.Row="1" Style="{StaticResource SideList}">
           <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" v:WheelChain.On="True">
             <StackPanel>
-              <ItemsControl ItemsSource="{Binding Targets}" ItemTemplate="{StaticResource TotalRow}" Focusable="False"
-                            ItemContainerStyle="{StaticResource ByName}"/>
+              <ItemsControl ItemsSource="{Binding TargetRows}" ItemTemplate="{StaticResource TargetPick}" Focusable="False"/>
               <ItemsControl ItemsSource="{Binding HealTargets}" ItemTemplate="{StaticResource TotalRow}" Focusable="False"
                             ItemContainerStyle="{StaticResource ByName}"/>
             </StackPanel>

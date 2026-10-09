@@ -148,6 +148,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     public ObservableCollection<ChipRow> Chips { get; } = [];
 
+    /// <summary>
+    /// Which targets the damage on screen is isolated to, and the list they
+    /// are picked from: the Target button on the command bar. Of the session,
+    /// or of the parse open in the View section, whichever is drawn. Not
+    /// saved, and emptied when what it lists changes hands: Start, a new
+    /// event file, the session and a saved parse changing places.
+    /// </summary>
+    public PickFilter TargetFilter { get; } = PickFilter.OfTargets(paired: false);
+
+    /// <summary>Which damage types it is isolated to: the Type button beside
+    /// that one. The two cut together, each listing what the other leaves,
+    /// and are emptied together.</summary>
+    public PickFilter TypeFilter { get; } = PickFilter.OfTypes(paired: false);
+
     /// <summary>The cards that can float over the game, and their opacity.</summary>
     public PanelSet Panels { get; }
 
@@ -191,6 +205,16 @@ public sealed partial class MainViewModel : ObservableObject
         Compare = new CompareViewModel(settings, this) { Active = IsCompare };
         ReadLayouts();
 
+        TargetFilter.Changed += () =>
+        {
+            Log.Write("targets " + (TargetFilter.IsOn ? TargetFilter.Names : "all"));
+            Recount();
+        };
+        TypeFilter.Changed += () =>
+        {
+            Log.Write("types " + (TypeFilter.IsOn ? TypeFilter.Names : "all"));
+            Recount();
+        };
         feed.Updated += OnUpdated;
         feed.Failed += OnFailed;
         // A chart's inks restyle themselves; the colours that stand for
@@ -259,7 +283,13 @@ public sealed partial class MainViewModel : ObservableObject
             // A new file is a new load of the addon or a new character: nothing carries
             // over, and a clock from the old one would measure the wrong session.
             live.Follow(u.File);
-            if (!Viewing) drill = healDrill = null;
+            if (!Viewing)
+            {
+                drill = healDrill = null;
+                // The targets were the old file's, and what was isolated with them.
+                TargetFilter.Reset();
+                TypeFilter.Reset();
+            }
             Log.Write($"following {u.File}");
             // The Settings page says which file is newest in the folder.
             if (IsSettings) DescribeFolder();
@@ -316,6 +346,11 @@ public sealed partial class MainViewModel : ObservableObject
         }
         askTimer?.Stop();
         drill = healDrill = null;
+        // The next pull has targets of its own, and none yet: a filter kept
+        // from this one would count nothing, with nothing listed to untick.
+        // The types go with them: one pull's question, not the next one's.
+        TargetFilter.Reset();
+        TypeFilter.Reset();
         LogSession("armed");
         Recount();
     }
@@ -442,14 +477,23 @@ public sealed partial class MainViewModel : ObservableObject
         {
             drawn = Shown;
             drill = healDrill = null;
+            // And the targets and types picked were the other's.
+            TargetFilter.Reset();
+            TypeFilter.Reset();
         }
-        var c = snapshot = Shown.Count(excluded, Skillchains, now);
+        var c = snapshot = Shown.Count(excluded, Skillchains, now, TargetFilter.Only, TypeFilter.Only);
         if (c.Latched) LogSession("started");
+        // A drill-down into an action never used on what is isolated closes,
+        // as it does when its character is left out.
+        if ((c.Isolated.Count > 0 || c.IsolatedTypes.Count > 0) && drill is { } on &&
+            !c.Totals.Actors.Any(a => a.Name == on.Actor && a.Actions.ContainsKey(on.Action)))
+            drill = null;
         View = SessionView.Of(Shown.Session, Viewing, live.Asking);
         DescribeParse();
         Compare.SessionChanged(live.Session.StartedAt != null);
 
         DrawChips(c);
+        DrawTargets(c);
         DrawTiles(c);
         DrawLine(c);
         DrawBars(c);
@@ -497,7 +541,7 @@ public sealed partial class MainViewModel : ObservableObject
         Tag = View.Tag;
         ClockText = SessionText.Stopwatch(s, now);
         ClockNote = SessionText.ClockNote(s);
-        TotalNote = SessionText.TotalNote(s, agg is { Actors.Count: > 0 }, Viewing);
+        TotalNote = totalShare + SessionText.TotalNote(s, agg is { Actors.Count: > 0 }, Viewing);
         var heals = snapshot?.Healing;
         HealTotalNote = SessionText.TotalNote(s, heals is { Actors.Count: > 0 }, Viewing, what: "healing");
 
@@ -506,8 +550,10 @@ public sealed partial class MainViewModel : ObservableObject
             // The party's figure and every character's move together or not
             // at all: one falling past a column that stood still would be
             // two right numbers from two different moments.
-            DpsText = Format.Num(agg != null && secs > 0 ? agg.Total / secs : 0, 1);
-            foreach (var row in Actors) row.Dps = Format.Num(secs > 0 ? row.Total / secs : 0, 1);
+            // No rate while a target is isolated: a dash, here and in
+            // every row (Snapshot.Rate says why).
+            DpsText = Rate(agg?.Total ?? 0, secs);
+            foreach (var row in Actors) row.Dps = Rate(row.Total, secs);
             // The Party line under the rows is the party's figure again.
             Party.Dps = DpsText;
         }
@@ -523,6 +569,12 @@ public sealed partial class MainViewModel : ObservableObject
         // is. A chart that is not on screen does not redraw for it.
         if (s.Running) Edge = ms;
     }
+
+    /// <summary>An amount over the session clock as it is printed: a rate
+    /// to one decimal, or a dash while targets are isolated.</summary>
+    string Rate(double total, double seconds) =>
+        snapshot is { } c ? c.Rate(total, seconds) is double r ? Format.Num(r, 1) : None
+        : Format.Num(0, 1);
 
     void DescribeStatus()
     {

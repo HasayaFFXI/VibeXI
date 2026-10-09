@@ -100,6 +100,15 @@
         </Trigger>
       </Style.Triggers>
     </Style>
+    <!-- The mark beside the party's DPS: gone while a target is isolated,
+         when there is no rate for it to have been. -->
+    <Style x:Key="RateMark" TargetType="Grid" BasedOn="{StaticResource BandMark}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding TargetFilter.IsOn}" Value="True">
+          <Setter Property="Visibility" Value="Collapsed"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
     <!-- The same over the heals, which have marks of their own. -->
     <Style x:Key="HealBandMark" TargetType="Grid">
       <Setter Property="Grid.Column" Value="1"/>
@@ -440,6 +449,17 @@
             <ToggleButton Style="{StaticResource SmallToggle}" Content="Include Skillchains" IsChecked="{Binding Skillchains}"
                           ToolTip="{Binding SkillchainsTip}" Margin="0,0,6,0"
                           Visibility="{Binding IsDamage, Converter={StaticResource Visible}}"/>
+            <!-- Which targets the damage is isolated to, and which damage
+                 types, and the way to pick them: filters on what damage is
+                 counted, as the switch before them is, and like it not
+                 offered over healing. In Compare the two are on the
+                 Compare card too. -->
+            <Grid Margin="0,0,6,0" Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+              <v:PickButton DataContext="{Binding TargetFilter}"/>
+            </Grid>
+            <Grid Margin="0,0,6,0" Visibility="{Binding IsDamage, Converter={StaticResource Visible}}">
+              <v:PickButton DataContext="{Binding TypeFilter}"/>
+            </Grid>
             <ToggleButton Style="{StaticResource SmallToggle}" Content="Hide names" IsChecked="{Binding HideNames}"
                           ToolTip="{Binding HideNamesTip}" Margin="0,0,6,0"/>
             <!-- About every panel at once. The hot key does the same from inside
@@ -542,7 +562,9 @@
               <ColumnDefinition/>
               <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <v:Caps Text="Total damage" Style="{StaticResource BandLabel}"/>
+            <!-- What the total is a total of: with a target isolated,
+                 "Damage to Kirin". -->
+            <v:Caps Text="{Binding TotalLabel}" Style="{StaticResource BandLabel}" ToolTip="{Binding TotalTip}"/>
             <TextBlock Text="{Binding TotalText}" Style="{StaticResource BandFigure}"/>
             <Grid Style="{StaticResource BandMark}"
                   ToolTip="The party's damage in each stretch of the session, first to last. The last bar is still filling">
@@ -571,8 +593,10 @@
               <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <v:Caps Text="Party DPS" Style="{StaticResource BandLabel}"/>
-            <TextBlock Text="{Binding DpsText}" Style="{StaticResource BandFigure}"/>
-            <Grid Style="{StaticResource BandMark}"
+            <!-- A dash while a target is isolated, and its mark gone: the
+                 tooltip says why. -->
+            <TextBlock Text="{Binding DpsText}" Style="{StaticResource BandFigure}" ToolTip="{Binding DpsTip}"/>
+            <Grid Style="{StaticResource RateMark}"
                   ToolTip="The party's DPS as it stood through the session: everything dealt so far over the time so far">
               <TextBlock Text="running" Style="{StaticResource BandCaption}"/>
               <c:Spark Style="{StaticResource BandSpark}" Kind="Line" Values="{Binding DpsMark}"

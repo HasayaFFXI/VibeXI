@@ -29,7 +29,11 @@ public sealed class Measurement
     /// <summary>The run's clock, frozen at its Pause, in seconds.</summary>
     public double Duration { get; set; }
     public double Total { get; set; }
-    public double Dps { get; set; }
+    /// <summary>Null while targets are isolated: no rate is given for a
+    /// target (<see cref="Snapshot.Rate"/>).</summary>
+    public double? Dps { get; set; }
+    /// <summary>Only the damage dealt to some targets was counted.</summary>
+    public bool Isolated { get; set; }
     public double? Accuracy { get; set; }
     public double? WsTotal { get; set; }
     public int WsCount { get; set; }
@@ -40,9 +44,10 @@ public sealed class Measurement
     /// <summary>Rows with any damage.</summary>
     public int Characters { get; set; }
     public BestHit? Best { get; set; }
-    /// <summary>Damage by type (a pet's rows are one type, <c>pet</c>).</summary>
+    /// <summary>Damage by type (a pet's rows are one type, <c>pet</c>):
+    /// every type, whichever are isolated.</summary>
     public OrderedDictionary<string, double> Kinds { get; set; } = new(StringComparer.Ordinal);
-    /// <summary>Damage by target name.</summary>
+    /// <summary>Damage by target name: every target, whichever are isolated.</summary>
     public OrderedDictionary<string, double> Targets { get; set; } = new(StringComparer.Ordinal);
     public HealTotals Heal { get; set; } = new();
     /// <summary>Healing as time/amount points for the cumulative line (no pet heals).</summary>
@@ -159,14 +164,38 @@ public static class Compare
     /// character's main job before the aggregate, so a job's accuracy, WS
     /// average and action breakdown are counted over its combined swings rather
     /// than averaged from per-character figures.
+    ///
+    /// <para><paramref name="targets"/> isolates targets, by name, as
+    /// <see cref="Tracker.Count"/> does: every damage figure is then of the
+    /// damage dealt to those, but for <see cref="Measurement.Targets"/>,
+    /// which goes on listing them all. Healing and the run's clock are as
+    /// they were.</para>
+    ///
+    /// <para><paramref name="types"/> isolates damage types the same way
+    /// (<see cref="DamageTypes"/>), and <see cref="Measurement.Kinds"/> goes
+    /// on listing them all. <b>Each list is of what the other filter
+    /// leaves</b>: with a target isolated, the types are of the damage dealt
+    /// to it; with a type isolated, the targets are of what that type dealt
+    /// to each. A type takes no rate away.</para>
     /// </summary>
-    public static Measurement Measure(ImportedParse run, bool skillchains = true, bool byJob = false)
+    public static Measurement Measure(ImportedParse run, bool skillchains = true, bool byJob = false,
+                                      IReadOnlySet<string>? targets = null, IReadOnlySet<string>? types = null)
     {
         var roster = run.Source.Roster;
         var sn = run.Session;
 
         var scoped = Counting.Filter(run.Source.Events,
             new FilterOptions { Session = sn, Roster = roster, Skillchains = skillchains });
+
+        // By target and by type over every landed row, each before its own
+        // filter and after the other's. Unfolded is right: both only sum,
+        // and an area attack's damage belongs to each target.
+        var only = Targets.Only(targets);
+        var onlyTypes = Targets.Only(types);
+        var byTarget = Targets.Totals(onlyTypes != null ? Counting.Filter(scoped, new FilterOptions { Types = onlyTypes }) : scoped);
+        var kinds = DamageTypes.Totals(only != null ? Counting.Filter(scoped, new FilterOptions { Targets = only }) : scoped);
+        if (only != null || onlyTypes != null)
+            scoped = Counting.Filter(scoped, new FilterOptions { Targets = only, Types = onlyTypes });
 
         // The export's own clock, frozen at its Pause: the fixed denominator
         // the exporter was looking at.
@@ -226,17 +255,6 @@ public static class Compare
             Add(healTargets, h.Target, h.Hp);
         }
 
-        // Damage by type and by target over every landed row. Unfolded is right
-        // for both: they only sum, and an AoE's damage belongs to each target.
-        var kinds = new OrderedDictionary<string, double>(StringComparer.Ordinal);
-        var targets = new OrderedDictionary<string, double>(StringComparer.Ordinal);
-        foreach (var e in scoped)
-        {
-            if (!e.Hit || e.Dmg == 0 || double.IsNaN(e.Dmg)) continue;
-            Add(kinds, e.IsPets ? "pet" : e.Kind, e.Dmg);
-            Add(targets, e.Target, e.Dmg);
-        }
-
         // Party figures, summed from the per-row splits so they agree with the
         // table by construction.
         int autoTries = 0, autoHits = 0, wsTries = 0, wsHits = 0, scRows = 0;
@@ -264,7 +282,8 @@ public static class Compare
             Members = members,
             Duration = secs,
             Total = agg.Total,
-            Dps = secs > 0 ? agg.Total / secs : 0,
+            Dps = only != null ? null : secs > 0 ? agg.Total / secs : 0,
+            Isolated = only != null,
             Accuracy = autoTries != 0 ? (double)autoHits / autoTries : null,
             WsTotal = wsTries != 0 ? wsTotal : null,
             WsCount = wsTries,
@@ -275,7 +294,7 @@ public static class Compare
             Characters = agg.Actors.Count(a => a.Total > 0),
             Best = best,
             Kinds = kinds,
-            Targets = targets,
+            Targets = byTarget,
             Heal = heal,
             HealEvents = healEvents,
             HealRows = hl,

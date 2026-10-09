@@ -5,7 +5,7 @@ Shared-component app extracted from the single-file Jinpu weaponskill calculator
 ## Layout
 
 ```
-../../shared-ui/           at the repo root, a sibling of apps/ — the design system
+../shared-ui/              beside this folder in tools/ — the design system
   css/ffxi-theme.css       tokens and every shared primitive
   js/theme.js              window.FFXITheme — the same tokens, for canvas
 ../../shared-calc/         also at the repo root — the engine, data and components
@@ -31,7 +31,7 @@ Load order matters — the shared theme, then `core.js`, then data, then lib, th
 components:
 
 ```html
-<script src="../../../shared-ui/js/theme.js"></script>
+<script src="../../shared-ui/js/theme.js"></script>
 <script src="../../../shared-calc/lib/core.js"></script>
 <script src="../../../shared-calc/data/mob-data.js"></script>
 ...
@@ -39,7 +39,7 @@ components:
 
 **Styling is shared with the DPS meter.** The palette and every primitive
 (`.card`, `.field`, `table.data`, `.chart-wrap`, buttons) live in
-[`../../shared-ui/`](../../shared-ui); `../../shared-calc/css/calc.css` holds the
+[`../shared-ui/`](../shared-ui); `../../shared-calc/css/calc.css` holds the
 calculator shell both pages share. Canvas colours are read from the same custom properties
 through `FFXITheme`, so there is no second palette to keep in sync.
 
@@ -85,7 +85,7 @@ requirement isn't met is disabled outright.
 
 Copy the head and script block from `pages/ws-calculator.html`, mount the
 components you need, and supply the callbacks. Nothing in `../../shared-calc/`
-or `../../shared-ui/` needs to change — that is exactly how
+or `../shared-ui/` needs to change — that is exactly how
 [`../penta-calculator`](../penta-calculator) was built.
 
 ## Validating against the server

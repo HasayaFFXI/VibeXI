@@ -83,7 +83,7 @@ appends to a file, Zerg reads it. Zerg uses nothing else in the repository
 ## Commands
 
 ```bash
-# all tests (673, under a second once built). Naming the solution builds the
+# all tests (709, under a second once built). Naming the solution builds the
 # app too; beside a running Zerg, name the test project instead
 dotnet test apps/zerg/Zerg.slnx
 dotnet test apps/zerg/tests/Zerg.Core.Tests
@@ -259,6 +259,14 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
                            first press of Start only asks, and the pair is Confirm / Cancel),
                            and Count(), the whole pipeline in one call, damage and healing.
                            Also an opened parse, read only (Tracker.Of), and Export()
+  Targets.cs               isolating targets: what each target took (Totals), the order they
+                           are picked from (Sorted: alphabetical), and how what is picked is
+                           said ("Kirin +2", "Damage to Kirin"). The filter itself is a line
+                           of Counting.Counted; Snapshot.Rate is why no DPS is given meanwhile
+  DamageTypes.cs           isolating damage types, the same along another cut: the type a
+                           row is counted under (Of: its kind, a pet's rows all "pet"),
+                           what each is called, their totals and order, and the label over
+                           a total whatever is isolated (Heading: "Melee damage to Kirin")
   Cast.cs, Shades.cs       colour slots (owner in slot 0), shades for a shared job, hidden-name labels
   SessionView.cs           the two session buttons and the session's wording, as data; the
                            word in the state tag (SessionTag: the state, or Saved over an
@@ -336,6 +344,13 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
                            the Save dialog for an export
   Rows.cs                  the list rows, kept and updated in place (Rows.Sync), each with
                            its shade and how long it is; the two Party lines
+  PickFilter.cs            what damage is isolated to along one cut, and the list it is
+                           picked from (PickRow): what a pick button and its menu are
+                           drawn from. Two kinds, PickFilter.OfTargets (TargetFilter)
+                           and PickFilter.OfTypes (TypeFilter, damage types), and one
+                           of each on MainViewModel (the session's, or the viewed
+                           parse's) and on CompareViewModel (Compare's own). Never
+                           saved; its owner empties it (Reset)
   Panels.cs                PanelSet / PanelInfo: which cards float, their opacity, the open
                            windows; which were out last time (Reopen, Leave), click-through,
                            Dock all
@@ -420,7 +435,12 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
                            the keyboard and has an automation peer), Sample (a picture on
                            the Settings page of what a setting does: one named image to
                            UI Automation, with nothing inside it), ChordKeysConverter
-                           (and PercentConverter)
+                           (and PercentConverter); PickButton (a pick button, "Target"
+                           or "Type" as its PickFilter says: one bordered piece, the
+                           word, what is picked and a chevron, which open its menu, and
+                           while anything is isolated a mark that clears; the menu is a
+                           context menu of its own style, made of the filter's rows
+                           each time it opens, which stays open while lines are chosen)
   EventFeed.cs             250 ms poll on the dispatcher + FileSystemWatcher to poll early;
                            Watch(dir) follows another folder from then on
   Settings.cs              %LOCALAPPDATA%\VibeXI\zerg\settings.json
@@ -470,7 +490,7 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   Log.cs, Options.cs, AppInfo.cs, EqualsConverter.cs
   app.manifest             PerMonitorV2 + common controls v6
   zerg.ico                 built by tools/make-icon.ps1 from assets/icon-source.webp
-tests/Zerg.Core.Tests/     xUnit v2, 673 tests of Zerg.Core: the tail, the tracker (sessions,
+tests/Zerg.Core.Tests/     xUnit v2, 709 tests of Zerg.Core: the tail, the tracker (sessions,
                            counting, healing, the Party line), chart layout (ChartLayoutTests:
                            ticks, the names at a line's end, a stepped edge, the hover
                            card, the histograms), Compare's sheet, export / import,
@@ -494,7 +514,13 @@ tests/Zerg.Core.Tests/     xUnit v2, 673 tests of Zerg.Core: the tail, the track
                            held to the red and to the green; the badge's ink; a colour
                            as written), a colour as hue,
                            saturation and brightness (HsvTests: there and back, the
-                           sheet's markers, what a gray and black keep)
+                           sheet's markers, what a gray and black keep), isolating
+                           targets (TargetsTests: what is counted, an area attack, the
+                           clock left alone, no rate, the list and its order, the words,
+                           a compared run and its sheet), isolating damage types
+                           (DamageTypesTests: a row's type, what is counted in a session
+                           and in a compared run, the rate kept, each list of what the
+                           other filter leaves, the sheet)
 tools/drive.cs             drive the windows: screen grabs, UI Automation, the real mouse (move,
                            click, drag), text fields, Enter and typed keys (for a file dialog), a
                            process's window list, zoom into a grab, a key chord (a global hot key),
@@ -695,6 +721,44 @@ tools/make-icon.ps1        the icon, from assets/
   `DynamicResource`. A colour belongs to its slot: Swap exchanges the
   parses. Under the cumulative chart, "Data table" puts the same
   figures in the chart's place.
+- **Isolating targets.** The Target button (a `Views/PickButton` whose
+  data context is a `PickFilter`) stands after Include Skillchains on the
+  command bar, over the Damage section only, and again on the Compare
+  section's title line while damage is compared. Its menu lists every target
+  alphabetically with what it took (over Compare, in each run); choosing a
+  line isolates that target or lets it go, the menu stays open so several
+  can be chosen, and "All targets" clears. What is picked goes into the
+  count (`Tracker.Count(..., targets)`, `CompareSheet.Of(..., targets)`),
+  and `RULES.md`, "Isolating targets", says what that changes. On screen
+  while one is isolated: the button is lit in the accent, names what is
+  picked and has a mark that clears; the first figure's label reads "Damage
+  to Kirin" (`TotalLabel`) with its share of everything in the note; **every
+  DPS is a dash** (`MainViewModel.Rate`, which the draw beat goes through
+  too, so a beat cannot write a number back) and the mark beside Party DPS
+  is gone (`RateMark`); a damage panel's bar names the targets after the
+  card (`PickFilter.Scope`). In Compare the By target table's rows are
+  buttons (`ComparePickRow`, the `TargetPick` template) that pick as the
+  menu does; the table lists every target whatever is picked, the isolated
+  ones edged in the accent and the rest dimmed, with Clear among the pane's
+  tools. Nothing of it is saved: `MainViewModel` empties its filter on
+  Start, on a new event file and when the session and a viewed parse change
+  places (with the drill-down, in `Recount`), `CompareViewModel` when a slot
+  changes.
+- **Isolating damage types** is the same thing along another cut: a second
+  pick button, Type, after Target, in both places (`TypeFilter` on each
+  view model, made by `PickFilter.OfTypes`), and in Compare the By damage
+  type table's rows as buttons (`KindPick`; the two templates share the
+  `SidePick`, `PickEdge`, `PickCells` and `PickName` styles in
+  `Views/ComparePanes.xaml`). The Damage section has no such table: there
+  the menu is the whole of it. A type's key is the row's kind ("ws"); it is
+  drawn, sorted and logged by what its line of the table is called
+  ("Weaponskills"). **The two filters cut together and each list is of what
+  the other leaves** (`Tracker.Count`, `Compare.Measure`), so picking Melee
+  narrows the targets to what melee dealt, and picking a target narrows the
+  types to what that target took. A type takes no DPS away. The first
+  figure's label says both ("Melee damage to Kirin", `DamageTypes.Heading`),
+  a damage panel's bar names both after the card, and the two filters are
+  emptied together. `RULES.md`, "Isolating damage types".
 - **The Settings page.** One ruled row to a setting
   (`Views/SettingsPage`, each row a `v:SettingRow`): what it is called
   and what it does at the left, its control at the right, and beside
@@ -886,7 +950,7 @@ Zerg replaced; nothing reads them.
 
 ## Verifying a change
 
-1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 673 tests. They cover
+1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 709 tests. They cover
    `Zerg.Core` only. There is no second implementation to compare the
    counting with any more: a change to a counting rule needs its own test,
    and its reason in `RULES.md`.
@@ -1123,6 +1187,42 @@ Zerg replaced; nothing reads them.
      two test parses, in two dozen states, sizes and colours, and says
      where everything was put and what a script would press;
      `compare-walk.sh` walks it on screen.
+   - **The Target button, and Type.** `click <pid> Target` opens its menu
+     (over Compare the same name; only the one on screen is found), and
+     `click <pid> Type` the other's: `MenuItem 'All types'`, then the
+     types by what they are called, each with its damage and share (over
+     Compare, a column for each run); `"Clear the type filter"` is its
+     mark, and `zerg.log` has `types Melee` (`compare types Melee,
+     Weaponskills` over Compare). Over Compare `click <pid> Melee` is a
+     row of By damage type and `"Clear the isolated types"` the link in
+     that pane's heading. With both isolated the first figure reads
+     `Melee damage to Leaping Lizzy`, or `Damage of 2 types to Goblin
+     Pathfind…`, and a panel's bar `Damage by character · Leaping Lizzy ·
+     Melee`. The fixture's whole run reads 62,555 of Melee (Party DPS
+     2,606.5, which stays), 17,157 of it to Leaping Lizzy, and 51,549 of
+     Melee and Weaponskills to Goblin Pathfinder. **With a menu open, find
+     it by its styles** (`windows <pid>`: `tool noactivate topmost
+     layered`, not `clickthrough`): its size changes with its lines. The menu
+     is a window of the process with no title, 400 units wide
+     (`windows <pid>`; `400x…` at 100%, `600x…` at 150%): `names h<menu>` lists `MenuItem
+     'All targets'` and one per target, alphabetically, each followed by
+     its figures; `click h<menu> "<target>"` isolates it or lets it go and
+     the menu stays open; `chord $'\x1b'` (Esc, with Zerg in front: `fg`
+     first) shuts it. **While the menu is open `click <pid> Target` finds
+     the word "Target" in the menu's own heading**, not the button: shut
+     it with Esc. `click <pid> "Clear the target filter"` is the mark on
+     the button, there only while a target is isolated. In `text` the
+     button reads `Target` twice and then what is picked (`All`, `Kirin`,
+     `Genbu +2`), and the first figure's label reads `Damage to <target>`
+     or `Damage to 2 targets`, its note `74.9% of 153,687 · …`; every DPS
+     is `—` and Party DPS's note is `no rate for a target`. In Compare a
+     row of By target is pressed by the target's name (`click <pid>
+     "Leaping Lizzy"`), and `"Clear the isolated targets"` is the link in
+     that pane's heading. `zerg.log` has `targets Leaping Lizzy, Rock
+     Crab`, `targets all`, and `compare targets …`. The fixture has eight
+     targets; a whole one with `--extras` reads 75,788 to Goblin
+     Pathfinder and 39,355 to Leaping Lizzy of 153,687. A floating damage
+     panel's bar reads `<card> · <what is picked>` in `text`.
    - **The View section.** `click <pid> Import` (on the command bar) opens
      the Open dialog, as above, and shows the section once a file is
      chosen; with a parse left open under another section it goes back to
@@ -1359,6 +1459,14 @@ drawn without a window, or "not checked".
 - **A text block is trimmed to the width it was measured in.** `ChipLine`
   measures the hint a second time, in the room left for it. (Whether one
   measured without limit and arranged in less would trim was not tried.)
+- **A context menu says Closed late, and sometimes never.** It fades out,
+  and raises `Closed` when it has; opened again before that, it does not
+  raise it at all. The press that shuts a menu lands on the button that
+  opens it, 60 ms later in `drive.cs press`, so a guard set in `Closed` saw
+  nothing and every second press opened the menu again (seen, with a log
+  line in each handler). `PickButton` asks the `IsOpen` property instead
+  (`DependencyPropertyDescriptor.AddValueChanged`), which changes there and
+  then, and notes on the button's way down whether that press shut the menu.
 - **A separator in a menu does not find its style by its type.** The menu
   tells it to look under the key `MenuItem.SeparatorStyleKey`, so
   `Themes/Controls.xaml` has a style under that key as well as one for

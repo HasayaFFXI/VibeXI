@@ -8,23 +8,23 @@ css/ffxi-theme.css   tokens + every shared primitive
 js/theme.js          window.FFXITheme -- the same tokens, for <canvas>
 ```
 
-This lives at the repo root, a sibling of `apps/` rather than inside it: it is
-not an app, and both calculators under `apps/` reach it by relative path, so its
+This lives in `tools/`, beside the two calculators rather than inside either: it
+is not a tool itself, and both calculators reach it by relative path, so its
 position is load-bearing. See the paths below.
 
-The look is [`../apps/ws-calculator`](../apps/ws-calculator)'s: dark ink field, bone text, blade-red
+The look is [`../ws-calculator`](../ws-calculator)'s: dark ink field, bone text, blade-red
 and brass accents, Shippori Mincho headings, JetBrains Mono for anything numeric.
 
 ## How each app loads it
 
-**apps/ws-calculator** and **apps/penta-calculator** — plain relative paths,
-because pages are opened straight off disk; three levels up from `pages/`:
+**tools/ws-calculator** and **tools/penta-calculator** — plain relative paths,
+because pages are opened straight off disk; two levels up from `pages/`:
 
 ```html
-<link rel="stylesheet" href="../../../shared-ui/css/ffxi-theme.css">
+<link rel="stylesheet" href="../../shared-ui/css/ffxi-theme.css">
 <link rel="stylesheet" href="../shared/css/theme.css">
 ...
-<script src="../../../shared-ui/js/theme.js"></script>
+<script src="../../shared-ui/js/theme.js"></script>
 ```
 
 The shared sheet always loads **first**; the app's own sheet loads after it and

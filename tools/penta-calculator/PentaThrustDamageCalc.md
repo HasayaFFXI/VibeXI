@@ -144,7 +144,7 @@ they do not compound — and only the food term is capped.
 
 ## 3. Every input
 
-"Modelled" is whether `apps/penta-calculator` simulates it today.
+"Modelled" is whether `tools/penta-calculator` simulates it today.
 
 ### The weaponskill itself — fixed constants, not inputs
 
@@ -297,7 +297,7 @@ region it costs far less.
 
 ## 5. What the calculator does not model
 
-Each of these is real server behaviour left out of `apps/penta-calculator`, with
+Each of these is real server behaviour left out of `tools/penta-calculator`, with
 the line to start from.
 
 - **The weaponskill stops early once it has done enough damage.** Every hit loop

@@ -37,7 +37,7 @@ pages/penta-calculator.html the app
 ```
 
 Everything else is shared: the design system in
-[`../../shared-ui`](../../shared-ui) and the engine, data and components in
+[`../shared-ui`](../shared-ui) and the engine, data and components in
 [`../../shared-calc`](../../shared-calc). This app is one HTML file and a
 document.
 

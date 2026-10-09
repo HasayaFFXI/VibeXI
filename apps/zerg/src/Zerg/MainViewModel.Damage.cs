@@ -18,6 +18,18 @@ public sealed partial class MainViewModel
 
     [ObservableProperty] private string totalText = "0";
     [ObservableProperty] private string totalNote = "";
+    /// <summary>What the total is a total of: "Total damage", or with
+    /// targets isolated "Damage to Kirin", "Damage to 3 targets"; with
+    /// damage types, "Melee damage"; with both, "Melee damage to Kirin".</summary>
+    [ObservableProperty] private string totalLabel = Targets.Heading([]);
+    /// <summary>With anything isolated, every one of them by name, for the
+    /// pointer: the label cuts a long name and counts several.</summary>
+    [ObservableProperty] private string? totalTip;
+    /// <summary>With anything isolated, what leads the note under the total:
+    /// how much of all the damage this is ("48.1% of 227,587 · ").</summary>
+    string totalShare = "";
+    /// <summary>With targets isolated, why the party's DPS is a dash.</summary>
+    [ObservableProperty] private string? dpsTip;
     [ObservableProperty] private string clockText = "00:00";
     [ObservableProperty] private string clockNote = None;
     /// <summary>The word in the tag beside the clock, which also colours the
@@ -57,12 +69,32 @@ public sealed partial class MainViewModel
     static IReadOnlyList<T> Kept<T>(IReadOnlyList<T> had, IReadOnlyList<T>? now) =>
         now is null ? (had.Count == 0 ? had : []) : had.SequenceEqual(now) ? had : now;
 
+    /// <summary>
+    /// The Target and Type buttons' lists, and what isolating changes in the
+    /// band of figures: the total's label and what it is a share of, and,
+    /// with a target isolated, the reason the rate beside it is a dash.
+    /// </summary>
+    void DrawTargets(Snapshot c)
+    {
+        TargetFilter.Draw(c.Targets, c.AllTargets, NameOf);
+        TypeFilter.Draw(c.Types, c.AllTypes, n => n);
+        bool isolated = c.Isolated.Count > 0, any = isolated || c.IsolatedTypes.Count > 0;
+        TotalLabel = DamageTypes.Heading(c.IsolatedTypes, c.Isolated);
+        TotalTip = DamageTypes.Told(c.IsolatedTypes, c.Isolated.Select(NameOf).ToList());
+        totalShare = any && c.Whole > 0
+            ? Format.Num(c.Totals.Total / c.Whole * 100, 1) + "% of " + Format.Int(c.Whole) + Dot
+            : "";
+        DpsTip = isolated ? "No DPS while a target is isolated: the clock is the session’s, not the time that target was fought"
+            : null;
+    }
+
     void DrawTiles(Snapshot c)
     {
         var agg = c.Totals;
         int n = agg.Actors.Count;
+        bool isolated = c.Isolated.Count > 0;
         TotalText = Format.Int(agg.Total);
-        DpsNote = n > 0 ? n + " character" + (n == 1 ? "" : "s") : None;
+        DpsNote = isolated ? "no rate for a target" : n > 0 ? n + " character" + (n == 1 ? "" : "s") : None;
 
         // Nothing before the clock starts. The rows are the ones the
         // cumulative chart is drawn from, so the bars add up to its lines.
@@ -70,7 +102,8 @@ public sealed partial class MainViewModel
         HasMarks = pulse != null;
         TotalMark = Kept(TotalMark, pulse?.Bars);
         if (pulse != null) TotalMarkCaption = BandMarks.Caption(pulse.Bucket);
-        DpsMark = Kept(DpsMark, pulse?.Running);
+        // No running rate either while a target is isolated: the mark goes.
+        DpsMark = Kept(DpsMark, isolated ? null : pulse?.Running);
         TopMark = Kept(TopMark, pulse is null ? null
             : agg.Actors.Where(a => a.Total > 0).Select(a => new ShareSlice(a.Total, SwatchOf(a.Name))).ToList());
 
@@ -223,7 +256,7 @@ public sealed partial class MainViewModel
             row.ShowJob = ShowJob;
             row.Damage = Format.Int(a.Total);
             row.Share = Percent(a.Share);
-            row.Dps = Format.Num(a.Dps, 1);
+            row.Dps = Rate(a.Total, c.Elapsed / 1000);
             row.Accuracy = Percent(a.AutoAcc);
             row.WsDamage = Whole(a.WsTotal);
             row.WsAvg = Whole(a.WsAvg);

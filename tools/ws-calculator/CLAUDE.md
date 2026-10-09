@@ -7,8 +7,8 @@ this file is the operational detail.
 ## Paths
 
 ```
-../../shared-ui/css/ffxi-theme.css  THE design system, shared with every app
-../../shared-ui/js/theme.js   window.FFXITheme — the same tokens resolved for <canvas>
+../shared-ui/css/ffxi-theme.css  THE design system, shared with every app
+../shared-ui/js/theme.js      window.FFXITheme — the same tokens resolved for <canvas>
 ../../shared-calc/            THE engine, data and components — shared with ../penta-calculator
 pages/ws-calculator.html      weaponskill Monte-Carlo sim (currently the only page here)
 ```
@@ -29,7 +29,7 @@ is deliberately not vendored here. Formula reference lives in the
 - **Classic scripts on `window.FFXI`. Never ES modules.** Modules are CORS-blocked
   on `file://`, which would break double-click-to-open. This is deliberate, not
   an oversight — don't "modernize" it.
-- **Load order: `../../../shared-ui/js/theme.js` → `core.js` → `data/` → `lib/` →
+- **Load order: `../../shared-ui/js/theme.js` → `core.js` → `data/` → `lib/` →
   `components/`**, all from `../../../shared-calc/`, all before the page's inline script. `core.js` creates the
   namespace everything else assigns into; `theme.js` comes first because
   `lib/chart.js` builds its colour view from `FFXITheme` at load time.
@@ -51,12 +51,12 @@ is deliberately not vendored here. Formula reference lives in the
   Don't reintroduce a component-owned button — components just expose `render()` /
   `derive()` for the host to call. Anything that writes a field programmatically
   must either fire a bubbling event or call `scheduleRecalc()` itself.
-- **The design system lives in `../../shared-ui/`, not here.** `../../shared-calc/css/calc.css`
+- **The design system lives in `../shared-ui/`, not here.** `../../shared-calc/css/calc.css`
   loads *after* it and holds only what an app that is not a calculator would never want. Before adding a
   rule, check whether the shared sheet already has the primitive — `.card`,
   `.field`, `table.data`, `.chart-wrap`, `.chart-tip`, `.tile`, `.stat`,
   `button.primary` — and if a rule here starts looking generally useful, move it
-  up rather than letting the other app grow a copy. `../../shared-ui/README.md` is
+  up rather than letting the other app grow a copy. `../shared-ui/README.md` is
   the vocabulary list.
 - **Canvas colours come from `FFXITheme`, not from a table in the JS.**
   `FFXI.chart.COLORS` is a live view over the CSS custom properties; every key is

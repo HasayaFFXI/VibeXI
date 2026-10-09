@@ -7,7 +7,17 @@ takes its number when the version is cut.
 
 ## Unreleased
 
-Nothing yet.
+- A Target button, on the command bar over the Damage section and beside
+  Include Skillchains in Compare: counts only the damage dealt to the
+  targets picked from its menu, one or several, listed alphabetically. In
+  Compare a row of the By target table can be pressed to the same end. What
+  is picked is not saved, and Start clears it.
+- A Type button beside it, in both places, and in Compare the rows of the
+  By damage type table pressed the same way: counts only the damage of the
+  types picked. The two filters work together, and each lists what the
+  other leaves.
+- Two counting rules added: isolating targets, with no DPS while one is
+  isolated, and isolating damage types (`RULES.md`).
 
 ## 0.2.0 — 2026-10-08
 

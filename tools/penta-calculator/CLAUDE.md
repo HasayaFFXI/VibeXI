@@ -8,8 +8,8 @@ this file is the operational detail.
 ## Paths
 
 ```
-../../shared-ui/css/ffxi-theme.css   THE design system, shared with every app
-../../shared-ui/js/theme.js          window.FFXITheme, the same tokens for <canvas>
+../shared-ui/css/ffxi-theme.css      THE design system, shared with every app
+../shared-ui/js/theme.js             window.FFXITheme, the same tokens for <canvas>
 ../../shared-calc/                   THE engine, data and components — shared with ws-calculator
 pages/penta-calculator.html          the whole app
 PentaThrustDamageCalc.md             the derivation; cites server file:line for every formula
@@ -72,7 +72,7 @@ rules. Additions specific to this app:
   Opening the page over `file://` in the pane is worse: it renders as a `data:`
   URL snapshot, so every relative `<script src>` fails and `FFXI` is undefined.
   Use the `calc-static` launch config (`python -m http.server 8740` at the repo
-  root) and browse to `/apps/penta-calculator/pages/penta-calculator.html`.
+  root) and browse to `/tools/penta-calculator/pages/penta-calculator.html`.
 - **Never read `shared-calc/data/mob-data.js` with the Read tool** — one 390KB
   line, ~250k tokens. Shell only.
 - **The DEX panel runs a sim per sample point**, thirteen of them at 3000 trials
