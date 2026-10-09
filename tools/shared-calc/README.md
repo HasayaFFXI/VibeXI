@@ -18,10 +18,9 @@ components/         mob-selector.js  fstr-panel.js  attack-panel.js  histogram.j
 css/calc.css        the calculator shell — mob grid, buff table, presets, run bar, results
 ```
 
-This lives at the repo root, a sibling of `tools/` (which holds the calculators
-and `shared-ui/`), and its
+This lives in `tools/`, beside the calculators and `shared-ui/`, and its
 position is load-bearing: both calculator pages reach it by relative path,
-`../../../shared-calc/...` from `tools/<tool>/pages/`. Moving or renaming it breaks
+`../../shared-calc/...` from `tools/<tool>/pages/`. Moving or renaming it breaks
 both pages silently.
 
 `shared-ui/` is the *design system*; `shared-calc/` is the *math and components*.
@@ -50,12 +49,12 @@ double-clicking a page has to keep working. There is no build step.
 
 ```html
 <script src="../../shared-ui/js/theme.js"></script>      <!-- first: chart.js reads it at load -->
-<script src="../../../shared-calc/lib/core.js"></script>  <!-- creates the namespace -->
-<script src="../../../shared-calc/data/…"></script>
-<script src="../../../shared-calc/lib/buffs.js"></script> <!-- before damage.js -->
-<script src="../../../shared-calc/lib/damage.js"></script>
-<script src="../../../shared-calc/lib/…"></script>
-<script src="../../../shared-calc/components/…"></script>
+<script src="../../shared-calc/lib/core.js"></script>  <!-- creates the namespace -->
+<script src="../../shared-calc/data/…"></script>
+<script src="../../shared-calc/lib/buffs.js"></script> <!-- before damage.js -->
+<script src="../../shared-calc/lib/damage.js"></script>
+<script src="../../shared-calc/lib/…"></script>
+<script src="../../shared-calc/components/…"></script>
 ```
 
 **`lib/damage.js`, `lib/mob-stats.js` and `lib/buffs.js` are pure.** No
@@ -101,12 +100,18 @@ only needs VIT and DEF is unaffected.
 
 ## Validating a change
 
-Serve the repo root and open a page over http — `file://` in the preview pane
-renders as a `data:` URL snapshot where no relative script loads:
+Serve `tools/` and open a page over http — `file://` in the preview pane
+renders as a `data:` URL snapshot where no relative script loads. Everything
+a page loads is under `tools/`, so that folder is all a server needs:
 
 ```bash
-python -m http.server 8740
+cd tools && python -m http.server 8740
 ```
+
+That is the `calc-static` entry of `tools/.claude/launch.json`, which a Claude
+session opened on `tools/` finds; the pages are then at
+`/ws-calculator/pages/ws-calculator.html` and
+`/penta-calculator/pages/penta-calculator.html`.
 
 Then, in the page console:
 

@@ -18,7 +18,7 @@ mechanics that weaponskill has no representation for:
 - **`atkVaries 0.875`** — a 12.5% attack penalty applied *inside* pDIF, so it
   moves the attack/defense ratio rather than scaling the damage.
 
-All three now live in the shared engine at [`../../shared-calc`](../../shared-calc),
+All three now live in the shared engine at [`../shared-calc`](../shared-calc),
 behind parameters that default to no-ops, so ws-calculator's numbers are
 unchanged.
 
@@ -38,7 +38,7 @@ pages/penta-calculator.html the app
 
 Everything else is shared: the design system in
 [`../shared-ui`](../shared-ui) and the engine, data and components in
-[`../../shared-calc`](../../shared-calc). This app is one HTML file and a
+[`../shared-calc`](../shared-calc). This app is one HTML file and a
 document.
 
 ## What the page shows

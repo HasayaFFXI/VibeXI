@@ -10,12 +10,12 @@ this file is the operational detail.
 ```
 ../shared-ui/css/ffxi-theme.css      THE design system, shared with every app
 ../shared-ui/js/theme.js             window.FFXITheme, the same tokens for <canvas>
-../../shared-calc/                   THE engine, data and components — shared with ws-calculator
+../shared-calc/                      THE engine, data and components — shared with ws-calculator
 pages/penta-calculator.html          the whole app
 PentaThrustDamageCalc.md             the derivation; cites server file:line for every formula
 ```
 
-`../../shared-calc/README.md` documents the shared layer. **Nothing in this app
+`../shared-calc/README.md` documents the shared layer. **Nothing in this app
 owns a formula** — the only JS here is page wiring, the DEX panel, and the
 readouts.
 
@@ -71,8 +71,10 @@ rules. Additions specific to this app:
   ```
   Opening the page over `file://` in the pane is worse: it renders as a `data:`
   URL snapshot, so every relative `<script src>` fails and `FFXI` is undefined.
-  Use the `calc-static` launch config (`python -m http.server 8740` at the repo
-  root) and browse to `/tools/penta-calculator/pages/penta-calculator.html`.
+  Use the `calc-static` launch config (`tools/.claude/launch.json`: `python -m
+  http.server 8740` in `tools/`, found by a session opened on that folder) and
+  browse to `/penta-calculator/pages/penta-calculator.html`. Served from the
+  repo root instead, both paths gain a leading `/tools`.
 - **Never read `shared-calc/data/mob-data.js` with the Read tool** — one 390KB
   line, ~250k tokens. Shell only.
 - **The DEX panel runs a sim per sample point**, thirteen of them at 3000 trials
