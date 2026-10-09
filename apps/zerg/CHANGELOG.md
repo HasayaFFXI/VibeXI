@@ -7,6 +7,10 @@ takes its number when the version is cut.
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.2.1 — 2026-10-08
+
 - A Target button, on the command bar over the Damage section and beside
   Include Skillchains in Compare: counts only the damage dealt to the
   targets picked from its menu, one or several, listed alphabetically. In

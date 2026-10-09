@@ -164,8 +164,9 @@ side identity; leave it at 1.0.0.0).
 5. If the user asks for it, publish over `dist/Zerg` (the command is
    above).
 
-0.1.0 was never tagged. `dist/Zerg` is 0.2.0, published a second time on
-2026-10-08 once the number had moved and the status line showed it.
+0.1.0 was never tagged. `dist/Zerg` is 0.2.1, published on 2026-10-08: the
+Target and Type filters. A patch number by the owner's call, though they
+are a feature and the rule above would have made them a minor.
 
 ## Layout
 
