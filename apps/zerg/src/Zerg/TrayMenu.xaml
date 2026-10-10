@@ -166,6 +166,8 @@
     <MenuItem Style="{StaticResource PanelItem}" DataContext="{Binding Panels[line]}"/>
     <MenuItem Style="{StaticResource PanelItem}" DataContext="{Binding Panels[bars]}"/>
     <MenuItem Style="{StaticResource PanelItem}" DataContext="{Binding Panels[actions]}"/>
+    <MenuItem Style="{StaticResource PanelItem}" DataContext="{Binding Panels[types]}"/>
+    <MenuItem Style="{StaticResource PanelItem}" DataContext="{Binding Panels[targets]}"/>
     <Separator/>
     <MenuItem Style="{StaticResource PanelItem}" DataContext="{Binding Panels[hline]}"/>
     <MenuItem Style="{StaticResource PanelItem}" DataContext="{Binding Panels[hbars]}"/>

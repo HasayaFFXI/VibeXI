@@ -798,8 +798,9 @@
 
       <!-- The Damage section's panes, flush against each other and ruled
            off, arranged as its tree of splits says (v:SplitPanel): the
-           tables in the left-hand column, the chart over the drill-down in
-           the right. Each pane is a Grid with the pane's key, holding the
+           tables in the left-hand column; in the right, the chart, By
+           damage type over By target, and the drill-down. Each pane is a
+           Grid with the pane's key, holding the
            card and what stands in for it while the card floats over the
            game in a panel of its own; a pane whose card is out is as tall
            as that stand-in, and its neighbour in the column has the rest.
@@ -855,11 +856,47 @@
           <v:Away DataContext="{Binding Panels[line]}"/>
         </Grid>
 
+        <!-- The two side tables: what kind of damage, and at whom. One
+             card, twice (v:TallyCard), each given the filter it lists:
+             the one the Type button on the command bar has, and the one
+             the Target button has. A row isolates what it names, as its
+             line of that button's menu does. Over the parse open in the
+             View section they list that parse, as every pane here does. -->
+        <Grid v:SplitPanel.Key="types" v:SplitPanel.Title="By damage type">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[types].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:TallyCard Filter="{Binding TypeFilter}" Info="{Binding Panels[types]}"
+                       Visibility="{Binding Panels[types].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[types]}"/>
+        </Grid>
+
+        <Grid v:SplitPanel.Key="targets" v:SplitPanel.Title="By target">
+          <Grid.Style>
+            <Style TargetType="Grid">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Panels[targets].IsOut}" Value="True">
+                  <Setter Property="v:SplitPanel.Fixed" Value="{StaticResource StandInHeight}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Grid.Style>
+          <v:TallyCard Filter="{Binding TargetFilter}" Info="{Binding Panels[targets]}"
+                       Visibility="{Binding Panels[targets].IsOut, Converter={StaticResource Hidden}}"/>
+          <v:Away DataContext="{Binding Panels[targets]}"/>
+        </Grid>
+
         <!-- The drill-down: always a pane, with a place of its own. It is
              folded to its heading until an action is picked, and while the
              Actions card floats (its panel shows the drill-down under the
              action; the heading here says so): then it is as tall as a
-             heading, and the chart above it has the column (or, moved into
+             heading, and the tables above it have its room (or, moved into
              a column of its own, as wide as one: a rail). The card folds
              itself; this says so to the panel that arranges it. -->
         <Grid x:Name="Drill" v:SplitPanel.Key="drill" v:SplitPanel.Title="Drill-down">

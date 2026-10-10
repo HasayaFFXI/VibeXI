@@ -41,6 +41,9 @@ require('vx_entity')
 require('vx_emit')
 require('vx_ws_names')
 
+# Reads vibexi.ini (see the filesystem section) and hands back the settings.
+require('vx_config')
+
 
 # --- events ------------------------------------------------------------------
 ashita.events.register
@@ -54,7 +57,7 @@ event:unload
 
 
 # --- filesystem --------------------------------------------------------------
-# Creating the output directory under the Ashita config path.
+# Creating the output directory: EventDir from vibexi.ini, else the default.
 ashita.fs.exists
 ashita.fs.create_dir
 
@@ -63,6 +66,13 @@ io.open
 :write
 :close
 :flush
+
+# The settings file. io.open's one other use: vx_config.lua opens vibexi.ini in
+# the addon's own folder, read-only, once at load. Reading a local file cannot
+# reach the server. This is NOT IConfigurationManager, which parses .ini too --
+# its call is ':Load', and a ':Method' token is allowed whatever it is called
+# on, so that line would also allow the plugin manager's ':Load'.
+:read
 
 
 # --- Ashita SDK roots --------------------------------------------------------
@@ -130,7 +140,8 @@ GetPlayerEntity()
 os.time
 os.date
 
-# Reads %LOCALAPPDATA% to locate the output directory. Reads an environment
-# variable and nothing else — it cannot execute, open or connect to anything.
+# Reads %LOCALAPPDATA% to locate the output directory, and whichever %NAME% the
+# EventDir line of vibexi.ini is written with. Reads an environment variable
+# and nothing else — it cannot execute, open or connect to anything.
 # (os.execute and io.popen, which CAN, are denylisted.)
 os.getenv

@@ -83,7 +83,7 @@ appends to a file, Zerg reads it. Zerg uses nothing else in the repository
 ## Commands
 
 ```bash
-# all tests (709, under a second once built). Naming the solution builds the
+# all tests (727, under a second once built). Naming the solution builds the
 # app too; beside a running Zerg, name the test project instead
 dotnet test apps/zerg/Zerg.slnx
 dotnet test apps/zerg/tests/Zerg.Core.Tests
@@ -164,9 +164,11 @@ side identity; leave it at 1.0.0.0).
 5. If the user asks for it, publish over `dist/Zerg` (the command is
    above).
 
-0.1.0 was never tagged. `dist/Zerg` is 0.2.1, published on 2026-10-08: the
-Target and Type filters. A patch number by the owner's call, though they
-are a feature and the rule above would have made them a minor.
+0.1.0 was never tagged. `dist/Zerg` is 0.2.2, published on 2026-10-09: the
+By target and By damage type panes of the Damage section. 0.2.1
+(2026-10-08) was the Target and Type filters. Both are patch numbers by
+the owner's call, though they are features and the rule above would have
+made each a minor.
 
 ## Layout
 
@@ -216,12 +218,15 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
                            stand-in its own height, and folding a pane that stands alone
                            in its column sideways, to a rail; Least, Keys, At; PaneLayouts,
                            the arrangement each section is installed with (Damage, Healing,
-                           Compare)
+                           Compare) and the keys of their panes (Damage has six: bars,
+                           actions, line, types, targets, drill)
   Layout/SplitTree.Edits.cs  a tree changed, each change a function that returns another
                            tree: a rule moved (SetRatio; Drag, which stops at the panes'
                            least sizes), a pane folded, moved beside another, put on an
                            edge of the section, swapped; the neighbour on a side; a saved
-                           tree made fit for this build (Repair)
+                           tree made fit for this build (Repair: a pane the build has
+                           not got dropped, and a pane the tree lacks put beside the
+                           pane it is installed beside, PutBack)
   Layout/SplitTree.Json.cs   a tree as settings.json has it, and read back from whatever
                            is there (PaneLayouts.Read, Write)
   Layout/PaneDrops.cs      where a pane carried by its heading can be put down: the five
@@ -261,12 +266,17 @@ src/Zerg.Core/             net10.0, no UI, so it is testable without a window
                            and Count(), the whole pipeline in one call, damage and healing.
                            Also an opened parse, read only (Tracker.Of), and Export()
   Targets.cs               isolating targets: what each target took (Totals), the order they
-                           are picked from (Sorted: alphabetical), and how what is picked is
+                           are picked from (Sorted: alphabetical), the order a table of
+                           one parse lists them in (Ranked: largest first, then whatever
+                           is picked that took nothing) and what the rows that name no
+                           target came to (Unnamed), and how what is picked is
                            said ("Kirin +2", "Damage to Kirin"). The filter itself is a line
                            of Counting.Counted; Snapshot.Rate is why no DPS is given meanwhile
   DamageTypes.cs           isolating damage types, the same along another cut: the type a
                            row is counted under (Of: its kind, a pet's rows all "pet"),
-                           what each is called, their totals and order, and the label over
+                           what each is called, their totals and order (in a table of one
+                           parse, Listed: the order of Compare's By damage type), and the
+                           label over
                            a total whatever is isolated (Heading: "Melee damage to Kirin")
   Cast.cs, Shades.cs       colour slots (owner in slot 0), shades for a shared job, hidden-name labels
   SessionView.cs           the two session buttons and the session's wording, as data; the
@@ -295,8 +305,9 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
                            section, its band (the parse open there), which never scrolls;
                            then the page (Body): the band of five figures (three with a
                            small mark, the clock with the state tag), the characters as
-                           chips, and the section: the Damage or Healing section's four
-                           panes in two columns, each scrolling what it holds (a pane whose
+                           chips, and the section: the Damage section's six panes or the
+                           Healing section's four, in two columns, each scrolling what it
+                           holds (a pane whose
                            card is floating is the short stand-in for it); or the Compare
                            section's own bands and its four panes; or the Settings page.
                            Over the panes, in a window 700
@@ -347,12 +358,18 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
                            its shade and how long it is; the two Party lines
   PickFilter.cs            what damage is isolated to along one cut, and the list it is
                            picked from (PickRow): what a pick button and its menu are
-                           drawn from. Two kinds, PickFilter.OfTargets (TargetFilter)
+                           drawn from; and, over one parse, the same as a table (Table,
+                           of TallyRow: the Damage section's By target and By damage
+                           type panes), with what such a table's pane and rows say
+                           (Title, TableNote, NoteOf, PickTip). Two kinds,
+                           PickFilter.OfTargets (TargetFilter)
                            and PickFilter.OfTypes (TypeFilter, damage types), and one
                            of each on MainViewModel (the session's, or the viewed
                            parse's) and on CompareViewModel (Compare's own). Never
                            saved; its owner empties it (Reset)
-  Panels.cs                PanelSet / PanelInfo: which cards float, their opacity, the open
+  Panels.cs                PanelSet / PanelInfo: which cards float (eight: the Damage
+                           section's line, bars, actions, types and targets, the Healing
+                           section's three), their opacity, the open
                            windows; which were out last time (Reopen, Leave), click-through,
                            Dock all
   PanelWindow              a floating panel: one card in a borderless, always-on-top, see-through
@@ -366,7 +383,12 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   Views/                   one UserControl per card (LineCard, BarsCard, ActionsCard, DrillCard, and
                            the Healing section's HealLineCard, HealBarsCard, HealActionsCard,
                            HealDrillCard), each a Pane with a docked and a floating form
-                           switched by Float.On; Pane (a region of a section with a
+                           switched by Float.On; TallyCard, which is two of the Damage
+                           section's panes (By damage type, By target: one card, given
+                           the PickFilter it lists as its Filter and the PanelInfo it
+                           floats in as its Info; a row is a button that isolates, drawn
+                           with the styles Compare's side tables use, SidePick, PickEdge,
+                           PickCells and PickName in App.xaml); Pane (a region of a section with a
                            30-unit heading: grip, title, note, tools, fold mark, Pop out;
                            folded, it is its heading; to UI Automation, a group named
                            by its title; the grip and the fold mark are controls, which
@@ -491,7 +513,7 @@ src/Zerg/                  net10.0-windows WPF exe, Zerg.exe
   Log.cs, Options.cs, AppInfo.cs, EqualsConverter.cs
   app.manifest             PerMonitorV2 + common controls v6
   zerg.ico                 built by tools/make-icon.ps1 from assets/icon-source.webp
-tests/Zerg.Core.Tests/     xUnit v2, 709 tests of Zerg.Core: the tail, the tracker (sessions,
+tests/Zerg.Core.Tests/     xUnit v2, 727 tests of Zerg.Core: the tail, the tracker (sessions,
                            counting, healing, the Party line), chart layout (ChartLayoutTests:
                            ticks, the names at a line's end, a stepped edge, the hover
                            card, the histograms), Compare's sheet, export / import,
@@ -502,8 +524,13 @@ tests/Zerg.Core.Tests/     xUnit v2, 709 tests of Zerg.Core: the tail, the track
                            the design's sheets, least sizes, a folded pane and a stand-in,
                            rooms too small, whole pixels, the rail; SplitEditsTests: a rule
                            moved, a pane folded, moved, swapped and put on an edge, the
-                           least sizes after any of it, a saved tree repaired, written and
-                           read back, where a carried pane lands), a table's columns
+                           least sizes after any of it, a saved tree repaired (a tree
+                           from before the Damage section's two side tables among them),
+                           written and
+                           read back, where a carried pane lands; both arrange a tree of
+                           their own, Four, the four panes the Damage section had until
+                           2026-10-09, wherever a test is about the arithmetic and not
+                           about which panes a section has), a table's columns
                            (ColumnsTests:
                            the sheets' widths, leasts, a column gone, when each table
                            drops which), a floating panel's measures (PanelFitTests: a
@@ -517,11 +544,12 @@ tests/Zerg.Core.Tests/     xUnit v2, 709 tests of Zerg.Core: the tail, the track
                            saturation and brightness (HsvTests: there and back, the
                            sheet's markers, what a gray and black keep), isolating
                            targets (TargetsTests: what is counted, an area attack, the
-                           clock left alone, no rate, the list and its order, the words,
+                           clock left alone, no rate, the list and its order, a table's
+                           order and its line for what named no target, the words,
                            a compared run and its sheet), isolating damage types
                            (DamageTypesTests: a row's type, what is counted in a session
                            and in a compared run, the rate kept, each list of what the
-                           other filter leaves, the sheet)
+                           other filter leaves, a table's order, the sheet)
 tools/drive.cs             drive the windows: screen grabs, UI Automation, the real mouse (move,
                            click, drag), text fields, Enter and typed keys (for a file dialog), a
                            process's window list, zoom into a grab, a key chord (a global hot key),
@@ -611,7 +639,13 @@ tools/make-icon.ps1        the icon, from assets/
   while a drill-down has nothing picked), and its neighbour in the column
   takes the rest. No pane is made smaller than 320 by 132; in a window too
   short for that the panel says what it needs (`PageStack.Needs`) and the
-  page scrolls.
+  page scrolls. **The Damage section has six panes** (the Healing section
+  four): the two tables in the left-hand column, and down the right the
+  chart, By damage type, By target and the drill-down
+  (`PaneLayouts.Damage`). Four down a column need 531 units with the
+  drill-down open and 429 while it is its heading, so in a body 706 tall
+  the two side tables are at their least while an action is picked, and
+  have the drill-down's room (210 and 209) while none is.
 - **The arrangement is the player's**, per section, and remembered
   (`settings.layouts`). Three things change it, and each is a function in
   `Zerg.Core/Layout` that makes a new tree from the old one. **A rule is
@@ -639,7 +673,13 @@ tools/make-icon.ps1        the icon, from assets/
   up or down by one place, Reset), which a right-click on the heading
   opens too, and Shift+F10 or the menu key with the keyboard on one of
   the heading's controls. In one column nothing is dragged; a pane still
-  folds.
+  folds. **A saved arrangement that lacks a pane the build has** (one
+  written before the Damage section had its two side tables, say) keeps
+  everything in it, and the pane is put beside the pane it is installed
+  beside, split the same way with the installed share
+  (`SplitTree.Repair`, `PutBack`): the side tables go over the
+  drill-down, wherever the player had put that. Nothing is written back
+  until the player next changes the arrangement.
 - **The keyboard.** The Tab key goes through the window as it reads: the
   title bar (the tabs, the View tab and the mark that closes it, the
   gear), the command bar (the pair, Export, Import, the toggles, the
@@ -737,9 +777,17 @@ tools/make-icon.ps1        the icon, from assets/
   DPS is a dash** (`MainViewModel.Rate`, which the draw beat goes through
   too, so a beat cannot write a number back) and the mark beside Party DPS
   is gone (`RateMark`); a damage panel's bar names the targets after the
-  card (`PickFilter.Scope`). In Compare the By target table's rows are
-  buttons (`ComparePickRow`, the `TargetPick` template) that pick as the
-  menu does; the table lists every target whatever is picked, the isolated
+  card (`PickFilter.Scope`). **The By target pane lists the same as a
+  table, and its rows pick as the menu does**: in the Damage section (and
+  the View section's damage side, which is the same panes) it is
+  `Views/TallyCard` over the filter's own `Table` (`TallyRow`, kept and
+  updated in place by `PickFilter.Draw` from the count that draws the
+  menu), largest first, each row shaded to what it took out of the most
+  any took (a small bar beside its share while `shadeCharacters` is
+  off), with a last line that cannot be pressed for rows that named no
+  target; in Compare the table's rows are
+  buttons (`ComparePickRow`, the `TargetPick` template). Either table
+  lists every target whatever is picked, the isolated
   ones edged in the accent and the rest dimmed, with Clear among the pane's
   tools. Nothing of it is saved: `MainViewModel` empties its filter on
   Start, on a new event file and when the session and a viewed parse change
@@ -747,11 +795,13 @@ tools/make-icon.ps1        the icon, from assets/
   changes.
 - **Isolating damage types** is the same thing along another cut: a second
   pick button, Type, after Target, in both places (`TypeFilter` on each
-  view model, made by `PickFilter.OfTypes`), and in Compare the By damage
-  type table's rows as buttons (`KindPick`; the two templates share the
-  `SidePick`, `PickEdge`, `PickCells` and `PickName` styles in
-  `Views/ComparePanes.xaml`). The Damage section has no such table: there
-  the menu is the whole of it. A type's key is the row's kind ("ws"); it is
+  view model, made by `PickFilter.OfTypes`), and in both the By damage
+  type table's rows as buttons: in Compare `KindPick`, in the Damage
+  section the second `Views/TallyCard`, in the order Compare's table has
+  (`DamageTypes.Listed`), not by size. Every such row, of either section
+  and either table, is drawn with the `SidePick`, `PickEdge`, `PickCells`
+  and `PickName` styles in `App.xaml`, which ask a row for `Isolated`,
+  `Dimmed`, `Name`, `Tip` and `PickCommand` and nothing else. A type's key is the row's kind ("ws"); it is
   drawn, sorted and logged by what its line of the table is called
   ("Weaponskills"). **The two filters cut together and each list is of what
   the other leaves** (`Tracker.Count`, `Compare.Measure`), so picking Melee
@@ -903,8 +953,9 @@ tools/make-icon.ps1        the icon, from assets/
 - **The halo.** A panel's text has a dark halo, so it holds over a bright
   part of the game with the backdrop turned down. It is one
   `DropShadowEffect` (`PanelHalo` in `App.xaml`) on the bar's line and on
-  the whole card of the four panels in which nothing moves with the
-  clock (`PanelWindow.Halo`). **Never on a row, and never over a
+  the whole card of the six panels in which nothing moves with the
+  clock (`PanelWindow.Halo`: the strips, the Actions and Heals tables,
+  By damage type and By target). **Never on a row, and never over a
   cumulative chart**, whose lines are drawn at the draw frequency: an
   effect is worked out again whenever anything in it or under it is
   drawn. That chart outlines its own labels in paint (`Chart.Halo`,
@@ -943,7 +994,7 @@ All under `%LOCALAPPDATA%\VibeXI\zerg\`:
 | | |
 |---|---|
 | `logs\zerg.log` | startup, settings and theme changes, file switches, session changes with their exact times, crashes. The first thing to read when something is wrong |
-| `settings.json` | filters (`excluded`, `skillchains`, `hideNames`, `groupSmallLines`), `charactersOpen` (false, as installed: one line of as many chips as fit and a "+N" chip; true: every character's chip, on as many lines as they take. Until 2026-10-07 the installed value was true; a file that has the key keeps what it says), how the tables' rows are drawn (`shadeCharacters`, true as installed: a character's row is shaded in their colour to the length of their share; `shadeActions`, false as installed: the rows under a character are shaded; `lowAccuracy`, 90 as installed, 50 to 100: the percentage under which a rate is marked red; the Settings page sets all three, and a file without them gets the installed look), the colours of Compare's two runs (`runA`, `runB`: each as it is written, "#3987E5", or null, as installed: the blue and the orange of the theme in use; once set, the one colour serves both themes; set with the Settings page's picker, and back to null with its "Use default"), `theme`, `section`, `viewMode`, `compareBy`, `compareMode`, panel opacity (`panelOpacity`, the default, set on the Settings page; `panelOpacities`, each panel whose own slider has been moved), `drawFrequency` (how many times a second the clock, every DPS and HPS and a live chart's edge are redrawn, 1 to 60), placement under `windows` (`main`, and `panel:<key>` for each floating panel), `openPanels` (the panels to bring back at the next start), `layouts` (how each section's panes are arranged, where that is not as installed: an object with a tree under "Damage", "Healing" or "Compare"; a split is `{"split": "columns", "share": 0.653, "first": ..., "second": ...}`, "rows" for one over the other, and a pane `{"pane": "bars"}` with `"folded": true` while it is; the key is absent while all three are as installed, as in a file from before 2026-10-08; whatever is under it that is not a tree is the installed arrangement, and a tree is repaired against the panes the build has), `layoutLocked` (false as installed: the arrangement cannot be dragged), `clickThroughKey` (the hot key, "Ctrl+Alt+Z") and `eventsDir` (the folder the event files are looked for in; absent or null is the addon's own) |
+| `settings.json` | filters (`excluded`, `skillchains`, `hideNames`, `groupSmallLines`), `charactersOpen` (false, as installed: one line of as many chips as fit and a "+N" chip; true: every character's chip, on as many lines as they take. Until 2026-10-07 the installed value was true; a file that has the key keeps what it says), how the tables' rows are drawn (`shadeCharacters`, true as installed: a character's row is shaded in their colour to the length of their share; `shadeActions`, false as installed: the rows under a character are shaded; `lowAccuracy`, 90 as installed, 50 to 100: the percentage under which a rate is marked red; the Settings page sets all three, and a file without them gets the installed look), the colours of Compare's two runs (`runA`, `runB`: each as it is written, "#3987E5", or null, as installed: the blue and the orange of the theme in use; once set, the one colour serves both themes; set with the Settings page's picker, and back to null with its "Use default"), `theme`, `section`, `viewMode`, `compareBy`, `compareMode`, panel opacity (`panelOpacity`, the default, set on the Settings page; `panelOpacities`, each panel whose own slider has been moved), `drawFrequency` (how many times a second the clock, every DPS and HPS and a live chart's edge are redrawn, 1 to 60), placement under `windows` (`main`, and `panel:<key>` for each floating panel), `openPanels` (the panels to bring back at the next start), `layouts` (how each section's panes are arranged, where that is not as installed: an object with a tree under "Damage", "Healing" or "Compare"; a split is `{"split": "columns", "share": 0.653, "first": ..., "second": ...}`, "rows" for one over the other, and a pane `{"pane": "bars"}` with `"folded": true` while it is; the key is absent while all three are as installed, as in a file from before 2026-10-08; whatever is under it that is not a tree is the installed arrangement, and a tree is repaired against the panes the build has: one it does not know is dropped, and one the tree lacks is put beside the pane it is installed beside, so a "Damage" tree from before 2026-10-09, which has four panes, is read with By damage type and By target over its drill-down, and is written with six the next time the arrangement changes), `layoutLocked` (false as installed: the arrangement cannot be dragged), `clickThroughKey` (the hot key, "Ctrl+Alt+Z") and `eventsDir` (the folder the event files are looked for in; absent or null is the addon's own) |
 
 A `zerg.log` at the top of that folder, a `windows.json` and a `WebView2\`
 folder may also be there on this machine. They are left over from the build
@@ -951,7 +1002,7 @@ Zerg replaced; nothing reads them.
 
 ## Verifying a change
 
-1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 709 tests. They cover
+1. **Tests:** `dotnet test apps/zerg/Zerg.slnx`, 727 tests. They cover
    `Zerg.Core` only. There is no second implementation to compare the
    counting with any more: a change to a counting rule needs its own test,
    and its reason in `RULES.md`.
@@ -1012,7 +1063,17 @@ Zerg replaced; nothing reads them.
      page does not, so that is a pane's list (the first pane's that has
      more than fits); in a narrow window it is the page. The stand-in for
      a floating card is the card's title, `Showing in its own panel.` and
-     `Bring back <title>`.
+     `Bring back <title>`. **The Damage section's two side tables** are
+     `Group 'By damage type'` and `Group 'By target'` (the names Compare's
+     two have: only one section is on screen). A row is a button named by
+     what it lists, `click <pid> "Leaping Lizzy"`, `click <pid> Melee`,
+     and a press isolates it or lets it go; in `text` a row reads its
+     name, what it came to and its share. The note after the title reads
+     `1 of 8 isolated. Select another to add it` while anything is, and
+     the heading then has `Clear the isolated targets` (`... types`),
+     which is not the mark on the command bar's button (`Clear the target
+     filter`): both are on screen. A target's row and its line of the
+     Target button's menu have one name; the menu is another window.
    - **The layout.** Each pane's heading has `Move <pane>` (the grip: a
      button, and `click` on it opens the heading's menu) and `Fold <pane>`
      (`Unfold <pane>` while folded); a drill-down's are `Move Drill-down`
@@ -1021,7 +1082,9 @@ Zerg replaced; nothing reads them.
      be moved is `Thumb 'Divider between <pane> and <pane>'`, the first
      pane in reading order of each side: as installed, `Divider between
      Damage by character and Cumulative damage` (upright), `... Damage by
-     character and Actions`, `... Cumulative damage and Drill-down`; a
+     character and Actions`, `... Cumulative damage and By damage type`,
+     `... By damage type and By target`, and with a drill-down
+     open the one over it, `... By damage type and Drill-down`; a
      rule beside a folded pane or a stand-in has none, and none has while
      the layout is locked or the window is one column. **A rule is moved
      without the mouse by `set <pid> "<its name>" <units>`**: its value
@@ -1296,12 +1359,16 @@ Zerg replaced; nothing reads them.
      (`tool noactivate topmost layered` for a panel); use that `h<hwnd>` as
      the target of any other command. Panels are opened with
      `click <pid> "Pop out Cumulative damage"` (or `Damage by character`,
-     `Actions`, `Cumulative healing`, `Healing by character`, `Heals`) and
+     `Actions`, `By damage type`, `By target`, `Cumulative healing`,
+     `Healing by character`, `Heals`) and
      closed with `click h<hwnd> Dock`, or all at once with
      `click <pid> "Dock all"` (the status line, which also says how many
      are out: `text` has "1 panel out", "3 panels out, click-through"). A drill-down has no panel of its
      own: in the Actions or Heals panel, `click h<hwnd> "<character>, <action>"`
-     opens it under that row.
+     opens it under that row. In the By target or By damage type panel a
+     row is pressed by its name as in the pane, `click h<hwnd> "Leaping
+     Lizzy"`, and Clear, on a line of its own over the Share column while
+     anything is isolated, as `Clear the isolated targets`.
    - **A panel's bar.** In `text` it reads the pair (`Restart`, `Pause`,
      each twice), the clock, the total, the card's name, the lock's
      sentence (read out though hidden), `Panel opacity`, the percentage,
@@ -1999,6 +2066,37 @@ it.
 **Next is packaging**, which has not been started and waits for the user's
 word: a single-file self-contained `Zerg.exe`, a zip, a version resource;
 then a clean-machine test, SmartScreen, and a README for players.
+
+**The Damage section's two side tables** (2026-10-09, under "Unreleased" in
+`CHANGELOG.md`; no version cut, and `dist/Zerg` does not have them): By
+damage type and By target as panes of the Damage section, and so of the
+View section's damage side, their rows picking as the Type and Target
+buttons' menus do. No counting rule changed. Seen in three short launches of
+a Debug build, on one screen of 2560 by 1600 at 150%, in the dark theme,
+in a window 1440 by 920 units, with the fixture played in: both panes in
+an arrangement saved before them (the owner's own, which gained them over
+its drill-down) and in the installed one; a target and a type isolated by
+their rows, together (17,157 of Melee to Leaping Lizzy, as the Target and
+Type buttons give), and cleared by each pane's link; both popped out, a
+row pressed in the By target panel through UI Automation, docked; the rows
+with `shadeCharacters` off; a drill-down open under the two tables; a
+target isolated over a parse opened in the View section; and the Compare
+section, whose rows' styles moved to `App.xaml` for this, with one parse
+in both slots and a target and a type isolated by their rows, as it was.
+The Clear link's
+place in a panel was moved after it was seen cut by the panel's edge, and
+was seen in its new place. **Not seen**: the light theme; a narrow window
+(one column); a row pressed with the real mouse in a panel (whether the
+foreground stays where it was); the tray menu's two new lines; a panel
+brought back by a restart (`openPanels`); a window at 100%; the keyboard
+through the new panes (the Tab order is the panel's, and was not walked);
+a rule dragged or a pane carried among six; a live session counting under
+the tables (the rows were seen after the fixture's rows had all arrived).
+**In a body about 700 units tall the column of four is tight with a
+drill-down open**: the two tables go to their least (132, three rows
+each) and the drill-down has what is left (185 as installed). Folding a
+table by its mark, or a taller window, is the way out; the shares are in
+`PaneLayouts.Damage`.
 
 **The redesign of the UI is done** (2026-10-08): a re-skin in place to
 the design in `apps/zerg-mockup/` (`DESIGN.md` and ten sheets), in thirteen

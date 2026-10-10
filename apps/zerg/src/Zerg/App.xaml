@@ -483,6 +483,76 @@
       </Setter>
     </Style>
 
+    <!-- ===================================================== the side tables
+         By target and By damage type: in the Damage section over one parse
+         (Views/TallyCard), in the Compare section over two runs
+         (Views/ComparePanes). The two share how a row that isolates is
+         drawn; what is in its cells is each table's own. A row says
+         Isolated, Dimmed, Name, Tip and PickCommand, whichever kind it is
+         (TallyRow, ComparePickRow). -->
+
+    <!-- A row of a side table that is pressed to isolate it: a target, a
+         damage type. The Target and Type buttons' menus do the same.
+         Isolated, it has the accent down its left edge and its name is
+         stronger; while others are isolated and it is not, it is dimmed: it
+         is still listed, with what it came to, and is in no other figure.
+         The row's cells are the template's that names this style. 28 units
+         for the two lines of a Compare row; a table of one parse says its
+         own height. -->
+    <Style x:Key="SidePick" TargetType="Button" BasedOn="{StaticResource RowPick}">
+      <Setter Property="Height" Value="28"/>
+      <Setter Property="ToolTip" Value="{Binding Tip}"/>
+      <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+      <Setter Property="Command" Value="{Binding PickCommand}"/>
+      <Setter Property="AutomationProperties.Name" Value="{Binding Name}"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Isolated}" Value="True">
+          <Setter Property="AutomationProperties.ItemStatus" Value="isolated"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The accent down an isolated row's left edge. -->
+    <Style x:Key="PickEdge" TargetType="Rectangle">
+      <Setter Property="Width" Value="3"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="Margin" Value="0,0,0,1"/>
+      <Setter Property="Fill" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
+      <Setter Property="Visibility" Value="Collapsed"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Isolated}" Value="True">
+          <Setter Property="Visibility" Value="Visible"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- What is dimmed of a row that is not among the isolated. -->
+    <Style x:Key="PickCells" TargetType="Grid">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Dimmed}" Value="True">
+          <Setter Property="Opacity" Value="0.5"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="PickName" TargetType="TextBlock" BasedOn="{StaticResource CellText}">
+      <Setter Property="Padding" Value="14,0,8,0"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Isolated}" Value="True">
+          <Setter Property="FontWeight" Value="SemiBold"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- The rows of a side table scroll under its headings in what the
+         pane has left. In a narrow window, where a pane is as tall as it
+         asks to be, the list is as tall as it needs, up to a cap. -->
+    <Style x:Key="SideList" TargetType="Grid">
+      <Style.Triggers>
+        <Trigger Property="v:SplitPanel.Stacked" Value="True">
+          <Setter Property="MaxHeight" Value="340"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
     <!-- ================================================= the Compare section
          What its bands (Views/CompareSection) and its panes
          (Views/ComparePanes) both draw with. -->

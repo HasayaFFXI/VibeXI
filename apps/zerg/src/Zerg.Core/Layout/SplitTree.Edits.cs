@@ -266,9 +266,11 @@ public static partial class SplitTree
     /// the build has not got is dropped (its neighbour takes its room); a
     /// pane named twice is kept where it is first met; a share that is not
     /// a number is a half, and one outside 0 to 1 is brought inside; and
-    /// each pane of the build that the tree does not mention is put under
-    /// everything else, the section's whole width, with an even share of
-    /// its height, so that it is on screen and can be moved from there.
+    /// each pane of the build that the tree does not mention is put beside
+    /// the pane it stands beside as installed (<see cref="PutBack"/>), so
+    /// that an arrangement saved by a build with fewer panes keeps
+    /// everything its player did and has the new panes where a new
+    /// installation has them, as nearly as that arrangement allows.
     /// Nothing left, or no tree at all, or one too deep to be anything but
     /// damage, is the installed tree. Never throws.
     /// </summary>
@@ -280,12 +282,17 @@ public static partial class SplitTree
         var kept = tree is null ? null : Clean(tree, 0);
         if (kept is null || tooDeep) return installed;
 
+        // In reading order, so a pane put back can be the neighbour the
+        // next one is put beside: two that the installed tree has together
+        // come out together.
         foreach (string key in Keys(installed))
         {
-            if (seen.Contains(key)) continue;
-            int count = seen.Count + 1;
-            seen.Add(key);
-            kept = new PaneSplit(SplitWay.Rows, Share(1 - 1.0 / count), kept, new PaneLeaf(key));
+            if (!seen.Add(key)) continue;
+            // There is always a neighbour (the tree has a pane, and every
+            // pane of the build is somewhere in the installed tree); if
+            // there were not, under everything else, the section's width.
+            kept = PutBack(kept, installed, key)
+                   ?? new PaneSplit(SplitWay.Rows, Share(1 - 1.0 / seen.Count), kept, new PaneLeaf(key));
         }
         // Said the same way as the installed tree, it is the installed tree.
         return kept == installed ? installed : kept;
@@ -315,5 +322,64 @@ public static partial class SplitTree
                     return null;
             }
         }
+    }
+
+    /// <summary>
+    /// A tree with one more pane, put where the installed tree has it: for
+    /// a pane the build has and the tree lacks. Null if the installed tree
+    /// has no such pane, or the tree holds none of that pane's neighbours.
+    ///
+    /// <para>The installed tree says what the pane stands beside: the other
+    /// half of the split it is a half of, or, where the tree has nothing of
+    /// that half, the other half of the split above that, and so on up.
+    /// Of that other half the tree may hold all, or some, or have them
+    /// scattered. So the pane is put beside the one of them nearest it as
+    /// installed (the last of them if the pane comes after, the first if
+    /// before), or beside as large a piece of the tree round that one as
+    /// holds nothing but panes of that half: split the same way, on the
+    /// same side, with the installed share. A tree arranged as the
+    /// installed one was before a pane was added so comes out arranged as
+    /// the installed one is now, with whatever shares its player had set.</para>
+    /// </summary>
+    static SplitNode? PutBack(SplitNode tree, SplitNode installed, string key)
+    {
+        if (PathTo(installed, key) is not { } path) return null;
+        var pane = new PaneLeaf(key);
+        for (int depth = path.Length - 1; depth >= 0; depth--)
+        {
+            if (NodeAt(installed, path[..depth]) is not PaneSplit split) return null;
+            bool after = path[depth] == '1';
+            var theirs = Keys(after ? split.First : split.Second);
+            var here = theirs.Where(k => Leaf(tree, k) is not null).ToList();
+            if (here.Count == 0) continue;
+
+            var at = PathTo(tree, after ? here[^1] : here[0])!;
+            while (at.Length > 0 && Keys(NodeAt(tree, at[..^1])!).All(theirs.Contains)) at = at[..^1];
+            double share = double.IsNaN(split.Ratio) ? 0.5 : Share(split.Ratio);
+            return Put(tree, at, 0, beside => after ? new PaneSplit(split.Way, share, beside, pane)
+                                                    : new PaneSplit(split.Way, share, pane, beside));
+        }
+        return null;
+    }
+
+    /// <summary>The node a path leads to, a pane or a split, or null.</summary>
+    static SplitNode? NodeAt(SplitNode tree, string path)
+    {
+        var node = tree;
+        foreach (char step in path)
+        {
+            if (node is not PaneSplit split) return null;
+            node = step == '0' ? split.First : split.Second;
+        }
+        return node;
+    }
+
+    /// <summary>The node at the end of a path, whatever it is, replaced.</summary>
+    static SplitNode Put(SplitNode node, string path, int at, Func<SplitNode, SplitNode> change)
+    {
+        if (at == path.Length) return change(node);
+        if (node is not PaneSplit split) return node;
+        return path[at] == '0' ? split with { First = Put(split.First, path, at + 1, change) }
+                               : split with { Second = Put(split.Second, path, at + 1, change) };
     }
 }

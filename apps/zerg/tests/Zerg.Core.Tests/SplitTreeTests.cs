@@ -18,12 +18,22 @@ public class SplitTreeTests
     static Dictionary<string, double> Own(params (string Key, double Height)[] heights) =>
         heights.ToDictionary(h => h.Key, h => h.Height);
 
+    /// <summary>
+    /// Four panes in two columns, as sheet 01 draws the Damage section:
+    /// what that section was installed with until it gained its two side
+    /// tables, and still the shape of the Healing section's. What most of
+    /// these tests arrange: they are about the arithmetic, not about which
+    /// panes a section has.
+    /// </summary>
+    static readonly SplitNode Four =
+        Columns(0.653, Rows(0.474, Pane("bars"), Pane("actions")), Rows(0.42, Pane("line"), Pane("drill")));
+
     // ------------------------------------------------- the installed layouts
 
     [Fact]
-    public void Damage_is_arranged_as_the_sheet_draws_it()
+    public void Four_panes_are_arranged_as_the_sheet_draws_them()
     {
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits);
+        var a = SplitTree.Arrange(Four, W, H, Limits);
 
         // Sheet 01: rules at x 940.5, y 504.5 and y 466.5 in a window whose
         // body begins at y 170.
@@ -32,6 +42,56 @@ public class SplitTreeTests
         Assert.Equal(new Box(941, 0, 499, 296), a.Panes["line"]);
         Assert.Equal(new Box(941, 297, 499, 409), a.Panes["drill"]);
         Assert.Equal(4, a.Panes.Count);
+    }
+
+    [Fact]
+    public void Damage_keeps_the_sheets_tables_and_has_four_panes_down_its_second_column()
+    {
+        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits);
+
+        // The left-hand column is sheet 01's, to the unit.
+        Assert.Equal(new Box(0, 0, 940, 334), a.Panes["bars"]);
+        Assert.Equal(new Box(0, 335, 940, 371), a.Panes["actions"]);
+        // The right: the chart, By damage type over By target, the
+        // drill-down. With the drill-down open that body is short for
+        // four: the two tables are at their least.
+        Assert.Equal(new Box(941, 0, 499, 254), a.Panes["line"]);
+        Assert.Equal(new Box(941, 255, 499, 132), a.Panes["types"]);
+        Assert.Equal(new Box(941, 388, 499, 132), a.Panes["targets"]);
+        Assert.Equal(new Box(941, 521, 499, 185), a.Panes["drill"]);
+        Assert.Equal(6, a.Panes.Count);
+        Assert.Equal(5, a.Dividers.Count);
+    }
+
+    [Fact]
+    public void Damages_side_tables_have_the_drill_downs_room_until_an_action_is_picked()
+    {
+        // The drill-down is its heading until then, which is how the
+        // section is nearly always seen.
+        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits, null, new HashSet<string> { "drill" });
+
+        Assert.Equal(new Box(941, 0, 499, 254), a.Panes["line"]);
+        Assert.Equal(new Box(941, 255, 499, 210), a.Panes["types"]);
+        Assert.Equal(new Box(941, 466, 499, 209), a.Panes["targets"]);
+        Assert.Equal(new Box(941, 676, 499, 30), a.Panes["drill"]);
+        // The rule between the two tables can be moved; the one over the
+        // folded drill-down cannot.
+        Assert.False(a.Dividers.Single(d => d.Path == "110").Held);
+        Assert.True(a.Dividers.Single(d => d.Path == "11").Held);
+    }
+
+    [Fact]
+    public void The_two_side_tables_are_the_damage_sections_alone()
+    {
+        // Healing is never isolated, and the Compare section has tables of
+        // its own, under keys of its own: a key names one pane of one section.
+        Assert.Equal("types", PaneLayouts.Types);
+        Assert.Equal("targets", PaneLayouts.Targets);
+        Assert.DoesNotContain(SplitTree.Keys(PaneLayouts.Healing), k => k is PaneLayouts.Types or PaneLayouts.Targets);
+        var all = SplitTree.Keys(PaneLayouts.Damage).Concat(SplitTree.Keys(PaneLayouts.Healing))
+                           .Concat(SplitTree.Keys(PaneLayouts.Compare)).ToList();
+        Assert.Equal(14, all.Count);
+        Assert.Equal(all.Count, all.Distinct().Count());
     }
 
     [Fact]
@@ -74,16 +134,20 @@ public class SplitTreeTests
     {
         // Down the left-hand column, then down the right: the order they
         // stand in when a narrow window has one column.
-        Assert.Equal(new[] { "bars", "actions", "line", "drill" }, SplitTree.Keys(PaneLayouts.Damage));
+        Assert.Equal(new[] { "bars", "actions", "line", "types", "targets", "drill" }, SplitTree.Keys(PaneLayouts.Damage));
         Assert.Equal(new[] { "hbars", "hactions", "hline", "hdrill" }, SplitTree.Keys(PaneLayouts.Healing));
         Assert.Equal(new[] { "only" }, SplitTree.Keys(Pane("only")));
     }
 
     [Fact]
-    public void The_installed_layouts_need_two_least_panes_each_way()
+    public void The_installed_layouts_need_two_least_panes_across_and_as_many_down_as_their_longer_column()
     {
-        Assert.Equal((641.0, 265.0), SplitTree.Least(PaneLayouts.Damage, Limits));
+        Assert.Equal((641.0, 265.0), SplitTree.Least(Four, Limits));
         Assert.Equal((641.0, 265.0), SplitTree.Least(PaneLayouts.Healing, Limits));
+        // Damage: four down its second column, three of them and a heading
+        // while the drill-down has nothing picked.
+        Assert.Equal((641.0, 531.0), SplitTree.Least(PaneLayouts.Damage, Limits));
+        Assert.Equal((641.0, 429.0), SplitTree.Least(PaneLayouts.Damage, Limits, null, new HashSet<string> { "drill" }));
     }
 
     // ------------------------------------------------------------ the rules
@@ -91,7 +155,7 @@ public class SplitTreeTests
     [Fact]
     public void The_panes_and_their_rules_fill_the_room_and_overlap_nothing()
     {
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits);
+        var a = SplitTree.Arrange(Four, W, H, Limits);
 
         double area = a.Panes.Values.Sum(b => b.Width * b.Height) + a.Dividers.Sum(d => d.Line.Width * d.Line.Height);
         Assert.Equal(W * H, area, 6);
@@ -104,7 +168,7 @@ public class SplitTreeTests
     [Fact]
     public void Each_split_has_a_rule_between_its_halves()
     {
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits);
+        var a = SplitTree.Arrange(Four, W, H, Limits);
 
         Assert.Equal(3, a.Dividers.Count);
         var root = a.Dividers.Single(d => d.Path == "");
@@ -124,7 +188,7 @@ public class SplitTreeTests
     [Fact]
     public void A_path_leads_back_to_its_split()
     {
-        var tree = PaneLayouts.Damage;
+        var tree = Four;
         Assert.Same(tree, SplitTree.At(tree, ""));
         Assert.Equal(0.474, SplitTree.At(tree, "0")!.Ratio);
         Assert.Equal(0.42, SplitTree.At(tree, "1")!.Ratio);
@@ -137,7 +201,7 @@ public class SplitTreeTests
     [Fact]
     public void A_rule_says_how_far_it_may_be_moved()
     {
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits);
+        var a = SplitTree.Arrange(Four, W, H, Limits);
 
         // Between the columns: each side keeps its 320.
         var root = a.Dividers.Single(d => d.Path == "");
@@ -243,7 +307,7 @@ public class SplitTreeTests
     [InlineData(double.PositiveInfinity, 300)]
     public void No_room_at_all_is_arranged_without_complaint(double width, double height)
     {
-        var a = SplitTree.Arrange(PaneLayouts.Damage, width, height, Limits);
+        var a = SplitTree.Arrange(Four, width, height, Limits);
 
         Assert.Equal(4, a.Panes.Count);
         foreach (var b in a.Panes.Values)
@@ -282,7 +346,7 @@ public class SplitTreeTests
     [Fact]
     public void A_drill_down_folded_to_its_heading_leaves_the_chart_the_column()
     {
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits, Own(("drill", 30)));
+        var a = SplitTree.Arrange(Four, W, H, Limits, Own(("drill", 30)));
 
         Assert.Equal(new Box(941, 0, 499, 675), a.Panes["line"]);
         Assert.Equal(new Box(941, 676, 499, 30), a.Panes["drill"]);
@@ -291,7 +355,7 @@ public class SplitTreeTests
     [Fact]
     public void Two_such_panes_stand_at_the_top_and_the_rest_is_empty()
     {
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits, Own(("line", 46), ("drill", 30)));
+        var a = SplitTree.Arrange(Four, W, H, Limits, Own(("line", 46), ("drill", 30)));
 
         Assert.Equal(new Box(941, 0, 499, 46), a.Panes["line"]);
         Assert.Equal(new Box(941, 47, 499, 30), a.Panes["drill"]);
@@ -377,13 +441,13 @@ public class SplitTreeTests
     {
         // A drill-down with nothing picked: the host names it, the tree is not touched.
         var own = new HashSet<string> { "drill" };
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, Limits, null, own);
+        var a = SplitTree.Arrange(Four, W, H, Limits, null, own);
         Assert.Equal(new Box(941, 0, 499, 675), a.Panes["line"]);
         Assert.Equal(new Box(941, 676, 499, 30), a.Panes["drill"]);
         Assert.Empty(a.Rails);
 
         // Put in a column of its own, it is a rail until an action is picked.
-        var moved = SplitTree.MoveToEdge(PaneLayouts.Damage, "drill", PaneSide.Right);
+        var moved = SplitTree.MoveToEdge(Four, "drill", PaneSide.Right);
         var b = SplitTree.Arrange(moved, W, H, Limits, null, own);
         Assert.Equal(new Box(1410, 0, 30, 706), b.Panes["drill"]);
         Assert.Equal(new[] { "drill" }, b.Rails);
@@ -429,12 +493,12 @@ public class SplitTreeTests
     [Fact]
     public void The_least_height_counts_a_folded_pane_as_its_heading()
     {
-        Assert.Equal((641.0, 265.0), SplitTree.Least(PaneLayouts.Damage, Limits, Own(("drill", 30))));
+        Assert.Equal((641.0, 265.0), SplitTree.Least(Four, Limits, Own(("drill", 30))));
         // Both right-hand panes short: the left-hand column still needs 265.
-        Assert.Equal((641.0, 265.0), SplitTree.Least(PaneLayouts.Damage, Limits, Own(("line", 46), ("drill", 30))));
+        Assert.Equal((641.0, 265.0), SplitTree.Least(Four, Limits, Own(("line", 46), ("drill", 30))));
         Assert.Equal((320.0, 163.0), SplitTree.Least(Rows(0.5, Pane("a", folded: true), Pane("b")), Limits));
         // Folded for a reason of its own: the same.
-        Assert.Equal((641.0, 265.0), SplitTree.Least(PaneLayouts.Damage, Limits, null, new HashSet<string> { "drill" }));
+        Assert.Equal((641.0, 265.0), SplitTree.Least(Four, Limits, null, new HashSet<string> { "drill" }));
         Assert.Equal((320.0, 163.0),
             SplitTree.Least(Rows(0.5, Pane("a"), Pane("b")), Limits, null, new HashSet<string> { "a" }));
     }
@@ -449,7 +513,7 @@ public class SplitTreeTests
         double pixel = 1 / 1.5;
         var limits = new PaneLimits(Rule: 2 * pixel, Grain: pixel);
 
-        var a = SplitTree.Arrange(PaneLayouts.Damage, W, H, limits);
+        var a = SplitTree.Arrange(Four, W, H, limits);
 
         foreach (var b in a.Panes.Values)
         {

@@ -58,6 +58,46 @@ public static class Targets
         keys.Distinct(StringComparer.Ordinal)
             .OrderBy(called, StringComparer.OrdinalIgnoreCase).ThenBy(called, StringComparer.Ordinal).ToList();
 
+    /// <summary>
+    /// The same lines in the order a table of one parse lists them: largest
+    /// first, as the Compare section's By target table is (damage types
+    /// have an order of their own: <see cref="DamageTypes.Listed"/>); two
+    /// that came to the same, by what they are called. After them,
+    /// whatever is picked that nothing was dealt to, with no total (not a
+    /// number), in the order they are picked from: it stays listed, where
+    /// it can be let go. A line with no name cannot be picked and is not
+    /// listed; what such rows came to is the table's to say apart
+    /// (<see cref="Unnamed"/>).
+    /// </summary>
+    /// <param name="called">What a key is called, where that is not the key
+    /// itself (a damage type's).</param>
+    public static List<TargetTotal> Ranked(IEnumerable<TargetTotal> list, IEnumerable<string>? picked = null,
+                                           Func<string, string>? called = null)
+    {
+        called ??= n => n;
+        var ranked = list.Where(t => t.Name.Length > 0 && !double.IsNaN(t.Total))
+            .GroupBy(t => t.Name, StringComparer.Ordinal).Select(g => g.First())
+            .OrderByDescending(t => t.Total)
+            .ThenBy(t => called(t.Name), StringComparer.OrdinalIgnoreCase).ThenBy(t => called(t.Name), StringComparer.Ordinal)
+            .ToList();
+        if (picked != null)
+        {
+            var listed = new HashSet<string>(ranked.Select(t => t.Name), StringComparer.Ordinal);
+            ranked.AddRange(SortedBy(picked.Where(k => k.Length > 0 && !listed.Contains(k)), called)
+                .Select(k => new TargetTotal(k, double.NaN)));
+        }
+        return ranked;
+    }
+
+    /// <summary>What the rows that name nothing came to: the whole, less
+    /// every line that has a name. Nothing, where that is none or (by a
+    /// rounding of the sums) less.</summary>
+    public static double Unnamed(IEnumerable<TargetTotal> list, double whole)
+    {
+        double rest = whole - list.Where(t => t.Name.Length > 0 && !double.IsNaN(t.Total)).Sum(t => t.Total);
+        return double.IsNaN(rest) || rest < 0.5 ? 0 : rest;
+    }
+
     /// <summary>What a filter is handed: the names picked, or null for
     /// "every target" when none is.</summary>
     public static IReadOnlySet<string>? Only(IEnumerable<string>? picked)

@@ -150,7 +150,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>
     /// Which targets the damage on screen is isolated to, and the list they
-    /// are picked from: the Target button on the command bar. Of the session,
+    /// are picked from: the Target button on the command bar, and the rows
+    /// of the Damage section's By target pane, which is this filter's own
+    /// table (Views/TallyCard). Of the session,
     /// or of the parse open in the View section, whichever is drawn. Not
     /// saved, and emptied when what it lists changes hands: Start, a new
     /// event file, the session and a saved parse changing places.
@@ -158,8 +160,9 @@ public sealed partial class MainViewModel : ObservableObject
     public PickFilter TargetFilter { get; } = PickFilter.OfTargets(paired: false);
 
     /// <summary>Which damage types it is isolated to: the Type button beside
-    /// that one. The two cut together, each listing what the other leaves,
-    /// and are emptied together.</summary>
+    /// that one, and the rows of the By damage type pane. The two cut
+    /// together, each listing what the other leaves, and are emptied
+    /// together.</summary>
     public PickFilter TypeFilter { get; } = PickFilter.OfTypes(paired: false);
 
     /// <summary>The cards that can float over the game, and their opacity.</summary>

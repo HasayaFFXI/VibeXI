@@ -9,7 +9,7 @@ using Zerg.Core.Charts;
 
 namespace Zerg;
 
-// The Damage section: five tiles and four cards, each drawn from one count.
+// The Damage section: five tiles and six cards, each drawn from one count.
 public sealed partial class MainViewModel
 {
     const char KeyGap = (char)1;
@@ -70,9 +70,11 @@ public sealed partial class MainViewModel
         now is null ? (had.Count == 0 ? had : []) : had.SequenceEqual(now) ? had : now;
 
     /// <summary>
-    /// The Target and Type buttons' lists, and what isolating changes in the
-    /// band of figures: the total's label and what it is a share of, and,
-    /// with a target isolated, the reason the rate beside it is a dash.
+    /// The Target and Type buttons' lists, with them the By target and By
+    /// damage type tables (each filter draws its own, from the same count:
+    /// PickFilter.Draw), and what isolating changes in the band of
+    /// figures: the total's label and what it is a share of, and, with a
+    /// target isolated, the reason the rate beside it is a dash.
     /// </summary>
     void DrawTargets(Snapshot c)
     {
