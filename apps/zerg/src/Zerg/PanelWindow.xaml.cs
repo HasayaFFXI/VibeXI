@@ -98,6 +98,9 @@ public partial class PanelWindow : Window
             PanelSet.Line => new LineCard(),
             PanelSet.Actions => new ActionsCard(),
             PanelSet.Bars => Scrolling(new BarsCard()),
+            // The two side tables are one card, told which filter it lists.
+            PanelSet.Types => new TallyCard { Filter = model.TypeFilter, Info = info },
+            PanelSet.Targets => new TallyCard { Filter = model.TargetFilter, Info = info },
             PanelSet.HealLine => new HealLineCard(),
             PanelSet.HealActions => new HealActionsCard(),
             _ => Scrolling(new HealBarsCard()),
@@ -128,11 +131,13 @@ public partial class PanelWindow : Window
             if (WindowPlacement.IsUsableFrame(saved)) WindowPlacement.ApplyFrame(this, saved!);
             // The first time, near the main window's corner, each panel a
             // step further in so several opened at once do not stack exactly.
-            // A heal panel starts a little right of its damage twin's place.
+            // A heal panel starts a little right of its damage twin's place,
+            // and the two side tables a little right of those.
             else if (WindowPlacement.CaptureFrame(main) is { } at)
             {
                 int i = Array.IndexOf([PanelSet.Line, PanelSet.Bars, PanelSet.Actions,
-                                       PanelSet.HealLine, PanelSet.HealBars, PanelSet.HealActions], info.Key);
+                                       PanelSet.HealLine, PanelSet.HealBars, PanelSet.HealActions,
+                                       PanelSet.Types, PanelSet.Targets], info.Key);
                 int step = 36 * (i % 3), across = 48 * (i / 3);
                 WindowPlacement.MoveFrame(this, at.X + 60 + step + across, at.Y + 140 + step);
             }
@@ -201,7 +206,7 @@ public partial class PanelWindow : Window
     /// <summary>
     /// The halo round the card's text (<c>PanelHalo</c> in <c>App.xaml</c>
     /// says what it is and what it may be set on): one effect on the whole
-    /// card, in the four panels where nothing moves with the clock. A strip
+    /// card, in the six panels where nothing moves with the clock. A strip
     /// and a table are drawn again when an event arrives and at no other
     /// time, and their bars do not ease in a panel (<c>Views/Grow</c>), so
     /// the effect is worked out once per count. A cumulative chart's lines
@@ -327,6 +332,9 @@ public partial class PanelWindow : Window
             // The design's width; the headings, then a row each, three rows at least.
             PanelSet.Bars => (440, PanelFit.StripHeight(model.Strip.Count, scale)),
             PanelSet.HealBars => (440, PanelFit.StripHeight(model.HealStrip.Count, scale)),
+            // A side table: three columns, and room for eight rows under
+            // the bar and the headings.
+            PanelSet.Types or PanelSet.Targets => (360, 250),
             // Room for a few rows and the drill-down that opens under one.
             _ => (660, 520),
         };

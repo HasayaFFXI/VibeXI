@@ -7,7 +7,20 @@ takes its number when the version is cut.
 
 ## Unreleased
 
-Nothing yet.
+## 0.2.2 — 2026-10-09
+
+- Two more panes in the Damage section, and so in the View section's
+  damage side: By damage type and By target, what each type came to and
+  what each target took, with its share. A row is pressed to isolate what
+  it names, as its line of the Type or Target button's menu does, and the
+  two stay in step; the rows that are not isolated are dimmed, and the
+  pane's heading has Clear. Both can be popped out, folded and moved like
+  any pane. They stand in the right-hand column, under the chart and over
+  the drill-down.
+- An arrangement of the Damage section saved before this keeps everything
+  in it and gains the two panes beside its drill-down. More generally, a
+  pane a saved arrangement lacks is now put beside the pane it is
+  installed beside, not under everything else.
 
 ## 0.2.1 — 2026-10-08
 

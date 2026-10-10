@@ -356,34 +356,49 @@ public static partial class SplitTree
 
 /// <summary>
 /// The panes Zerg has, and the arrangement each section is installed with:
-/// the one the design's sheets draw. It is what a section starts from, what
+/// the one the design's sheets draw (and, in the Damage section, the two
+/// side tables added to it since). It is what a section starts from, what
 /// it is set back to, and what a saved arrangement is repaired against (the
 /// panes this build has are the installed tree's). Reading the saved ones
 /// and writing them is in <c>SplitTree.Json.cs</c>.
 /// </summary>
 public static partial class PaneLayouts
 {
-    // The Damage section's four. The first three are also the keys of the
-    // cards that can float (PanelSet); a drill-down cannot, and goes where
-    // its table goes.
+    // The Damage section's six. All but the drill-down are also the keys of
+    // the cards that can float (PanelSet); a drill-down cannot, and goes
+    // where its table goes.
     public const string Bars = "bars", Actions = "actions", Line = "line", Drill = "drill";
-    /// <summary>The Healing section's four, each the twin of the one above it.</summary>
+    /// <summary>The Damage section's two side tables: what kind of damage
+    /// (by damage type) and at whom (by target). Each row of either
+    /// isolates what it names, as the Type and Target buttons do. The
+    /// Healing section has no such panes: healing is never isolated.</summary>
+    public const string Types = "types", Targets = "targets";
+    /// <summary>The Healing section's four, each the twin of a Damage pane.</summary>
     public const string HealBars = "hbars", HealActions = "hactions", HealLine = "hline", HealDrill = "hdrill";
 
     /// <summary>
-    /// Damage, as sheet 01 draws it in a body 1440 by 706: the tables in a
-    /// column 940 wide, the per-character table 334 tall over Actions; the
-    /// chart 296 tall over the drill-down in the 499 that are left.
+    /// Damage, in a body 1440 by 706: the tables in a column 940 wide, as
+    /// sheet 01 draws them, the per-character table 334 tall over Actions;
+    /// and down the 499 that are left the chart, By damage type over By
+    /// target, and the drill-down, in the order the Compare section has
+    /// its own three. The sheet draws that column with the chart 296 tall
+    /// over the drill-down alone; the two tables came later (2026-10-09)
+    /// and took their room from both. The drill-down is its heading until
+    /// an action is picked, and the two tables have what it leaves: 210
+    /// and 209 in that body, under a chart 254 tall.
     /// </summary>
     public static SplitNode Damage { get; } =
         new PaneSplit(SplitWay.Columns, 0.653,
             new PaneSplit(SplitWay.Rows, 0.474, new PaneLeaf(Bars), new PaneLeaf(Actions)),
-            new PaneSplit(SplitWay.Rows, 0.42, new PaneLeaf(Line), new PaneLeaf(Drill)));
+            new PaneSplit(SplitWay.Rows, 0.36, new PaneLeaf(Line),
+                new PaneSplit(SplitWay.Rows, 0.5,
+                    new PaneSplit(SplitWay.Rows, 0.5, new PaneLeaf(Types), new PaneLeaf(Targets)),
+                    new PaneLeaf(Drill))));
 
     /// <summary>
-    /// Healing, as sheet 02 draws it: the same columns; the per-character
-    /// table, which has eight columns and few rows, 224 tall. The sheet
-    /// draws the chart floating, so its share is Damage's.
+    /// Healing, as sheet 02 draws it: the tables in a column 940 wide and
+    /// the chart 296 tall over the drill-down beside them; the
+    /// per-character table, which has eight columns and few rows, 224 tall.
     /// </summary>
     public static SplitNode Healing { get; } =
         new PaneSplit(SplitWay.Columns, 0.653,

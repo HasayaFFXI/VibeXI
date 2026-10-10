@@ -219,6 +219,49 @@ public class DamageTypesTests
         Assert.Null(both.Dps);
     }
 
+    // ------------------------------------------------------------- the table
+
+    [Fact]
+    public void A_table_of_one_parse_lists_the_types_in_the_order_of_compares_table()
+    {
+        var c = Session().Count(Nobody, true, 30_000);
+
+        // The list a type is picked from is alphabetical by what each is
+        // called; the table has the order of Compare's By damage type.
+        Assert.Equal(["magic", "melee", "pet", "ws"], c.Types.Select(t => t.Name));
+        Assert.Equal([new TargetTotal("melee", 160), new TargetTotal("ws", 400), new TargetTotal("magic", 300),
+                      new TargetTotal("pet", 130)], DamageTypes.Listed(c.Types));
+        Assert.Equal(c.AllTypes, DamageTypes.Listed(c.Types).Sum(t => t.Total));
+        // The very order of the sheet's own table of the same fight.
+        var sheet = CompareSheet.Of(Fight(), Fight(), false, true, false);
+        Assert.Equal(sheet.Kinds.Select(k => k.Key), DamageTypes.Listed(c.Types).Select(t => t.Name));
+    }
+
+    [Fact]
+    public void A_type_the_table_does_not_know_is_listed_after_the_ones_it_does()
+    {
+        var lines = DamageTypes.Listed([new TargetTotal("zeta", 900), new TargetTotal("magic", 5), new TargetTotal("Alpha", 1),
+                                        new TargetTotal("melee", 7)]);
+
+        Assert.Equal(["melee", "magic", "Alpha", "zeta"], lines.Select(t => t.Name));
+    }
+
+    [Fact]
+    public void A_type_that_is_picked_and_came_to_nothing_keeps_its_place_in_the_table()
+    {
+        // Skillchains picked, then Include Skillchains switched off: the
+        // line stays where it stands, with no total, to be let go.
+        var lines = DamageTypes.Listed([new TargetTotal("melee", 160), new TargetTotal("magic", 300)], ["skillchain", "melee"]);
+
+        Assert.Equal(["melee", "skillchain", "magic"], lines.Select(t => t.Name));
+        Assert.True(double.IsNaN(lines[1].Total));
+        Assert.Equal(160, lines[0].Total);
+        // A type with no key is no line, and what it came to is said apart.
+        var odd = new[] { new TargetTotal("", 30), new TargetTotal("melee", 160) };
+        Assert.Equal(["melee"], DamageTypes.Listed(odd, [""]).Select(t => t.Name));
+        Assert.Equal(30, Targets.Unnamed(odd, 190));
+    }
+
     // -------------------------------------------------------------- the sheet
 
     [Fact]

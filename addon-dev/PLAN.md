@@ -253,7 +253,8 @@ Estimated addon size: ~600 lines.
 ### Layout
 
 `addons/VibeXI/` is the addon and nothing else — it is what gets copied into
-Ashita, so only Lua the addon loads at runtime may live there. Everything that
+Ashita, so only Lua the addon loads at runtime, and the one settings file it
+reads, may live there. Everything that
 builds, checks or documents the addon sits outside it and never ships.
 
 ```
@@ -265,6 +266,8 @@ addons/VibeXI/         copy this folder to …\HorizonXI\Game\addons\
   vx_enums.lua         packet ids, categories, spawn flags, message ids
   vx_emit.lua          event → ASCII JSON → append to file
   vx_ws_names.lua      generated weaponskill id → name table
+  vx_config.lua        reads vibexi.ini → settings table
+  vibexi.ini           settings, edited by hand (Horizon=1)
 
 addon-dev/             the addon's tooling and docs; never shipped
   PLAN.md              this file
@@ -338,8 +341,31 @@ Source is in `addons/VibeXI/`:
 | `vx_emit.lua` | event → ASCII JSON → appended file |
 | `vx_enums.lua` | packet ids, categories, spawn flags, message ids |
 | `vx_ws_names.lua` | generated; `addon-dev/gen-ws-names.py` rebuilds it |
+| `vx_config.lua` | reads `vibexi.ini` once at load; every failure is the defaults |
+| `vibexi.ini` | settings, edited by hand; the one non-Lua file in the folder |
 
-**Output path — `%LOCALAPPDATA%\VibeXI\events\<Character>-<YYYYMMDDHHMMSS>.jsonl`**, a
+**`Horizon` (default 1)** is the one setting so far. The server sends twelve job
+abilities — the Jumps, the bashes, Eagle Eye Shot — on the weaponskill category
+under ids real weaponskills also use, and with the setting on the addon separates
+them by the first result's message and writes them as `kind:"ability"` under
+their own names (`E.WsAbilities` in `vx_enums.lua`). Set it to 0 on a server that
+sends job abilities as job abilities. The startup `meta` line records which way a
+file was written, as `"horizon":1` or `0`, and whether the `.ini` was found at
+all, as `"iniFound"`.
+
+**`EventDir` (default `%LOCALAPPDATA%\VibeXI\events`)** is the folder the event
+files go to. A full path only; `%NAME%` expands to that environment variable. An
+empty, relative or uncreatable value falls back to the default rather than to no
+file, and the `meta` line's `"dirFrom"` says which rule won (`ini`, `default` or
+`install`). Zerg's Events folder setting has to name the same folder.
+
+Nothing else is a setting. The rest of the addon's constants are packet layout,
+message tables and safety rails (`PARTY_TTL`, `MAX_TARGETS`, the 512 ability
+offset): changing one changes what the numbers mean, not how the addon suits
+its user.
+
+**Output path — `%LOCALAPPDATA%\VibeXI\events\<Character>-<YYYYMMDDHHMMSS>.jsonl`**
+by default (`EventDir` moves the folder; the file name is fixed), a
 new file each time the addon is loaded.
 Deliberately not `%TEMP%` (Storage Sense deletes it, and this file *is* the
 persistence layer), not `%APPDATA%`/Roaming (profile sync on a hot file), not

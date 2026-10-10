@@ -22,7 +22,9 @@ namespace Zerg;
 // rearranging them there rearranges that section.
 public sealed partial class MainViewModel
 {
-    /// <summary>The Damage section's panes: bars, actions, line, drill.</summary>
+    /// <summary>The Damage section's panes: bars, actions, line, types,
+    /// targets, drill. A tree saved by a build that had only four of them
+    /// is given the other two where they are installed (SplitTree.Repair).</summary>
     [ObservableProperty] private SplitNode damageLayout = PaneLayouts.Damage;
 
     /// <summary>The Healing section's panes: hbars, hactions, hline, hdrill.</summary>

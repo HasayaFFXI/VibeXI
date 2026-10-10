@@ -37,6 +37,10 @@ local Action   = require('vx_action')
 local Entity   = require('vx_entity')
 local Emit     = require('vx_emit')
 local WS_NAMES = require('vx_ws_names')
+local Config   = require('vx_config')
+
+-- Horizon=1 in vibexi.ini, which is also what a missing file or line means.
+local HORIZON = Config.horizon
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
@@ -129,7 +133,10 @@ local function action_name(category, param, first_result)
     elseif category == E.Category.WEAPONSKILL then
         -- Category 3 also carries a handful of job abilities (Mug, Steal,
         -- Shield Bash, the Jumps...), which is exactly the ambiguity the chat
-        -- log could never resolve. Weaponskill table first, then abilities.
+        -- log could never resolve. Weaponskill table first, then abilities --
+        -- which only reaches an ability whose id no weaponskill has. The ones
+        -- that share an id never get here as category 3 with Horizon on:
+        -- record() has already turned them into abilities.
         local n = WS_NAMES[param]
         if n then return n end
         n = ability_name(param + E.ABILITY_ID_OFFSET)
@@ -176,6 +183,15 @@ end
 ---                  name in abilRaw and a job ability in abilOffset means the
 ---                  table is segmented as assumed and E.ABILITY_ID_OFFSET is
 ---                  right. If the names come back swapped, the offset is wrong.
+---   horizon        The Horizon setting this file was written under, 1 or 0. It
+---                  changes what a category 3 ability is named and which kind it
+---                  is written as, so a file has to say which way it was read.
+---   iniFound       Whether vibexi.ini was there to read. false with horizon 1
+---                  is the default standing in for a file that was not found.
+---   dirFrom        Which rule chose the folder in `path`: "ini" is EventDir,
+---                  "default" is %LOCALAPPDATA%, "install" the Ashita tree.
+---                  Anything but "ini" with an EventDir set means that folder
+---                  could not be used.
 local function probe(p)
     local player = GetPlayerEntity()
     local mm = AshitaCore:GetMemoryManager()
@@ -210,6 +226,9 @@ local function probe(p)
         ',"abilOffset":"' .. Emit.escape(abil_offset) .. '"',
         ',"spellLookup":"' .. Emit.escape(spell_probe) .. '"',
         ',"wsLookup":"'    .. Emit.escape(ws_probe) .. '"',
+        ',"horizon":' .. (HORIZON and '1' or '0'),
+        ',"iniFound":' .. (Config.found and 'true' or 'false'),
+        ',"dirFrom":"' .. Emit.escape(Emit.dir_from or 'nil') .. '"',
         ',"path":"' .. Emit.escape(Emit.path or 'nil') .. '"',
         '}',
     }
@@ -318,9 +337,32 @@ local function record_heal(act, actor, actor_kind, owner, pet_name, heal_name, v
     end
 end
 
+--- The first result in the packet, or nil when no target carries one.
+local function first_result(act)
+    for _, target in ipairs(act.targets) do
+        local res = target.results[1]
+        if res then return res end
+    end
+    return nil
+end
+
 --- Turn one decoded action packet into rows and write them.
 local function record(act, actor, now)
-    local kind = E.EmitCategory[act.category]
+    -- A JOB ABILITY SENT AS A WEAPONSKILL is recorded as the ability: named
+    -- from the ability table and written as kind 'ability', exactly as if it
+    -- had arrived on category 6. Decided once for the whole action, from its
+    -- first result -- see E.WsAbilities for why not per result. Only the name
+    -- and the kind follow `category`; anything that reports what the packet
+    -- said (the unknown-message lines) still reads act.category.
+    local category = act.category
+    if HORIZON and category == E.Category.WEAPONSKILL then
+        local first = first_result(act)
+        if first and E.ws_ability(act.param, first.message) then
+            category = E.Category.ABILITY
+        end
+    end
+
+    local kind = E.EmitCategory[category]
     if not kind then return end
 
     local actor_kind = Entity.kind(actor)
@@ -407,7 +449,7 @@ local function record(act, actor, now)
                 -- we see, so an action whose every result was dropped costs no
                 -- resource lookup.
                 if not name_resolved then
-                    name_resolved = action_name(act.category, act.param, res)
+                    name_resolved = action_name(category, act.param, res)
                 end
 
                 local dmg = 0

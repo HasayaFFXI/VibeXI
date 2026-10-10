@@ -11,6 +11,11 @@
 --   One file per load of the addon: the stamp is the local date and time the
 --   file was named.
 --
+--   The folder is the EventDir setting in vibexi.ini, and what follows is why
+--   its default is what it is -- and so what to weigh before pointing it
+--   somewhere else. The file name is not a setting: readers find a character's
+--   sessions by it.
+--
 --   * NOT %TEMP%. Tempting, but wrong: Storage Sense and Disk Cleanup delete
 --     files there on their own schedule, and this file is not scratch -- it is
 --     the app's persistence layer. Reloading the page replays it, and it is
@@ -33,9 +38,12 @@
 -- thread. Every failure is swallowed and counted; a broken emitter must degrade
 -- to "no data" and never to a stuttering or crashing client.
 
+local Config = require('vx_config')
+
 local M = {}
 
 M.path      = nil
+M.dir_from  = nil    -- 'ini' | 'default' | 'install': which folder rule won
 M.stats     = { written = 0, failed = 0, opened = 0 }
 local handle = nil
 local open_failed_for = nil    -- path we already failed on; stop retrying it
@@ -184,26 +192,44 @@ end
 
 -- ---------------------------------------------------------------- file
 
---- Build the output directory. Returns nil when no usable root can be found, in
---- which case the addon simply never writes.
+--- Make sure a folder is there, creating it if need be.
 ---
 --- One call, not one per level: `ashita.fs.create_dir` is an alias for
 --- `create_directory`, which Ashita documents as "Creates all missing folders
 --- within the path" -- it is recursive, and it takes the same absolute
 --- backslash paths Ashita's own addons hand it. The earlier two-step version
 --- was working around a limitation that does not exist.
+local function usable(dir)
+    if not ashita.fs.exists(dir) then ashita.fs.create_dir(dir) end
+    return ashita.fs.exists(dir)
+end
+
+--- Build the output directory. Returns nil when no usable root can be found, in
+--- which case the addon simply never writes.
+---
+--- The folder named in vibexi.ini first. One that cannot be created -- a drive
+--- that is not there, a share that is offline -- falls through to the default
+--- rather than to nothing: a session written somewhere unexpected can be found
+--- (the probe line's dirFrom says which rule won), one never written cannot.
 local function ensure_dir()
+    local dir = Config.event_dir
+    if dir and usable(dir) then
+        M.dir_from = 'ini'
+        return dir
+    end
+
     local root = os.getenv('LOCALAPPDATA')
+    M.dir_from = 'default'
     if not root or root == '' then
         -- Fall back to Ashita's own install tree. Not preferred (see header)
         -- but better than not recording at all.
         root = AshitaCore:GetInstallPath()
+        M.dir_from = 'install'
     end
     if not root or root == '' then return nil end
 
-    local dir = root .. '\\VibeXI\\events'
-    if not ashita.fs.exists(dir) then ashita.fs.create_dir(dir) end
-    if not ashita.fs.exists(dir) then return nil end
+    dir = root .. '\\VibeXI\\events'
+    if not usable(dir) then return nil end
     return dir
 end
 

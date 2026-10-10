@@ -198,6 +198,87 @@ public class TargetsTests
         Assert.Equal(30, Targets.Totals(c.Events)[""]);
     }
 
+    // ------------------------------------------------------------- the table
+
+    [Fact]
+    public void A_table_lists_the_same_targets_largest_first()
+    {
+        var t = Session(
+            Lines.Hit(10, "Hasaya", 100, target: "Genbu"),
+            Lines.Hit(12, "Hasaya", 400, target: "Kirin"),
+            Lines.Hit(14, "Tank", 100, target: "byakko"),
+            Lines.Hit(16, "Tank", 250, target: "Suzaku"));
+        var c = t.Count(Nobody, true, 30_000);
+
+        // The list a target is picked from is alphabetical; the table is
+        // by what each took, and two that took the same are by name.
+        Assert.Equal(["byakko", "Genbu", "Kirin", "Suzaku"], c.Targets.Select(x => x.Name));
+        Assert.Equal([new TargetTotal("Kirin", 400), new TargetTotal("Suzaku", 250), new TargetTotal("byakko", 100),
+                      new TargetTotal("Genbu", 100)], Targets.Ranked(c.Targets));
+        // Nothing is added or lost by the order.
+        Assert.Equal(c.AllTargets, Targets.Ranked(c.Targets).Sum(x => x.Total));
+    }
+
+    [Fact]
+    public void A_table_goes_on_listing_what_is_picked_when_nothing_was_dealt_to_it()
+    {
+        // Picked, and then its character left out: it stays, with no
+        // total, after the ones that have one, where it can be let go.
+        var lines = Targets.Ranked([new TargetTotal("Genbu", 40), new TargetTotal("Kirin", 150)], ["Suzaku", "Kirin", "Aern"]);
+
+        Assert.Equal(["Kirin", "Genbu", "Aern", "Suzaku"], lines.Select(x => x.Name));
+        Assert.Equal([150, 40], lines.Take(2).Select(x => x.Total));
+        Assert.All(lines.Skip(2), x => Assert.True(double.IsNaN(x.Total)));
+        // Nothing picked, nothing added; and a pick is listed once.
+        Assert.Equal(2, Targets.Ranked([new TargetTotal("Genbu", 40), new TargetTotal("Kirin", 150)], []).Count);
+        Assert.Equal(["Kirin"], Targets.Ranked([new TargetTotal("Kirin", 150)], ["Kirin", "Kirin"]).Select(x => x.Name));
+    }
+
+    [Fact]
+    public void A_table_orders_by_what_a_key_is_called_where_two_came_to_the_same()
+    {
+        // Keys that are called something else than they are written.
+        var lines = Targets.Ranked([new TargetTotal("ws", 70), new TargetTotal("melee", 70), new TargetTotal("magic", 90)],
+                                   ["pet"], DamageTypes.Label);
+
+        Assert.Equal(["magic", "melee", "ws", "pet"], lines.Select(x => x.Name));
+    }
+
+    [Fact]
+    public void A_table_has_no_line_to_pick_for_rows_that_name_no_target_and_says_what_they_came_to()
+    {
+        var t = Session(Lines.Hit(10, "Hasaya", 100, target: "Kirin"), Lines.Hit(12, "Hasaya", 30, target: ""));
+        var c = t.Count(Nobody, true, 30_000);
+
+        Assert.Equal([new TargetTotal("Kirin", 100)], Targets.Ranked(c.Targets));
+        Assert.Equal(30, Targets.Unnamed(c.Targets, c.AllTargets));
+        // A name that is none is not a line, wherever it came from.
+        Assert.Equal(["Kirin"], Targets.Ranked([new TargetTotal("", 30), new TargetTotal("Kirin", 100)], [""]).Select(x => x.Name));
+        Assert.Equal(30, Targets.Unnamed([new TargetTotal("", 30), new TargetTotal("Kirin", 100)], 130));
+        // Every row named its target: nothing over, and never less than nothing.
+        Assert.Equal(0, Targets.Unnamed(c.Targets, 100));
+        Assert.Equal(0, Targets.Unnamed(c.Targets, 99));
+        Assert.Equal(0, Targets.Unnamed([], 0));
+    }
+
+    [Fact]
+    public void A_table_of_one_filter_is_of_what_the_other_leaves()
+    {
+        // The count already says so; the table only orders it.
+        var t = Session(
+            Lines.Hit(10, "Hasaya", 100, target: "Kirin"),
+            Lines.Hit(12, "Hasaya", 300, kind: "ws", action: "Tachi: Gekko", target: "Genbu"),
+            Lines.Hit(14, "Tank", 40, target: "Genbu"));
+
+        var melee = t.Count(Nobody, true, 30_000, null, new HashSet<string> { "melee" });
+        Assert.Equal([new TargetTotal("Kirin", 100), new TargetTotal("Genbu", 40)], Targets.Ranked(melee.Targets));
+        var genbu = t.Count(Nobody, true, 30_000, new HashSet<string> { "Genbu" });
+        Assert.Equal([new TargetTotal("melee", 40), new TargetTotal("ws", 300)],
+                     DamageTypes.Listed(genbu.Types, genbu.IsolatedTypes));
+        // Its own filter does not cut a table: every target is still listed.
+        Assert.Equal(["Genbu", "Kirin"], Targets.Ranked(genbu.Targets, genbu.Isolated).Select(x => x.Name));
+    }
+
     // ------------------------------------------------------------- the words
 
     [Fact]

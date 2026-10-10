@@ -643,26 +643,24 @@ public sealed partial class CompareViewModel : ObservableObject
         var types = TypeFilter.Picked;
         TypeFilter.Draw(s.TypeList, s.A.Kinds.Values.Sum(), s.B.Kinds.Values.Sum());
         KindsNote = heal ? "Every healer’s casts of each spell or ability, combined. Pet heals included"
-            : types.Count > 0 ? types.Count + " of " + s.TypeList.Count + " isolated. Select another to add it"
-            : "Where the party’s damage came from. Select a type to isolate it";
+            : TypeFilter.NoteOf(s.TypeList.Count);
         // By target lists every target whatever is isolated (it is measured
         // before the filter): where one is seen among the rest, and where
         // the next is picked.
         var picked = TargetFilter.Picked;
         TargetFilter.Draw(s.TargetList, s.A.Targets.Values.Sum(), s.B.Targets.Values.Sum());
         TargetsNote = heal ? "Healing each character received, largest first. Pet heals included"
-            : picked.Count > 0 ? picked.Count + " of " + s.TargetList.Count + " isolated. Select another to add it"
-            : "Party damage dealt to each target name. Select one to isolate it";
+            : TargetFilter.NoteOf(s.TargetList.Count);
         Actors = heal ? [] : s.Actors.Select(r => new CompareActorRow(r, s.Ids[r.Key], SwatchOf(s.Ids[r.Key]), job,
                                                                       open.Contains(r.Key), (k, on) => Flip(open, k, on),
                                                                       x => ActionOf(s, r.Key, x))).ToList();
         KindRows = heal ? [] : s.Kinds.Select(k => new ComparePickRow(k, k.Key, k.Label, types.Contains(k.Key),
                                                                      types.Count > 0 && !types.Contains(k.Key),
-                                                                     "Count only " + k.Label + " damage",
+                                                                     TypeFilter.PickTip(k.Label),
                                                                      TypeFilter.Toggle)).ToList();
         TargetRows = heal ? [] : s.Targets.Select(t => new ComparePickRow(t, t.Key, t.Name, picked.Contains(t.Key),
                                                                        picked.Count > 0 && !picked.Contains(t.Key),
-                                                                       "Count only the damage dealt to " + t.Name,
+                                                                       TargetFilter.PickTip(t.Name),
                                                                        TargetFilter.Toggle)).ToList();
 
         HealerHead = job ? "Job" : "Healer";

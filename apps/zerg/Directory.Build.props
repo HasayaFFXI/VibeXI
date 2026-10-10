@@ -5,7 +5,7 @@
        the exe. CHANGELOG.md says what each version was; CLAUDE.md, "Versions",
        says when the number moves. -->
   <PropertyGroup>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <!-- The version string is shown to players; keep the git hash out of it. -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>

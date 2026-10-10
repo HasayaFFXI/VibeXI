@@ -276,6 +276,14 @@ The Target button counts only the damage dealt to the targets picked
 - **Several can be picked**, and the list they are picked from is
   alphabetical (`Targets.Sorted`), whatever their case. Not by damage: a list
   in that order moves under the pointer while a session counts.
+- **The Damage section's By target table picks as well**, and is the same
+  filter's: a row pressed is that target's line of the menu chosen. It
+  lists the same targets with the same figures, largest first
+  (`Targets.Ranked`), as Compare's table does and as a table of damage is
+  read; whatever is picked that nothing was dealt to comes after, with
+  dashes. Under them, where any row named no target, a line says what
+  those came to (`Targets.Unnamed`): it is in the total, and there is
+  nothing of it to pick.
 - **The list names every target whatever is picked**, each with what it took
   from the characters who count (exclusions and the skillchain switch
   apply; the targets picked do not). A target nothing landed on is not
@@ -318,11 +326,14 @@ The Target button counts only the damage dealt to the targets picked
 
 The Type button, beside the Target button over the Damage section and in
 Compare, counts only the damage of the types picked (`DamageTypes`, and one
-more line of `Counting.Counted`); in Compare the rows of the By damage type
+more line of `Counting.Counted`); in both, the rows of the By damage type
 table pick as well. It is the targets' rule along another cut, and what is
 said above of picking holds here: several, alphabetical by what each is
 called, a list that names them all, nothing kept (emptied when the targets
-are).
+are). The Damage section's table lists the types in the order Compare's
+has always had them (`DamageTypes.Listed`: melee, weaponskills,
+skillchains, magic, ...), not by size: they are the same few in every
+fight, and are found where they always are.
 
 - **A type is a line of Compare's By damage type table**, in both sections. A row's type is its
   `kind`, but a pet's rows are the one type "Pet" whatever the pet did
@@ -433,9 +444,10 @@ filter does, and credits a pet's heal to its owner.
 - Reaction attempts that dealt nothing are not recorded, so a Counter or
   Retaliation row always reads 100% accuracy.
 - Monster TP moves and pet abilities are named `#<id>`.
-- A few job abilities share an id with a weaponskill (Jump among them) and are
-  written by the addon as `kind:"ws"`, so they land in the WS columns. The fix
-  belongs in the addon.
+- A few job abilities share an id with a weaponskill (Jump among them). The
+  addon now writes them as `kind:"ability"` under their own names, but a file
+  whose `meta` line has no `"horizon":1` still has them as `kind:"ws"` under
+  the weaponskill's name, so there they land in the WS columns.
 - Absorbed and "no effect" outcomes are misses, except in Accuracy, where a
   swing into shadows is a hit.
 - Nothing reports double, triple or quad attack rates.

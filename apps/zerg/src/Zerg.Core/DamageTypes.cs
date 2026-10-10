@@ -48,6 +48,36 @@ public static class DamageTypes
     /// what they are called, as targets are by name.</summary>
     public static List<string> Sorted(IEnumerable<string> types) => Targets.SortedBy(types, Label);
 
+    /// <summary>
+    /// The same lines in the order a table of one parse lists them: the
+    /// order of Compare's By damage type table (melee, weaponskills,
+    /// skillchains, magic, ...: <see cref="Compare.KindLabels"/>), then any
+    /// type that table does not know yet, by what it is called. Not by
+    /// size, as targets are (<see cref="Targets.Ranked"/>): the types are
+    /// the same few in every fight, and are found where they always are.
+    /// A type that is picked and came to nothing stays in its place, with
+    /// no total (not a number), where it can be let go. A line with no key
+    /// cannot be picked and is not listed (<see cref="Targets.Unnamed"/>
+    /// says what such rows came to).
+    /// </summary>
+    public static List<TargetTotal> Listed(IEnumerable<TargetTotal> list, IEnumerable<string>? picked = null)
+    {
+        var by = new Dictionary<string, double>(StringComparer.Ordinal);
+        foreach (var t in list)
+            if (t.Name.Length > 0 && !double.IsNaN(t.Total)) by.TryAdd(t.Name, t.Total);
+        var keys = new HashSet<string>(by.Keys, StringComparer.Ordinal);
+        foreach (var k in picked ?? [])
+            if (k.Length > 0) keys.Add(k);
+
+        var lines = new List<TargetTotal>(keys.Count);
+        foreach (var k in Compare.KindLabels)
+            if (keys.Remove(k.Key)) lines.Add(Line(k.Key));
+        foreach (var k in Sorted(keys)) lines.Add(Line(k));
+        return lines;
+
+        TargetTotal Line(string key) => new(key, by.TryGetValue(key, out double total) ? total : double.NaN);
+    }
+
     /// <summary>Everything picked, as it is called, for a tooltip: "Magic, Melee".</summary>
     public static string Names(IEnumerable<string> picked) => string.Join(", ", Sorted(picked).Select(Label));
 

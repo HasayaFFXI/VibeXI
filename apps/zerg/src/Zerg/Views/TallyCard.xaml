@@ -1,0 +1,132 @@
+<UserControl x:Class="Zerg.Views.TallyCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             xmlns:v="clr-namespace:Zerg.Views"
+             x:Name="Self">
+  <UserControl.Resources>
+    <!-- What it is, Damage, Share: the shares the Compare section's side
+         tables give the same three, each with the least it may be (a
+         figure column its longest figure). The second set is the same
+         table with "shade characters" off: the share then has a small bar
+         before its figure, which needs the room, and the name gives it up.
+         The heading and every row share them. -->
+    <sys:String x:Key="Columns">170*90,100*64,84*56</sys:String>
+    <sys:String x:Key="BarColumns">130*70,100*64,124*100</sys:String>
+    <Style x:Key="Table" TargetType="v:Cells">
+      <Setter Property="Widths" Value="{StaticResource Columns}"/>
+      <Style.Triggers>
+        <Trigger Property="v:Shading.Characters" Value="False">
+          <Setter Property="Widths" Value="{StaticResource BarColumns}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- A row to press: the Compare section's (SidePick, in App.xaml), as
+         tall as a row under a character is: it has one line of figures,
+         not a line for each run. -->
+    <Style x:Key="Pick" TargetType="Button" BasedOn="{StaticResource SidePick}">
+      <Setter Property="Height" Value="{StaticResource SubRowHeight}"/>
+    </Style>
+
+    <!-- The row is the bar, as in the tables beside this one: shaded from
+         its left edge to what it came to out of the largest in the table.
+         No character's colour: a target and a type have none, and the
+         accent is kept for what is isolated. Gone while "shade characters"
+         is off (RowShade), when the small bar beside the share is drawn. -->
+    <Style x:Key="Shade" TargetType="Rectangle" BasedOn="{StaticResource RowShade}">
+      <Setter Property="Fill" Value="{DynamicResource ActionShadeBrush}"/>
+      <Setter Property="Margin" Value="0,0,0,1"/>
+    </Style>
+
+    <!-- One target, or one type: what it is called, what it came to, and
+         that out of them all. Pressed, it isolates it, as its line of the
+         Target or Type button's menu does; isolated, it has the accent down
+         its left edge, and the rows that are not are dimmed. -->
+    <DataTemplate x:Key="Line">
+      <Button Style="{StaticResource Pick}">
+        <Grid>
+          <Grid Style="{StaticResource PickCells}">
+            <Rectangle Style="{StaticResource Shade}" v:Grow.Share="{Binding Fraction}"/>
+            <v:Cells Style="{StaticResource Table}" Margin="0,0,14,1">
+              <TextBlock Text="{Binding Name}" Style="{StaticResource PickName}"/>
+              <TextBlock Text="{Binding Damage}" Style="{StaticResource Fig}" FontWeight="SemiBold" Padding="2,0,8,0"/>
+              <v:SmallBar For="Character" Length="42" Value="{Binding Fraction}" Fill="{DynamicResource Text3Brush}">
+                <TextBlock Text="{Binding Share}" Style="{StaticResource FigQuiet}" Padding="2,0,8,0"/>
+              </v:SmallBar>
+            </v:Cells>
+          </Grid>
+          <Rectangle Style="{StaticResource PickEdge}"/>
+        </Grid>
+      </Button>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <!-- By target, or By damage type, over one parse: the session, or the
+       parse open in the View section. Which of the two is said by the
+       filter the card is given (Filter: a PickFilter, the one the Target
+       or the Type button on the command bar has), and everything that
+       differs between them is the filter's: the title, the note, the
+       first column's word, the rows. The data context is the view model,
+       as every card's is.
+
+       A pane: the column headings stand still and the rows scroll under
+       them, largest first. Every row is listed whatever is isolated, and
+       is of what the other filter leaves. While anything is isolated the
+       heading has the way back to them all. In a floating panel the list
+       takes the panel's height.
+
+       The pane says how its rows are drawn (v:Shading). -->
+  <v:Pane Title="{Binding Filter.Title, ElementName=Self}" Note="{Binding Filter.TableNote, ElementName=Self}"
+          PopOutCommand="{Binding Info.PopOutCommand, ElementName=Self}"
+          v:Shading.Characters="{Binding ShadeCharacters}">
+    <v:Pane.Tools>
+      <Button Content="Clear" Command="{Binding Filter.ClearCommand, ElementName=Self}"
+              ToolTip="{Binding Filter.ClearTip, ElementName=Self}"
+              AutomationProperties.Name="{Binding Filter.TableClearName, ElementName=Self}"
+              Visibility="{Binding Filter.IsOn, ElementName=Self, Converter={StaticResource Visible}}">
+        <Button.Style>
+          <Style TargetType="Button" BasedOn="{StaticResource LinkButton}">
+            <Style.Triggers>
+              <!-- In a floating panel the tools have a line of their own,
+                   and a table lies edge to edge: the link stands over the
+                   Share column, clear of the frame and of the scroll bar. -->
+              <Trigger Property="v:Float.On" Value="True">
+                <Setter Property="Margin" Value="0,3,22,1"/>
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </Button.Style>
+      </Button>
+    </v:Pane.Tools>
+    <DockPanel>
+      <TextBlock DockPanel.Dock="Top" Text="{Binding EmptyText}" Style="{StaticResource Label}" FontSize="12"
+                 Margin="12,18,12,8" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                 Visibility="{Binding Filter.HasTable, ElementName=Self, Converter={StaticResource Hidden}}"/>
+
+      <Grid Visibility="{Binding Filter.HasTable, ElementName=Self, Converter={StaticResource Visible}}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition/>
+        </Grid.RowDefinitions>
+        <!-- 14 units are kept clear at the right of the headings and of
+             every row's cells: the room the list's scroll bar is drawn in. -->
+        <Grid Height="{StaticResource SubRowHeight}">
+          <v:Cells Style="{StaticResource Table}" Margin="0,0,14,1">
+            <TextBlock Text="{Binding Filter.Word, ElementName=Self}" Style="{StaticResource HeadText}" Padding="14,0,8,0"/>
+            <TextBlock Text="Damage" Style="{StaticResource Head}" Padding="2,0,8,0"/>
+            <TextBlock Text="Share" Style="{StaticResource Head}" Padding="2,0,8,0"
+                       ToolTip="{Binding Filter.ShareTip, ElementName=Self}"/>
+          </v:Cells>
+          <Rectangle Height="1" VerticalAlignment="Bottom" Fill="{DynamicResource Line2Brush}" SnapsToDevicePixels="True"/>
+        </Grid>
+        <Grid Grid.Row="1" Style="{StaticResource SideList}">
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" v:WheelChain.On="True">
+            <ItemsControl ItemsSource="{Binding Filter.Table, ElementName=Self}" ItemTemplate="{StaticResource Line}"
+                          Focusable="False"/>
+          </ScrollViewer>
+        </Grid>
+      </Grid>
+    </DockPanel>
+  </v:Pane>
+</UserControl>

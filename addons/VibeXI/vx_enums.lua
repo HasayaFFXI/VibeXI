@@ -229,8 +229,63 @@ E.Crit = {
 }
 
 E.Message = {
-    BURST = 252,    -- MagicBurstDamage
+    BURST     = 252,    -- MagicBurstDamage
+    WS_DAMAGE = 185,    -- UsesSkillTakesDamage
+    WS_MISS   = 188,    -- UsesSkillMisses
 }
+
+-- ============================================================================
+-- JOB ABILITIES ON THE WEAPONSKILL CATEGORY -- consulted only with Horizon=1
+-- in vibexi.ini.
+--
+-- The server sends these twelve abilities as category 3, and their ids are
+-- weaponskill ids too: 168 is Blade Bash and Hexa Strike, 66 is Jump and Gale
+-- Axe. The weaponskill table is all but dense from 1 to 255, so looking a
+-- category 3 id up there first names every one of them after the weaponskill
+-- it collides with. The right-hand column is what each was being written as.
+--
+-- The ids are the rows with actionType 3 in sql/abilities.sql of the server
+-- checkout named in the repo README, cut to the ones a 75-era server has. Eight
+-- of them (26, 41, 45, 46, 66, 67, 77, 168) have also been seen arriving this
+-- way in real event files; 57, 68, 150 and 170 rest on the SQL alone.
+--
+-- THE ID ALONE DECIDES NOTHING -- a Dragoon's Jump and a Beastmaster's Gale Axe
+-- are the same packet up to the result. What separates them is the message: a
+-- weaponskill reports 185 or 188, and these report something else (110 for the
+-- bashes, 317 and 324 for the Jumps, 125/153 for Steal). That is Metrics' test
+-- (isWeaponskillAbility, handlers/tp_action.lua), over a longer list: Metrics'
+-- own Res.WS.Abilities has no 150, 168 or 170 and so calls Blade Bash a Hexa
+-- Strike too.
+--
+-- The message has to be the action's FIRST result. An AoE weaponskill reports
+-- 185 on its main target and 264 on the others, so asking each result in turn
+-- would call Spinning Axe a weaponskill on one mob and a Super Jump on the next.
+--
+-- KNOWN MISREAD: a real weaponskill with one of these ids whose first result is
+-- neither 185 nor 188 -- absorbed by shadows (31), no effect (189) -- is taken
+-- for the ability. The packet carries nothing that could tell them apart.
+E.WsAbilities = {
+    [26]  = true,   -- Eagle Eye Shot    Mercy Stroke
+    [41]  = true,   -- Steal             Swift Blade
+    [45]  = true,   -- Mug               Atonement
+    [46]  = true,   -- Shield Bash       Expiacion
+    [57]  = true,   -- Shadowbind        Scourge
+    [66]  = true,   -- Jump              Gale Axe
+    [67]  = true,   -- High Jump         Avalanche Axe
+    [68]  = true,   -- Super Jump        Spinning Axe
+    [77]  = true,   -- Weapon Bash       Ruinator
+    [150] = true,   -- Tomahawk          Tachi: Yukikaze
+    [168] = true,   -- Blade Bash        Hexa Strike
+    [170] = true,   -- Angon             Randgrith
+}
+
+--- Is this category 3 action a job ability rather than a weaponskill?
+--- `message` is the message of the action's first result.
+function E.ws_ability(param, message)
+    if not param or not message then return false end
+    if not E.WsAbilities[param] then return false end
+    return message ~= E.Message.WS_DAMAGE and message ~= E.Message.WS_MISS
+end
 
 -- ============================================================================
 -- REACTION DAMAGE -- damage the DEFENDER dealt, riding on the ATTACKER's packet.
