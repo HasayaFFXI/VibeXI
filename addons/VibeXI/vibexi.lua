@@ -1,5 +1,5 @@
--- VibeXI -- read-only combat event recorder. Its events are read by Zerg
--- (apps/zerg), which shows a party's damage and healing from them.
+-- VibeXI -- read-only combat event recorder. Its events are read by a separate
+-- desktop app, which shows a party's damage and healing from them.
 --
 -- Watches incoming action packets, resolves the ids in them against the
 -- client's own entity table, and appends one JSON line per (action, target) to
