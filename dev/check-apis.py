@@ -20,7 +20,7 @@ Comments are scanned too, but a hit inside a comment is a WARNING, not a failure
 -- a comment cannot execute, and "-- deliberately no socket here" is a sentence
 we want to be able to write.
 
-    python addon-dev/check-apis.py
+    python dev/check-apis.py
 
 Stdlib only, and it is wired to .githooks/pre-commit.
 """
@@ -31,7 +31,7 @@ import re
 import sys
 from pathlib import Path
 
-HERE  = Path(__file__).resolve().parent      # addon-dev/
+HERE  = Path(__file__).resolve().parent      # dev/
 ROOT  = HERE.parent                          # repo root; findings are reported relative to it
 ADDON = ROOT / 'addons' / 'VibeXI'           # the Lua the addon actually loads
 
@@ -45,8 +45,8 @@ DENIED = [
     (r'add_outgoing_packet', 'packet injection'),
     (r'AddOutgoingPacket', 'packet injection'),
     (r'InjectPacket', 'packet injection'),
-    (r"""require\s*\(?\s*['"]socket""", 'network capability (PLAN.md Decision 1)'),
-    (r"""require\s*\(?\s*['"]ffi""", 'foreign-function escape hatch (PLAN.md Decision 2)'),
+    (r"""require\s*\(?\s*['"]socket""", 'network capability'),
+    (r"""require\s*\(?\s*['"]ffi""", 'foreign-function escape hatch'),
     (r'ffi\.load', 'can load ws2_32'),
     (r'ffi\.cdef', 'can declare connect()/send()'),
     (r'os\.execute', 'shell execution'),
@@ -172,7 +172,7 @@ def main(argv=None):
 
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--src-dir', default=None, help='default: addons/VibeXI')
-    ap.add_argument('--manifest', default=None, help='default: addon-dev/ALLOWED_APIS.txt')
+    ap.add_argument('--manifest', default=None, help='default: dev/ALLOWED_APIS.txt')
     args = ap.parse_args(argv)
 
     COLOR = _ansi_ok()

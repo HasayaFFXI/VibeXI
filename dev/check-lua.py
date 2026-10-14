@@ -15,7 +15,7 @@ Calibration: run over the 108 .lua files shipped in Ashita-v4beta/addons it
 reports zero failures, and it does flag both mutations (one `end` removed, one
 paren removed) of this repo's own sources.
 
-    python addon-dev/check-lua.py addons/VibeXI/*.lua
+    python dev/check-lua.py addons/VibeXI/*.lua
 """
 
 import argparse

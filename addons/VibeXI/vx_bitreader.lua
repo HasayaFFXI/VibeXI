@@ -1,8 +1,8 @@
 -- LSB-first bit reader over a packet string.
 --
 -- Written from the XiPackets description of server packet 0x0028, NOT copied
--- from Ashita's reader -- that file is GPL-3.0 and this project is not (see
--- addon-dev/PLAN.md, Licensing). The algorithm is the obvious one and is not the
+-- from Ashita's reader -- that file is GPL-3.0 and this project is not.
+-- The algorithm is the obvious one and is not the
 -- part anyone owns; the point is that no GPL text is vendored here.
 --
 -- Two deliberate differences from the reference implementation:
@@ -19,7 +19,7 @@
 --      Lua number instead is exact to 2^53 and simply cannot produce that bug.
 --      Reads here are a few hundred bits per packet; the cost is irrelevant.
 --
--- Dot-calls only, per PLAN.md Decision 8.
+-- Dot-calls only.
 
 local M = {}
 

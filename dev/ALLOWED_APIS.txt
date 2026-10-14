@@ -27,8 +27,8 @@
 
 # --- modules -----------------------------------------------------------------
 # 'common' is Ashita's stdlib extensions: T{}, switch(), string helpers.
-# NOT socket (network capability we do not need — PLAN.md Decision 1).
-# NOT ffi (foreign-function escape hatch — PLAN.md Decision 2).
+# NOT socket (network capability we do not need).
+# NOT ffi (foreign-function escape hatch).
 require('common')
 
 # Our own modules. Listed individually on purpose: a new module is then a
@@ -61,7 +61,7 @@ event:unload
 ashita.fs.exists
 ashita.fs.create_dir
 
-# The one-way bridge. Append mode, local path only. See PLAN.md.
+# The one-way bridge. Append mode, local path only.
 io.open
 :write
 :close

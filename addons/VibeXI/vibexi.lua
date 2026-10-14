@@ -3,7 +3,7 @@
 --
 -- Watches incoming action packets, resolves the ids in them against the
 -- client's own entity table, and appends one JSON line per (action, target) to
--- a local file. That file is the only output. See addon-dev/PLAN.md.
+-- a local file. That file is the only output.
 --
 -- Horizon Approved Addon -- ticket addon-0032, approved by Aerec 2026-09-04.
 -- Approval covers this addon as described below: read-only, no outgoing
@@ -19,13 +19,13 @@
 --     the packet from reaching the client, which is interference with the game
 --     even though it is inbound. We observe; we never intervene.
 --
--- This is enforced mechanically, not by discipline: addon-dev/check-apis.py diffs
--- every external call in this directory against addon-dev/ALLOWED_APIS.txt and
+-- This is enforced mechanically, not by discipline: dev/check-apis.py diffs
+-- every external call in this directory against dev/ALLOWED_APIS.txt and
 -- fails on anything unlisted. Run it before you commit.
 -- ============================================================================
 --
 -- Conventions in this tree:
---   * Dot-calls only on our own modules (PLAN.md Decision 8) -- every ':' call
+--   * Dot-calls only on our own modules -- every ':' call
 --     you see is therefore an Ashita SDK call or a file handle.
 --   * string.xxx(s, ...) rather than s:xxx(...), for the same reason.
 --   * Nothing on the packet path may throw. It runs on the game's thread.
@@ -63,7 +63,7 @@ local S = {
 -- across chunk boundaries, which would double every number. Metrics solves this
 -- with FFI memcmp over raw pointers; we do the same comparison on Lua strings,
 -- because FFI is a foreign-function escape hatch this addon deliberately does
--- not have (PLAN.md Decision 2).
+-- not have.
 --
 -- The packet event table really does carry the chunk: Ashita exports
 -- chunk_data, chunk_data_raw and chunk_size next to data, data_raw,
