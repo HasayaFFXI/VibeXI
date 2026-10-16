@@ -1,5 +1,7 @@
 # VibeXI
 
+[![Latest release](https://img.shields.io/github/v/release/HasayaFFXI/VibeXI)](https://github.com/HasayaFFXI/VibeXI/releases/latest)
+
 An Ashita v4 addon for Final Fantasy XI that records combat as it happens. It
 reads the game's incoming action packets and writes one JSON line per event to
 a file on your PC.
@@ -14,17 +16,13 @@ Ashita v4, and it is approved for use on HorizonXI.
 
 ## Install
 
-Releases are git tags. Each tag (for example `1.0.0`) is a version you can
-download.
+1. Download the latest release:
+   **[VibeXI.zip](https://github.com/HasayaFFXI/VibeXI/releases/latest/download/VibeXI.zip)**
 
-1. Download the release zip:
-   - Go to the repo's [tags](https://github.com/HasayaFFXI/VibeXI/tags) and pick
-     a version, or
-   - download 1.0.0 directly:
-     <https://github.com/HasayaFFXI/VibeXI/archive/refs/tags/1.0.0.zip>
-2. Unzip it. Inside `VibeXI-1.0.0\` you'll find `addons\VibeXI\`.
-3. Copy that `VibeXI` folder into the `addons` folder of your Ashita install,
-   so you end up with:
+   Older versions and release notes are on the
+   [releases page](https://github.com/HasayaFFXI/VibeXI/releases).
+2. Unzip it into the `addons` folder of your Ashita install. The zip holds a
+   single `VibeXI` folder, so you end up with:
 
    ```
    <Ashita folder>\addons\VibeXI\vibexi.lua
@@ -34,8 +32,8 @@ download.
 
    On HorizonXI the Ashita folder is `HorizonXI\Game`. Don't rename the
    `VibeXI` folder: Ashita takes the addon's name from it.
-4. If you're not on HorizonXI, set `Horizon=0` in `vibexi.ini`.
-5. In game, load it:
+3. If you're not on HorizonXI, set `Horizon=0` in `vibexi.ini`.
+4. In game, load it:
 
    ```
    /addon load vibexi
@@ -49,21 +47,13 @@ your character is known.
 
 ### Updating
 
-Download the newer tag and copy its `VibeXI` folder over the old one, but
+Download the latest `VibeXI.zip` and unzip it over the old folder, but
 **back up your `vibexi.ini` first**. The release ships a default one that would
 overwrite your settings. Then reload:
 
 ```
 /addon reload vibexi
 ```
-
-### Installing with git (optional)
-
-```bash
-git clone --branch 1.0.0 https://github.com/HasayaFFXI/VibeXI.git
-```
-
-Copy `addons\VibeXI` from the clone the same way as above.
 
 ## Output
 
@@ -138,3 +128,12 @@ folder is copied into Ashita as-is. Tooling lives in `dev/`, and a pre-commit
 hook in `.githooks/` runs `dev/check-apis.py`, which checks every external call
 against `dev/ALLOWED_APIS.txt` so the addon can't gain a way to send to the
 server.
+
+### Releasing
+
+Push a version tag (`1.2.3` or `v1.2.3`). The `Release` workflow in
+`.github/workflows/release.yml` zips `addons/VibeXI/` as `VibeXI.zip`, sets
+`addon.version` inside it from the tag, and publishes a GitHub Release with the
+zip attached. The README's download link always points at the newest one. To
+rebuild the release for an existing tag, run the workflow by hand from the
+Actions tab.
