@@ -89,10 +89,19 @@ local function esc(s)
     return table.concat(out)
 end
 
+--- Integers only; the game deals in whole damage and whole seconds, and every
+--- number written here already is one -- bit-reader fields, counters, os.time.
+--- So no conversion is done: `..` writes an integer-valued number exactly as
+--- %d would (up to 1e14, far past any of them), without a format call.
 local function num(n)
-    if not n then return '0' end
-    -- Integers only; the game deals in whole damage and whole seconds.
-    return string.format('%d', math.floor(n))
+    return n or 0
+end
+
+--- A field from a fixed vocabulary of plain words -- a row kind, an entity
+--- kind, a healing list: 'melee', 'player', 'magic'. None of them can need
+--- escaping, so they skip esc's scan. A missing one reads 'nil', as esc would.
+local function word(s)
+    return s or 'nil'
 end
 
 local function boolean(b)
@@ -116,13 +125,13 @@ function M.encode(e)
     return '{"t":'           .. num(e.t)
         .. ',"seq":'         .. num(e.seq)
         .. ',"use":'         .. num(e.use)
-        .. ',"kind":"'       .. esc(e.kind) .. '"'
+        .. ',"kind":"'       .. word(e.kind) .. '"'
         .. ',"actor":"'      .. esc(e.actor) .. '"'
-        .. ',"actorKind":"'  .. esc(e.actorKind) .. '"'
+        .. ',"actorKind":"'  .. word(e.actorKind) .. '"'
         .. ',"action":"'     .. esc(e.action) .. '"'
         .. ',"actionId":'    .. num(e.actionId)
         .. ',"target":"'     .. esc(e.target) .. '"'
-        .. ',"targetKind":"' .. esc(e.targetKind) .. '"'
+        .. ',"targetKind":"' .. word(e.targetKind) .. '"'
         .. ',"dmg":'         .. num(e.dmg)
         .. ',"hit":'         .. boolean(e.hit)
         .. ',"crit":'        .. boolean(e.crit)
@@ -180,13 +189,13 @@ function M.encode_heal(e)
     return '{"kind":"heal","t":' .. num(e.t)
         .. ',"seq":'         .. num(e.seq)
         .. ',"use":'         .. num(e.use)
-        .. ',"via":"'        .. esc(e.via) .. '"'
+        .. ',"via":"'        .. word(e.via) .. '"'
         .. ',"actor":"'      .. esc(e.actor) .. '"'
-        .. ',"actorKind":"'  .. esc(e.actorKind) .. '"'
+        .. ',"actorKind":"'  .. word(e.actorKind) .. '"'
         .. ',"action":"'     .. esc(e.action) .. '"'
         .. ',"actionId":'    .. num(e.actionId)
         .. ',"target":"'     .. esc(e.target) .. '"'
-        .. ',"targetKind":"' .. esc(e.targetKind) .. '"'
+        .. ',"targetKind":"' .. word(e.targetKind) .. '"'
         .. ',"hp":'          .. num(e.hp)
         .. ',"msg":'         .. num(e.msg)
         .. optional_tail(e)
@@ -246,14 +255,17 @@ end
 function M.open(character)
     M.close()
 
+    -- This load's file already refused to open, and is not retried. Said
+    -- before ensure_dir, which would otherwise touch the disk again on every
+    -- action packet for the rest of the session just to reach this answer.
+    if session_path and open_failed_for == session_path then return false end
+
     local dir = ensure_dir()
     if not dir then return false end
 
     session_path = session_path or
         (dir .. '\\' .. (character or 'Unknown') .. '-' .. os.date('%Y%m%d%H%M%S') .. '.jsonl')
     local path = session_path
-
-    if open_failed_for == path then return false end
 
     local f = io.open(path, 'a')
     if not f then
@@ -270,42 +282,48 @@ end
 
 -- The file calls, as plain functions so pcall can take them directly and a
 -- line allocates no closure.
-local function put_event(h, e) h:write(M.encode(e), '\n') end
-local function put_line(h, line) h:write(line, '\n') end
-local function flush_handle(h) h:flush() end
-local function close_handle(h) h:close() end
+--
+-- EACH RETURNS WHAT THE FILE CALL RETURNED, because that is where an I/O
+-- failure shows up. write, flush and close do not raise when the disk is full
+-- or the file is gone: they return nil and a message. pcall only catches what
+-- IS raised -- a closed handle, an encode error -- so a caller needs both
+-- answers, and `succeeded` below asks for both. Nothing here raises on purpose.
+local function put_event(h, e) return h:write(M.encode(e), '\n') end
+local function put_line(h, line) return h:write(line, '\n') end
+local function flush_handle(h) return h:flush() end
+local function close_handle(h) return h:close() end
+
+--- Did a pcall'd file call work? `ok` is pcall's own answer, `res` the call's.
+local function succeeded(ok, res)
+    return ok and res ~= nil and res ~= false
+end
 
 -- Lines written since the last flush.
 local pending = false
 
+--- Close the handle and forget it. Closing flushes first, so whatever the
+--- current packet buffered still reaches the file if the handle can manage it.
 function M.close()
-    if handle then
-        pcall(flush_handle, handle)
-        pcall(close_handle, handle)
-    end
+    if handle then pcall(close_handle, handle) end
     handle = nil
     pending = false
 end
 
 --- Run one write against the handle. A failure usually means the handle died
---- (disk full, file removed underneath us): drop it so the next event tries a
+--- (disk full, file removed underneath us): close it so the next event tries a
 --- clean reopen.
 local function append(fn, v)
     if not handle then
         M.stats.failed = M.stats.failed + 1
         return false
     end
-    local ok = pcall(fn, handle, v)
-    if ok then
+    if succeeded(pcall(fn, handle, v)) then
         pending = true
-    else
-        M.stats.failed = M.stats.failed + 1
-        -- Push out whatever this packet already buffered, if the handle can.
-        pcall(flush_handle, handle)
-        handle = nil
-        pending = false
+        return true
     end
-    return ok
+    M.stats.failed = M.stats.failed + 1
+    M.close()
+    return false
 end
 
 --- Append one event. Never throws.
@@ -332,9 +350,9 @@ function M.flush()
     if not pending then return end
     pending = false
     if not handle then return end
-    if not pcall(flush_handle, handle) then
+    if not succeeded(pcall(flush_handle, handle)) then
         M.stats.failed = M.stats.failed + 1
-        handle = nil
+        M.close()
     end
 end
 

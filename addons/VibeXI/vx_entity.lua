@@ -18,6 +18,9 @@ local M = {}
 -- are the other two parties of the alliance. Nothing below distinguishes them,
 -- and nothing should -- "ours" means the whole alliance.
 M.party = {}
+-- The entity index of each of those members, from the same pass: the short
+-- list M.pet_owner searches instead of the party table's eighteen slots.
+M.member_index = {}
 M.party_stamp = 0
 M.party_dirty = true         -- read the table on the first action, not 3s in
 local PARTY_TTL = 3          -- seconds
@@ -28,6 +31,13 @@ local PARTY_TTL = 3          -- seconds
 M.jobs = {}
 
 local MAX_ENTITY_INDEX = 2303
+
+-- The players' block of the entity table. Below it are the zone's own NPCs and
+-- monsters, above it the dynamic slots -- pets, trusts, fellows. It sets the
+-- ORDER of the scan below and nothing else: every slot is still scanned, so
+-- were the layout ever different the cost would be speed, never an answer.
+local PC_FIRST = 0x400
+local PC_LAST  = 0x6FF
 
 -- server id -> the index the linear scan last found it at.
 --
@@ -45,39 +55,75 @@ local index_cache = {}
 local index_cache_size = 0
 local INDEX_CACHE_MAX = 4096
 
---- Entity index for a server id.
---- The low 11 bits of a server id are usually the index, so try that first,
---- then the cache, and only fall back to the linear scan when neither matches.
---- `% 2048` is the same as masking 0x7FF and avoids pulling in the bit library.
-function M.index_by_id(id)
-    local mm = AshitaCore:GetMemoryManager()
-    if not mm then return 0 end
-    local em = mm:GetEntity()
-    if not em then return 0 end
+-- Ids the scan failed to find, for the one wall-clock second they failed in.
+--
+-- A miss is a full scan, all 2303 slots, and an id that is not in the table
+-- now -- despawned, or not spawned yet -- is usually asked about again within
+-- the same packet or the next one. The price is that an entity which appears
+-- partway through that second reads as absent until it ends. Emptied when the
+-- second turns over, so it never holds more than one second's misses.
+local miss_second = 0
+local misses = {}
 
-    local guess = id % 2048
-    if em:GetServerId(guess) == id then return guess end
+--- The entity table, or nil while the client has none to hand out.
+local function entity_manager()
+    local mm = AshitaCore:GetMemoryManager()
+    if not mm then return nil end
+    return mm:GetEntity()
+end
+
+local function scan(em, id, first, last)
+    for i = first, last do
+        if em:GetServerId(i) == id then return i end
+    end
+    return nil
+end
+
+--- Entity index for a server id, or 0.
+---
+--- An id that encodes its index carries it in the LOW 12 BITS --
+--- 0x01000000 | zone << 12 | index, so 17195010 is 0x1066002, index 2 of zone
+--- 102 -- and that guess is tried first. Twelve bits, not eleven: indices run
+--- to 2303 (0x8FF), and `% 2048` would send every slot from 2048 up to the
+--- scan. `% 4096` is the same as masking 0xFFF and avoids pulling in the bit
+--- library.
+---
+--- Then the cache, then the second's misses, and only then the scan, players'
+--- block first since players are what the guess cannot find.
+local function index_of(em, id)
+    -- 0 is every empty slot's id, so it names no one entity.
+    if not id or id == 0 then return 0 end
+
+    local guess = id % 4096
+    if guess <= MAX_ENTITY_INDEX and em:GetServerId(guess) == id then return guess end
 
     local cached = index_cache[id]
     if cached and em:GetServerId(cached) == id then return cached end
 
-    for i = 1, MAX_ENTITY_INDEX do
-        if em:GetServerId(i) == id then
-            -- Id 0 is every empty slot's, so it names no one entity.
-            if id ~= 0 then
-                if not cached then
-                    if index_cache_size >= INDEX_CACHE_MAX then
-                        index_cache = {}
-                        index_cache_size = 0
-                    end
-                    index_cache_size = index_cache_size + 1
-                end
-                index_cache[id] = i
-            end
-            return i
-        end
+    local now = os.time()
+    if now ~= miss_second then
+        miss_second = now
+        misses = {}
     end
-    return 0
+    if misses[id] then return 0 end
+
+    local i = scan(em, id, PC_FIRST, PC_LAST)
+           or scan(em, id, 1, PC_FIRST - 1)
+           or scan(em, id, PC_LAST + 1, MAX_ENTITY_INDEX)
+    if not i then
+        misses[id] = true
+        return 0
+    end
+
+    if not cached then
+        if index_cache_size >= INDEX_CACHE_MAX then
+            index_cache = {}
+            index_cache_size = 0
+        end
+        index_cache_size = index_cache_size + 1
+    end
+    index_cache[id] = i
+    return i
 end
 
 --- Entity record for an index. Returns nil when the slot is empty, which the
@@ -85,13 +131,8 @@ end
 ---
 --- Only what something reads: this runs for the actor and every target of
 --- every action in range, and each field is an SDK call.
-function M.by_index(index)
+local function record_of(em, index)
     if not index or index <= 0 then return nil end
-
-    local mm = AshitaCore:GetMemoryManager()
-    if not mm then return nil end
-    local em = mm:GetEntity()
-    if not em then return nil end
 
     local name = em:GetName(index)
     if not name or name == '' then return nil end
@@ -100,12 +141,15 @@ function M.by_index(index)
         name        = name,
         index       = index,
         spawn_flags = em:GetSpawnFlags(index),
-        pet_index   = em:GetPetTargetIndex(index),
     }
 end
 
+--- Entity record for a server id, or nil. The entity table is fetched once
+--- here and handed to both halves of the lookup.
 function M.by_id(id)
-    return M.by_index(M.index_by_id(id))
+    local em = entity_manager()
+    if not em then return nil end
+    return record_of(em, index_of(em, id))
 end
 
 --- Is a single spawn-flag bit set?
@@ -203,12 +247,15 @@ function M.refresh_party(now, force)
     if not pt then return nil end
 
     local fresh = {}
+    local indices = {}
     local changed = nil
     for slot = 0, 17 do
         if pt:GetMemberIsActive(slot) == 1 then
             local name = pt:GetMemberName(slot)
             if name and name ~= '' then
                 fresh[name] = true
+                local index = pt:GetMemberTargetIndex(slot)
+                if index and index > 0 then indices[#indices + 1] = index end
                 local rec = M.note_job(name,
                     pt:GetMemberMainJob(slot),  pt:GetMemberMainJobLevel(slot),
                     pt:GetMemberSubJob(slot),   pt:GetMemberSubJobLevel(slot))
@@ -220,6 +267,7 @@ function M.refresh_party(now, force)
         end
     end
     M.party = fresh
+    M.member_index = indices
     return changed
 end
 
@@ -228,28 +276,29 @@ function M.in_party(name)
     return M.party[name] == true
 end
 
---- The owner entity of a pet, or nil: whichever party member's entity record
---- has a `pet_index` matching the pet.
+--- The owner entity of a pet, or nil: whichever party member's entity names
+--- the pet as its own.
 ---
---- The pet index is read straight off each member's slot, and the full record
---- is built only for the one that matches.
+--- Searches M.member_index rather than the party table, so it costs one SDK
+--- call per member actually there instead of up to three per slot of
+--- eighteen -- and it runs for every pet in range, a stranger's included. The
+--- full record is built only for the member that matches.
+---
+--- Those indices are as old as the last refresh, and in that time a member can
+--- zone out and a stranger take the slot. A match therefore counts only when
+--- the owner's name is in the party as well.
 function M.pet_owner(pet)
     if not pet or not pet.index then return nil end
 
-    local mm = AshitaCore:GetMemoryManager()
-    if not mm then return nil end
-    local pt = mm:GetParty()
-    if not pt then return nil end
-    local em = mm:GetEntity()
+    local em = entity_manager()
     if not em then return nil end
 
-    for slot = 0, 17 do
-        if pt:GetMemberIsActive(slot) == 1 then
-            local index = pt:GetMemberTargetIndex(slot)
-            if index and index > 0 and em:GetPetTargetIndex(index) == pet.index then
-                local owner = M.by_index(index)
-                if owner then return owner end
-            end
+    local indices = M.member_index
+    for i = 1, #indices do
+        local index = indices[i]
+        if em:GetPetTargetIndex(index) == pet.index then
+            local owner = record_of(em, index)
+            if owner and M.party[owner.name] then return owner end
         end
     end
     return nil

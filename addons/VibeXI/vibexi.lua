@@ -73,17 +73,35 @@ local S = {
 local last_chunk    = {}
 local current_chunk = {}
 
-local function is_duplicate(p)
-    local data = p.data
-    if not data then return false end
-
-    -- A packet identical to the head of its chunk is the first packet OF that
-    -- chunk, which means a new chunk started and the previous one can retire.
-    if p.chunk_data and string.sub(p.chunk_data, 1, #data) == data then
+--- Retire the previous chunk when this packet opens a new one.
+---
+--- EVERY PACKET, not just the action packets that are checked for duplicates.
+--- A new chunk is recognised by its FIRST packet, and that is whatever the
+--- server put first -- an entity update as often as an action. Seeing only the
+--- action packets, a chunk that opens with anything else never rotates, the
+--- previous chunk's packets are never compared against, and a re-delivered
+--- action goes through twice.
+---
+--- The first two bytes are the packet's id and size, so comparing them turns
+--- away nearly every packet that is not the head without building a string.
+---
+--- A chunk that is not a string fails OPEN -- no rotation, so no duplicate is
+--- caught -- rather than raising on every packet and recording nothing at
+--- all. The probe line's chunkData field is what reports it.
+local function note_chunk(chunk, data)
+    if type(chunk) ~= 'string' then return end
+    local c1, c2 = string.byte(chunk, 1, 2)
+    local d1, d2 = string.byte(data, 1, 2)
+    if c1 ~= d1 or c2 ~= d2 then return end
+    if string.sub(chunk, 1, #data) == data then
         last_chunk    = current_chunk
         current_chunk = {}
     end
+end
 
+--- Was this action packet already delivered in the previous chunk?
+local function is_duplicate(data)
+    -- Lua strings are interned, so each comparison is a pointer check.
     for i = 1, #last_chunk do
         if last_chunk[i] == data then return true end
     end
@@ -314,6 +332,11 @@ end
 --- ONE `use` FOR THE WHOLE ACTION. A heal has no multi-attack dimension, so the
 --- per-slot rule record() uses for swings does not apply: a Curaga on five
 --- people is one cast.
+---
+--- One table for every heal line, for the same reason as `row` below: the
+--- fields that are the action's are set once, and each line sets the rest.
+local heal_row = {}
+
 local function record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
     local name = action_name(act.category, act.param, nil)
     -- Pet abilities have no resource lookup and come back as '#id'; name
@@ -321,29 +344,29 @@ local function record_heal(act, actor, actor_kind, owner, pet_name, heal_name, v
     if string.sub(name, 1, 1) == '#' then name = heal_name end
 
     S.use = S.use + 1
-    local use = S.use
+
+    local h = heal_row
+    h.t         = now
+    h.use       = S.use
+    h.via       = via
+    h.actor     = actor.name
+    h.actorKind = actor_kind
+    h.action    = name
+    h.actionId  = act.param
+    h.owner     = owner
+    h.pet       = pet_name
 
     for _, target in ipairs(act.targets) do
         local tgt = Entity.by_id(target.id)
         if tgt then
             local tgt_kind = Entity.kind(tgt)
             for _, res in ipairs(target.results) do
-                Emit.write_heal({
-                    t          = now,
-                    seq        = next_seq(now),
-                    use        = use,
-                    via        = via,
-                    actor      = actor.name,
-                    actorKind  = actor_kind,
-                    action     = name,
-                    actionId   = act.param,
-                    target     = tgt.name,
-                    targetKind = tgt_kind,
-                    hp         = res.value or 0,
-                    msg        = res.message,
-                    owner      = owner,
-                    pet        = pet_name,
-                })
+                h.seq        = next_seq(now)
+                h.target     = tgt.name
+                h.targetKind = tgt_kind
+                h.hp         = res.value or 0
+                h.msg        = res.message
+                Emit.write_heal(h)
             end
         end
     end
@@ -369,6 +392,17 @@ local function use_for(use_by_slot, slot)
     end
     return u
 end
+
+-- The damage line being written, ONE TABLE REFILLED FOR EVERY LINE. Emit.write
+-- encodes a line on the spot and keeps nothing, so a fresh table per line would
+-- only be garbage for the game's thread to collect.
+--
+-- Every writer assigns every field, nil included -- that is how owner and pet
+-- are cleared -- so nothing carries over from one line to the next. record()
+-- sets the action's five (t, actor, actorKind, owner, pet) once, each target's
+-- two (target, targetKind) at the top of its loop, and the other ten per line;
+-- emit_reaction sets all seventeen itself.
+local row = {}
 
 --- Turn one decoded action packet into rows and write them. `actor_kind` and
 --- `pet_owner` are what classify() already worked out for the actor.
@@ -434,13 +468,19 @@ local function record(act, actor, actor_kind, pet_owner, now)
 
     local name_resolved = nil
 
+    row.t         = now
+    row.actor     = actor.name
+    row.actorKind = actor_kind
+    row.owner     = owner
+    row.pet       = pet_name
+
     for _, target in ipairs(act.targets) do
         local tgt = Entity.by_id(target.id)
-        local tgt_name = 'Unknown'
-        local tgt_kind = 'other'
+        row.target     = 'Unknown'
+        row.targetKind = 'other'
         if tgt then
-            tgt_name = tgt.name
-            tgt_kind = Entity.kind(tgt)
+            row.target     = tgt.name
+            row.targetKind = Entity.kind(tgt)
         end
 
         for slot, res in ipairs(target.results) do
@@ -465,25 +505,17 @@ local function record(act, actor, actor_kind, pet_owner, now)
                 local dmg = 0
                 if is_damage then dmg = res.value or 0 end
 
-                Emit.write({
-                    t          = now,
-                    seq        = next_seq(now),
-                    use        = use,
-                    kind       = kind,
-                    actor      = actor.name,
-                    actorKind  = actor_kind,
-                    action     = name_resolved,
-                    actionId   = act.param,
-                    target     = tgt_name,
-                    targetKind = tgt_kind,
-                    dmg        = dmg,
-                    hit        = is_damage,
-                    crit       = E.Crit[res.message] == true,
-                    burst      = res.message == E.Message.BURST,
-                    msg        = res.message,
-                    owner      = owner,
-                    pet        = pet_name,
-                })
+                row.seq      = next_seq(now)
+                row.use      = use
+                row.kind     = kind
+                row.action   = name_resolved
+                row.actionId = act.param
+                row.dmg      = dmg
+                row.hit      = is_damage
+                row.crit     = E.Crit[res.message] == true
+                row.burst    = res.message == E.Message.BURST
+                row.msg      = res.message
+                Emit.write(row)
             else
                 note_unknown(res.message, act)
             end
@@ -515,27 +547,19 @@ local function record(act, actor, actor_kind, pet_owner, now)
                         S.use = S.use + 1
                         sc_use = S.use
                     end
-                    Emit.write({
-                        t          = now,
-                        seq        = next_seq(now),
-                        use        = sc_use,
-                        kind       = 'skillchain',
-                        actor      = actor.name,
-                        actorKind  = actor_kind,
-                        action     = 'Skillchain: ' .. sc_name,
-                        actionId   = res.proc_message,
-                        target     = tgt_name,
-                        targetKind = tgt_kind,
-                        -- proc_value, never res.value: the chain's damage is
-                        -- its own and is not part of the weaponskill's.
-                        dmg        = res.proc_value or 0,
-                        hit        = true,
-                        crit       = false,
-                        burst      = false,
-                        msg        = res.proc_message,
-                        owner      = owner,
-                        pet        = pet_name,
-                    })
+                    row.seq      = next_seq(now)
+                    row.use      = sc_use
+                    row.kind     = 'skillchain'
+                    row.action   = 'Skillchain: ' .. sc_name
+                    row.actionId = res.proc_message
+                    -- proc_value, never res.value: the chain's damage is its
+                    -- own and is not part of the weaponskill's.
+                    row.dmg      = res.proc_value or 0
+                    row.hit      = true
+                    row.crit     = false
+                    row.burst    = false
+                    row.msg      = res.proc_message
+                    Emit.write(row)
 
                 elseif E.Damage[res.proc_message] == true then
                     -- An additional effect: an enspell, a Sneak Attack proc, an
@@ -546,25 +570,17 @@ local function record(act, actor, actor_kind, pet_owner, now)
                         S.use = S.use + 1
                         addl_use = S.use
                     end
-                    Emit.write({
-                        t          = now,
-                        seq        = next_seq(now),
-                        use        = addl_use,
-                        kind       = 'addl',
-                        actor      = actor.name,
-                        actorKind  = actor_kind,
-                        action     = 'Additional Effect',
-                        actionId   = res.proc_message,
-                        target     = tgt_name,
-                        targetKind = tgt_kind,
-                        dmg        = res.proc_value or 0,
-                        hit        = true,
-                        crit       = false,
-                        burst      = false,
-                        msg        = res.proc_message,
-                        owner      = owner,
-                        pet        = pet_name,
-                    })
+                    row.seq      = next_seq(now)
+                    row.use      = addl_use
+                    row.kind     = 'addl'
+                    row.action   = 'Additional Effect'
+                    row.actionId = res.proc_message
+                    row.dmg      = res.proc_value or 0
+                    row.hit      = true
+                    row.crit     = false
+                    row.burst    = false
+                    row.msg      = res.proc_message
+                    Emit.write(row)
 
                 else
                     note_unknown(res.proc_message, act)
@@ -583,41 +599,24 @@ end
 ---
 --- "Ours" is party or alliance: Entity.refresh_party walks all 18 slots, and
 --- trusts occupy party slots like anyone else. A pet qualifies only through
---- Entity.pet_owner, which searches those same slots, so a passing stranger's
---- pet is not ours and is not recorded.
+--- Entity.pet_owner, which searches those same members, so a passing
+--- stranger's pet is not ours and is not recorded.
 ---
 --- NOT the whole test, because it asks only about the packet's actor. Damage
 --- our side dealt as a REACTION -- a counter, spikes, retaliation -- rides on a
---- packet the monster is the actor of, so `has_reaction` gets a second look at
---- everything this returns false for. The same predicate then decides it, asked
---- of the entity that reacted rather than of the one that swung.
+--- packet the monster is the actor of, so `Action.has_reaction` gets a second
+--- look at everything this returns false for. The same predicate then decides
+--- it, asked of the entity that reacted rather than of the one that swung.
 ---
 --- Returns the answer along with the entity's kind and, for a pet, its owner's
---- record -- the two things every caller needs next. The owner search is
---- eighteen party slots of SDK calls, so it is done once, here, and handed on.
+--- record -- the two things every caller needs next. The owner search is a
+--- round of SDK calls per party member, so it is done once, here, and handed on.
 local function classify(ent)
     local kind = Entity.kind(ent)
     local owner = nil
     if kind == 'pet' then owner = Entity.pet_owner(ent) end
     local ours = Entity.in_party(ent.name) or owner ~= nil
     return ours, kind, owner
-end
-
---- Does this action carry a reaction at all?
----
---- A cheap pre-test, and it has to be: this runs for every monster action in
---- range, and the overwhelming majority carry no reaction. Integer lookups over
---- the parsed result blocks only -- not one entity lookup until something is
---- actually there to credit.
-local function has_reaction(act)
-    for _, target in ipairs(act.targets) do
-        for _, res in ipairs(target.results) do
-            if E.Reaction[res.message] then return true end
-            if res.has_react and res.react_message
-               and E.SpikeReaction[res.react_message] then return true end
-        end
-    end
-    return false
 end
 
 --- One reaction row: `defender` dealt `dmg` back to `attacker`.
@@ -630,25 +629,24 @@ local function emit_reaction(now, defender, d_kind, attacker, atk_kind,
     -- purpose -- see the 535/592/14 note in vx_enums.lua.
     if not dmg or dmg <= 0 then return end
     S.use = S.use + 1
-    Emit.write({
-        t          = now,
-        seq        = next_seq(now),
-        use        = S.use,
-        kind       = 'reaction',
-        actor      = defender.name,
-        actorKind  = d_kind,
-        action     = name,
-        actionId   = message,
-        target     = attacker.name,
-        targetKind = atk_kind,
-        dmg        = dmg,
-        hit        = true,
-        crit       = false,
-        burst      = false,
-        msg        = message,
-        owner      = owner,
-        pet        = pet_name,
-    })
+    row.t          = now
+    row.seq        = next_seq(now)
+    row.use        = S.use
+    row.kind       = 'reaction'
+    row.actor      = defender.name
+    row.actorKind  = d_kind
+    row.action     = name
+    row.actionId   = message
+    row.target     = attacker.name
+    row.targetKind = atk_kind
+    row.dmg        = dmg
+    row.hit        = true
+    row.crit       = false
+    row.burst      = false
+    row.msg        = message
+    row.owner      = owner
+    row.pet        = pet_name
+    Emit.write(row)
 end
 
 --- Emit what our side dealt back on somebody else's action.
@@ -723,7 +721,14 @@ end)
 --- directly: it runs for every packet the client receives, and a fresh closure
 --- per packet is garbage the game's thread has to collect.
 local function on_packet_in(p)
-    if not p or not p.data then return end
+    if not p then return end
+    local data = p.data
+    if not data then return end
+    local id = p.id
+
+    -- Before any packet is turned away by id: see note_chunk.
+    local injected = p.injected
+    if not injected then note_chunk(p.chunk_data, data) end
 
     -- ROSTER UPDATES. 0x0C8 announces an alliance change, 0x0DD a party
     -- member change; between them they cover forming an alliance, merging a
@@ -738,13 +743,13 @@ local function on_packet_in(p)
     -- pulls the moment it is assembled therefore spends its first seconds
     -- with the other twelve members absent from the name set that classify()
     -- tests against, and every one of their swings is dropped.
-    if p.id == E.Packet.ALLIANCE or p.id == E.Packet.PARTY then
+    if id == E.Packet.ALLIANCE or id == E.Packet.PARTY then
         Entity.party_changed()
         return
     end
 
-    if p.id ~= E.Packet.ACTION then return end
-    if not p.injected and is_duplicate(p) then
+    if id ~= E.Packet.ACTION then return end
+    if not injected and is_duplicate(data) then
         S.dupes = S.dupes + 1
         return
     end
@@ -770,18 +775,31 @@ local function on_packet_in(p)
     local job_changes = Entity.refresh_party(now)
     if job_changes then record_jobs(job_changes, now) end
 
-    local act = Action.parse(p.data)
-    if not act then S.dropped = S.dropped + 1 return end
+    -- THE ACTOR FIRST, THE PACKET SECOND. Most action packets in a busy zone
+    -- are a stranger's or a monster's, and all that is ever wanted from one of
+    -- those is a reaction our side dealt back -- which a walk over the bits
+    -- answers without building a table. So the actor is resolved from its id
+    -- alone, and the packet is decoded in full only when there is something
+    -- in it to write.
+    local actor_id = Action.actor_id(data)
+    if not actor_id then S.dropped = S.dropped + 1 return end
 
-    local actor = Entity.by_id(act.actor_id)
+    local actor = Entity.by_id(actor_id)
     if not actor then return end
 
     local ours, actor_kind, pet_owner = classify(actor)
+    -- The one reason a monster's own packet is still looked at: the damage
+    -- our side dealt back on it.
+    if not ours and not Action.has_reaction(data, E.Reaction, E.SpikeReaction) then
+        return
+    end
+
+    local act = Action.parse(data)
+    if not act then S.dropped = S.dropped + 1 return end
+
     if ours then
         record(act, actor, actor_kind, pet_owner, now)
-    elseif has_reaction(act) then
-        -- The one reason a monster's own packet is still looked at: the
-        -- damage our side dealt back on it.
+    else
         record_reactions(act, actor, actor_kind, now)
     end
 end
