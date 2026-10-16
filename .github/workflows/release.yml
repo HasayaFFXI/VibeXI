@@ -1,61 +1,61 @@
-# Publishes a GitHub Release for every version tag, with the addon attached as
-# VibeXI.zip. The README links releases/latest/download/VibeXI.zip, which only
-# works because every release carries an asset under that exact name.
+# Publishes a GitHub Release with the addon attached as VibeXI.zip. The README
+# links releases/latest/download/VibeXI.zip, which only works because every
+# release carries an asset under that exact name.
 #
 # The zip holds addons\VibeXI\ and config\addons\VibeXI\vibexi.ini, laid out
 # as the Ashita folder is, so players unzip it straight into that folder. The
 # settings live under config\ so an update can leave them alone: Windows asks
-# before replacing the ini, and players skip it. addon.version is set from the
-# tag inside the zip, so the version the addon reports always matches the
-# release it came from.
+# before replacing the ini, and players skip it.
 #
-# To release: push a tag (1.2.3 or v1.2.3). To (re)build an existing tag, run
-# this workflow by hand from the Actions tab and give it the tag.
+# addon.version in vibexi.lua is the one place the version lives. To release,
+# change it on main (in a PR like any other change). When vibexi.lua lands on
+# main, this workflow reads the version and, if no release has it yet, tags
+# that commit and publishes the release. A version that is already released
+# is left alone, so other edits to vibexi.lua publish nothing. The workflow
+# never writes to the repo, and nobody tags by hand: the release creates the
+# tag. Running it from the Actions tab does the same for the head of main.
 
 name: Release
 
 on:
   push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    branches: [main]
+    paths: [addons/VibeXI/vibexi.lua]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Existing tag to build a release for, e.g. 1.0.0'
-        required: true
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
 
 jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      TAG: ${{ github.event.inputs.tag || github.ref_name }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TAG }}
 
-      - name: Set addon.version from the tag
+      - name: Read addon.version
         run: |
-          version="${TAG#v}"
-          file=addons/VibeXI/vibexi.lua
-          sed -i -E "s/^addon\.version *= *'[^']*'/addon.version = '${version}'/" "$file"
-          grep -qx "addon.version = '${version}'" "$file" \
-            || { echo "::error::addon.version line not found in $file"; exit 1; }
+          version=$(sed -n -E "s/^addon\.version *= *'([^']*)'.*/\1/p" addons/VibeXI/vibexi.lua)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || { echo "::error::addon.version in vibexi.lua must look like 1.2.3, got '$version'"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "::notice::$version is already released; nothing to do."
+          else
+            echo "PUBLISH=1" >> "$GITHUB_ENV"
+          fi
 
       - name: Build VibeXI.zip
+        if: env.PUBLISH == '1'
         run: |
           zip -r -X VibeXI.zip addons/VibeXI config/addons/VibeXI
 
       - name: Publish the release
+        if: env.PUBLISH == '1'
         run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" VibeXI.zip --clobber
-          else
-            gh release create "$TAG" VibeXI.zip --verify-tag \
-              --title "VibeXI $TAG" --generate-notes
-          fi
+          gh release create "$VERSION" VibeXI.zip --target "$GITHUB_SHA" \
+            --title "VibeXI $VERSION" --generate-notes
