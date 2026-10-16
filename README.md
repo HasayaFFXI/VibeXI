@@ -2,25 +2,19 @@
 
 [![Latest release](https://img.shields.io/github/v/release/HasayaFFXI/VibeXI)](https://github.com/HasayaFFXI/VibeXI/releases/latest)
 
-An Ashita v4 addon for Final Fantasy XI that records combat as it happens. It
-reads the game's incoming action packets and writes one JSON line per event to
-a file on your PC.
+An Ashita v4 addon for Final Fantasy XI that records combat events as they happen in real time. 
+It reads the game's incoming action packets and writes one JSON line per event to a file on your PC.
 
-VibeXI is read-only. It never sends anything to the game server, has no
-commands and draws nothing on screen. It works on any server you play through
-Ashita v4, and it is approved for use on HorizonXI.
+It works on any server you play through Ashita v4, and it is approved for use on HorizonXI.
+Note that no approvals have been given for any other private servers.
 
-> **Not playing on HorizonXI?** Open `vibexi.ini` and set `Horizon=0` before
-> you play. The default, `1`, is only right on HorizonXI. See
-> [`Horizon`](#server-horizon) below.
+> **Not playing on HorizonXI?**  See [`Horizon`](#server-horizon) below.
 
 ## Install
 
 1. Download the latest release:
    **[VibeXI.zip](https://github.com/HasayaFFXI/VibeXI/releases/latest/download/VibeXI.zip)**
 
-   Older versions and release notes are on the
-   [releases page](https://github.com/HasayaFFXI/VibeXI/releases).
 2. Unzip it into your Ashita folder (the one that has `addons` in it). The zip
    holds `addons\VibeXI\`, so you end up with:
 
@@ -30,8 +24,6 @@ Ashita v4, and it is approved for use on HorizonXI.
    ...
    ```
 
-   On HorizonXI the Ashita folder is `HorizonXI\Game`. Don't rename the
-   `VibeXI` folder: Ashita takes the addon's name from it.
 3. If you're not on HorizonXI, set `Horizon=0` in `vibexi.ini`.
 4. In game, load it:
 
@@ -41,9 +33,6 @@ Ashita v4, and it is approved for use on HorizonXI.
 
    To load it every time you play, add that same line to
    `<Ashita folder>\scripts\default.txt`.
-
-You can load it at character select or after you log in. Recording starts once
-your character is known.
 
 ### Updating
 
@@ -82,15 +71,13 @@ default is used. A bad setting never stops the addon from loading or recording.
 
 ### `[server]` `Horizon`
 
-HorizonXI sends about a dozen job abilities as if they were weaponskills: the
-Jumps, Shield Bash, Weapon Bash, Blade Bash and Eagle Eye Shot. With
+HorizonXI sends about a dozen job abilities as if they were weaponskills. With
 `Horizon=1`, VibeXI spots these and records them as the job abilities they
 really are.
 
 - `1` (also `on`, `yes`, `true`): you play on HorizonXI. This is the default.
-- `0` (also `off`, `no`, `false`): you play anywhere else. Other servers send
-  job abilities normally, so the fix has nothing to correct and could misread a
-  real weaponskill.
+- `0` (also `off`, `no`, `false`): you play anywhere else. Other servers may
+- send job abilities normally (unconfirmed)
 
 ### `[output]` `EventDir`
 
@@ -103,8 +90,8 @@ The folder the `.jsonl` event files go to. It is created if it doesn't exist.
 - Spaces are fine, and quotes around the path are optional.
 - If the line is empty, or the folder can't be used, the addon falls back to
   `%LOCALAPPDATA%\VibeXI\events`.
-- **Don't use OneDrive, Dropbox or any other synced folder.** The file is
-  written several times a second for as long as you play.
+- **Don't use slow or network storage** The file is written several times a
+- second for as long as you play.
 
 ### Writing the file
 
