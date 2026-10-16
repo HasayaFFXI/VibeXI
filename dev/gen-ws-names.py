@@ -1,17 +1,18 @@
 """Regenerates addons/VibeXI/vx_ws_names.lua -- weaponskill id -> English name.
 
 Ashita's IResourceManager has GetSpellById and GetAbilityById but no weaponskill
-lookup, so this one table has to ship with the addon. Source is Metrics'
-resources/weapon_skills.lua, itself derived from Windower's.
+lookup, so this one table has to ship with the addon. The source is a
+weapon_skills.lua resource table whose entries look like
+`[1] = {id=1,en="Combo",...},`.
 
-Only id and English name are kept: ~7KB instead of the 49KB original, and
-nothing else in that file is used. Every event also carries the raw actionId, so
-a lookup miss degrades to "#123" rather than losing information.
+Only id and English name are kept, and nothing else in that file is used. Every
+event also carries the raw actionId, so a lookup miss degrades to "#123" rather
+than losing information.
 
-    python dev/gen-ws-names.py
+    python dev/gen-ws-names.py --source path/to/weapon_skills.lua
 
-Writes CRLF, matching what the PowerShell generator produced, so regenerating an
-unchanged table is a no-op in git rather than a whole-file diff.
+Writes CRLF, so regenerating an unchanged table is a no-op in git rather than a
+whole-file diff.
 """
 
 import argparse
@@ -20,7 +21,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent          # repo root
-DEFAULT_SOURCE = Path(r'C:\Users\thadl\OneDrive\Documents\Claude\resources\metrics\resources\weapon_skills.lua')
 
 ENTRY_RX = re.compile(r'^\s*\[(\d+)\]\s*=\s*\{id=(\d+),en="([^"]*)"')
 
@@ -29,7 +29,7 @@ HEADER = [
     '--',
     "-- Weaponskill id -> English name. Ashita's IResourceManager exposes",
     '-- GetSpellById and GetAbilityById but no weaponskill lookup, so this one',
-    "-- table has to ship. Derived from Windower's weapon_skills.lua via Metrics.",
+    '-- table has to ship.',
     '',
     'return {',
 ]
@@ -37,7 +37,7 @@ HEADER = [
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('--source', default=str(DEFAULT_SOURCE))
+    ap.add_argument('--source', required=True, help='weapon_skills.lua to read')
     ap.add_argument('--out', default=None, help='default: addons/VibeXI/vx_ws_names.lua')
     args = ap.parse_args(argv)
 
@@ -46,7 +46,6 @@ def main(argv=None):
 
     if not source.is_file():
         print('source not found: %s' % source)
-        print('Metrics is not in this repo; pass its weapon_skills.lua with --source.')
         return 1
 
     lines = list(HEADER)
@@ -60,8 +59,8 @@ def main(argv=None):
             n += 1
     lines.append('}')
 
-    # newline='' plus explicit \r\n: WriteAllLines put a line terminator after
-    # every line including the last, and this file is CRLF in the working tree.
+    # newline='' plus explicit \r\n: a line terminator after every line,
+    # including the last.
     with open(out, 'w', encoding='utf-8', newline='') as fh:
         for line in lines:
             fh.write(line + '\r\n')

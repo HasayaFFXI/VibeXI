@@ -1,7 +1,7 @@
 -- Constants read off the wire. No logic here.
 --
--- Sourced from Metrics (ashita/_enums.lua) and the XiPackets documentation for
--- server packet 0x0028. Values are the game's, not ours.
+-- Sourced from the XiPackets documentation for server packet 0x0028 and the
+-- LandSandBoat server source. Values are the game's, not ours.
 
 local E = {}
 
@@ -46,14 +46,13 @@ E.EmitCategory = {
     [E.Category.PET_ABILITY] = 'pet',
 }
 
--- Entity spawn flags. This is what replaces the chat log's article heuristic.
+-- Entity spawn flags.
 --
 -- IT IS A BITFIELD, not an enumeration -- confirmed against Ashita's own
 -- plugins/sdk/ffxi/enums.h (EntitySpawnFlags) and against how Ashita's shipped
 -- addons read it (chamcham and skeletonkey both use bit.band, never `==`).
--- Metrics' table lists composite *observed* values instead, which is why the
--- first cut of vx_entity.kind() compared with `==` and would have misclassified
--- any entity carrying a bit combination nobody happened to write down.
+-- Comparing with `==` against observed composite values would misclassify any
+-- entity carrying a bit combination nobody happened to write down.
 E.SpawnFlags = {
     PLAYER      = 0x0001,
     NPC         = 0x0002,
@@ -69,8 +68,8 @@ E.SpawnFlags = {
     TRUST       = 0x1000,
 }
 
--- The composites Metrics recorded, kept only as a decoding key for anyone
--- reading the probe line or a Metrics CSV. Nothing compares against these.
+-- Common composites, kept only as a decoding key for anyone reading the probe
+-- line. Nothing compares against these.
 --
 --    525 = 0x20D  PLAYER|PARTY|ALLIANCE|LOCALPLAYER   (ourselves)
 --     13 = 0x00D  PLAYER|PARTY|ALLIANCE               (a party member)
@@ -94,25 +93,20 @@ E.Animation = {
 -- ============================================================================
 -- THESE ARE ALLOWLISTS. An id in neither table is not emitted at all.
 --
--- The first cut of this was a denylist (`NoDamage`) built from the handful of
--- melee outcomes Metrics enumerates, which meant an unrecognised message
--- defaulted to "this is damage". It is not. `value` is a different quantity per
--- message, and on the very first live run a Protect and a Shell landed 40 and
--- 41 "damage" on the meter -- message 230 is "<target> gains the effect of
--- <status>" and its value field is the status, not a number of hit points.
+-- A denylist would default an unrecognised message to "this is damage". It is
+-- not. `value` is a different quantity per message: message 230 is "<target>
+-- gains the effect of <status>" and its value field is the status, not a
+-- number of hit points, so a Protect would read as 40 damage.
 --
--- Same argument Phase 0 made for the API manifest, applied to the wire: a
--- denylist only catches what someone thought of, and here the failure mode of a
--- miss is silently wrong totals. Unknown ids now drop, so the failure mode is
--- missing data instead -- and record() writes one meta line naming each unknown
--- id it saw, so growing these tables is a deliberate edit informed by evidence.
+-- Same argument as the API allowlist, applied to the wire: a denylist only
+-- catches what someone thought of, and here the failure mode of a miss is
+-- silently wrong totals. Unknown ids drop, so the failure mode is missing data
+-- instead -- and record() writes one meta line naming each unknown id it saw,
+-- so growing these tables is a deliberate edit informed by evidence.
 --
 -- Ids and their English text come from the server's own enum -- `MsgBasic` in
--- src/map/enums/msg_basic.h of the LandSandBoat-derivative checkout named in
--- the repo README. That is authoritative and it names every id, where Metrics'
--- Ashita.Enum.Message lists only the ~40 it needed. Two of the names we had
--- inherited from it are wrong against that enum: 3 is StartsCastingSelf, not a
--- heal, and 373 is SpikesEffectRecover.
+-- LandSandBoat's src/map/enums/msg_basic.h, which names every id. Note that 3
+-- is StartsCastingSelf, not a heal, and 373 is SpikesEffectRecover.
 -- ============================================================================
 
 -- Tier 1 -- result.value IS hit points of damage dealt BY this packet's actor.
@@ -146,10 +140,7 @@ E.Damage = {
 -- A result block has THREE message slots, not one. The main `message`, and two
 -- optional trailers: `has_proc` -> proc_message, which is the ADDITIONAL EFFECT
 -- (or a SKILLCHAIN -- see E.skillchain below), and `has_react` -> react_message,
--- which is the SPIKE effect. Metrics' Build_Action renames them exactly that way
--- (add_effect_message = proc_message, spike_effect_message = react_message,
--- ashita/packets.lua:52-66), and its melee handler tests add_effect_message
--- separately from message.
+-- which is the SPIKE effect.
 --
 -- record() reads the trailer separately from the main message and emits an
 -- additional effect as its own `kind:'addl'` row with its own `use`, so an
@@ -189,21 +180,18 @@ E.Attempt = {
     [373] = true,   -- SpikesEffectRecover -- the hit HEALED the target
     [655] = true,   -- MagicCompleteResist
 }
--- 373 is the one id where this file and Metrics could have diverged, so it is
--- worth the note. Metrics' No_Damage_Messages tests it against the MAIN message
--- (handlers/melee.lua:170-177) while LSB names it SpikesEffectRecover, which
--- says spike trailer. Whichever is right, an absorbed hit is a swing that dealt
--- nothing, so Tier 2 is the answer both ways: if it never arrives here the entry
--- is inert, and if it does the swing lands in the accuracy denominator exactly
--- as Metrics counts it. The reader already counts absorbs as misses, so
--- this also keeps the two sources telling the same story.
+-- 373 is worth a note. LSB names it SpikesEffectRecover, which says spike
+-- trailer, but it may also arrive as the MAIN message. Either way, an absorbed
+-- hit is a swing that dealt nothing, so Tier 2 is the answer both ways: if it
+-- never arrives here the entry is inert, and if it does the swing lands in the
+-- accuracy denominator, the same as any other absorb.
 
 -- Deliberately in NEITHER table, so they drop. Recorded here so the next person
 -- to see one in the unknown-message meta lines does not "fix" it by accident.
 --
---   REACTION DAMAGE moved out of this list -- see E.Reaction below. 33, 44 and
---   536 are now emitted with the two ends swapped rather than dropped. What is
---   still unwired is the reaction ATTEMPTS: 535 RetaliateShadowAbsorbs, 592
+--   REACTION DAMAGE is not here -- see E.Reaction below. 33, 44 and 536 are
+--   emitted with the two ends swapped rather than dropped. What is unwired is
+--   the reaction ATTEMPTS: 535 RetaliateShadowAbsorbs, 592
 --   PerfectCounterMiss and 14 CounterAbsByShadow. Each is a reaction that dealt
 --   nothing, and each would be the honest denominator for a Counter or
 --   Retaliation accuracy -- but which side of the packet a given one belongs to
@@ -213,13 +201,13 @@ E.Attempt = {
 --   known overstatement and better than a fabricated one.
 --
 --   MP, NOT HP -- 162 AddEffectMPDrained, 225 UsesSkillMPDrained,
---   366 TargetMPDrained. Metrics keeps MP drain out of the damage total too.
+--   366 TargetMPDrained. MP drain is not damage.
 --
 --   BUFFS, ENFEEBLES, STATUS -- 230/266 (gains the effect of), 236/237/267
 --   (receives the effect of), 373 (SpikesEffectRecover).
 --
 --   HEALS -- 7, 24, 102, 103 (recovers HP) -- stay out of BOTH tables, but they
---   are no longer dropped. Healing is recognised by ACTION ID, not by message,
+--   are not dropped. Healing is recognised by ACTION ID, not by message,
 --   and written as its own kind:"heal" line; see the HEALING block below. A
 --   heal reaching these tables would be summed as damage.
 
@@ -242,20 +230,17 @@ E.Message = {
 -- weaponskill ids too: 168 is Blade Bash and Hexa Strike, 66 is Jump and Gale
 -- Axe. The weaponskill table is all but dense from 1 to 255, so looking a
 -- category 3 id up there first names every one of them after the weaponskill
--- it collides with. The right-hand column is what each was being written as.
+-- it collides with. The right-hand column is that weaponskill.
 --
--- The ids are the rows with actionType 3 in sql/abilities.sql of the server
--- checkout named in the repo README, cut to the ones a 75-era server has. Eight
+-- The ids are the rows with actionType 3 in LandSandBoat's sql/abilities.sql,
+-- cut to the ones a 75-era server has. Eight
 -- of them (26, 41, 45, 46, 66, 67, 77, 168) have also been seen arriving this
 -- way in real event files; 57, 68, 150 and 170 rest on the SQL alone.
 --
 -- THE ID ALONE DECIDES NOTHING -- a Dragoon's Jump and a Beastmaster's Gale Axe
 -- are the same packet up to the result. What separates them is the message: a
 -- weaponskill reports 185 or 188, and these report something else (110 for the
--- bashes, 317 and 324 for the Jumps, 125/153 for Steal). That is Metrics' test
--- (isWeaponskillAbility, handlers/tp_action.lua), over a longer list: Metrics'
--- own Res.WS.Abilities has no 150, 168 or 170 and so calls Blade Bash a Hexa
--- Strike too.
+-- bashes, 317 and 324 for the Jumps, 125/153 for Steal).
 --
 -- The message has to be the action's FIRST result. An AoE weaponskill reports
 -- 185 on its main target and 264 on the others, so asking each result in turn
@@ -313,8 +298,7 @@ end
 -- TWO SLOTS, TWO TABLES. Counter and Retaliation replace the swing's own
 -- outcome and arrive in the MAIN message with the damage in res.value. Spikes
 -- fire in addition to the swing, so they arrive in the REACT (spike) trailer
--- with the damage in res.react_value -- the trailer Metrics calls
--- spike_effect_message. Keeping them apart is what stops a main-slot 44 from
+-- with the damage in res.react_value. Keeping them apart is what stops a main-slot 44 from
 -- being read as spike damage on the strength of the number alone.
 E.Reaction = {
     [33]  = 'Counter',
@@ -335,30 +319,23 @@ E.SpikeReaction = {
 --     res.proc_value     the skillchain's own damage, separate from the
 --                        weaponskill's own res.value
 --
--- METRICS IS THE SOURCE OF TRUTH FOR THIS TABLE. What follows is
--- `Res.WS.Skillchains` from resources/weapon_skills_curated.lua, copied
--- verbatim, and E.skillchain() is its `Res.WS.Get_Skillchain` -- a plain
--- lookup, nothing more.
+-- E.skillchain() is a plain lookup into this table, nothing more.
 --
--- DO NOT DERIVE THESE IDS ARITHMETICALLY. An earlier cut of this file computed
--- them as `287 + effect` / `384 + effect` from the LandSandBoat server's
--- `action_result_t::recordSkillchain`. That formula disagrees with Metrics in
--- two places -- it puts Radiance and Umbra at 302/303 rather than 767/768, and
--- it reads the 385/386 pair as "absorbed" rather than as Light/Darkness -- and
--- Metrics is the parser with a track record against this server. If the two
--- ever have to be reconciled, that is a measurement against a live client, not
--- a reading of either source.
+-- DO NOT DERIVE THESE IDS ARITHMETICALLY. Computing them as `287 + effect` /
+-- `384 + effect` from LandSandBoat's `action_result_t::recordSkillchain`
+-- disagrees with this table in two places -- it puts Radiance and Umbra at
+-- 302/303 rather than 767/768, and it reads the 385/386 pair as "absorbed"
+-- rather than as Light/Darkness. The table is the one with a track record
+-- against live servers. If the two ever have to be reconciled, that is a
+-- measurement against a live client, not a reading of either source.
 --
--- THE TABLE IS ONLY CONSULTED ON A WEAPONSKILL (category 3). That is the single
--- context Metrics consults it in: `H.TP.Skillchain_Parse` is called from
--- `H.TP.Action` and from nowhere else (handlers/tp_action.lua:41). Monster TP
--- moves and pet abilities never reach it, and there is a comment at
--- tp_action.lua:151 saying BST pet abilities cannot skillchain here anyway.
+-- THE TABLE IS ONLY CONSULTED ON A WEAPONSKILL (category 3). Monster TP moves
+-- and pet abilities never reach it; BST pet abilities cannot skillchain here
+-- anyway.
 --
 -- That context is also what resolves 229, which is in two tables at once. On a
--- weaponskill Metrics calls it 'DRG Jump Effect'; everywhere else it reads the
--- same trailer as `Message.ENSPELL` (ashita/_enums.lua) and files it as an
--- additional effect. So the id means one thing on a weaponskill and another on
+-- weaponskill it is 'DRG Jump Effect'; everywhere else the same trailer is an
+-- enspell, filed as an additional effect. So the id means one thing on a weaponskill and another on
 -- a melee swing, and record() reproduces both -- see the proc-trailer branch
 -- there. This is why the lookup is gated on `kind` rather than being global.
 E.Skillchains = {
@@ -372,7 +349,7 @@ E.Skillchains = {
 }
 
 --- The skillchain's English name, or nil when this message is not one.
---- Metrics' Res.WS.Get_Skillchain, and deliberately nothing more than a lookup.
+--- Deliberately nothing more than a lookup.
 function E.skillchain(message)
     if not message then return nil end
     return E.Skillchains[message]
@@ -381,43 +358,32 @@ end
 -- ============================================================================
 -- HEALING -- recognised by ACTION ID, never by message.
 --
--- THE RULE IS METRICS', AND ONLY METRICS'. Nothing here is a judgement of ours:
--- every id below is copied verbatim from Metrics' resource tables, and record()
--- does with them exactly what Metrics' handlers do. A heal Metrics does not
--- count is not counted here.
+-- How an action is decided to be a heal:
 --
--- How Metrics decides (handlers/spells.lua, handlers/abilities.lua):
---
---   * By the action's id against a curated list -- `Res.Spells.Get_Healing`,
---     `Res.Abilities.Get_Player_Healing` / `Get_Pet_Healing`,
---     `Res.Avatar.Get_Healing`, `Res.Pets.Get_Healing_Wyvern_Breath`. The
+--   * By the action's id against a curated list -- the tables below. The
 --     result's message is not consulted at all.
---   * The amount is the result's value (Metrics' `result.param`), for every
---     result on every target the client can resolve. A cure on a full-HP
---     target is a 0 -- still a cast, and what overcure is measured from.
---   * Healing never enters the damage total
---     (`DB.Catalog.Include_Total_Damage` excludes every healing trackable).
---     So a healing id is written as kind:"heal" and NEVER as a damage row, even
---     where the message would otherwise read as damage.
+--   * The amount is the result's value, for every result on every target the
+--     client can resolve. A cure on a full-HP target is a 0 -- still a cast,
+--     and what overcure is measured from.
+--   * Healing never enters the damage total. So a healing id is written as
+--     kind:"heal" and NEVER as a damage row, even where the message would
+--     otherwise read as damage.
 --
 -- WHICH CATEGORY EACH LIST IS CONSULTED ON matters as much as the ids, because
 -- the id spaces overlap (649 is Repair as an ability and Sand Breath as a pet
--- ability). Each list is looked up only on the category Metrics routes it from:
+-- ability). Each list is looked up only on its own category:
 --
 --   category 4  (magic)        E.HealingSpells      key = act.param
 --   category 6  (ability)      E.HealingAbilities   key = act.param + 512
 --   category 13 (pet ability)  E.PetHealing         key = act.param
 --
--- NOT consulted on category 14. Metrics' dispatcher does nothing there
--- ("Unblinkable Job Ability; Waltz", metrics.lua) -- so a waltz that arrives on
--- 14 is not counted by Metrics and is not counted here, even though the Curing
--- Waltz ids are on the ability list for category 6.
+-- NOT consulted on category 14 (unblinkable job abilities; waltzes) -- so a
+-- waltz that arrives on 14 is not counted, even though the Curing Waltz ids
+-- are on the ability list for category 6.
 --
--- Metrics' Divine Seal clamp (`DB.Healing_Max`) limits only a spell's recorded
--- MAX, which is the reference overcure is measured against; the totals take the
--- raw value. So the raw value is what goes on the wire, as for damage.
+-- The raw value is what goes on the wire, as for damage -- including a Divine
+-- Seal cure. Clamping, if any, is the reader's business.
 
--- Res.Spells.Healing, resources/spells_curated.lua.
 E.HealingSpells = {
     [1]   = 'Cure',       [2]   = 'Cure II',     [3]  = 'Cure III',
     [4]   = 'Cure IV',    [5]   = 'Cure V',      [6]  = 'Cure VI',
@@ -428,11 +394,9 @@ E.HealingSpells = {
     [690] = 'White Wind', [711] = 'Restoral',
 }
 
--- Res.Abilities.Healing + Res.Abilities.Pet_Healing, resources/abilities.lua.
--- Keyed as Metrics keys them: the packet's param PLUS the 512 offset
--- (H.Enum.Offsets.ABILITY), which is E.ABILITY_ID_OFFSET below. The pet ones
--- (Reward, Spirit Link, Repair) are cast BY the player ON the pet, and Metrics
--- credits them to the player as ability healing.
+-- Keyed by the packet's param PLUS the 512 offset, which is E.ABILITY_ID_OFFSET
+-- below. The pet ones (Reward, Spirit Link, Repair) are cast BY the player ON
+-- the pet, and are credited to the player as ability healing.
 E.HealingAbilities = {
     [541] = 'Spirit Surge',
     [550] = 'Chakra',
@@ -444,9 +408,8 @@ E.HealingAbilities = {
     [649] = 'Repair',
 }
 
--- Res.Avatar.Healing (resources/avatars.lua) and Res.Pets.Healing_Wyvern_Breath
--- (resources/pets.lua). A PET's action, credited to its owner with the pet's
--- name kept -- record() already does that for every pet row.
+-- Avatar heals and wyvern breaths. A PET's action, credited to its owner with
+-- the pet's name kept -- record() already does that for every pet row.
 E.PetHealing = {
     [869] = 'Whispering Wind',
     [906] = 'Healing Ruby',
@@ -457,10 +420,9 @@ E.PetHealing = {
     [642] = 'Healing Breath III',
 }
 
---- The heal's English name when this action is one Metrics counts as healing,
---- else nil. `via` is which list matched: 'magic', 'ability' or 'pet' -- the
---- browser needs it to split the totals the way Metrics' columns do (spell
---- HEALING + ABILITY_HEALING is its Healing column; PET_HEAL is separate).
+--- The heal's English name when this action counts as healing, else nil.
+--- `via` is which list matched: 'magic', 'ability' or 'pet', so a reader can
+--- split the totals (pet healing is usually kept apart from the rest).
 function E.healing(category, param)
     if not param then return nil end
     if category == E.Category.MAGIC then
@@ -478,7 +440,7 @@ end
 
 -- Ability ids in the action packet are offset by 512 from the resource table.
 --
--- Still the one number here that is inferred rather than read off a definition.
+-- The one number here that is inferred rather than read off a definition.
 -- The Ashita tree does not ship abils.dat (it lives in the FFXI install), so the
 -- table's own layout cannot be inspected from source. Two things support it:
 -- Ashita's recast addon scans GetAbilityById(0..2048), i.e. the table is far
@@ -490,12 +452,12 @@ E.ABILITY_ID_OFFSET = 512
 
 -- Job id -> the three-letter abbreviation the game itself uses.
 --
--- The party table hands out job IDS, and an id is unreadable in a JSON file and
--- unusable as a colour key without a second table on the browser side. Resolving
--- it here costs 24 lines and makes the event file self-describing: "WAR/NIN" is
--- in the line, not reconstructed from two integers by whoever reads it.
+-- The party table hands out job IDS, and an id is unreadable in a JSON file
+-- without a second table on the reader's side. Resolving it here costs 24 lines
+-- and makes the event file self-describing: "WAR/NIN" is in the line, not
+-- reconstructed from two integers by whoever reads it.
 --
--- Ids are the game's, matching Metrics' Res.Jobs.List. 20-23 cannot appear on a
+-- Ids are the game's. 20-23 cannot appear on a
 -- 75-era server; they are listed so an unexpected id resolves to a name rather
 -- than to nil.
 E.Jobs = {

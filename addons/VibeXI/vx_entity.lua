@@ -2,12 +2,8 @@
 --
 -- This is the module that makes the packet data useful: the packet carries
 -- numeric ids, and everything that turns an id into "Hasaya, a party member" or
--- "Goblin Pathfinder, a monster" happens here.
---
--- It is also what retires the chat parser's guesswork. `spawn_flags` states
--- outright whether an entity is a player, a monster or a pet, so the article
--- heuristic ("the Goblin..."), the fixed-point propagation over who-fights-whom,
--- and every `guess: true` event become unnecessary.
+-- "Goblin Pathfinder, a monster" happens here. `spawn_flags` states outright
+-- whether an entity is a player, a monster or a pet, so nothing is guessed.
 --
 -- Every call in here is a getter. Nothing in this file can write to game memory
 -- or to the network -- see dev/ALLOWED_APIS.txt.
@@ -20,12 +16,11 @@ local M = {}
 -- the client keeps one 18-member structure (partymember_t Members[18] in
 -- Ashita's plugins/sdk/ffxi/party.h), so slots 0-5 are our own party and 6-17
 -- are the other two parties of the alliance. Nothing below distinguishes them,
--- and nothing should -- "ours" means the whole alliance, which is exactly what
--- Metrics' Party.Is_Affiliate (party_number 1, 2 or 3) resolves to.
+-- and nothing should -- "ours" means the whole alliance.
 M.party = {}
 M.party_stamp = 0
 M.party_dirty = true         -- read the table on the first action, not 3s in
-local PARTY_TTL = 3          -- seconds; matches what Metrics uses
+local PARTY_TTL = 3          -- seconds
 
 -- name -> { main, main_lvl, sub, sub_lvl }, for everyone we have ever seen a
 -- job for. Kept for the whole session rather than rebuilt per refresh: see
@@ -90,7 +85,6 @@ local function has(flags, mask)
 end
 
 --- 'player' | 'pet' | 'mob' | 'npc' | 'other'
---- This is the field the UI's roster becomes a thin wrapper over.
 ---
 --- ORDER MATTERS, because the bits overlap. Trusts and pets are both NPC|ALLY;
 --- only the TRUST bit separates them, so it has to be tested first. Everything
@@ -117,10 +111,8 @@ end
 ---
 --- A MAIN JOB OF ZERO NEVER OVERWRITES A REAL ONE. The party table reports 0
 --- for a member who is zoning, out of range, or mid-update, and taking that at
---- face value would blank a character's job -- and with it their colour in the
---- meter -- every time they crossed a zone line. Metrics guards the same way
---- (Ashita.Party.Update_Job); the first real answer wins and only another real
---- answer replaces it.
+--- face value would blank a character's job every time they crossed a zone
+--- line. The first real answer wins and only another real answer replaces it.
 function M.note_job(name, main, main_lvl, sub, sub_lvl)
     if not name or name == '' then return nil end
 
@@ -146,8 +138,7 @@ end
 ---
 --- Called from the 0x0C8 (alliance update) and 0x0DD (party member update)
 --- handlers. It sets a flag rather than reading the party table there and then,
---- and that is deliberate -- Metrics carries the same note above its own
---- packet_in dispatch: the client's party memory does not update in the same
+--- and that is deliberate: the client's party memory does not update in the same
 --- breath as the packet that announced the change, so a read taken on arrival
 --- can still hand back the OLD roster. Flag now, read on the next action.
 ---
@@ -205,8 +196,8 @@ function M.in_party(name)
     return M.party[name] == true
 end
 
---- The owner entity of a pet, or nil. The chat log could never answer this;
---- `pet_index` on each party member's entity record does.
+--- The owner entity of a pet, or nil: whichever party member's entity record
+--- has a `pet_index` matching the pet.
 function M.pet_owner(pet)
     if not pet or not pet.index then return nil end
 

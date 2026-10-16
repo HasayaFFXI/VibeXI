@@ -28,7 +28,7 @@
 --
 -- The nesting is the whole point: action -> targets -> results is what makes
 -- multi-attack (several results on one target) and AoE (several targets)
--- directly observable, instead of inferred from the order of chat lines.
+-- directly observable.
 --
 -- Cross-checked field for field and width for width against the parser in
 -- Ashita's shipped `actionparse` addon: same byte-5 start, same 32/6/4/4/32/32
@@ -41,8 +41,8 @@ local BR = require('vx_bitreader')
 
 local M = {}
 
--- A target_count of 0 is a junk packet the server sends; Metrics drops these
--- too. The upper bounds are sanity rails, not protocol limits -- a corrupt
+-- A target_count of 0 is a junk packet the server sends, and is dropped. The
+-- upper bounds are sanity rails, not protocol limits -- a corrupt
 -- length field would otherwise spin the result loop for a very long time
 -- inside the packet callback.
 local MAX_TARGETS = 64

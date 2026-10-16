@@ -1,8 +1,8 @@
 -- Event -> one line of ASCII JSON -> appended to a local file.
 --
--- This is the entire bridge. It is one-way by construction: the addon writes a
--- file, the Python server reads it. Nothing downstream can send anything
--- back into the game no matter what happens to it.
+-- This is the addon's only output. It is one-way by construction: the addon
+-- writes a file, and nothing that reads it can send anything back into the
+-- game no matter what happens to it.
 --
 -- WHERE THE FILE GOES, and why it is not %TEMP%:
 --
@@ -18,15 +18,14 @@
 --
 --   * NOT %TEMP%. Tempting, but wrong: Storage Sense and Disk Cleanup delete
 --     files there on their own schedule, and this file is not scratch -- it is
---     the app's persistence layer. Reloading the page replays it, and it is
---     what survives an FFXI crash. Losing it mid-session loses the parse.
+--     the session's record, and what survives an FFXI crash. Losing it
+--     mid-session loses the parse.
 --   * NOT %APPDATA% (Roaming). Roams with the profile on a domain; a file
 --     written several times a second is the last thing you want syncing.
---   * NOT anywhere under OneDrive. The repo on this machine lives under
---     OneDrive, and putting a hot append-only file there would hand the sync
---     client a file changing continuously for hours. Actively bad.
---   * NOT the Ashita install dir. Metrics writes its CSVs there, but on this
---     machine that path is itself under AppData\Roaming, and it is their tree.
+--   * NOT anywhere under OneDrive or another synced folder. A hot append-only
+--     file there hands the sync client a file changing continuously for hours.
+--   * NOT the Ashita install dir. It can itself sit under a roaming or synced
+--     folder, and it is Ashita's tree, not ours.
 --
 --   %LOCALAPPDATA% is the documented Windows location for per-user,
 --   machine-local application data that should not roam. That is exactly this.
@@ -129,8 +128,8 @@ end
 --- disagree with their later ones. One line when it changes says it once and
 --- says it in order.
 ---
---- The abbreviation AND the id both go out: the abbreviation is what the UI
---- prints, and the id is what survives a name table this file does not have.
+--- The abbreviation AND the id both go out: the abbreviation is what a person
+--- reads, and the id is what survives a name table this file does not have.
 --- The sub-job trio is omitted entirely when there is no sub-job, which is the
 --- same rule `owner` and `pet` follow above.
 function M.encode_job(e)
@@ -157,13 +156,12 @@ end
 --- Encode one healing line: one target's result of one heal.
 ---
 --- ITS OWN KIND AND ITS OWN AMOUNT FIELD, and that is the safety of it. A heal
---- carries `hp`, never `dmg` and never `hit`: those are the two fields the
---- browser sums and counts as damage, so a heal line read by anything that
---- treats it as an event still adds nothing to a damage total. Metrics keeps
---- healing out of its damage total the same way, by trackable.
+--- carries `hp`, never `dmg` and never `hit`: those are the two fields that
+--- are summed and counted as damage, so a heal line read by anything that
+--- treats it as an event still adds nothing to a damage total.
 ---
---- `via` is which of Metrics' healing lists matched -- 'magic', 'ability' or
---- 'pet' -- because its columns total them differently (see E.healing).
+--- `via` is which healing list matched -- 'magic', 'ability' or 'pet' -- so a
+--- reader can total them separately (see E.healing).
 --- `use` is one per ACTION, shared by every target: a Curaga is one cast.
 function M.encode_heal(e)
     local p = {}
@@ -197,8 +195,7 @@ end
 --- One call, not one per level: `ashita.fs.create_dir` is an alias for
 --- `create_directory`, which Ashita documents as "Creates all missing folders
 --- within the path" -- it is recursive, and it takes the same absolute
---- backslash paths Ashita's own addons hand it. The earlier two-step version
---- was working around a limitation that does not exist.
+--- backslash paths Ashita's own addons hand it.
 local function usable(dir)
     if not ashita.fs.exists(dir) then ashita.fs.create_dir(dir) end
     return ashita.fs.exists(dir)
@@ -271,9 +268,8 @@ function M.close()
 end
 
 --- Append one event. Never throws.
---- Flushes on every line so the server's tailer sees data immediately;
---- `Read-LogTail` already holds back a partial trailing line, so a flush landing
---- mid-line is safe on the reader's side.
+--- Flushes on every line so anything tailing the file sees data immediately. A
+--- tailer should hold back a partial trailing line until its newline arrives.
 function M.write(e)
     if not handle then
         M.stats.failed = M.stats.failed + 1
