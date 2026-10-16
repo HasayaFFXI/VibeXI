@@ -287,7 +287,7 @@ end
 -- That rule is symmetric, so neither side needs a special case. A monster
 -- swinging into our spikes inverts to us damaging the monster, and is counted.
 -- Us swinging into a MONSTER's spikes inverts to the monster damaging us, and
--- is dropped by the same is_ours test every other bit of monster damage is.
+-- is dropped by the same classify() test every other bit of monster damage is.
 --
 -- 33 IS IN E.Attempt AS WELL, and that is not a contradiction: the two readings
 -- never apply to the same packet. On a packet WE are the actor of, 33 means our

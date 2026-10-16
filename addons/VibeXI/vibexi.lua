@@ -98,19 +98,37 @@ end
 
 -- ---------------------------------------------------------------- naming
 
+-- id -> name, for every lookup that found one. The resource tables do not
+-- change while the game runs, and each lookup marshals a whole resource record
+-- out of the SDK. Misses are not kept, so a miss is asked again next time.
+local ability_names = {}
+local spell_names   = {}
+
 local function ability_name(id)
+    local n = ability_names[id]
+    if n then return n end
     local rm = AshitaCore:GetResourceManager()
     if not rm then return nil end
     local a = rm:GetAbilityById(id)
-    if a and a.Name and a.Name[1] and a.Name[1] ~= '' then return a.Name[1] end
+    if a and a.Name and a.Name[1] and a.Name[1] ~= '' then
+        n = a.Name[1]
+        ability_names[id] = n
+        return n
+    end
     return nil
 end
 
 local function spell_name(id)
+    local n = spell_names[id]
+    if n then return n end
     local rm = AshitaCore:GetResourceManager()
     if not rm then return nil end
     local s = rm:GetSpellById(id)
-    if s and s.Name and s.Name[1] and s.Name[1] ~= '' then return s.Name[1] end
+    if s and s.Name and s.Name[1] and s.Name[1] ~= '' then
+        n = s.Name[1]
+        spell_names[id] = n
+        return n
+    end
     return nil
 end
 
@@ -340,8 +358,21 @@ local function first_result(act)
     return nil
 end
 
---- Turn one decoded action packet into rows and write them.
-local function record(act, actor, now)
+--- The `use` id for result slot `slot` of the action record() is writing,
+--- minted on first sight. See ONE USE ID PER SWING in record().
+local function use_for(use_by_slot, slot)
+    local u = use_by_slot[slot]
+    if not u then
+        S.use = S.use + 1
+        u = S.use
+        use_by_slot[slot] = u
+    end
+    return u
+end
+
+--- Turn one decoded action packet into rows and write them. `actor_kind` and
+--- `pet_owner` are what classify() already worked out for the actor.
+local function record(act, actor, actor_kind, pet_owner, now)
     -- A JOB ABILITY SENT AS A WEAPONSKILL is recorded as the ability: named
     -- from the ability table and written as kind 'ability', exactly as if it
     -- had arrived on category 6. Decided once for the whole action, from its
@@ -359,14 +390,10 @@ local function record(act, actor, now)
     local kind = E.EmitCategory[category]
     if not kind then return end
 
-    local actor_kind = Entity.kind(actor)
     local owner, pet_name
-    if actor_kind == 'pet' then
-        local o = Entity.pet_owner(actor)
-        if o then
-            owner    = o.name
-            pet_name = actor.name
-        end
+    if pet_owner then
+        owner    = pet_owner.name
+        pet_name = actor.name
     end
 
     -- HEALING IS DECIDED BY THE ACTION'S ID, BEFORE ANY MESSAGE IS LOOKED AT, and
@@ -400,16 +427,6 @@ local function record(act, actor, now)
     -- misses.
     local use_by_slot = {}
 
-    local function use_for(slot)
-        local u = use_by_slot[slot]
-        if not u then
-            S.use = S.use + 1
-            u = S.use
-            use_by_slot[slot] = u
-        end
-        return u
-    end
-
     -- The proc trailers are per ACTION, not per swing: one weaponskill closes
     -- one skillchain however many targets or swings it involved. Minted lazily,
     -- so an action with no trailer costs no id.
@@ -427,7 +444,7 @@ local function record(act, actor, now)
         end
 
         for slot, res in ipairs(target.results) do
-            local use = use_for(slot)
+            local use = use_for(use_by_slot, slot)
 
             -- Three outcomes, and the default is DROP. A message in neither
             -- table is not a damage event -- a cure, a buff, an enfeeble, a
@@ -574,10 +591,16 @@ end
 --- packet the monster is the actor of, so `has_reaction` gets a second look at
 --- everything this returns false for. The same predicate then decides it, asked
 --- of the entity that reacted rather than of the one that swung.
-local function is_ours(actor)
-    if Entity.in_party(actor.name) then return true end
-    if Entity.kind(actor) == 'pet' and Entity.pet_owner(actor) then return true end
-    return false
+---
+--- Returns the answer along with the entity's kind and, for a pet, its owner's
+--- record -- the two things every caller needs next. The owner search is
+--- eighteen party slots of SDK calls, so it is done once, here, and handed on.
+local function classify(ent)
+    local kind = Entity.kind(ent)
+    local owner = nil
+    if kind == 'pet' then owner = Entity.pet_owner(ent) end
+    local ours = Entity.in_party(ent.name) or owner ~= nil
+    return ours, kind, owner
 end
 
 --- Does this action carry a reaction at all?
@@ -597,6 +620,37 @@ local function has_reaction(act)
     return false
 end
 
+--- One reaction row: `defender` dealt `dmg` back to `attacker`.
+local function emit_reaction(now, defender, d_kind, attacker, atk_kind,
+                             owner, pet_name, name, message, dmg)
+    -- A reaction that dealt nothing is not written. It would enter the
+    -- accuracy denominator as a swing this actor never took, and a zero would
+    -- drag the average of an action whose entire content is its damage. The
+    -- reaction ATTEMPTS that would be the honest denominator are unwired on
+    -- purpose -- see the 535/592/14 note in vx_enums.lua.
+    if not dmg or dmg <= 0 then return end
+    S.use = S.use + 1
+    Emit.write({
+        t          = now,
+        seq        = next_seq(now),
+        use        = S.use,
+        kind       = 'reaction',
+        actor      = defender.name,
+        actorKind  = d_kind,
+        action     = name,
+        actionId   = message,
+        target     = attacker.name,
+        targetKind = atk_kind,
+        dmg        = dmg,
+        hit        = true,
+        crit       = false,
+        burst      = false,
+        msg        = message,
+        owner      = owner,
+        pet        = pet_name,
+    })
+end
+
 --- Emit what our side dealt back on somebody else's action.
 ---
 --- THE INVERSION IS THE WHOLE FUNCTION. `attacker` is the packet's actor and
@@ -605,7 +659,7 @@ end
 --- instead, each of these credits a victim with their attacker's damage. See
 --- the REACTION DAMAGE block in vx_enums.lua.
 ---
---- The is_ours test is applied to the ENTITY THAT REACTED, which is what makes
+--- The classify() test is applied to the ENTITY THAT REACTED, which is what makes
 --- this symmetric rather than a special case for monsters: when the swing is
 --- ours and the spikes are the monster's, the inverted actor is a monster and
 --- nothing is written, exactly as for any other damage the monsters dealt.
@@ -614,64 +668,37 @@ end
 --- one swing: an AoE that lands on two party members with spikes up is two
 --- events by two different actors, and a shared id would let a reader that
 --- groups by `use` fold them into a single row under whichever came first.
-local function record_reactions(act, attacker, now)
-    local atk_kind = Entity.kind(attacker)
-
+local function record_reactions(act, attacker, atk_kind, now)
     for _, target in ipairs(act.targets) do
         local defender = Entity.by_id(target.id)
-        if defender and is_ours(defender) then
-            local d_kind = Entity.kind(defender)
+        local ours, d_kind, d_owner = false, nil, nil
+        if defender then ours, d_kind, d_owner = classify(defender) end
+        if ours then
             local owner, pet_name
-            if d_kind == 'pet' then
-                local o = Entity.pet_owner(defender)
-                if o then
-                    owner    = o.name
-                    pet_name = defender.name
-                end
-            end
-
-            local function emit(name, message, dmg)
-                -- A reaction that dealt nothing is not written. It would enter
-                -- the accuracy denominator as a swing this actor never took,
-                -- and a zero would drag the average of an action whose entire
-                -- content is its damage. The reaction ATTEMPTS that would be
-                -- the honest denominator are unwired on purpose -- see the
-                -- 535/592/14 note in vx_enums.lua.
-                if not dmg or dmg <= 0 then return end
-                S.use = S.use + 1
-                Emit.write({
-                    t          = now,
-                    seq        = next_seq(now),
-                    use        = S.use,
-                    kind       = 'reaction',
-                    actor      = defender.name,
-                    actorKind  = d_kind,
-                    action     = name,
-                    actionId   = message,
-                    target     = attacker.name,
-                    targetKind = atk_kind,
-                    dmg        = dmg,
-                    hit        = true,
-                    crit       = false,
-                    burst      = false,
-                    msg        = message,
-                    owner      = owner,
-                    pet        = pet_name,
-                })
+            if d_owner then
+                owner    = d_owner.name
+                pet_name = defender.name
             end
 
             for _, res in ipairs(target.results) do
                 -- Main slot: the counter or the retaliation that stopped this
                 -- swing, with its damage in res.value.
                 local reaction = E.Reaction[res.message]
-                if reaction then emit(reaction, res.message, res.value) end
+                if reaction then
+                    emit_reaction(now, defender, d_kind, attacker, atk_kind,
+                                  owner, pet_name, reaction, res.message, res.value)
+                end
 
                 -- React (spike) trailer: fires in ADDITION to the swing, so it
                 -- is read whatever the main message said, and its damage is in
                 -- res.react_value rather than res.value.
                 if res.has_react and res.react_message then
                     local spike = E.SpikeReaction[res.react_message]
-                    if spike then emit(spike, res.react_message, res.react_value) end
+                    if spike then
+                        emit_reaction(now, defender, d_kind, attacker, atk_kind,
+                                      owner, pet_name, spike, res.react_message,
+                                      res.react_value)
+                    end
                 end
             end
         end
@@ -692,72 +719,82 @@ ashita.events.register('unload', 'vibexi_unload', function()
     Emit.close()
 end)
 
+--- Everything packet_in does, as a named function so the callback can pcall it
+--- directly: it runs for every packet the client receives, and a fresh closure
+--- per packet is garbage the game's thread has to collect.
+local function on_packet_in(p)
+    if not p or not p.data then return end
+
+    -- ROSTER UPDATES. 0x0C8 announces an alliance change, 0x0DD a party
+    -- member change; between them they cover forming an alliance, merging a
+    -- party into one, and anyone joining or leaving. Neither is read here --
+    -- we only mark the cached roster stale, because the client's party
+    -- memory does not update in the same breath as the packet that
+    -- announced the change. Entity.refresh_party then re-reads on the next
+    -- action.
+    --
+    -- Without this the roster is refreshed ONLY by its 3-second TTL, and
+    -- only when an action packet arrives to consult it. An alliance that
+    -- pulls the moment it is assembled therefore spends its first seconds
+    -- with the other twelve members absent from the name set that classify()
+    -- tests against, and every one of their swings is dropped.
+    if p.id == E.Packet.ALLIANCE or p.id == E.Packet.PARTY then
+        Entity.party_changed()
+        return
+    end
+
+    if p.id ~= E.Packet.ACTION then return end
+    if not p.injected and is_duplicate(p) then
+        S.dupes = S.dupes + 1
+        return
+    end
+
+    local now = os.time()
+
+    -- Lazily (re)open: the character is not known at load time when the
+    -- addon is loaded from the character select screen, and a failed write
+    -- drops the handle. Either way it is this load's one file.
+    if not Emit.is_open() then
+        S.owner = Entity.me() or S.owner
+        if S.owner then Emit.open(S.owner) end
+        if not Emit.is_open() then return end
+    end
+
+    if not S.probed then
+        S.probed = true
+        probe(p)
+    end
+
+    if Entity.is_zoning() then return end
+
+    local job_changes = Entity.refresh_party(now)
+    if job_changes then record_jobs(job_changes, now) end
+
+    local act = Action.parse(p.data)
+    if not act then S.dropped = S.dropped + 1 return end
+
+    local actor = Entity.by_id(act.actor_id)
+    if not actor then return end
+
+    local ours, actor_kind, pet_owner = classify(actor)
+    if ours then
+        record(act, actor, actor_kind, pet_owner, now)
+    elseif has_reaction(act) then
+        -- The one reason a monster's own packet is still looked at: the
+        -- damage our side dealt back on it.
+        record_reactions(act, actor, actor_kind, now)
+    end
+end
+
 ashita.events.register('packet_in', 'vibexi_packet_in', function(p)
     -- Wrapped whole: a decode bug must never surface as a Lua error on the
     -- game's thread. A dropped packet is a missing row; a thrown error is a
     -- broken client.
-    pcall(function()
-        if not p or not p.data then return end
+    pcall(on_packet_in, p)
 
-        -- ROSTER UPDATES. 0x0C8 announces an alliance change, 0x0DD a party
-        -- member change; between them they cover forming an alliance, merging a
-        -- party into one, and anyone joining or leaving. Neither is read here --
-        -- we only mark the cached roster stale, because the client's party
-        -- memory does not update in the same breath as the packet that
-        -- announced the change. Entity.refresh_party then re-reads on the next
-        -- action.
-        --
-        -- Without this the roster is refreshed ONLY by its 3-second TTL, and
-        -- only when an action packet arrives to consult it. An alliance that
-        -- pulls the moment it is assembled therefore spends its first seconds
-        -- with the other twelve members absent from the name set that is_ours
-        -- tests against, and every one of their swings is dropped.
-        if p.id == E.Packet.ALLIANCE or p.id == E.Packet.PARTY then
-            Entity.party_changed()
-            return
-        end
-
-        if p.id ~= E.Packet.ACTION then return end
-        if not p.injected and is_duplicate(p) then
-            S.dupes = S.dupes + 1
-            return
-        end
-
-        local now = os.time()
-
-        -- Lazily (re)open: the character is not known at load time when the
-        -- addon is loaded from the character select screen, and a failed write
-        -- drops the handle. Either way it is this load's one file.
-        if not Emit.is_open() then
-            S.owner = Entity.me() or S.owner
-            if S.owner then Emit.open(S.owner) end
-            if not Emit.is_open() then return end
-        end
-
-        if not S.probed then
-            S.probed = true
-            probe(p)
-        end
-
-        if Entity.is_zoning() then return end
-
-        local job_changes = Entity.refresh_party(now)
-        if job_changes then record_jobs(job_changes, now) end
-
-        local act = Action.parse(p.data)
-        if not act then S.dropped = S.dropped + 1 return end
-
-        local actor = Entity.by_id(act.actor_id)
-        if not actor then return end
-
-        if is_ours(actor) then
-            record(act, actor, now)
-        elseif has_reaction(act) then
-            -- The one reason a monster's own packet is still looked at: the
-            -- damage our side dealt back on it.
-            record_reactions(act, actor, now)
-        end
-    end)
+    -- Whatever this packet wrote goes to the file now, in one flush. Emit.flush
+    -- cannot throw.
+    Emit.flush()
 
     -- ALWAYS false. True would block the packet from reaching the client.
     return false

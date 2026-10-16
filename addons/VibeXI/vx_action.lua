@@ -59,7 +59,7 @@ function M.parse(data)
     local act = {}
     act.actor_id     = BR.read(r, 32)
     act.target_count = BR.read(r, 6)
-    local _res_sum   = BR.read(r, 4)
+    BR.skip(r, 4)                         -- result_sum
     act.category     = BR.read(r, 4)
     act.param        = BR.read(r, 32)
     act.recast       = BR.read(r, 32)
@@ -85,7 +85,7 @@ function M.parse(data)
             res.stagger   = BR.read(r, 5)
             res.value     = BR.read(r, 17)
             res.message   = BR.read(r, 10)
-            local _unk    = BR.read(r, 31)
+            BR.skip(r, 31)                -- unknown
 
             if BR.read(r, 1) > 0 then
                 res.has_proc     = true

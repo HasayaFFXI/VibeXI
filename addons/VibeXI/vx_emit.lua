@@ -64,8 +64,15 @@ local ESCAPES = {
 --- being passed through, which is what keeps the file decodable as CP932, UTF-8
 --- or plain ASCII identically. Entity names are ASCII in practice; this is a
 --- guard, not a transcoder.
+---
+--- So the common case is a string with nothing to escape, and it goes back as
+--- it came after one pattern search. The pattern is exactly the set of bytes the
+--- loop below would change: control bytes, '"', '\', and 0x7F and up.
+local NEEDS_ESCAPE = '[%z\1-\31"\\\127-\255]'
+
 local function esc(s)
     s = tostring(s)
+    if not string.find(s, NEEDS_ESCAPE) then return s end
     local out = {}
     for i = 1, #s do
         local c = string.sub(s, i, i)
@@ -95,27 +102,33 @@ end
 
 --- Encode one event. Field order is fixed so the file diffs and greps sanely.
 --- Optional fields are omitted rather than written null, keeping lines short.
+---
+--- The optional tail is built first so the line itself is ONE concatenation,
+--- which LuaJIT does into a single buffer.
+local function optional_tail(e)
+    local tail = '}'
+    if e.pet   then tail = ',"pet":"'   .. esc(e.pet)   .. '"' .. tail end
+    if e.owner then tail = ',"owner":"' .. esc(e.owner) .. '"' .. tail end
+    return tail
+end
+
 function M.encode(e)
-    local p = {}
-    p[#p + 1] = '{"t":'        .. num(e.t)
-    p[#p + 1] = ',"seq":'      .. num(e.seq)
-    p[#p + 1] = ',"use":'      .. num(e.use)
-    p[#p + 1] = ',"kind":"'    .. esc(e.kind) .. '"'
-    p[#p + 1] = ',"actor":"'   .. esc(e.actor) .. '"'
-    p[#p + 1] = ',"actorKind":"' .. esc(e.actorKind) .. '"'
-    p[#p + 1] = ',"action":"'  .. esc(e.action) .. '"'
-    p[#p + 1] = ',"actionId":' .. num(e.actionId)
-    p[#p + 1] = ',"target":"'  .. esc(e.target) .. '"'
-    p[#p + 1] = ',"targetKind":"' .. esc(e.targetKind) .. '"'
-    p[#p + 1] = ',"dmg":'      .. num(e.dmg)
-    p[#p + 1] = ',"hit":'      .. boolean(e.hit)
-    p[#p + 1] = ',"crit":'     .. boolean(e.crit)
-    p[#p + 1] = ',"burst":'    .. boolean(e.burst)
-    p[#p + 1] = ',"msg":'      .. num(e.msg)
-    if e.owner then p[#p + 1] = ',"owner":"' .. esc(e.owner) .. '"' end
-    if e.pet   then p[#p + 1] = ',"pet":"'   .. esc(e.pet)   .. '"' end
-    p[#p + 1] = '}'
-    return table.concat(p)
+    return '{"t":'           .. num(e.t)
+        .. ',"seq":'         .. num(e.seq)
+        .. ',"use":'         .. num(e.use)
+        .. ',"kind":"'       .. esc(e.kind) .. '"'
+        .. ',"actor":"'      .. esc(e.actor) .. '"'
+        .. ',"actorKind":"'  .. esc(e.actorKind) .. '"'
+        .. ',"action":"'     .. esc(e.action) .. '"'
+        .. ',"actionId":'    .. num(e.actionId)
+        .. ',"target":"'     .. esc(e.target) .. '"'
+        .. ',"targetKind":"' .. esc(e.targetKind) .. '"'
+        .. ',"dmg":'         .. num(e.dmg)
+        .. ',"hit":'         .. boolean(e.hit)
+        .. ',"crit":'        .. boolean(e.crit)
+        .. ',"burst":'       .. boolean(e.burst)
+        .. ',"msg":'         .. num(e.msg)
+        .. optional_tail(e)
 end
 
 --- Encode one party-member job line.
@@ -164,23 +177,19 @@ end
 --- reader can total them separately (see E.healing).
 --- `use` is one per ACTION, shared by every target: a Curaga is one cast.
 function M.encode_heal(e)
-    local p = {}
-    p[#p + 1] = '{"kind":"heal","t":' .. num(e.t)
-    p[#p + 1] = ',"seq":'      .. num(e.seq)
-    p[#p + 1] = ',"use":'      .. num(e.use)
-    p[#p + 1] = ',"via":"'     .. esc(e.via) .. '"'
-    p[#p + 1] = ',"actor":"'   .. esc(e.actor) .. '"'
-    p[#p + 1] = ',"actorKind":"' .. esc(e.actorKind) .. '"'
-    p[#p + 1] = ',"action":"'  .. esc(e.action) .. '"'
-    p[#p + 1] = ',"actionId":' .. num(e.actionId)
-    p[#p + 1] = ',"target":"'  .. esc(e.target) .. '"'
-    p[#p + 1] = ',"targetKind":"' .. esc(e.targetKind) .. '"'
-    p[#p + 1] = ',"hp":'       .. num(e.hp)
-    p[#p + 1] = ',"msg":'      .. num(e.msg)
-    if e.owner then p[#p + 1] = ',"owner":"' .. esc(e.owner) .. '"' end
-    if e.pet   then p[#p + 1] = ',"pet":"'   .. esc(e.pet)   .. '"' end
-    p[#p + 1] = '}'
-    return table.concat(p)
+    return '{"kind":"heal","t":' .. num(e.t)
+        .. ',"seq":'         .. num(e.seq)
+        .. ',"use":'         .. num(e.use)
+        .. ',"via":"'        .. esc(e.via) .. '"'
+        .. ',"actor":"'      .. esc(e.actor) .. '"'
+        .. ',"actorKind":"'  .. esc(e.actorKind) .. '"'
+        .. ',"action":"'     .. esc(e.action) .. '"'
+        .. ',"actionId":'    .. num(e.actionId)
+        .. ',"target":"'     .. esc(e.target) .. '"'
+        .. ',"targetKind":"' .. esc(e.targetKind) .. '"'
+        .. ',"hp":'          .. num(e.hp)
+        .. ',"msg":'         .. num(e.msg)
+        .. optional_tail(e)
 end
 
 --- Append one healing line. Never throws; see M.write.
@@ -259,55 +268,74 @@ function M.open(character)
     return true
 end
 
+-- The file calls, as plain functions so pcall can take them directly and a
+-- line allocates no closure.
+local function put_event(h, e) h:write(M.encode(e), '\n') end
+local function put_line(h, line) h:write(line, '\n') end
+local function flush_handle(h) h:flush() end
+local function close_handle(h) h:close() end
+
+-- Lines written since the last flush.
+local pending = false
+
 function M.close()
     if handle then
-        pcall(function() handle:flush() end)
-        pcall(function() handle:close() end)
+        pcall(flush_handle, handle)
+        pcall(close_handle, handle)
     end
     handle = nil
+    pending = false
 end
 
---- Append one event. Never throws.
---- Flushes on every line so anything tailing the file sees data immediately. A
---- tailer should hold back a partial trailing line until its newline arrives.
-function M.write(e)
+--- Run one write against the handle. A failure usually means the handle died
+--- (disk full, file removed underneath us): drop it so the next event tries a
+--- clean reopen.
+local function append(fn, v)
     if not handle then
         M.stats.failed = M.stats.failed + 1
         return false
     end
-
-    local ok = pcall(function()
-        handle:write(M.encode(e) .. '\n')
-        handle:flush()
-    end)
-
+    local ok = pcall(fn, handle, v)
     if ok then
-        M.stats.written = M.stats.written + 1
+        pending = true
     else
         M.stats.failed = M.stats.failed + 1
-        -- A failed write usually means the handle died (disk full, file removed
-        -- underneath us). Drop it so the next event tries a clean reopen.
+        -- Push out whatever this packet already buffered, if the handle can.
+        pcall(flush_handle, handle)
         handle = nil
+        pending = false
     end
+    return ok
+end
+
+--- Append one event. Never throws.
+--- Buffered until M.flush, which the packet callback calls once per packet.
+function M.write(e)
+    local ok = append(put_event, e)
+    if ok then M.stats.written = M.stats.written + 1 end
     return ok
 end
 
 --- Append a pre-built line verbatim. Used for the one-off environment probe in
 --- vibexi.lua; consumers skip any line whose "kind" is "meta".
 function M.write_raw(line)
-    if not handle then
-        M.stats.failed = M.stats.failed + 1
-        return false
-    end
-    local ok = pcall(function()
-        handle:write(line .. '\n')
-        handle:flush()
-    end)
-    if not ok then
+    return append(put_line, line)
+end
+
+--- Push everything written since the last flush to the file. Never throws.
+---
+--- ONCE PER PACKET. Every line of a packet is written in the same instant, so
+--- anything tailing the file sees a packet's rows as soon as it is processed,
+--- and an AoE that writes ten rows costs one flush to the OS. A tailer should
+--- hold back a partial trailing line until its newline arrives.
+function M.flush()
+    if not pending then return end
+    pending = false
+    if not handle then return end
+    if not pcall(flush_handle, handle) then
         M.stats.failed = M.stats.failed + 1
         handle = nil
     end
-    return ok
 end
 
 --- JSON-escape helper exposed for the probe line.

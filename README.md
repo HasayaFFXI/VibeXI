@@ -123,8 +123,8 @@ need to change the addon to use them.
   endings.
 - One file per load of the addon, named `<Character>-<YYYYMMDDHHMMSS>.jsonl`
   (local time) in the `EventDir` folder.
-- The file only grows. Each line is flushed as it's written, so you can tail
-  the file live. While the game is running, the last line may be incomplete:
+- The file only grows. Lines are flushed as soon as each packet is processed,
+  so you can tail the file live. While the game is running, the last line may be incomplete:
   only parse lines that end in a newline.
 - Open it for reading with write sharing allowed (for example
   `FileShare.ReadWrite` in .NET), because the addon keeps it open.
