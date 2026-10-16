@@ -17,14 +17,14 @@
 --      comes back as a SIGNED int32, so any value with the top bit set (and
 --      entity ids do reach there) would arrive negative. Accumulating into a
 --      Lua number instead is exact to 2^53 and simply cannot produce that bug.
---      Reads here are a few hundred bits per packet; the cost is irrelevant.
 --
 -- Dot-calls only.
 
 local M = {}
 
 -- string.byte is 1-indexed; `pos` is a 0-based byte offset, so index is pos+1.
-local POW = {1, 2, 4, 8, 16, 32, 64, 128}
+-- POW[n + 1] is 2^n, up to a whole byte.
+local POW = {1, 2, 4, 8, 16, 32, 64, 128, 256}
 
 --- Create a reader over a packet data string.
 function M.new(data)
@@ -41,25 +41,42 @@ end
 --- Reads past the end of the buffer yield zero bits rather than erroring: a
 --- truncated packet should degrade to junk values that the dispatcher rejects,
 --- never throw inside the packet callback.
+---
+--- A byte at a time: each pass takes every bit the field still needs from the
+--- current byte, so a 32-bit read is four or five passes.
 function M.read(r, bits)
     local ret   = 0
     local scale = 1
     local data  = r.data
-    for _ = 1, bits do
-        local b = string.byte(data, r.pos + 1)
+    local pos   = r.pos
+    local bit   = r.bit
+    while bits > 0 do
+        local take = 8 - bit
+        if take > bits then take = bits end
+        local b = string.byte(data, pos + 1)
         if b then
-            -- bit `r.bit` of byte `r.pos`
-            local v = math.floor(b / POW[r.bit + 1]) % 2
-            ret = ret + v * scale
+            -- bits `bit` .. `bit + take - 1` of byte `pos`
+            ret = ret + (math.floor(b / POW[bit + 1]) % POW[take + 1]) * scale
         end
-        scale = scale * 2
-        r.bit = r.bit + 1
-        if r.bit == 8 then
-            r.bit = 0
-            r.pos = r.pos + 1
+        scale = scale * POW[take + 1]
+        bits  = bits - take
+        bit   = bit + take
+        if bit == 8 then
+            bit = 0
+            pos = pos + 1
         end
     end
+    r.pos = pos
+    r.bit = bit
     return ret
+end
+
+--- Advance the cursor past `bits` bits without decoding them, for the fields
+--- the parser has no use for. Leaves the cursor exactly where read() would.
+function M.skip(r, bits)
+    local total = r.bit + bits
+    r.pos = r.pos + math.floor(total / 8)
+    r.bit = total % 8
 end
 
 --- True once the cursor has run off the end. The action parser checks this
