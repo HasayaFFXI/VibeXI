@@ -93,8 +93,8 @@ The folder the `.jsonl` event files go to. It is created if it doesn't exist.
 - Spaces are fine, and quotes around the path are optional.
 - If the line is empty, or the folder can't be used, the addon falls back to
   `%LOCALAPPDATA%\VibeXI\events`.
-- **Don't use slow or network storage** The file is written several times a
-- second for as long as you play.
+- **Don't use slow or network storage** The file is written several times a 
+  second for as long as you play.
 
 ### Writing the file
 
