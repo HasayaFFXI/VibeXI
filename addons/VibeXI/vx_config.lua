@@ -1,7 +1,7 @@
 -- Settings, read from <Ashita>\config\addons\VibeXI\vibexi.ini.
 --
 -- Not beside this file: the release zip replaces addons\VibeXI\ wholesale on
--- every update, and settings kept there went with it. The config tree is where
+-- every update, and settings kept there would go with it. The config tree is where
 -- Ashita keeps per-addon settings, so it is where a player expects them to live.
 --
 -- Read ONCE, here, when the addon loads -- never on the packet path. Every
@@ -16,7 +16,7 @@
 -- sensitive.
 --
 -- A VALUE IS THE REST OF ITS LINE, spaces and all, because one of them is a
--- folder and `C:\Users\Jo Smith\Logs` has to survive. That is also why a
+-- folder and `D:\FFXI Logs\Combat` has to survive. That is also why a
 -- comment cannot share a line with a path: `;` and `#` are both legal in a
 -- Windows folder name.
 --

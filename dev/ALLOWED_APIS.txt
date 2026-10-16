@@ -135,8 +135,8 @@ GetPlayerEntity()
 
 
 # --- Lua stdlib --------------------------------------------------------------
-# Timestamps. os.time is 1-second resolution and that is deliberate: nothing in
-# the UI resolves finer, and it lets us skip LuaSocket entirely (Decision 1).
+# Timestamps. os.time is 1-second resolution and that is deliberate: it lets
+# us skip LuaSocket entirely.
 os.time
 os.date
 

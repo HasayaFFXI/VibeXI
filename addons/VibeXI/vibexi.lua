@@ -1,5 +1,4 @@
--- VibeXI -- read-only combat event recorder. Its events are read by a separate
--- desktop app, which shows a party's damage and healing from them.
+-- VibeXI -- read-only combat event recorder.
 --
 -- Watches incoming action packets, resolves the ids in them against the
 -- client's own entity table, and appends one JSON line per (action, target) to
@@ -60,10 +59,9 @@ local S = {
 }
 
 -- Duplicate suppression. Ashita can hand the same packet to an addon twice
--- across chunk boundaries, which would double every number. Metrics solves this
--- with FFI memcmp over raw pointers; we do the same comparison on Lua strings,
--- because FFI is a foreign-function escape hatch this addon deliberately does
--- not have.
+-- across chunk boundaries, which would double every number. The comparison is
+-- done on Lua strings rather than with FFI over raw pointers, because FFI is a
+-- foreign-function escape hatch this addon deliberately does not have.
 --
 -- The packet event table really does carry the chunk: Ashita exports
 -- chunk_data, chunk_data_raw and chunk_size next to data, data_raw,
@@ -132,8 +130,7 @@ local function action_name(category, param, first_result)
         return 'Ranged Attack'
     elseif category == E.Category.WEAPONSKILL then
         -- Category 3 also carries a handful of job abilities (Mug, Steal,
-        -- Shield Bash, the Jumps...), which is exactly the ambiguity the chat
-        -- log could never resolve. Weaponskill table first, then abilities --
+        -- Shield Bash, the Jumps...). Weaponskill table first, then abilities --
         -- which only reaches an ability whose id no weaponskill has. The ones
         -- that share an id never get here as category 3 with Horizon on:
         -- record() has already turned them into abilities.
@@ -149,8 +146,8 @@ local function action_name(category, param, first_result)
         if n then return n end
     end
     -- Monster TP moves and pet abilities land here. Ashita's resource manager
-    -- has no lookup for them and the name tables are ~300KB, so Phase 1 emits
-    -- the id and leaves naming to a later pass.
+    -- has no lookup for them and the name tables are ~300KB, so the event
+    -- carries the id and leaves naming to whatever reads it.
     return '#' .. tostring(param)
 end
 
@@ -158,11 +155,9 @@ end
 
 --- One-off environment probe, written as the first line of every file.
 ---
---- This addon was written without a Lua runtime available to test it against,
---- so several SDK behaviours started out assumed rather than known. Most have
---- since been settled against the Ashita source tree; the probe stays because
---- confirming them live costs one line per file and turns "should work" into
---- "did work on this machine, this build, this server".
+--- Several SDK behaviours this addon relies on are read from the Ashita source
+--- rather than observed. Confirming them live costs one line per file and turns
+--- "should work" into "did work on this machine, this build, this server".
 ---
 --- What each field answers:
 ---
@@ -264,7 +259,7 @@ end
 --- a session -- so this runs a handful of times per file.
 ---
 --- The job of a party member who never swings is still recorded, and that is the
---- point: the meter lists the party, not only the characters who dealt damage.
+--- point: the file describes the party, not only the characters who dealt damage.
 local function record_jobs(changed, now)
     for i = 1, #changed do
         local m = changed[i]
@@ -292,20 +287,18 @@ end
 
 --- Write a heal: one kind:"heal" line per resolved target result.
 ---
---- Metrics' H.Spell.Action / H.Ability.Action / H.Ability.Pet_Action, reduced to
---- what they record about healing: every result on every target the client can
---- resolve, its value as the amount, whatever its message says. A target that
---- does not resolve is skipped, because Metrics skips it (`if target_mob then`).
---- Proc trailers are not read -- Metrics' healing paths never read them, and a
---- heal has no skillchain or additional effect to carry.
+--- Every result on every target the client can resolve, its value as the
+--- amount, whatever its message says. A target that does not resolve is
+--- skipped. Proc trailers are not read: a heal has no skillchain or additional
+--- effect to carry.
 ---
 --- ONE `use` FOR THE WHOLE ACTION. A heal has no multi-attack dimension, so the
 --- per-slot rule record() uses for swings does not apply: a Curaga on five
---- people is one cast (Metrics counts it once, in H.Spell.Count).
+--- people is one cast.
 local function record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
     local name = action_name(act.category, act.param, nil)
-    -- Pet abilities have no resource lookup and come back as '#id'; Metrics
-    -- names those from the same table that identified them.
+    -- Pet abilities have no resource lookup and come back as '#id'; name
+    -- those from the same table that identified them.
     if string.sub(name, 1, 1) == '#' then name = heal_name end
 
     S.use = S.use + 1
@@ -376,9 +369,9 @@ local function record(act, actor, now)
     end
 
     -- HEALING IS DECIDED BY THE ACTION'S ID, BEFORE ANY MESSAGE IS LOOKED AT, and
-    -- a healing action never reaches the damage branch below. That is Metrics'
-    -- rule (see the HEALING block in vx_enums.lua): a cure is healing whatever
-    -- its result message says, and healing never counts as damage.
+    -- a healing action never reaches the damage branch below (see the HEALING
+    -- block in vx_enums.lua): a cure is healing whatever its result message
+    -- says, and healing never counts as damage.
     local heal_name, via = E.healing(act.category, act.param)
     if heal_name then
         record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
@@ -391,9 +384,7 @@ local function record(act, actor, now)
     -- be collapsed together:
     --
     --   several TARGETS, one result each   an AoE. One use of the action; the
-    --                                      packet states the target list, which
-    --                                      is the grouping the chat parser had
-    --                                      to infer with a 5-second window.
+    --                                      packet states the target list.
     --   one target, several RESULTS        a multi-attack round. Genuinely two
     --                                      or three separate swings, each with
     --                                      its own hit-or-miss outcome.
@@ -401,10 +392,11 @@ local function record(act, actor, now)
     -- So the id is keyed on the result's position, not on the action: result 1
     -- across every target is one use, result 2 across every target is the next.
     -- Sharing a single id for the whole action instead would fold a multi-attack
-    -- round into one swing -- and since stats.collapse() treats `hit` as "any",
-    -- a round where the first swing landed and the second whiffed would report
-    -- one hit and NO miss. The swing count is the denominator accuracy divides
-    -- by, so that reads as a party that never misses.
+    -- round into one swing -- and to a reader that groups rows by `use` and
+    -- treats `hit` as "any", a round where the first swing landed and the second
+    -- whiffed would read as one hit and NO miss. The swing count is the
+    -- denominator accuracy divides by, so that reads as a party that never
+    -- misses.
     local use_by_slot = {}
 
     local function use_for(slot)
@@ -440,7 +432,7 @@ local function record(act, actor, now)
             -- table is not a damage event -- a cure, a buff, an enfeeble, a
             -- status tick -- and its `value` field means something other than
             -- hit points, so emitting it would put a non-damage number into a
-            -- field the browser sums as damage. See vx_enums.E.Damage.
+            -- field that is summed as damage. See vx_enums.E.Damage.
             local is_damage  = E.Damage[res.message] == true
             local is_attempt = E.Attempt[res.message] == true
 
@@ -485,8 +477,7 @@ local function record(act, actor, now)
             -- message happened to be one we do not recognise. The trailer names
             -- its own outcome and carries its own damage in proc_value.
             if res.has_proc and res.proc_message and res.proc_message > 0 then
-                -- The skillchain table is consulted ONLY on a weaponskill,
-                -- because that is the only context Metrics consults it in. The
+                -- The skillchain table is consulted ONLY on a weaponskill. The
                 -- same proc message means different things by category: 229 is
                 -- 'DRG Jump Effect' on a weaponskill and an ENSPELL on a melee
                 -- swing, so reading the table globally would file every enspell
@@ -496,9 +487,9 @@ local function record(act, actor, now)
 
                 if sc_name then
                     -- A skillchain is its own row, so it needs its own `use`:
-                    -- sharing the weaponskill's would let stats.collapse() fold
-                    -- the chain's damage into the weaponskill and lose it as a
-                    -- separate action. Minted once per action, not once per
+                    -- sharing the weaponskill's would let a reader that groups
+                    -- by `use` fold the chain's damage into the weaponskill and
+                    -- lose it as a separate action. Minted once per action, not once per
                     -- target, so an AoE weaponskill closing on three mobs is one
                     -- chain of summed damage -- the same rule the weaponskill
                     -- itself is under.
@@ -513,16 +504,12 @@ local function record(act, actor, now)
                         kind       = 'skillchain',
                         actor      = actor.name,
                         actorKind  = actor_kind,
-                        -- The same string the UI has always used, and what its
-                        -- drill-down test matches on.
                         action     = 'Skillchain: ' .. sc_name,
                         actionId   = res.proc_message,
                         target     = tgt_name,
                         targetKind = tgt_kind,
                         -- proc_value, never res.value: the chain's damage is
-                        -- its own and is not part of the weaponskill's. This is
-                        -- Metrics' H.TP.Skillchain_Damage, which reads
-                        -- add_effect_param for exactly the same reason.
+                        -- its own and is not part of the weaponskill's.
                         dmg        = res.proc_value or 0,
                         hit        = true,
                         crit       = false,
@@ -535,8 +522,8 @@ local function record(act, actor, now)
                 elseif E.Damage[res.proc_message] == true then
                     -- An additional effect: an enspell, a Sneak Attack proc, an
                     -- HP drain. Real damage the actor dealt, in a row of its own
-                    -- rather than folded into the swing, exactly as the chat
-                    -- parser filed it. Its own `use` for the same reason.
+                    -- rather than folded into the swing. Its own `use` for the
+                    -- same reason.
                     if not addl_use then
                         S.use = S.use + 1
                         addl_use = S.use
@@ -571,10 +558,10 @@ end
 
 --- Is this action worth recording? ONLY if one of OURS is the actor.
 ---
---- This meter measures damage the party dealt. Damage dealt TO the party is
+--- This addon records damage the party dealt. Damage dealt TO the party is
 --- explicitly not wanted, so a monster's own swings are dropped here rather
---- than written and then filtered out in the browser -- on a long pull those
---- rows were a large fraction of the file and nothing ever read one.
+--- than written for a reader to filter out -- on a long pull those rows would
+--- be a large fraction of the file.
 ---
 --- "Ours" is party or alliance: Entity.refresh_party walks all 18 slots, and
 --- trusts occupy party slots like anyone else. A pet qualifies only through
@@ -624,8 +611,8 @@ end
 ---
 --- ONE `use` PER ROW, minted fresh. A reaction is one entity's own answer to
 --- one swing: an AoE that lands on two party members with spikes up is two
---- events by two different actors, and a shared id would let stats.collapse()
---- fold them into a single row under whichever came first.
+--- events by two different actors, and a shared id would let a reader that
+--- groups by `use` fold them into a single row under whichever came first.
 local function record_reactions(act, attacker, now)
     local atk_kind = Entity.kind(attacker)
 
@@ -716,8 +703,8 @@ ashita.events.register('packet_in', 'vibexi_packet_in', function(p)
         -- party into one, and anyone joining or leaving. Neither is read here --
         -- we only mark the cached roster stale, because the client's party
         -- memory does not update in the same breath as the packet that
-        -- announced the change (Metrics carries the same warning above its own
-        -- dispatch). Entity.refresh_party then re-reads on the next action.
+        -- announced the change. Entity.refresh_party then re-reads on the next
+        -- action.
         --
         -- Without this the roster is refreshed ONLY by its 3-second TTL, and
         -- only when an action packet arrives to consult it. An alliance that

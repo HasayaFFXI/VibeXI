@@ -37,7 +37,7 @@ ADDON = ROOT / 'addons' / 'VibeXI'           # the Lua the addon actually loads
 
 # Known egress routes. This is the SECOND line of defence, not the first -- the
 # allowlist is what actually holds. These exist to produce a clear message.
-# Matched case-insensitively, like the PowerShell -match operator they came from.
+# Matched case-insensitively.
 DENIED = [
     (r'GetChatManager', 'the only route to QueueCommand'),
     (r'QueueCommand', 'issues a game command / chat message'),
