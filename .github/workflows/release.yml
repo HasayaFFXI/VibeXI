@@ -1,0 +1,59 @@
+# Publishes a GitHub Release for every version tag, with the addon attached as
+# VibeXI.zip. The README links releases/latest/download/VibeXI.zip, which only
+# works because every release carries an asset under that exact name.
+#
+# The zip holds just the VibeXI folder, so players unzip it straight into
+# Ashita's addons folder. addon.version is set from the tag inside the zip, so
+# the version the addon reports always matches the release it came from.
+#
+# To release: push a tag (1.2.3 or v1.2.3). To (re)build an existing tag, run
+# this workflow by hand from the Actions tab and give it the tag.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build a release for, e.g. 1.0.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Set addon.version from the tag
+        run: |
+          version="${TAG#v}"
+          file=addons/VibeXI/vibexi.lua
+          sed -i -E "s/^addon\.version *= *'[^']*'/addon.version = '${version}'/" "$file"
+          grep -qx "addon.version = '${version}'" "$file" \
+            || { echo "::error::addon.version line not found in $file"; exit 1; }
+
+      - name: Build VibeXI.zip
+        run: |
+          cd addons
+          zip -r -X ../VibeXI.zip VibeXI
+
+      - name: Publish the release
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" VibeXI.zip --clobber
+          else
+            gh release create "$TAG" VibeXI.zip --verify-tag \
+              --title "VibeXI $TAG" --generate-notes
+          fi
