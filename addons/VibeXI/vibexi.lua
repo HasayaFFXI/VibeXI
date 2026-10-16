@@ -44,7 +44,7 @@ local HORIZON = Config.horizon
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '0.3.0'
+addon.version = '1.0.1'
 
 -- ---------------------------------------------------------------- state
 
