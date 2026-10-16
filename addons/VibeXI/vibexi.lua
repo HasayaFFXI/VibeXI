@@ -45,6 +45,7 @@ addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
 addon.version = '1.0.2'
 
+
 -- ---------------------------------------------------------------- state
 
 local S = {
