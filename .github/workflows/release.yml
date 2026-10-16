@@ -2,8 +2,8 @@
 # VibeXI.zip. The README links releases/latest/download/VibeXI.zip, which only
 # works because every release carries an asset under that exact name.
 #
-# The zip holds just the VibeXI folder, so players unzip it straight into
-# Ashita's addons folder. addon.version is set from the tag inside the zip, so
+# The zip holds addons\VibeXI\ and nothing else, so players unzip it straight
+# into their Ashita folder. addon.version is set from the tag inside the zip, so
 # the version the addon reports always matches the release it came from.
 #
 # To release: push a tag (1.2.3 or v1.2.3). To (re)build an existing tag, run
@@ -46,8 +46,7 @@ jobs:
 
       - name: Build VibeXI.zip
         run: |
-          cd addons
-          zip -r -X ../VibeXI.zip VibeXI
+          zip -r -X VibeXI.zip addons/VibeXI
 
       - name: Publish the release
         run: |

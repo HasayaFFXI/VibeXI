@@ -21,8 +21,8 @@ Ashita v4, and it is approved for use on HorizonXI.
 
    Older versions and release notes are on the
    [releases page](https://github.com/HasayaFFXI/VibeXI/releases).
-2. Unzip it into the `addons` folder of your Ashita install. The zip holds a
-   single `VibeXI` folder, so you end up with:
+2. Unzip it into your Ashita folder (the one that has `addons` in it). The zip
+   holds `addons\VibeXI\`, so you end up with:
 
    ```
    <Ashita folder>\addons\VibeXI\vibexi.lua
@@ -47,7 +47,7 @@ your character is known.
 
 ### Updating
 
-Download the latest `VibeXI.zip` and unzip it over the old folder, but
+Download the latest `VibeXI.zip` and unzip it into your Ashita folder again, but
 **back up your `vibexi.ini` first**. The release ships a default one that would
 overwrite your settings. Then reload:
 
