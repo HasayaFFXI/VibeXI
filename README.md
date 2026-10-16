@@ -262,12 +262,3 @@ have no `t` and can be skipped.
 ```
 
 The `meta` line is shortened here; real ones carry more fields.
-
-## Releasing
-
-For maintainers. Push a version tag (`1.2.3` or `v1.2.3`). The `Release`
-workflow in `.github/workflows/release.yml` zips `addons/VibeXI/` as
-`VibeXI.zip`, sets `addon.version` inside it from the tag, and publishes a
-GitHub Release with the zip attached. The README's download link always points
-at the newest one. To rebuild the release for an existing tag, run the workflow
-by hand from the Actions tab.
