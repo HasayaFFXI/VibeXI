@@ -2,9 +2,6 @@
 --
 -- Sourced from the XiPackets documentation for server packet 0x0028 and the
 -- LandSandBoat server source. Values are the game's, not ours.
---
--- The skillchain and healing tables below are adapted from Metrics, by Metra
--- of HorizonXI. Its license notice is in THIRD_PARTY_NOTICES.txt.
 
 local E = {}
 

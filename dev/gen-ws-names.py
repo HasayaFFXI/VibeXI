@@ -1,10 +1,9 @@
 """Regenerates addons/VibeXI/vx_ws_names.lua -- weaponskill id -> English name.
 
 Ashita's IResourceManager has GetSpellById and GetAbilityById but no weaponskill
-lookup, so this one table has to ship with the addon. The source is Windower's
-weapon_skills.lua resource table, whose entries look like
-`[1] = {id=1,en="Combo",...},`. Its license notice ships in
-addons/VibeXI/THIRD_PARTY_NOTICES.txt.
+lookup, so this one table has to ship with the addon. The source is a
+weapon_skills.lua resource table whose entries look like
+`[1] = {id=1,en="Combo",...},`.
 
 Only id and English name are kept, and nothing else in that file is used. Every
 event also carries the raw actionId, so a lookup miss degrades to "#123" rather
@@ -30,8 +29,7 @@ HEADER = [
     '--',
     "-- Weaponskill id -> English name. Ashita's IResourceManager exposes",
     '-- GetSpellById and GetAbilityById but no weaponskill lookup, so this one',
-    "-- table has to ship. Generated from Windower's weapon_skills.lua; its license",
-    '-- notice is in THIRD_PARTY_NOTICES.txt.',
+    '-- table has to ship.',
     '',
     'return {',
 ]

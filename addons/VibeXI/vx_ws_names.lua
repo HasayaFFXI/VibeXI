@@ -2,8 +2,7 @@
 --
 -- Weaponskill id -> English name. Ashita's IResourceManager exposes
 -- GetSpellById and GetAbilityById but no weaponskill lookup, so this one
--- table has to ship. Generated from Windower's weapon_skills.lua; its license
--- notice is in THIRD_PARTY_NOTICES.txt.
+-- table has to ship.
 
 return {
     [1] = "Combo",
