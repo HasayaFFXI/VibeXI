@@ -15,13 +15,14 @@ Note that no approvals have been given for any other private servers.
 1. Download the latest release:
    **[VibeXI.zip](https://github.com/HasayaFFXI/VibeXI/releases/latest/download/VibeXI.zip)**
 
-2. Unzip it into your Ashita folder (the one that has `addons` in it). The zip
-   holds `addons\VibeXI\`, so you end up with:
+2. Unzip it into your Ashita folder (the one that has `addons` and `config` in
+   it). The zip holds `addons\VibeXI\` and `config\addons\VibeXI\`, so you end
+   up with:
 
    ```
    <Ashita folder>\addons\VibeXI\vibexi.lua
-   <Ashita folder>\addons\VibeXI\vibexi.ini
    ...
+   <Ashita folder>\config\addons\VibeXI\vibexi.ini
    ```
 
 3. If you're not on HorizonXI, set `Horizon=0` in `vibexi.ini`.
@@ -36,9 +37,9 @@ Note that no approvals have been given for any other private servers.
 
 ### Updating
 
-Download the latest `VibeXI.zip` and unzip it into your Ashita folder again, but
-**back up your `vibexi.ini` first**. The release ships a default one that would
-overwrite your settings. Then reload:
+Download the latest `VibeXI.zip` and unzip it into your Ashita folder again.
+When Windows asks whether to replace `vibexi.ini`, **choose Skip** to keep your
+settings. Everything else should be replaced. Then reload:
 
 ```
 /addon reload vibexi
@@ -58,8 +59,10 @@ To use a different folder, set `EventDir` (below).
 
 ## Settings: `vibexi.ini`
 
-`vibexi.ini` sits next to `vibexi.lua`. The addon reads it once when it loads,
-so **after changing a value, reload the addon** (`/addon reload vibexi`).
+`vibexi.ini` lives in `<Ashita folder>\config\addons\VibeXI\`, apart from the
+addon's own files, so updates don't have to touch it. The addon reads it once
+when it loads, so **after changing a value, reload the addon**
+(`/addon reload vibexi`).
 
 If a line or the whole file is missing, or a value can't be understood, the
 default is used. A bad setting never stops the addon from loading or recording.

@@ -1,4 +1,8 @@
--- Settings, read from vibexi.ini beside this file.
+-- Settings, read from <Ashita>\config\addons\VibeXI\vibexi.ini.
+--
+-- Not beside this file: the release zip replaces addons\VibeXI\ wholesale on
+-- every update, and settings kept there went with it. The config tree is where
+-- Ashita keeps per-addon settings, so it is where a player expects them to live.
 --
 -- Read ONCE, here, when the addon loads -- never on the packet path. Every
 -- failure degrades to the defaults: no file, an unreadable file, a line that is
@@ -23,16 +27,18 @@
 
 local M = {}
 
-local FILE = 'vibexi.ini'
+local FILE = 'config\\addons\\VibeXI\\vibexi.ini'
 
 local ON  = { ['1'] = true, ['true']  = true, ['on']  = true, ['yes'] = true }
 local OFF = { ['0'] = true, ['false'] = true, ['off'] = true, ['no']  = true }
 
 --- The file's text, or nil when it is not there to read.
 local function read_file()
-    if not addon or not addon.path then return nil end
+    local root = AshitaCore:GetInstallPath()
+    if not root or root == '' then return nil end
+    root = string.gsub(root, '[\\/]+$', '')
 
-    local f = io.open(addon.path .. '\\' .. FILE, 'r')
+    local f = io.open(root .. '\\' .. FILE, 'r')
     if not f then return nil end
 
     local text = f:read('*a')

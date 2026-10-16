@@ -68,8 +68,8 @@ io.open
 :flush
 
 # The settings file. io.open's one other use: vx_config.lua opens vibexi.ini in
-# the addon's own folder, read-only, once at load. Reading a local file cannot
-# reach the server. This is NOT IConfigurationManager, which parses .ini too --
+# <Ashita>\config\addons\VibeXI\, read-only, once at load. Reading a local file
+# cannot reach the server. This is NOT IConfigurationManager, which parses .ini too --
 # its call is ':Load', and a ':Method' token is allowed whatever it is called
 # on, so that line would also allow the plugin manager's ':Load'.
 :read
