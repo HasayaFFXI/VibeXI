@@ -12,8 +12,8 @@ Note that no approvals have been given for any other private servers.
 
 ## Install
 
-1. Download the latest release:
-   **[VibeXI.zip](https://github.com/HasayaFFXI/VibeXI/releases/latest/download/VibeXI.zip)**
+1. Download `VibeXI-<version>.zip` from the
+   **[latest release](https://github.com/HasayaFFXI/VibeXI/releases/latest)**.
 
 2. Unzip it into your Ashita folder (the one that has `addons` and `config` in
    it). The zip holds `addons\VibeXI\` and `config\addons\VibeXI\`, so you end
@@ -37,7 +37,7 @@ Note that no approvals have been given for any other private servers.
 
 ### Updating
 
-Download the latest `VibeXI.zip` and unzip it into your Ashita folder again.
+Download the zip from the latest release and unzip it into your Ashita folder again.
 When Windows asks whether to replace `vibexi.ini`, **choose Skip** to keep your
 settings. Everything else should be replaced. Then reload:
 

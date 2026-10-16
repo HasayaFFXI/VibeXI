@@ -1,6 +1,6 @@
-# Publishes a GitHub Release with the addon attached as VibeXI.zip. The README
-# links releases/latest/download/VibeXI.zip, which only works because every
-# release carries an asset under that exact name.
+# Publishes a GitHub Release with the addon attached as VibeXI-<version>.zip.
+# The name changes with every release, so the README links the latest release
+# page rather than a direct download.
 #
 # The zip holds addons\VibeXI\ and config\addons\VibeXI\vibexi.ini, laid out
 # as the Ashita folder is, so players unzip it straight into that folder. The
@@ -49,13 +49,13 @@ jobs:
             echo "PUBLISH=1" >> "$GITHUB_ENV"
           fi
 
-      - name: Build VibeXI.zip
+      - name: Build VibeXI-<version>.zip
         if: env.PUBLISH == '1'
         run: |
-          zip -r -X VibeXI.zip addons/VibeXI config/addons/VibeXI
+          zip -r -X "VibeXI-$VERSION.zip" addons/VibeXI config/addons/VibeXI
 
       - name: Publish the release
         if: env.PUBLISH == '1'
         run: |
-          gh release create "$VERSION" VibeXI.zip --target "$GITHUB_SHA" \
+          gh release create "$VERSION" "VibeXI-$VERSION.zip" --target "$GITHUB_SHA" \
             --title "VibeXI $VERSION" --generate-notes
