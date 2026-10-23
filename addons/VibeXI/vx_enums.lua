@@ -68,8 +68,8 @@ E.SpawnFlags = {
     TRUST       = 0x1000,
 }
 
--- Common composites, kept only as a decoding key for anyone reading the probe
--- line. Nothing compares against these.
+-- Common composites, kept only as a decoding key. Nothing compares against
+-- these.
 --
 --    525 = 0x20D  PLAYER|PARTY|ALLIANCE|LOCALPLAYER   (ourselves)
 --     13 = 0x00D  PLAYER|PARTY|ALLIANCE               (a party member)
@@ -101,8 +101,7 @@ E.Animation = {
 -- Same argument as the API allowlist, applied to the wire: a denylist only
 -- catches what someone thought of, and here the failure mode of a miss is
 -- silently wrong totals. Unknown ids drop, so the failure mode is missing data
--- instead -- and record() writes one meta line naming each unknown id it saw,
--- so growing these tables is a deliberate edit informed by evidence.
+-- instead, and growing these tables is a deliberate edit.
 --
 -- Ids and their English text come from the server's own enum -- `MsgBasic` in
 -- LandSandBoat's src/map/enums/msg_basic.h, which names every id. Note that 3
@@ -187,7 +186,7 @@ E.Attempt = {
 -- accuracy denominator, the same as any other absorb.
 
 -- Deliberately in NEITHER table, so they drop. Recorded here so the next person
--- to see one in the unknown-message meta lines does not "fix" it by accident.
+-- to see one in a packet does not "fix" it by accident.
 --
 --   REACTION DAMAGE is not here -- see E.Reaction below. 33, 44 and 536 are
 --   emitted with the two ends swapped rather than dropped. What is unwired is
@@ -445,9 +444,7 @@ end
 -- table's own layout cannot be inspected from source. Two things support it:
 -- Ashita's recast addon scans GetAbilityById(0..2048), i.e. the table is far
 -- larger than the ~300 job abilities and therefore segmented; and blusets does
--- the exact analogous `GetSpellById(id + 512)` for the BLU spell list. The probe
--- line reports the same id looked up both with and without the offset, so one
--- session settles it -- see probe() in vibexi.lua.
+-- the exact analogous `GetSpellById(id + 512)` for the BLU spell list.
 E.ABILITY_ID_OFFSET = 512
 
 -- Job id -> the three-letter abbreviation the game itself uses.
