@@ -2,15 +2,20 @@
 
 [![Latest release](https://img.shields.io/github/v/release/HasayaFFXI/VibeXI)](https://github.com/HasayaFFXI/VibeXI/releases/latest)
 
-An Ashita v4 addon for Final Fantasy XI that records combat events as they happen in real time. 
-It reads the game's incoming action packets and writes one JSON line per event to a file on your PC.
+VibeXI is an Ashita v4 addon for Final Fantasy XI that records combat events (player damage/healing) as they happen in real time.
 
-It works on any server you play through Ashita v4, and it is approved for use on HorizonXI.
-Note that no approvals have been given for any other private servers.
+VibeXI is meant to serve as a pre-approved method of extracting data from FFXI, so that it can be used in developing personal applications.
+
+It is approved for use on HorizonXI, but note that no approvals have been given for any other private servers.
+
+## Example application
+I built VibeXI for my personal project [Zerg](https://github.com/HasayaFFXI/Zerg).
+
+Feel free to download it and try it out to get some ideas for your own application!
 
 > **Not playing on HorizonXI?**  See [`Horizon`](#server-horizon) below.
 
-## Install
+## Installing VibeXI
 
 1. Download `VibeXI-<version>.zip` from the
    **[latest release](https://github.com/HasayaFFXI/VibeXI/releases/latest)**.
@@ -95,21 +100,6 @@ The folder the `.jsonl` event files go to. It is created if it doesn't exist.
   `%LOCALAPPDATA%\VibeXI\events`.
 - **Don't use slow or network storage** The file is written several times a 
   second for as long as you play.
-
-### Writing the file
-
-```ini
-[server]
-Horizon=0
-
-[output]
-EventDir=D:\FFXI\VibeXI Logs
-```
-
-- One `key=value` per line. Keys aren't case sensitive.
-- Comments start with `;` or `#` and **must be on their own line**. A comment
-  after a value becomes part of the value, because `;` and `#` are legal in
-  folder names.
 
 ## For developers
 
