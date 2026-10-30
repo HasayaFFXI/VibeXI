@@ -86,6 +86,21 @@ Things worth knowing:
   example `#1234`. This happens mostly with monster TP moves.
 - On HorizonXI with `Horizon=1`, abilities such as the Jumps arrive as
   `ability`, not `ws`.
+- **Support is not damage.** A line whose `actorKind` and `targetKind` are both
+  `player` or `pet` is one of your side acting on another: a buff (Protect,
+  Haste, a song, a roll), a status removal (Erase, Poisona) or a pet's ward.
+  It is written as an ordinary `magic`, `ability` or `pet` line with `dmg` 0.
+  `hit` is `true` when it took effect and `false` when it had no effect
+  (`msg` 75 or 323, for example). Keep these lines out of damage counts and
+  accuracy; count distinct `use` values to count casts.
+- **Only listed actions are written on your side.** An action is written
+  against one of your side only if its id is in `vx_support_ids.lua`: spells,
+  job abilities and pets' abilities that the game won't let anyone aim at an
+  enemy, taken from the server's own tables by `dev/gen-support-ids.py`.
+  Everything else aimed at your side is dropped: damage, a miss, and every
+  status put **on** your side, whoever put it there. A monster's actions
+  aren't recorded at all, and an enfeeble or an attack that one of your own
+  aims at your side (while charmed, say) is dropped too.
 
 ## Heal lines
 

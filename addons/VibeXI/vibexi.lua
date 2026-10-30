@@ -386,22 +386,36 @@ local function record(act, actor, actor_kind, pet_owner, now)
         for slot, res in ipairs(target.results) do
             local use = use_for(use_by_slot, slot)
 
-            -- Three outcomes, and the default is DROP. A message in neither
-            -- table is not a damage event -- a cure, a buff, an enfeeble, a
-            -- status tick -- and its `value` field means something other than
+            -- Four outcomes, and the default is DROP. A message in none of
+            -- the tables is not an event we write -- a cure, an enfeeble, a
+            -- status tick, a buff on a monster -- and its `value` field means something other than
             -- hit points, so emitting it would put a non-damage number into a
             -- field that is summed as damage. See vx_enums.E.Damage. Nothing
             -- is written about a dropped message either: the file holds only
             -- what the allowlists name.
-            local is_damage  = E.Damage[res.message] == true
-            local is_attempt = E.Attempt[res.message] == true
+            --
+            -- On a target of ours the only outcome is support, decided by the
+            -- action's id: true took effect, false had none, nil is dropped
+            -- (see E.support). Never damage, a miss or a debuff on our side.
+            local support = nil
+            local is_damage, is_attempt = false, false
+            if row.targetKind == 'player' or row.targetKind == 'pet' then
+                support = E.support(category, act.param, res.message)
+            else
+                is_damage  = E.Damage[res.message] == true
+                is_attempt = E.Attempt[res.message] == true
+            end
+            local is_support = support ~= nil
 
-            if is_damage or is_attempt then
+            if is_damage or is_attempt or is_support then
                 -- Resolved on the first row we actually emit, not the first row
                 -- we see, so an action whose every result was dropped costs no
-                -- resource lookup.
+                -- resource lookup. A pet's support is named from the list.
                 if not name_resolved then
                     name_resolved = action_name(category, act.param, res)
+                    if is_support and string.sub(name_resolved, 1, 1) == '#' then
+                        name_resolved = E.support_name(category, act.param) or name_resolved
+                    end
                 end
 
                 local dmg = 0
@@ -413,7 +427,7 @@ local function record(act, actor, actor_kind, pet_owner, now)
                 row.action   = name_resolved
                 row.actionId = act.param
                 row.dmg      = dmg
-                row.hit      = is_damage
+                row.hit      = is_damage or support == true
                 row.crit     = E.Crit[res.message] == true
                 row.burst    = res.message == E.Message.BURST
                 row.msg      = res.message

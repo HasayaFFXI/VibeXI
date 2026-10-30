@@ -40,6 +40,7 @@ require('vx_action')
 require('vx_entity')
 require('vx_emit')
 require('vx_ws_names')
+require('vx_support_ids')
 
 # Reads vibexi.ini (see the filesystem section) and hands back the settings.
 require('vx_config')
