@@ -80,9 +80,8 @@ HorizonXI sends about a dozen job abilities as if they were weaponskills. With
 `Horizon=1`, VibeXI spots these and records them as the job abilities they
 really are.
 
-- `1` (also `on`, `yes`, `true`): you play on HorizonXI. This is the default.
-- `0` (also `off`, `no`, `false`): you play anywhere else. Other servers may
-- send job abilities normally (unconfirmed)
+- `1` you play on HorizonXI. This is the default.
+- `0` you play anywhere else. Other servers may send job abilities normally (unconfirmed)
 
 ### `[output]` `EventDir`
 
