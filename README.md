@@ -7,13 +7,13 @@ VibeXI is an Ashita v4 addon for Final Fantasy XI that records combat events (pl
 VibeXI is meant to serve as a pre-approved method of extracting data from FFXI, so that it can be used in developing personal applications.
 
 It is approved for use on HorizonXI, but note that no approvals have been given for any other private servers.
+> **Not playing on HorizonXI?**  See [`Horizon`](#server-horizon) below.
+
 
 ## Example application
 I built VibeXI for my personal project [Zerg](https://github.com/HasayaFFXI/Zerg).
 
 Feel free to download it and try it out to get some ideas for your own application!
-
-> **Not playing on HorizonXI?**  See [`Horizon`](#server-horizon) below.
 
 ## Installing VibeXI
 
@@ -69,9 +69,6 @@ addon's own files, so updates don't have to touch it. The addon reads it once
 when it loads, so **after changing a value, reload the addon**
 (`/addon reload vibexi`).
 
-If a line or the whole file is missing, or a value can't be understood, the
-default is used. A bad setting never stops the addon from loading or recording.
-
 | Setting | Default | What it does |
 |---|---|---|
 | `Horizon` | `1` | Turns on a fix for how HorizonXI reports some job abilities. Set it to `0` on any other server. |
@@ -91,13 +88,6 @@ really are.
 
 The folder the `.jsonl` event files go to. It is created if it doesn't exist.
 
-- It must be a **full path**, like `D:\FFXI\Logs` or `\\server\share\vibexi`.
-  Relative paths are ignored.
-- `%NAME%` is replaced with that Windows environment variable, for example
-  `%USERPROFILE%\Documents\VibeXI`.
-- Spaces are fine, and quotes around the path are optional.
-- If the line is empty, or the folder can't be used, the addon falls back to
-  `%LOCALAPPDATA%\VibeXI\events`.
 - **Don't use slow or network storage** The file is written several times a 
   second for as long as you play.
 
