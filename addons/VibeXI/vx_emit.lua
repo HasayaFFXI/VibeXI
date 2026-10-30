@@ -42,7 +42,6 @@ local Config = require('vx_config')
 local M = {}
 
 M.path      = nil
-M.dir_from  = nil    -- 'ini' | 'default' | 'install': which folder rule won
 M.stats     = { written = 0, failed = 0, opened = 0 }
 local handle = nil
 local open_failed_for = nil    -- path we already failed on; stop retrying it
@@ -224,22 +223,19 @@ end
 ---
 --- The folder named in vibexi.ini first. One that cannot be created -- a drive
 --- that is not there, a share that is offline -- falls through to the default
---- rather than to nothing: a session written somewhere unexpected can be found
---- (the probe line's dirFrom says which rule won), one never written cannot.
+--- rather than to nothing: a session written somewhere unexpected can be found,
+--- one never written cannot.
 local function ensure_dir()
     local dir = Config.event_dir
     if dir and usable(dir) then
-        M.dir_from = 'ini'
         return dir
     end
 
     local root = os.getenv('LOCALAPPDATA')
-    M.dir_from = 'default'
     if not root or root == '' then
         -- Fall back to Ashita's own install tree. Not preferred (see header)
         -- but better than not recording at all.
         root = AshitaCore:GetInstallPath()
-        M.dir_from = 'install'
     end
     if not root or root == '' then return nil end
 
@@ -334,8 +330,7 @@ function M.write(e)
     return ok
 end
 
---- Append a pre-built line verbatim. Used for the one-off environment probe in
---- vibexi.lua; consumers skip any line whose "kind" is "meta".
+--- Append a pre-built line verbatim: the job and heal lines encoded above.
 function M.write_raw(line)
     return append(put_line, line)
 end
@@ -354,11 +349,6 @@ function M.flush()
         M.stats.failed = M.stats.failed + 1
         M.close()
     end
-end
-
---- JSON-escape helper exposed for the probe line.
-function M.escape(s)
-    return esc(s)
 end
 
 function M.is_open()

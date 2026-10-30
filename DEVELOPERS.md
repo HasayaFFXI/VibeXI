@@ -45,7 +45,6 @@ fields are left out rather than written as `null`.
 | `reaction` | Damage dealt back on an enemy's swing: a counter, retaliation or spikes. |
 | `heal` | HP restored to one target. |
 | `job` | A party member's job, written when it's first seen or when it changes. |
-| `meta` | Information about the session, not an event. Most readers skip these. |
 
 ## Action lines
 
@@ -86,7 +85,7 @@ Things worth knowing:
 - When the addon has no name for an action, `action` is `#` and the id, for
   example `#1234`. This happens mostly with monster TP moves.
 - On HorizonXI with `Horizon=1`, abilities such as the Jumps arrive as
-  `ability`, not `ws`. The session's `meta` line says which way it was read.
+  `ability`, not `ws`.
 
 ## Heal lines
 
@@ -113,32 +112,12 @@ damage by mistake. A Curaga on five people is five rows sharing one `use`.
 | `mainLvl` | integer | Main job level. |
 | `sub`, `subId`, `subLvl` | | The same for the support job. Left out when there isn't one. |
 
-## Meta lines
-
-The first line of every file is a `meta` line describing the session. The
-fields you're most likely to want:
-
-| Field | Meaning |
-|---|---|
-| `v` | The addon version that wrote the file. |
-| `t` | When the line was written, in Unix time: the start of recording. |
-| `selfName` | The character the file belongs to. |
-| `horizon` | `1` or `0`: the `Horizon` setting the file was written under. |
-| `path` | The file's own full path. |
-
-It also carries diagnostic fields you can ignore. Later `meta` lines with an
-`unknownMsg` field note a game message the addon saw but doesn't record; they
-have no `t` and can be skipped.
-
 ## Example
 
 ```jsonl
-{"kind":"meta","v":"1.0.0","t":1760571000,"selfName":"Hasaya","horizon":1,"path":"C:\\Users\\you\\AppData\\Local\\VibeXI\\events\\Hasaya-20261015193000.jsonl"}
 {"kind":"job","t":1760571002,"actor":"Hasaya","main":"SAM","mainId":12,"mainLvl":75,"sub":"WAR","subId":1,"subLvl":37}
 {"t":1760571004,"seq":1,"use":1,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","dmg":112,"hit":true,"crit":false,"burst":false,"msg":1}
 {"t":1760571004,"seq":2,"use":2,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","dmg":0,"hit":false,"crit":false,"burst":false,"msg":15}
 {"t":1760571009,"seq":1,"use":3,"kind":"ws","actor":"Hasaya","actorKind":"player","action":"Tachi: Gekko","actionId":151,"target":"Tiger","targetKind":"mob","dmg":1480,"hit":true,"crit":false,"burst":false,"msg":185}
 {"t":1760571009,"seq":2,"use":4,"kind":"skillchain","actor":"Hasaya","actorKind":"player","action":"Skillchain: Fragmentation","actionId":291,"target":"Tiger","targetKind":"mob","dmg":620,"hit":true,"crit":false,"burst":false,"msg":291}
 ```
-
-The `meta` line is shortened here; real ones carry more fields.

@@ -55,8 +55,6 @@ local S = {
     owner    = nil,     -- our character name, for the filename
     dropped  = 0,       -- packets that failed to decode
     dupes    = 0,
-    unknown  = 0,       -- distinct message ids in neither allowlist
-    probed   = false,   -- environment probe written; see probe()
 }
 
 -- Duplicate suppression. Ashita can hand the same packet to an addon twice
@@ -69,7 +67,7 @@ local S = {
 -- data_modified and data_modified_raw. Ashita's own addons use the non-_raw
 -- members as Lua strings (struct.unpack over e.data) and the _raw ones as FFI
 -- pointers (ffi.cast over e.data_modified_raw), which is the pairing this
--- relies on. The probe reports the observed type of p.chunk_data anyway.
+-- relies on.
 local last_chunk    = {}
 local current_chunk = {}
 
@@ -87,7 +85,7 @@ local current_chunk = {}
 ---
 --- A chunk that is not a string fails OPEN -- no rotation, so no duplicate is
 --- caught -- rather than raising on every packet and recording nothing at
---- all. The probe line's chunkData field is what reports it.
+--- all.
 local function note_chunk(chunk, data)
     if type(chunk) ~= 'string' then return end
     local c1, c2 = string.byte(chunk, 1, 2)
@@ -189,104 +187,6 @@ local function action_name(category, param, first_result)
 end
 
 -- ---------------------------------------------------------------- emit
-
---- One-off environment probe, written as the first line of every file.
----
---- Several SDK behaviours this addon relies on are read from the Ashita source
---- rather than observed. Confirming them live costs one line per file and turns
---- "should work" into "did work on this machine, this build, this server".
----
---- What each field answers:
----
----   chunkData      Duplicate suppression needs p.chunk_data to be a Lua string.
----                  Ashita's addon host does export chunk_data / chunk_data_raw
----                  alongside data / data_raw, and the non-_raw member of each
----                  pair is the string one. If this ever reads "nil", chunks
----                  never rotate, duplicates are never caught, and EVERY NUMBER
----                  IS DOUBLED -- so it is worth one field forever.
----   isZoningType   Expected "number" (Ashita.h returns uint32_t). A "boolean"
----                  here means vx_entity.is_zoning's fallback branch is load
----                  bearing rather than belt-and-braces.
----   selfSpawnFlags Expected 525 = PLAYER|PARTY|ALLIANCE|LOCALPLAYER. Read it as
----                  bits, not as a magic number; see vx_enums.SpawnFlags.
----   abilRaw/abilOffset
----                  The +512 question, asked as an experiment instead of an
----                  assertion. The SAME id is looked up both ways. A weaponskill
----                  name in abilRaw and a job ability in abilOffset means the
----                  table is segmented as assumed and E.ABILITY_ID_OFFSET is
----                  right. If the names come back swapped, the offset is wrong.
----   horizon        The Horizon setting this file was written under, 1 or 0. It
----                  changes what a category 3 ability is named and which kind it
----                  is written as, so a file has to say which way it was read.
----   iniFound       Whether vibexi.ini was there to read. false with horizon 1
----                  is the default standing in for a file that was not found.
----   dirFrom        Which rule chose the folder in `path`: "ini" is EventDir,
----                  "default" is %LOCALAPPDATA%, "install" the Ashita tree.
----                  Anything but "ini" with an EventDir set means that folder
----                  could not be used.
-local function probe(p)
-    local player = GetPlayerEntity()
-    local mm = AshitaCore:GetMemoryManager()
-    local zoning_type = 'nil'
-    if mm and mm:GetPlayer() then
-        zoning_type = type(mm:GetPlayer():GetIsZoning())
-    end
-
-    local self_flags = -1
-    if player then
-        local ent = Entity.by_id(player.ServerId)
-        if ent and ent.spawn_flags then self_flags = ent.spawn_flags end
-    end
-
-    local ABIL_PROBE_ID = 5
-    local abil_raw    = ability_name(ABIL_PROBE_ID) or 'MISS'
-    local abil_offset = ability_name(ABIL_PROBE_ID + E.ABILITY_ID_OFFSET) or 'MISS'
-    local spell_probe = spell_name(1) or 'MISS'
-    local ws_probe    = WS_NAMES[1] or 'MISS'
-
-    local parts = {
-        '{"kind":"meta","v":"' .. Emit.escape(addon.version) .. '"',
-        ',"t":' .. tostring(os.time()),
-        ',"chunkData":"' .. Emit.escape(type(p.chunk_data)) .. '"',
-        ',"injected":"' .. Emit.escape(type(p.injected)) .. '"',
-        ',"dataLen":' .. tostring(#(p.data or '')),
-        ',"isZoningType":"' .. Emit.escape(zoning_type) .. '"',
-        ',"selfName":"' .. Emit.escape(Entity.me() or 'nil') .. '"',
-        ',"selfSpawnFlags":' .. tostring(self_flags),
-        ',"abilProbeId":' .. tostring(ABIL_PROBE_ID),
-        ',"abilRaw":"'    .. Emit.escape(abil_raw) .. '"',
-        ',"abilOffset":"' .. Emit.escape(abil_offset) .. '"',
-        ',"spellLookup":"' .. Emit.escape(spell_probe) .. '"',
-        ',"wsLookup":"'    .. Emit.escape(ws_probe) .. '"',
-        ',"horizon":' .. (HORIZON and '1' or '0'),
-        ',"iniFound":' .. (Config.found and 'true' or 'false'),
-        ',"dirFrom":"' .. Emit.escape(Emit.dir_from or 'nil') .. '"',
-        ',"path":"' .. Emit.escape(Emit.path or 'nil') .. '"',
-        '}',
-    }
-    Emit.write_raw(table.concat(parts))
-end
-
---- Record a message id that is in neither allowlist, once per id per session.
----
---- The allowlists drop what they do not recognise, which is the right default
---- -- but silently, and a silent drop is indistinguishable from a bug. One meta
---- line per NEW id makes the omission visible and turns "should I add 431?"
---- into a question with evidence attached: the id, the category it arrived on,
---- and the action that produced it. Consumers already skip kind:"meta".
----
---- Once per id, so a buff-heavy party cannot flood the file.
-local seen_unknown = {}
-
-local function note_unknown(message, act)
-    if seen_unknown[message] then return end
-    seen_unknown[message] = true
-    S.unknown = S.unknown + 1
-    Emit.write_raw(
-        '{"kind":"meta","unknownMsg":' .. string.format('%d', message) ..
-        ',"category":' .. string.format('%d', act.category) ..
-        ',"actionId":' .. string.format('%d', act.param) .. '}')
-end
 
 --- Write one line per party member whose job changed since the last look.
 ---
@@ -411,8 +311,8 @@ local function record(act, actor, actor_kind, pet_owner, now)
     -- from the ability table and written as kind 'ability', exactly as if it
     -- had arrived on category 6. Decided once for the whole action, from its
     -- first result -- see E.WsAbilities for why not per result. Only the name
-    -- and the kind follow `category`; anything that reports what the packet
-    -- said (the unknown-message lines) still reads act.category.
+    -- and the kind follow `category`; anything that asks what the packet
+    -- said (the heal check below) still reads act.category.
     local category = act.category
     if HORIZON and category == E.Category.WEAPONSKILL then
         local first = first_result(act)
@@ -490,7 +390,9 @@ local function record(act, actor, actor_kind, pet_owner, now)
             -- table is not a damage event -- a cure, a buff, an enfeeble, a
             -- status tick -- and its `value` field means something other than
             -- hit points, so emitting it would put a non-damage number into a
-            -- field that is summed as damage. See vx_enums.E.Damage.
+            -- field that is summed as damage. See vx_enums.E.Damage. Nothing
+            -- is written about a dropped message either: the file holds only
+            -- what the allowlists name.
             local is_damage  = E.Damage[res.message] == true
             local is_attempt = E.Attempt[res.message] == true
 
@@ -516,8 +418,6 @@ local function record(act, actor, actor_kind, pet_owner, now)
                 row.burst    = res.message == E.Message.BURST
                 row.msg      = res.message
                 Emit.write(row)
-            else
-                note_unknown(res.message, act)
             end
 
             -- The PROC trailer, which is a second event riding on this result.
@@ -581,9 +481,6 @@ local function record(act, actor, actor_kind, pet_owner, now)
                     row.burst    = false
                     row.msg      = res.proc_message
                     Emit.write(row)
-
-                else
-                    note_unknown(res.proc_message, act)
                 end
             end
         end
@@ -763,11 +660,6 @@ local function on_packet_in(p)
         S.owner = Entity.me() or S.owner
         if S.owner then Emit.open(S.owner) end
         if not Emit.is_open() then return end
-    end
-
-    if not S.probed then
-        S.probed = true
-        probe(p)
     end
 
     if Entity.is_zoning() then return end
