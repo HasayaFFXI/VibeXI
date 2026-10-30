@@ -40,7 +40,7 @@ Feel free to download it and try it out to get some ideas for your own applicati
    To load it every time you play, add that same line to
    `<Ashita folder>\scripts\default.txt`.
 
-### Updating
+## Updating
 
 Download the zip from the latest release and unzip it into your Ashita folder again.
 When Windows asks whether to replace `vibexi.ini`, **choose Skip** to keep your
