@@ -68,8 +68,8 @@ E.SpawnFlags = {
     TRUST       = 0x1000,
 }
 
--- Common composites, kept only as a decoding key for anyone reading the probe
--- line. Nothing compares against these.
+-- Common composites, kept only as a decoding key for anyone reading spawn
+-- flags. Nothing compares against these.
 --
 --    525 = 0x20D  PLAYER|PARTY|ALLIANCE|LOCALPLAYER   (ourselves)
 --     13 = 0x00D  PLAYER|PARTY|ALLIANCE               (a party member)
@@ -101,8 +101,9 @@ E.Animation = {
 -- Same argument as the API allowlist, applied to the wire: a denylist only
 -- catches what someone thought of, and here the failure mode of a miss is
 -- silently wrong totals. Unknown ids drop, so the failure mode is missing data
--- instead -- and record() writes one meta line naming each unknown id it saw,
--- so growing these tables is a deliberate edit informed by evidence.
+-- instead. Nothing is written about them: the file holds only what these
+-- tables name, so growing them is a deliberate edit, made from what was seen
+-- in game.
 --
 -- Ids and their English text come from the server's own enum -- `MsgBasic` in
 -- LandSandBoat's src/map/enums/msg_basic.h, which names every id. Note that 3
@@ -187,7 +188,7 @@ E.Attempt = {
 -- accuracy denominator, the same as any other absorb.
 
 -- Deliberately in NEITHER table, so they drop. Recorded here so the next person
--- to see one in the unknown-message meta lines does not "fix" it by accident.
+-- to meet one in game does not "fix" it by accident.
 --
 --   REACTION DAMAGE is not here -- see E.Reaction below. 33, 44 and 536 are
 --   emitted with the two ends swapped rather than dropped. What is unwired is
@@ -203,13 +204,77 @@ E.Attempt = {
 --   MP, NOT HP -- 162 AddEffectMPDrained, 225 UsesSkillMPDrained,
 --   366 TargetMPDrained. MP drain is not damage.
 --
---   BUFFS, ENFEEBLES, STATUS -- 230/266 (gains the effect of), 236/237/267
---   (receives the effect of), 373 (SpikesEffectRecover).
+--   ENFEEBLES, STATUS -- 236 (<target> is <status>), 237 and 267 (receives
+--   the effect of), and every message of E.Support below on a target that
+--   is not one of ours. A buff or a removal that lands on one of ours is
+--   written when its action is on the support list: see E.support.
 --
 --   HEALS -- 7, 24, 102, 103 (recovers HP) -- stay out of BOTH tables, but they
 --   are not dropped. Healing is recognised by ACTION ID, not by message,
 --   and written as its own kind:"heal" line; see the HEALING block below. A
 --   heal reaching these tables would be summed as damage.
+
+-- SUPPORT -- a buff, a status removal, a roll, a ward -- one of ours gave one
+-- of ours. ON A TARGET OF OURS NOTHING ELSE IS WRITTEN: not damage, not a
+-- miss, and never a status put on them. Only what one of ours did FOR one of
+-- ours is reported.
+--
+-- DECIDED BY THE ACTION'S ID, as healing is: the action must be on the support
+-- list (vx_support_ids.lua, generated from the server's spell and ability
+-- tables by dev/gen-support-ids.py), every entry of which is an action the
+-- game will not let be aimed at an enemy. The message cannot decide it alone:
+-- the server answers Slow with the same 230 as Haste, and Diabolos's Nightmare
+-- with the same 266 as a song's other targets. On a listed action the message
+-- says only whether it took effect:
+--
+--   E.Support below   took effect: written with hit=true
+--   E.Attempt above   no effect (75 MagicNoEffect, 323 UsesAbilityNoEffect):
+--                     written with hit=false
+--   anything else     dropped (a Teleport's or a Raise's own messages)
+--
+-- Always with dmg 0, never with `value`: here value is the status id (a
+-- Protect's is 40) or a roll's total, not hit points.
+E.Support = {
+    [83]  = true,   -- MagicRemoveEffect     (-na: successfully removes <status>)
+    [230] = true,   -- MagicGainsEffect      (Protect, Haste, Regen, songs, ...)
+    [266] = true,   -- TargetGainsEffect     (an area spell's other targets)
+    [267] = true,   -- ReceivesEffect        (Rolling Thunder's enthunder)
+    [319] = true,   -- UsesAbilityGainsEffect (an avatar's ward or Hastega)
+    [341] = true,   -- MagicErase            (<status> effect disappears)
+    [420] = true,   -- RollMain
+    [421] = true,   -- ReceivesEffectAbility
+    [424] = true,   -- DoubleUp
+    [441] = true,   -- UsesAbilityEffect
+}
+
+local SupportIds = require('vx_support_ids')
+
+-- Which list a category is asked against, each by the packet's param.
+-- Category 14 (dances) is not written at all (see E.EmitCategory).
+local function support_list(category)
+    if category == E.Category.MAGIC then return SupportIds.spells end
+    if category == E.Category.ABILITY then return SupportIds.abilities end
+    if category == E.Category.PET_ABILITY then return SupportIds.pets end
+    return nil
+end
+
+--- For a result on a target of ours: true when it is support that took
+--- effect, false when it is support that had none, nil when it is not
+--- support, which drops it.
+function E.support(category, param, message)
+    local list = support_list(category)
+    if not list or not param or not list[param] then return nil end
+    if E.Support[message] then return true end
+    if E.Attempt[message] then return false end
+    return nil
+end
+
+--- The list's name for a support action: what a pet's is called, since pets'
+--- abilities have no resource lookup.
+function E.support_name(category, param)
+    local list = support_list(category)
+    return list and param and list[param] or nil
+end
 
 E.Crit = {
     [67]  = true,   -- AttackCrit
@@ -410,10 +475,16 @@ E.HealingAbilities = {
 
 -- Avatar heals and wyvern breaths. A PET's action, credited to its owner with
 -- the pet's name kept -- record() already does that for every pet row.
+--
+-- Keyed by the server's ability id, which is what category 13 carries: a
+-- wyvern's Healing Breath III arrives as 642 and Titan's Earthen Ward as 564,
+-- both their ids in the server's abilities table. (869, 906 and 911, which
+-- these three were once keyed by, are the same moves' ids as a MONSTER's TP
+-- move, which a pet's action never carries.)
 E.PetHealing = {
-    [869] = 'Whispering Wind',
-    [906] = 'Healing Ruby',
-    [911] = 'Healing Ruby II',
+    [594] = 'Whispering Wind',
+    [512] = 'Healing Ruby',
+    [517] = 'Healing Ruby II',
     [639] = 'Healing Breath IV',
     [640] = 'Healing Breath',
     [641] = 'Healing Breath II',
@@ -445,9 +516,7 @@ end
 -- table's own layout cannot be inspected from source. Two things support it:
 -- Ashita's recast addon scans GetAbilityById(0..2048), i.e. the table is far
 -- larger than the ~300 job abilities and therefore segmented; and blusets does
--- the exact analogous `GetSpellById(id + 512)` for the BLU spell list. The probe
--- line reports the same id looked up both with and without the offset, so one
--- session settles it -- see probe() in vibexi.lua.
+-- the exact analogous `GetSpellById(id + 512)` for the BLU spell list.
 E.ABILITY_ID_OFFSET = 512
 
 -- Job id -> the three-letter abbreviation the game itself uses.

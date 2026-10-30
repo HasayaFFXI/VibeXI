@@ -106,11 +106,6 @@ end
 local text   = read_file()
 local values = text and parse(text) or {}
 
---- Whether vibexi.ini was found and read. Reported in the probe line, because
---- "I set it to 0 and nothing changed" is otherwise indistinguishable from the
---- file having been looked for in the wrong place.
-M.found = text ~= nil
-
 --- Horizon=1 (the default). See E.WsAbilities in vx_enums.lua for what it does.
 M.horizon = flag(values.horizon, true)
 
