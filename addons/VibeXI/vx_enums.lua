@@ -206,7 +206,9 @@ E.Attempt = {
 --
 --   ENFEEBLES, STATUS -- 236 (<target> is <status>), 237 and 267 (receives
 --   the effect of), and every message of E.Support below on a target that
---   is not one of ours. A buff or a removal that lands on one of ours is
+--   is not one of ours. An enfeeble one of ours puts on a monster is written
+--   when its action is on the enfeeble list, as its own kind:"enfeeble" line:
+--   see E.enfeeble. A buff or a removal that lands on one of ours is
 --   written when its action is on the support list: see E.support.
 --
 --   HEALS -- 7, 24, 102, 103 (recovers HP) -- stay out of BOTH tables, but they
@@ -274,6 +276,99 @@ end
 function E.support_name(category, param)
     local list = support_list(category)
     return list and param and list[param] or nil
+end
+
+-- ENFEEBLES -- a status, a dispel or a drain one of ours puts on a monster:
+-- Sleep, Slow, Stun, Dispel, a Lullaby, Light Shot, Nightmare, Sheep Song.
+-- Written as its own kind:"enfeeble" line, NEVER as a damage row: before this
+-- list one that landed was dropped and one that was resisted was a dmg-0 miss,
+-- which no reader could tell from a nuke that missed.
+--
+-- DECIDED BY THE ACTION'S ID, as healing is, before any message is looked at:
+-- the action must be on the enfeeble list (vx_enfeeble_ids.lua, generated
+-- from the server's spell and ability tables and scripts by
+-- dev/gen-enfeeble-ids.py), every entry of which can be aimed at an enemy and
+-- deals no damage. The message cannot decide it: a resisted Sleepga and a
+-- resisted Stone both answer 85. On a listed action the message says only
+-- whether it took effect:
+--
+--   E.Enfeebled below    took effect: written with hit=true
+--   E.Attempt above,     resisted, missed or no effect: written with hit=false
+--   or 156 JaNoEffect
+--   anything else        dropped
+--
+-- Never with `value`: here it is a status id, an amount of MP or TP drained,
+-- or a count of effects, not hit points. Ids and names are the server's
+-- xi.msg.basic (scripts/enum/msg.lua), which the enfeebling scripts send.
+E.Enfeebled = {
+    [84]  = true,   -- IS_PARALYZED_2        (Paralyze, blue magic's enfeebles)
+    [127] = true,   -- JA_ENFEEB_IS          (Light Shot, Dark Shot)
+    [144] = true,   -- ACC_EVA_DOWN          (Lunar Cry)
+    [159] = true,   -- SKILL_ERASE           (a pet move's dispel)
+    [225] = true,   -- SKILL_DRAIN_MP
+    [228] = true,   -- MAGIC_DRAIN_MP        (Aspir)
+    [230] = true,   -- MagicGainsEffect      (Slow's and Repose's own message)
+    [236] = true,   -- MAGIC_ENFEEB_IS       (<target> is <status>)
+    [237] = true,   -- MAGIC_ENFEEB          (<target> receives the effect of <status>)
+    [242] = true,   -- SKILL_ENFEEB_IS       (a pet move)
+    [243] = true,   -- SKILL_ENFEEB
+    [266] = true,   -- JA_GAIN_EFFECT        (Nightmare)
+    [267] = true,   -- JA_RECEIVES_EFFECT    (an area action's other targets)
+    [268] = true,   -- MAGIC_BURST_ENFEEB
+    [271] = true,   -- MAGIC_BURST_ENFEEB_IS
+    [275] = true,   --                       (Aspir's magic burst, spell_list.sql)
+    [277] = true,   -- TargetStatus
+    [278] = true,   -- TargetReceivesEffect
+    [320] = true,   -- JA_RECEIVES_EFFECT_2  (a pact's, Slowga)
+    [321] = true,   -- JA_REMOVE_EFFECT_2    (Dark Shot's dispel)
+    [329] = true,   -- MAGIC_ABSORB_STR
+    [330] = true,   -- MAGIC_ABSORB_DEX
+    [331] = true,   -- MAGIC_ABSORB_VIT
+    [332] = true,   -- MAGIC_ABSORB_AGI
+    [333] = true,   -- MAGIC_ABSORB_INT
+    [334] = true,   -- MAGIC_ABSORB_MND
+    [335] = true,   -- MAGIC_ABSORB_CHR
+    [341] = true,   -- MAGIC_ERASE           (Dispel, Magic Finale)
+    [343] = true,   -- TargetEffectDisappears (an area dispel's other targets)
+    [362] = true,   -- TP_REDUCED            (Feather Tickle)
+    [363] = true,   -- TargetTPReduced
+    [366] = true,   -- TargetMPDrained
+    [370] = true,   -- UsesSkillEffectDrained
+    [404] = true,   -- TargetEffectDrained
+    [430] = true,   -- MAGIC_STEAL           (Voracious Trunk)
+    [454] = true,   -- MAGIC_ABSORB_TP
+    [533] = true,   -- MAGIC_ABSORB_ACC
+    [737] = true,   -- MAGIC_EFFECT_DRAINED  (Deconstruction)
+}
+
+-- An ability's "no effect" that E.Attempt does not hold: a damage row never
+-- answers with it, so it is the enfeeble's alone.
+local JA_NO_EFFECT = 156
+
+local EnfeebleIds = require('vx_enfeeble_ids')
+
+local function enfeeble_list(category)
+    if category == E.Category.MAGIC then return EnfeebleIds.spells end
+    if category == E.Category.ABILITY then return EnfeebleIds.abilities end
+    if category == E.Category.PET_ABILITY then return EnfeebleIds.pets end
+    return nil
+end
+
+--- Is this action an enfeeble? Its list's name for it (what a pet's is
+--- called, since pets' abilities have no resource lookup), or nil. A job
+--- ability sent as a weaponskill is asked as the ability it is.
+function E.enfeeble(category, param)
+    local list = enfeeble_list(category)
+    return list and param and list[param] or nil
+end
+
+--- For a result of an enfeeble on a monster: true when it took effect, false
+--- when it was resisted, missed or had none, nil when it says neither, which
+--- drops it.
+function E.enfeebled(message)
+    if E.Enfeebled[message] then return true end
+    if E.Attempt[message] or message == JA_NO_EFFECT then return false end
+    return nil
 end
 
 E.Crit = {

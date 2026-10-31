@@ -44,6 +44,7 @@ fields are left out rather than written as `null`.
 | `addl` | An additional effect riding on a hit: an enspell, a drain, a Sneak Attack proc. |
 | `reaction` | Damage dealt back on an enemy's swing: a counter, retaliation or spikes. |
 | `heal` | HP restored to one target. |
+| `enfeeble` | An enfeeble on one monster: a Sleep, Slow, Stun, Dispel, Lullaby, Light Shot. |
 | `job` | A party member's job, written when it's first seen or when it changes. |
 
 ## Action lines
@@ -116,6 +117,28 @@ action lines, plus:
 A heal has no `dmg`, `hit`, `crit` or `burst`, so it can never be counted as
 damage by mistake. A Curaga on five people is five rows sharing one `use`.
 
+## Enfeeble lines
+
+`kind` is `enfeeble`. An action is an enfeeble when its id is in
+`vx_enfeeble_ids.lua`: spells, job abilities and pets' abilities that can be
+aimed at an enemy and deal no damage, taken from the server's own tables and
+scripts by `dev/gen-enfeeble-ids.py`. Dia, Bio and Drain deal damage, so they
+are action lines. An enfeeble is never written as an action line, whether it
+landed or not.
+
+They have the same `t`, `seq`, `use`, `actor`, `actorKind`, `action`,
+`actionId`, `target`, `targetKind`, `msg`, `owner` and `pet` fields as action
+lines, plus:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `hit` | boolean | `true` if it took effect, `false` if it was resisted, missed or had no effect (the monster was already asleep, or immune). |
+| `via` | string | `magic`, `ability` or `pet`. |
+
+An enfeeble has no `dmg`, `crit` or `burst`. A Sleepga on three monsters is
+three rows sharing one `use`. Only enfeebles on monsters are written: one
+aimed at your side is dropped.
+
 ## Job lines
 
 | Field | Type | Meaning |
@@ -135,4 +158,5 @@ damage by mistake. A Curaga on five people is five rows sharing one `use`.
 {"t":1760571004,"seq":2,"use":2,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","dmg":0,"hit":false,"crit":false,"burst":false,"msg":15}
 {"t":1760571009,"seq":1,"use":3,"kind":"ws","actor":"Hasaya","actorKind":"player","action":"Tachi: Gekko","actionId":151,"target":"Tiger","targetKind":"mob","dmg":1480,"hit":true,"crit":false,"burst":false,"msg":185}
 {"t":1760571009,"seq":2,"use":4,"kind":"skillchain","actor":"Hasaya","actorKind":"player","action":"Skillchain: Fragmentation","actionId":291,"target":"Tiger","targetKind":"mob","dmg":620,"hit":true,"crit":false,"burst":false,"msg":291}
+{"kind":"enfeeble","t":1760571011,"seq":1,"use":5,"via":"magic","actor":"Olivia","actorKind":"player","action":"Sleepga","actionId":273,"target":"Tiger","targetKind":"mob","hit":true,"msg":236}
 ```

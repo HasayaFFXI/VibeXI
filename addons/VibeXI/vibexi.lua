@@ -272,6 +272,64 @@ local function record_heal(act, actor, actor_kind, owner, pet_name, heal_name, v
     end
 end
 
+--- Write an enfeeble: one kind:"enfeeble" line per result on a target that
+--- is not one of ours.
+---
+--- Whether it took effect is the message's to say (E.enfeebled); a message
+--- that says neither is dropped. A result on one of ours is never written:
+--- a Lullaby a charmed member sings over the party is a debuff on our side,
+--- which the file does not hold. A target the client cannot resolve is
+--- written as `Unknown`, as a damage row's is, so the cast still counts.
+--- Proc trailers are not read: an enfeeble deals no damage to carry one.
+---
+--- ONE `use` FOR THE WHOLE ACTION, as a heal's: a Sleepga on three monsters
+--- is one cast.
+local enfeeble_row = {}
+
+local function record_enfeeble(act, category, actor, actor_kind, owner, pet_name, list_name, via, now)
+    local name = action_name(category, act.param, nil)
+    if string.sub(name, 1, 1) == '#' then name = list_name end
+
+    local f = enfeeble_row
+    f.t         = now
+    f.use       = nil
+    f.via       = via
+    f.actor     = actor.name
+    f.actorKind = actor_kind
+    f.action    = name
+    f.actionId  = act.param
+    f.owner     = owner
+    f.pet       = pet_name
+
+    for _, target in ipairs(act.targets) do
+        local tgt = Entity.by_id(target.id)
+        local tgt_name, tgt_kind = 'Unknown', 'other'
+        if tgt then
+            tgt_name = tgt.name
+            tgt_kind = Entity.kind(tgt)
+        end
+        if tgt_kind ~= 'player' and tgt_kind ~= 'pet' then
+            for _, res in ipairs(target.results) do
+                local took = E.enfeebled(res.message)
+                if took ~= nil then
+                    -- Minted on the first line written, so an action whose
+                    -- every result was dropped costs no id.
+                    if not f.use then
+                        S.use = S.use + 1
+                        f.use = S.use
+                    end
+                    f.seq        = next_seq(now)
+                    f.target     = tgt_name
+                    f.targetKind = tgt_kind
+                    f.hit        = took
+                    f.msg        = res.message
+                    Emit.write_enfeeble(f)
+                end
+            end
+        end
+    end
+end
+
 --- The first result in the packet, or nil when no target carries one.
 local function first_result(act)
     for _, target in ipairs(act.targets) do
@@ -337,6 +395,16 @@ local function record(act, actor, actor_kind, pet_owner, now)
     local heal_name, via = E.healing(act.category, act.param)
     if heal_name then
         record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
+        return
+    end
+
+    -- AN ENFEEBLE IS DECIDED THE SAME WAY, and never reaches the damage branch
+    -- either (see the ENFEEBLES block in vx_enums.lua): a Sleep is an enfeeble
+    -- whether it landed or was resisted. Asked of `category`, so a job ability
+    -- sent as a weaponskill (Tomahawk, Angon, Shadowbind) is asked as one.
+    local enfeeble_name = E.enfeeble(category, act.param)
+    if enfeeble_name then
+        record_enfeeble(act, category, actor, actor_kind, owner, pet_name, enfeeble_name, kind, now)
         return
     end
 

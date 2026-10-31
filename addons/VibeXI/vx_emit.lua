@@ -205,6 +205,35 @@ function M.write_heal(e)
     return M.write_raw(M.encode_heal(e))
 end
 
+--- Encode one enfeeble line: one monster's result of one enfeeble.
+---
+--- ITS OWN KIND, AND NO AMOUNT, for the reason a heal has its own: there is
+--- no `dmg`, so nothing summed as damage can be read from it. `hit` is
+--- whether it took effect on this target (see E.enfeebled).
+---
+--- `via` is the action's kind -- 'magic', 'ability' or 'pet' -- as a heal's is.
+--- `use` is one per ACTION, shared by every target: a Sleepga is one cast.
+function M.encode_enfeeble(e)
+    return '{"kind":"enfeeble","t":' .. num(e.t)
+        .. ',"seq":'         .. num(e.seq)
+        .. ',"use":'         .. num(e.use)
+        .. ',"via":"'        .. word(e.via) .. '"'
+        .. ',"actor":"'      .. esc(e.actor) .. '"'
+        .. ',"actorKind":"'  .. word(e.actorKind) .. '"'
+        .. ',"action":"'     .. esc(e.action) .. '"'
+        .. ',"actionId":'    .. num(e.actionId)
+        .. ',"target":"'     .. esc(e.target) .. '"'
+        .. ',"targetKind":"' .. word(e.targetKind) .. '"'
+        .. ',"hit":'         .. boolean(e.hit)
+        .. ',"msg":'         .. num(e.msg)
+        .. optional_tail(e)
+end
+
+--- Append one enfeeble line. Never throws; see M.write.
+function M.write_enfeeble(e)
+    return M.write_raw(M.encode_enfeeble(e))
+end
+
 -- ---------------------------------------------------------------- file
 
 --- Make sure a folder is there, creating it if need be.
@@ -330,7 +359,7 @@ function M.write(e)
     return ok
 end
 
---- Append a pre-built line verbatim: the job and heal lines encoded above.
+--- Append a pre-built line verbatim: the job, heal and enfeeble lines encoded above.
 function M.write_raw(line)
     return append(put_line, line)
 end
