@@ -28,6 +28,8 @@ For installing the addon and its settings, see the [README](README.md).
   their pets.
 - Damage your side deals back on an enemy's action: counters, retaliation and
   spikes.
+- Monsters your party or alliance killed, and deaths of anyone in your party
+  or alliance.
 - Damage dealt **to** your party is not recorded. Nothing is recorded while
   zoning.
 
@@ -45,6 +47,7 @@ fields are left out rather than written as `null`.
 | `reaction` | Damage dealt back on an enemy's swing: a counter, retaliation or spikes. |
 | `heal` | HP restored to one target. |
 | `enfeeble` | An enfeeble on one monster: a Sleep, Slow, Stun, Dispel, Lullaby, Light Shot. |
+| `death` | A monster your side killed, or a death in your party or alliance. |
 | `job` | A party member's job, written when it's first seen or when it changes. |
 
 ## Action lines
@@ -139,6 +142,48 @@ An enfeeble has no `dmg`, `crit` or `burst`. A Sleepga on three monsters is
 three rows sharing one `use`. Only enfeebles on monsters are written: one
 aimed at your side is dropped.
 
+## Death lines
+
+`kind` is `death`. Look at `targetKind` to tell a monster's death from a
+player's.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `t` | integer | When it happened, in Unix time. |
+| `seq` | integer | Order within the same second. |
+| `actor` | string | Optional. The killer. Left out when nothing landed the killing blow (`msg` 20). |
+| `actorKind` | string | Optional, present with `actor`. Same values as on action lines. |
+| `target` | string | Who died. |
+| `targetKind` | string | `mob` or `player`. |
+| `targetId` | integer | Monsters only. The monster's id. See below. |
+| `msg` | integer | `6` a monster was defeated, `97` a player was defeated, `20` either one fell with no killer. |
+| `owner`, `pet` | string | Optional. Present when the killer was a pet: its master's name and its own. |
+
+A death has no `dmg`, `hit` or `use`, so it is never counted as damage or as
+an attempt. To count kills of a monster, count its death lines.
+
+- **Which monster deaths are written.** Your party or alliance must have the
+  monster's claim. If something landed the killing blow, it must be one of
+  yours too: a party or alliance member, a trust, or a pet. A monster you
+  claimed but someone else finished isn't written.
+- **Which player deaths are written.** Anyone in your party or alliance,
+  whatever killed them. If the killer can't be identified, `actor` is
+  `Unknown`.
+- **Trusts and pets aren't included.** The game doesn't announce their deaths.
+- **Timing.** A monster's death line arrives about a second after the hit
+  that killed it, so it can come after a few more lines about other things.
+- **Range.** Like everything else, deaths are only seen within range of your
+  character.
+- **`targetId`** is the monster's id, the number other tools often show in
+  hex (`17195010` is `0x1066002`). It contains the zone (`0x066`, zone 102)
+  and the monster's slot in that zone (`0x002`). It names a **spawn point,
+  not a single life of the monster**: a monster that respawns comes back with
+  the same id, so two deaths with the same `targetId` are the same spawn
+  dying twice. Use it to tell apart monsters that share a name, or to
+  track one spawn. A few monsters created on the fly during events reuse ids
+  from a pool, so their ids don't carry across sessions. Players have no
+  `targetId`: their name already identifies them.
+
 ## Job lines
 
 | Field | Type | Meaning |
@@ -159,4 +204,5 @@ aimed at your side is dropped.
 {"t":1760571009,"seq":1,"use":3,"kind":"ws","actor":"Hasaya","actorKind":"player","action":"Tachi: Gekko","actionId":151,"target":"Tiger","targetKind":"mob","dmg":1480,"hit":true,"crit":false,"burst":false,"msg":185}
 {"t":1760571009,"seq":2,"use":4,"kind":"skillchain","actor":"Hasaya","actorKind":"player","action":"Skillchain: Fragmentation","actionId":291,"target":"Tiger","targetKind":"mob","dmg":620,"hit":true,"crit":false,"burst":false,"msg":291}
 {"kind":"enfeeble","t":1760571011,"seq":1,"use":5,"via":"magic","actor":"Olivia","actorKind":"player","action":"Sleepga","actionId":273,"target":"Tiger","targetKind":"mob","hit":true,"msg":236}
+{"kind":"death","t":1760571015,"seq":1,"actor":"Hasaya","actorKind":"player","target":"Tiger","targetKind":"mob","targetId":17195010,"msg":6}
 ```

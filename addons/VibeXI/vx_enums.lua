@@ -151,7 +151,7 @@ E.Damage = {
 --
 -- The react (spike) trailer is read too, but NOT here: its damage belongs to the
 -- entity being attacked rather than to the actor on the packet, so it goes
--- through E.SpikeReaction and record_reactions() with the two ends swapped. See
+-- through E.Reaction and record_reactions() with the two ends swapped. See
 -- the REACTION DAMAGE block further down.
 
 -- Tier 2 -- the actor acted and dealt nothing. Emitted with dmg 0 and
@@ -383,6 +383,33 @@ E.Message = {
 }
 
 -- ============================================================================
+-- DEATHS, from the battle message packet 0x029. The server announces every
+-- death with one of three messages (CMobEntity::Die and CCharEntity::Die):
+--
+--   6   DefeatsTarget      a monster died; the actor is its last attacker
+--   97  PlayerDefeatedBy   a player died; the actor is their last attacker
+--   20  FallsToGround      either died with no last attacker; actor and
+--                          target are both the one who died
+--
+-- 20 does not say WHO died, so the target's kind decides it. Trusts and pets
+-- are never announced: their Die sends no message at all.
+--
+-- A monster's message is sent about a second after the blow that killed it
+-- (m_DropItemTime), while the corpse is still in the entity table.
+E.Death = {
+    DEFEATS  = 6,
+    DEFEATED = 97,
+    FALLS    = 20,
+}
+
+-- The same three, as a set: the one question asked of every 0x029.
+E.Deaths = {
+    [E.Death.DEFEATS]  = true,
+    [E.Death.DEFEATED] = true,
+    [E.Death.FALLS]    = true,
+}
+
+-- ============================================================================
 -- JOB ABILITIES ON THE WEAPONSKILL CATEGORY -- consulted only with Horizon=1
 -- in vibexi.ini.
 --
@@ -449,24 +476,21 @@ end
 -- Us swinging into a MONSTER's spikes inverts to the monster damaging us, and
 -- is dropped by the same classify() test every other bit of monster damage is.
 --
--- 33 IS IN E.Attempt AS WELL, and that is not a contradiction: the two readings
--- never apply to the same packet. On a packet WE are the actor of, 33 means our
--- swing was countered and dealt nothing -- a Tier 2 attempt, and the counter
--- damage in res.value is the monster's. On a packet we are not the actor of, 33
--- is the counter OUR side landed. Same id, opposite ends, decided by who swung.
---
--- TWO SLOTS, TWO TABLES. Counter and Retaliation replace the swing's own
--- outcome and arrive in the MAIN message with the damage in res.value. Spikes
--- fire in addition to the swing, so they arrive in the REACT (spike) trailer
--- with the damage in res.react_value. Keeping them apart is what stops a main-slot 44 from
+-- ONE SLOT. All three arrive in the REACT (spike) trailer, with the damage in
+-- res.react_value -- never in the main message. LSB writes spikesMessage and
+-- spikesParam for each: a Retaliation leaves the swing as an ordinary hit on
+-- the main slot, and a Counter blanks the main message to 0. Reading 33 or 536
+-- off the main slot finds nothing, which is how every Retaliation and Counter
+-- used to be dropped. Reading only the trailer also stops a main-slot 44 from
 -- being read as spike damage on the strength of the number alone.
+--
+-- 33 IS IN E.Attempt AS WELL, for the main slot only, where LSB never puts it:
+-- a swing of ours that was countered arrives with main message 0. The entry is
+-- inert there and harmless, and this table never looks at the main slot.
 E.Reaction = {
     [33]  = 'Counter',
+    [44]  = 'Spikes',
     [536] = 'Retaliation',
-}
-
-E.SpikeReaction = {
-    [44] = 'Spikes',
 }
 
 -- ============================================================================

@@ -2,7 +2,8 @@
 --
 -- Watches incoming action packets, resolves the ids in them against the
 -- client's own entity table, and appends one JSON line per (action, target) to
--- a local file. That file is the only output.
+-- a local file -- plus one per death the battle messages announce, of a
+-- monster we killed or of one of ours. That file is the only output.
 --
 -- Horizon Approved Addon -- ticket addon-0032, approved by Aerec 2026-09-04.
 -- Approval covers this addon as described below: read-only, no outgoing
@@ -43,7 +44,7 @@ local HORIZON = Config.horizon
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '1.1.1'
+addon.version = '1.2.0'
 
 
 -- ---------------------------------------------------------------- state
@@ -658,28 +659,87 @@ local function record_reactions(act, attacker, atk_kind, now)
             end
 
             for _, res in ipairs(target.results) do
-                -- Main slot: the counter or the retaliation that stopped this
-                -- swing, with its damage in res.value.
-                local reaction = E.Reaction[res.message]
-                if reaction then
-                    emit_reaction(now, defender, d_kind, attacker, atk_kind,
-                                  owner, pet_name, reaction, res.message, res.value)
-                end
-
-                -- React (spike) trailer: fires in ADDITION to the swing, so it
-                -- is read whatever the main message said, and its damage is in
+                -- Counter, Retaliation and Spikes all ride the react (spike)
+                -- trailer, whatever the main message said, with the damage in
                 -- res.react_value rather than res.value.
                 if res.has_react and res.react_message then
-                    local spike = E.SpikeReaction[res.react_message]
-                    if spike then
+                    local reaction = E.Reaction[res.react_message]
+                    if reaction then
                         emit_reaction(now, defender, d_kind, attacker, atk_kind,
-                                      owner, pet_name, spike, res.react_message,
+                                      owner, pet_name, reaction, res.react_message,
                                       res.react_value)
                     end
                 end
             end
         end
     end
+end
+
+--- Write a death: one kind:"death" line, from a battle message E.Deaths
+--- names (see the DEATHS block in vx_enums.lua).
+---
+--- A MONSTER's death is ours only when our alliance holds its claim AND,
+--- when it had a killer, that killer is ours: a party member, a trust, or a
+--- pet one of them owns. Either alone is not enough -- a mob we claimed and
+--- a stranger finished is not our kill, and nor is one we finished on
+--- somebody else's claim. A mob with no killer (20) is ours by the claim.
+---
+--- A PLAYER's death is written when they are in the party or alliance,
+--- whoever killed them. The killer is named whatever it is, `Unknown` if it
+--- is gone.
+---
+--- Anything else is dropped: a 6 on something not a monster, a 97 on
+--- something not a player, a 20 on an NPC or a pet.
+local death_row = {}
+
+local function record_death(actor_id, target_id, message, now)
+    local tgt = Entity.by_id(target_id)
+    if not tgt then return end
+    local tgt_kind = Entity.kind(tgt)
+
+    local d = death_row
+    d.actor     = nil
+    d.actorKind = nil
+    d.owner     = nil
+    d.pet       = nil
+    d.targetId  = nil
+
+    if tgt_kind == 'mob' and message ~= E.Death.DEFEATED then
+        if not Entity.claimed_by_party(tgt) then return end
+        if message == E.Death.DEFEATS then
+            local killer = Entity.by_id(actor_id)
+            if not killer then return end
+            local ours, k_kind, k_owner = classify(killer)
+            if not ours then return end
+            d.actor     = killer.name
+            d.actorKind = k_kind
+            if k_owner then
+                d.owner = k_owner.name
+                d.pet   = killer.name
+            end
+        end
+        d.targetId = target_id
+    elseif tgt_kind == 'player' and message ~= E.Death.DEFEATS then
+        if not Entity.in_party(tgt.name) then return end
+        if message == E.Death.DEFEATED then
+            local killer = Entity.by_id(actor_id)
+            d.actor     = 'Unknown'
+            d.actorKind = 'other'
+            if killer then
+                d.actor     = killer.name
+                d.actorKind = Entity.kind(killer)
+            end
+        end
+    else
+        return
+    end
+
+    d.t          = now
+    d.seq        = next_seq(now)
+    d.target     = tgt.name
+    d.targetKind = tgt_kind
+    d.msg        = message
+    Emit.write_death(d)
 end
 
 -- ---------------------------------------------------------------- events
@@ -727,7 +787,18 @@ local function on_packet_in(p)
         return
     end
 
-    if id ~= E.Packet.ACTION then return end
+    -- DEATHS. A battle message is one of dozens of things -- out of range, an
+    -- effect wearing off -- and only three are read, so the message id is
+    -- asked before anything else, the duplicate check included. One that
+    -- gets past goes through the same gates as an action below.
+    local death_actor, death_target, death_msg
+    if id == E.Packet.MESSAGE then
+        death_actor, death_target, death_msg = Action.message(data)
+        if not E.Deaths[death_msg] then return end
+    elseif id ~= E.Packet.ACTION then
+        return
+    end
+
     if not injected and is_duplicate(data) then
         S.dupes = S.dupes + 1
         return
@@ -749,6 +820,11 @@ local function on_packet_in(p)
     local job_changes = Entity.refresh_party(now)
     if job_changes then record_jobs(job_changes, now) end
 
+    if death_msg then
+        record_death(death_actor, death_target, death_msg, now)
+        return
+    end
+
     -- THE ACTOR FIRST, THE PACKET SECOND. Most action packets in a busy zone
     -- are a stranger's or a monster's, and all that is ever wanted from one of
     -- those is a reaction our side dealt back -- which a walk over the bits
@@ -764,7 +840,7 @@ local function on_packet_in(p)
     local ours, actor_kind, pet_owner = classify(actor)
     -- The one reason a monster's own packet is still looked at: the damage
     -- our side dealt back on it.
-    if not ours and not Action.has_reaction(data, E.Reaction, E.SpikeReaction) then
+    if not ours and not Action.has_reaction(data, E.Reaction) then
         return
     end
 

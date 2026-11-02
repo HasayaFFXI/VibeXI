@@ -234,6 +234,38 @@ function M.write_enfeeble(e)
     return M.write_raw(M.encode_enfeeble(e))
 end
 
+--- Encode one death line: a monster our side killed, or one of ours who died.
+---
+--- ITS OWN KIND, AND NO AMOUNT: no `dmg`, `hit` or `use`, so nothing that sums
+--- damage or counts attempts can read it as either.
+---
+--- `actor` is the killer, and is omitted with actorKind when there was none
+--- (message 20). `targetId` is the monster's server id, and is omitted for a
+--- player: theirs is their character id, which the name already stands in for.
+function M.encode_death(e)
+    local killer = ''
+    if e.actor then
+        killer = ',"actor":"' .. esc(e.actor) .. '"'
+              .. ',"actorKind":"' .. word(e.actorKind) .. '"'
+    end
+    local id = ''
+    if e.targetId then id = ',"targetId":' .. num(e.targetId) end
+
+    return '{"kind":"death","t":' .. num(e.t)
+        .. ',"seq":'         .. num(e.seq)
+        .. killer
+        .. ',"target":"'     .. esc(e.target) .. '"'
+        .. ',"targetKind":"' .. word(e.targetKind) .. '"'
+        .. id
+        .. ',"msg":'         .. num(e.msg)
+        .. optional_tail(e)
+end
+
+--- Append one death line. Never throws; see M.write.
+function M.write_death(e)
+    return M.write_raw(M.encode_death(e))
+end
+
 -- ---------------------------------------------------------------- file
 
 --- Make sure a folder is there, creating it if need be.
@@ -359,7 +391,7 @@ function M.write(e)
     return ok
 end
 
---- Append a pre-built line verbatim: the job, heal and enfeeble lines encoded above.
+--- Append a pre-built line verbatim: the job, heal, enfeeble and death lines encoded above.
 function M.write_raw(line)
     return append(put_line, line)
 end

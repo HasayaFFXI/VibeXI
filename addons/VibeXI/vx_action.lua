@@ -64,14 +64,14 @@ function M.actor_id(data)
     return b1 + b2 * 0x100 + b3 * 0x10000 + b4 * 0x1000000
 end
 
---- Does any result carry a reaction? True when a result's main message is a
---- key of `main`, or its react (spike) trailer's message is a key of `spike`.
+--- Does any result carry a reaction? True when a result's react (spike)
+--- trailer message is a key of `reactions`.
 ---
---- A walk over the bits that decodes those two messages and steps over the
+--- A walk over the bits that decodes that one message and steps over the
 --- rest, so it builds no tables at all. It runs for every action packet whose
 --- actor is not ours, and nearly all of them carry no reaction. The same
 --- rails as parse(): a packet that runs off its end answers false.
-function M.has_reaction(data, main, spike)
+function M.has_reaction(data, reactions)
     if not data or #data < 10 then return false end
 
     local r = BR.new(data)
@@ -89,15 +89,13 @@ function M.has_reaction(data, main, spike)
 
         for _ = 1, count do
             if BR.overrun(r) then return false end
-            BR.skip(r, 44)                -- reaction 3 .. value 17
-            if main[BR.read(r, 10)] then return true end
-            BR.skip(r, 31)                -- unknown
+            BR.skip(r, 85)                -- reaction 3 .. message 10, unknown 31
             if BR.read(r, 1) > 0 then
                 BR.skip(r, 37)            -- proc trailer: kind 6, info 4, value 17, message 10
             end
             if BR.read(r, 1) > 0 then
                 BR.skip(r, 24)            -- react kind 6, info 4, value 14
-                if spike[BR.read(r, 10)] then return true end
+                if reactions[BR.read(r, 10)] then return true end
             end
         end
     end
@@ -165,6 +163,35 @@ function M.parse(data)
     end
 
     return act
+end
+
+local function u16(data, i)
+    local b1, b2 = string.byte(data, i, i + 1)
+    return b1 + b2 * 0x100
+end
+
+local function u32(data, i)
+    local b1, b2, b3, b4 = string.byte(data, i, i + 3)
+    return b1 + b2 * 0x100 + b3 * 0x10000 + b4 * 0x1000000
+end
+
+--- Server packet 0x0029, a battle message: actor id, target id and message
+--- id, as three values rather than a table. nil for a packet too short to
+--- hold them.
+---
+--- Layout from GP_SERV_COMMAND_BATTLE_MESSAGE in the server source. After
+--- the 4-byte header, all byte-aligned and little-endian, so no reader:
+---
+---   bytes  5-8    actor_id      UniqueNoCas
+---   bytes  9-12   target_id     UniqueNoTar
+---   bytes 13-20   data, data2   (not read: a death sends both as 0)
+---   bytes 21-24   actor and target index   (not read)
+---   bytes 25-26   message       MessageNum
+---
+--- One byte earlier than 0x028's actor_id, which has a byte before it.
+function M.message(data)
+    if not data or #data < 26 then return nil end
+    return u32(data, 5), u32(data, 9), u16(data, 25)
 end
 
 return M
