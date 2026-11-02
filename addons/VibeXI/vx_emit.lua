@@ -205,6 +205,67 @@ function M.write_heal(e)
     return M.write_raw(M.encode_heal(e))
 end
 
+--- Encode one enfeeble line: one monster's result of one enfeeble.
+---
+--- ITS OWN KIND, AND NO AMOUNT, for the reason a heal has its own: there is
+--- no `dmg`, so nothing summed as damage can be read from it. `hit` is
+--- whether it took effect on this target (see E.enfeebled).
+---
+--- `via` is the action's kind -- 'magic', 'ability' or 'pet' -- as a heal's is.
+--- `use` is one per ACTION, shared by every target: a Sleepga is one cast.
+function M.encode_enfeeble(e)
+    return '{"kind":"enfeeble","t":' .. num(e.t)
+        .. ',"seq":'         .. num(e.seq)
+        .. ',"use":'         .. num(e.use)
+        .. ',"via":"'        .. word(e.via) .. '"'
+        .. ',"actor":"'      .. esc(e.actor) .. '"'
+        .. ',"actorKind":"'  .. word(e.actorKind) .. '"'
+        .. ',"action":"'     .. esc(e.action) .. '"'
+        .. ',"actionId":'    .. num(e.actionId)
+        .. ',"target":"'     .. esc(e.target) .. '"'
+        .. ',"targetKind":"' .. word(e.targetKind) .. '"'
+        .. ',"hit":'         .. boolean(e.hit)
+        .. ',"msg":'         .. num(e.msg)
+        .. optional_tail(e)
+end
+
+--- Append one enfeeble line. Never throws; see M.write.
+function M.write_enfeeble(e)
+    return M.write_raw(M.encode_enfeeble(e))
+end
+
+--- Encode one death line: a monster our side killed, or one of ours who died.
+---
+--- ITS OWN KIND, AND NO AMOUNT: no `dmg`, `hit` or `use`, so nothing that sums
+--- damage or counts attempts can read it as either.
+---
+--- `actor` is the killer, and is omitted with actorKind when there was none
+--- (message 20). `targetId` is the monster's server id, and is omitted for a
+--- player: theirs is their character id, which the name already stands in for.
+function M.encode_death(e)
+    local killer = ''
+    if e.actor then
+        killer = ',"actor":"' .. esc(e.actor) .. '"'
+              .. ',"actorKind":"' .. word(e.actorKind) .. '"'
+    end
+    local id = ''
+    if e.targetId then id = ',"targetId":' .. num(e.targetId) end
+
+    return '{"kind":"death","t":' .. num(e.t)
+        .. ',"seq":'         .. num(e.seq)
+        .. killer
+        .. ',"target":"'     .. esc(e.target) .. '"'
+        .. ',"targetKind":"' .. word(e.targetKind) .. '"'
+        .. id
+        .. ',"msg":'         .. num(e.msg)
+        .. optional_tail(e)
+end
+
+--- Append one death line. Never throws; see M.write.
+function M.write_death(e)
+    return M.write_raw(M.encode_death(e))
+end
+
 -- ---------------------------------------------------------------- file
 
 --- Make sure a folder is there, creating it if need be.
@@ -330,7 +391,7 @@ function M.write(e)
     return ok
 end
 
---- Append a pre-built line verbatim: the job and heal lines encoded above.
+--- Append a pre-built line verbatim: the job, heal, enfeeble and death lines encoded above.
 function M.write_raw(line)
     return append(put_line, line)
 end

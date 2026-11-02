@@ -151,7 +151,7 @@ E.Damage = {
 --
 -- The react (spike) trailer is read too, but NOT here: its damage belongs to the
 -- entity being attacked rather than to the actor on the packet, so it goes
--- through E.SpikeReaction and record_reactions() with the two ends swapped. See
+-- through E.Reaction and record_reactions() with the two ends swapped. See
 -- the REACTION DAMAGE block further down.
 
 -- Tier 2 -- the actor acted and dealt nothing. Emitted with dmg 0 and
@@ -206,7 +206,9 @@ E.Attempt = {
 --
 --   ENFEEBLES, STATUS -- 236 (<target> is <status>), 237 and 267 (receives
 --   the effect of), and every message of E.Support below on a target that
---   is not one of ours. A buff or a removal that lands on one of ours is
+--   is not one of ours. An enfeeble one of ours puts on a monster is written
+--   when its action is on the enfeeble list, as its own kind:"enfeeble" line:
+--   see E.enfeeble. A buff or a removal that lands on one of ours is
 --   written when its action is on the support list: see E.support.
 --
 --   HEALS -- 7, 24, 102, 103 (recovers HP) -- stay out of BOTH tables, but they
@@ -276,6 +278,99 @@ function E.support_name(category, param)
     return list and param and list[param] or nil
 end
 
+-- ENFEEBLES -- a status, a dispel or a drain one of ours puts on a monster:
+-- Sleep, Slow, Stun, Dispel, a Lullaby, Light Shot, Nightmare, Sheep Song.
+-- Written as its own kind:"enfeeble" line, NEVER as a damage row: before this
+-- list one that landed was dropped and one that was resisted was a dmg-0 miss,
+-- which no reader could tell from a nuke that missed.
+--
+-- DECIDED BY THE ACTION'S ID, as healing is, before any message is looked at:
+-- the action must be on the enfeeble list (vx_enfeeble_ids.lua, generated
+-- from the server's spell and ability tables and scripts by
+-- dev/gen-enfeeble-ids.py), every entry of which can be aimed at an enemy and
+-- deals no damage. The message cannot decide it: a resisted Sleepga and a
+-- resisted Stone both answer 85. On a listed action the message says only
+-- whether it took effect:
+--
+--   E.Enfeebled below    took effect: written with hit=true
+--   E.Attempt above,     resisted, missed or no effect: written with hit=false
+--   or 156 JaNoEffect
+--   anything else        dropped
+--
+-- Never with `value`: here it is a status id, an amount of MP or TP drained,
+-- or a count of effects, not hit points. Ids and names are the server's
+-- xi.msg.basic (scripts/enum/msg.lua), which the enfeebling scripts send.
+E.Enfeebled = {
+    [84]  = true,   -- IS_PARALYZED_2        (Paralyze, blue magic's enfeebles)
+    [127] = true,   -- JA_ENFEEB_IS          (Light Shot, Dark Shot)
+    [144] = true,   -- ACC_EVA_DOWN          (Lunar Cry)
+    [159] = true,   -- SKILL_ERASE           (a pet move's dispel)
+    [225] = true,   -- SKILL_DRAIN_MP
+    [228] = true,   -- MAGIC_DRAIN_MP        (Aspir)
+    [230] = true,   -- MagicGainsEffect      (Slow's and Repose's own message)
+    [236] = true,   -- MAGIC_ENFEEB_IS       (<target> is <status>)
+    [237] = true,   -- MAGIC_ENFEEB          (<target> receives the effect of <status>)
+    [242] = true,   -- SKILL_ENFEEB_IS       (a pet move)
+    [243] = true,   -- SKILL_ENFEEB
+    [266] = true,   -- JA_GAIN_EFFECT        (Nightmare)
+    [267] = true,   -- JA_RECEIVES_EFFECT    (an area action's other targets)
+    [268] = true,   -- MAGIC_BURST_ENFEEB
+    [271] = true,   -- MAGIC_BURST_ENFEEB_IS
+    [275] = true,   --                       (Aspir's magic burst, spell_list.sql)
+    [277] = true,   -- TargetStatus
+    [278] = true,   -- TargetReceivesEffect
+    [320] = true,   -- JA_RECEIVES_EFFECT_2  (a pact's, Slowga)
+    [321] = true,   -- JA_REMOVE_EFFECT_2    (Dark Shot's dispel)
+    [329] = true,   -- MAGIC_ABSORB_STR
+    [330] = true,   -- MAGIC_ABSORB_DEX
+    [331] = true,   -- MAGIC_ABSORB_VIT
+    [332] = true,   -- MAGIC_ABSORB_AGI
+    [333] = true,   -- MAGIC_ABSORB_INT
+    [334] = true,   -- MAGIC_ABSORB_MND
+    [335] = true,   -- MAGIC_ABSORB_CHR
+    [341] = true,   -- MAGIC_ERASE           (Dispel, Magic Finale)
+    [343] = true,   -- TargetEffectDisappears (an area dispel's other targets)
+    [362] = true,   -- TP_REDUCED            (Feather Tickle)
+    [363] = true,   -- TargetTPReduced
+    [366] = true,   -- TargetMPDrained
+    [370] = true,   -- UsesSkillEffectDrained
+    [404] = true,   -- TargetEffectDrained
+    [430] = true,   -- MAGIC_STEAL           (Voracious Trunk)
+    [454] = true,   -- MAGIC_ABSORB_TP
+    [533] = true,   -- MAGIC_ABSORB_ACC
+    [737] = true,   -- MAGIC_EFFECT_DRAINED  (Deconstruction)
+}
+
+-- An ability's "no effect" that E.Attempt does not hold: a damage row never
+-- answers with it, so it is the enfeeble's alone.
+local JA_NO_EFFECT = 156
+
+local EnfeebleIds = require('vx_enfeeble_ids')
+
+local function enfeeble_list(category)
+    if category == E.Category.MAGIC then return EnfeebleIds.spells end
+    if category == E.Category.ABILITY then return EnfeebleIds.abilities end
+    if category == E.Category.PET_ABILITY then return EnfeebleIds.pets end
+    return nil
+end
+
+--- Is this action an enfeeble? Its list's name for it (what a pet's is
+--- called, since pets' abilities have no resource lookup), or nil. A job
+--- ability sent as a weaponskill is asked as the ability it is.
+function E.enfeeble(category, param)
+    local list = enfeeble_list(category)
+    return list and param and list[param] or nil
+end
+
+--- For a result of an enfeeble on a monster: true when it took effect, false
+--- when it was resisted, missed or had none, nil when it says neither, which
+--- drops it.
+function E.enfeebled(message)
+    if E.Enfeebled[message] then return true end
+    if E.Attempt[message] or message == JA_NO_EFFECT then return false end
+    return nil
+end
+
 E.Crit = {
     [67]  = true,   -- AttackCrit
     [353] = true,   -- RangedAttackCrit
@@ -285,6 +380,33 @@ E.Message = {
     BURST     = 252,    -- MagicBurstDamage
     WS_DAMAGE = 185,    -- UsesSkillTakesDamage
     WS_MISS   = 188,    -- UsesSkillMisses
+}
+
+-- ============================================================================
+-- DEATHS, from the battle message packet 0x029. The server announces every
+-- death with one of three messages (CMobEntity::Die and CCharEntity::Die):
+--
+--   6   DefeatsTarget      a monster died; the actor is its last attacker
+--   97  PlayerDefeatedBy   a player died; the actor is their last attacker
+--   20  FallsToGround      either died with no last attacker; actor and
+--                          target are both the one who died
+--
+-- 20 does not say WHO died, so the target's kind decides it. Trusts and pets
+-- are never announced: their Die sends no message at all.
+--
+-- A monster's message is sent about a second after the blow that killed it
+-- (m_DropItemTime), while the corpse is still in the entity table.
+E.Death = {
+    DEFEATS  = 6,
+    DEFEATED = 97,
+    FALLS    = 20,
+}
+
+-- The same three, as a set: the one question asked of every 0x029.
+E.Deaths = {
+    [E.Death.DEFEATS]  = true,
+    [E.Death.DEFEATED] = true,
+    [E.Death.FALLS]    = true,
 }
 
 -- ============================================================================
@@ -354,24 +476,21 @@ end
 -- Us swinging into a MONSTER's spikes inverts to the monster damaging us, and
 -- is dropped by the same classify() test every other bit of monster damage is.
 --
--- 33 IS IN E.Attempt AS WELL, and that is not a contradiction: the two readings
--- never apply to the same packet. On a packet WE are the actor of, 33 means our
--- swing was countered and dealt nothing -- a Tier 2 attempt, and the counter
--- damage in res.value is the monster's. On a packet we are not the actor of, 33
--- is the counter OUR side landed. Same id, opposite ends, decided by who swung.
---
--- TWO SLOTS, TWO TABLES. Counter and Retaliation replace the swing's own
--- outcome and arrive in the MAIN message with the damage in res.value. Spikes
--- fire in addition to the swing, so they arrive in the REACT (spike) trailer
--- with the damage in res.react_value. Keeping them apart is what stops a main-slot 44 from
+-- ONE SLOT. All three arrive in the REACT (spike) trailer, with the damage in
+-- res.react_value -- never in the main message. LSB writes spikesMessage and
+-- spikesParam for each: a Retaliation leaves the swing as an ordinary hit on
+-- the main slot, and a Counter blanks the main message to 0. Reading 33 or 536
+-- off the main slot finds nothing, which is how every Retaliation and Counter
+-- used to be dropped. Reading only the trailer also stops a main-slot 44 from
 -- being read as spike damage on the strength of the number alone.
+--
+-- 33 IS IN E.Attempt AS WELL, for the main slot only, where LSB never puts it:
+-- a swing of ours that was countered arrives with main message 0. The entry is
+-- inert there and harmless, and this table never looks at the main slot.
 E.Reaction = {
     [33]  = 'Counter',
+    [44]  = 'Spikes',
     [536] = 'Retaliation',
-}
-
-E.SpikeReaction = {
-    [44] = 'Spikes',
 }
 
 -- ============================================================================

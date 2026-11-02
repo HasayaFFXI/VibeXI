@@ -21,6 +21,8 @@ M.party = {}
 -- The entity index of each of those members, from the same pass: the short
 -- list M.pet_owner searches instead of the party table's eighteen slots.
 M.member_index = {}
+-- And the server id of each, for M.claimed_by_party.
+M.member_ids = {}
 M.party_stamp = 0
 M.party_dirty = true         -- read the table on the first action, not 3s in
 local PARTY_TTL = 3          -- seconds
@@ -248,6 +250,7 @@ function M.refresh_party(now, force)
 
     local fresh = {}
     local indices = {}
+    local ids = {}
     local changed = nil
     for slot = 0, 17 do
         if pt:GetMemberIsActive(slot) == 1 then
@@ -256,6 +259,8 @@ function M.refresh_party(now, force)
                 fresh[name] = true
                 local index = pt:GetMemberTargetIndex(slot)
                 if index and index > 0 then indices[#indices + 1] = index end
+                local id = pt:GetMemberServerId(slot)
+                if id and id > 0 then ids[#ids + 1] = id end
                 local rec = M.note_job(name,
                     pt:GetMemberMainJob(slot),  pt:GetMemberMainJobLevel(slot),
                     pt:GetMemberSubJob(slot),   pt:GetMemberSubJobLevel(slot))
@@ -268,6 +273,7 @@ function M.refresh_party(now, force)
     end
     M.party = fresh
     M.member_index = indices
+    M.member_ids = ids
     return changed
 end
 
@@ -302,6 +308,36 @@ function M.pet_owner(pet)
         end
     end
     return nil
+end
+
+--- Does a party or alliance member hold this entity's claim?
+---
+--- Ashita's entity.h: the claim's LOW WORD is the claimer's server id and the
+--- high word a 0/1 flag, and a dead entity keeps its last claim -- which is
+--- what lets a death be asked this after the fact. So the low 16 bits of both
+--- sides are compared. Were the whole value the id instead, the comparison
+--- would still hold; it only fails if two of the 18 members share their low
+--- 16 bits.
+---
+--- The claim belongs to one character, and any member of the alliance holding
+--- it is the alliance holding it. A pet's or trust's blows claim for its
+--- master, who is a member.
+function M.claimed_by_party(ent)
+    if not ent or not ent.index then return false end
+
+    local em = entity_manager()
+    if not em then return false end
+
+    local claim = em:GetClaimStatus(ent.index)
+    if not claim then return false end
+    local low = claim % 0x10000
+    if low == 0 then return false end
+
+    local ids = M.member_ids
+    for i = 1, #ids do
+        if ids[i] % 0x10000 == low then return true end
+    end
+    return false
 end
 
 --- Our own character's name, used to name the output file.
