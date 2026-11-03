@@ -249,8 +249,9 @@ end
 --- ITS OWN KIND, AND NO AMOUNT: no `dmg`, `hit` or `use`, so nothing that sums
 --- damage or counts attempts can read it as either.
 ---
---- `actor` is the killer, and is omitted with actorKind when there was none
---- (message 20). `targetId` is the monster's server id, and is omitted for a
+--- `actor` is the killer of a monster, and is omitted with actorKind when
+--- there was none (message 20) and on every player's death, which never
+--- names its killer. `targetId` is the monster's server id, and is omitted for a
 --- player: theirs is their character id, which the name already stands in for.
 function M.encode_death(e)
     local killer = ''

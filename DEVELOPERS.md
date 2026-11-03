@@ -157,13 +157,13 @@ player's.
 |---|---|---|
 | `t` | integer | When it happened, in Unix time. |
 | `seq` | integer | Order within the same second. |
-| `actor` | string | Optional. The killer. Left out when nothing landed the killing blow (`msg` 20). |
+| `actor` | string | Optional. Who killed the monster, always one of your side. Left out when nothing landed the killing blow (`msg` 20), and always left out on a player's death. |
 | `actorKind` | string | Optional, present with `actor`. Same values as on action lines. |
 | `target` | string | Who died. |
 | `targetKind` | string | `mob` or `player`. |
 | `targetId` | integer | Monsters only. The monster's id. See below. |
 | `msg` | integer | `6` a monster was defeated, `97` a player was defeated, `20` either one fell with no killer. |
-| `owner`, `pet` | string | Optional. Present when the killer was a pet: its master's name and its own. |
+| `owner`, `pet` | string | Optional. Present when a monster's killer was a pet: its master's name and its own. |
 
 A death has no `dmg`, `hit` or `use`, so it is never counted as damage or as
 an attempt. To count kills of a monster, count its death lines.
@@ -173,8 +173,9 @@ an attempt. To count kills of a monster, count its death lines.
   yours too: a party or alliance member, a trust, or a pet. A monster you
   claimed but someone else finished isn't written.
 - **Which player deaths are written.** Anyone in your party or alliance,
-  whatever killed them. If the killer can't be identified, `actor` is
-  `Unknown`.
+  whatever killed them. The line says only who died: there is no `actor`,
+  because what a monster does to your party isn't recorded, its killing blow
+  included.
 - **Trusts and pets aren't included.** The game doesn't announce their deaths.
 - **Timing.** A monster's death line arrives about a second after the hit
   that killed it, so it can come after a few more lines about other things.

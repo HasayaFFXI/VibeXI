@@ -690,9 +690,9 @@ end
 --- a stranger finished is not our kill, and nor is one we finished on
 --- somebody else's claim. A mob with no killer (20) is ours by the claim.
 ---
---- A PLAYER's death is written when they are in the party or alliance,
---- whoever killed them. The killer is named whatever it is, `Unknown` if it
---- is gone.
+--- A PLAYER's death is written when they are in the party or alliance, and
+--- says only who died. The killer is never named: what a monster did to our
+--- side is not recorded, and its killing blow is no exception.
 ---
 --- Anything else is dropped: a 6 on something not a monster, a 97 on
 --- something not a player, a 20 on an NPC or a pet.
@@ -727,15 +727,6 @@ local function record_death(actor_id, target_id, message, now)
         d.targetId = target_id
     elseif tgt_kind == 'player' and message ~= E.Death.DEFEATS then
         if not Entity.in_party(tgt.name) then return end
-        if message == E.Death.DEFEATED then
-            local killer = Entity.by_id(actor_id)
-            d.actor     = 'Unknown'
-            d.actorKind = 'other'
-            if killer then
-                d.actor     = killer.name
-                d.actorKind = Entity.kind(killer)
-            end
-        end
     else
         return
     end
