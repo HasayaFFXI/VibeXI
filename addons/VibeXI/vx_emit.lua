@@ -183,6 +183,22 @@ function M.write_job(e)
     return M.write_raw(M.encode_job(e))
 end
 
+--- Encode the meta line: which build of the addon wrote this file, and when
+--- that build loaded.
+---
+--- THE FILE'S FIRST LINE, written once per load ahead of everything else, so
+--- a reader can check `version` before it reads a single event and refuse, or
+--- warn about, a file from a build older than the one it was written for.
+function M.encode_meta(e)
+    return '{"kind":"meta","t":' .. num(e.t)
+        .. ',"version":"'        .. esc(e.version) .. '"}'
+end
+
+--- Append the meta line. Never throws; see M.write.
+function M.write_meta(e)
+    return M.write_raw(M.encode_meta(e))
+end
+
 --- Encode one healing line: one target's result of one heal.
 ---
 --- ITS OWN KIND AND ITS OWN AMOUNT FIELD, and that is the safety of it. A heal

@@ -49,6 +49,26 @@ fields are left out rather than written as `null`.
 | `enfeeble` | An enfeeble on one monster: a Sleep, Slow, Stun, Dispel, Lullaby, Light Shot. |
 | `death` | A monster your side killed, or a death in your party or alliance. |
 | `job` | A party member's job, written when it's first seen or when it changes. |
+| `meta` | Which version of VibeXI wrote the file, and when it loaded. Always the first line. |
+
+## The meta line
+
+The first line of every file, written once when the addon loads:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `t` | integer | When the addon loaded, in Unix time. If it was loaded at character select, this is earlier than the first event. |
+| `version` | string | The version of VibeXI that wrote the file, `major.minor.patch`, for example `1.3.0`. |
+
+Use it to check the file before you read it: stop, or warn, when `version` is
+older than the version your tool was built for. Compare the three numbers one
+by one, not as strings (`1.10.0` is newer than `1.9.0`). A file whose first
+line isn't `meta` was written before the meta line was added, so it's older
+than any version you'd check for.
+
+If the addon is unloaded and loaded again within the same second, the second
+load writes to the same file, so a second `meta` line can turn up partway
+through. Everything after it comes from that second load.
 
 ## Action lines
 
@@ -205,6 +225,7 @@ an attempt. To count kills of a monster, count its death lines.
 ## Example
 
 ```jsonl
+{"kind":"meta","t":1760570990,"version":"1.3.0"}
 {"kind":"job","t":1760571002,"actor":"Hasaya","main":"SAM","mainId":12,"mainLvl":75,"sub":"WAR","subId":1,"subLvl":37}
 {"t":1760571004,"seq":1,"use":1,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":112,"hit":true,"crit":false,"burst":false,"msg":1}
 {"t":1760571004,"seq":2,"use":2,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":0,"hit":false,"crit":false,"burst":false,"msg":15}
