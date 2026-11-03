@@ -44,18 +44,20 @@ local HORIZON = Config.horizon
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '1.2.0'
+addon.version = '1.3.0'
 
 
 -- ---------------------------------------------------------------- state
 
 local S = {
-    use      = 0,       -- monotonic id shared by every row of one action
-    seq      = 0,       -- ordering within a single wall-clock second
-    seq_at   = 0,
-    owner    = nil,     -- our character name, for the filename
-    dropped  = 0,       -- packets that failed to decode
-    dupes    = 0,
+    use          = 0,       -- monotonic id shared by every row of one action
+    seq          = 0,       -- ordering within a single wall-clock second
+    seq_at       = 0,
+    owner        = nil,     -- our character name, for the filename
+    loaded_at    = 0,       -- os.time() when the addon loaded, for the meta line
+    meta_written = false,   -- this load's file has its meta line
+    dropped      = 0,       -- packets that failed to decode
+    dupes        = 0,
 }
 
 -- Duplicate suppression. Ashita can hand the same packet to an addon twice
@@ -744,12 +746,33 @@ end
 
 -- ---------------------------------------------------------------- events
 
+--- Open this load's file, once the character is known, and see that its first
+--- line is the meta line. The load event and packet_in's lazy open both come
+--- through here.
+---
+--- ONE META LINE PER FILE, not one per open: a reopen after a failed write
+--- appends to the same file, which already has its line. A meta line that
+--- fails to write closes the handle like any other, so the next open tries it
+--- again before any event can go in ahead of it. Its `t` is when the addon
+--- loaded, not when the file opened -- loaded at character select, the file
+--- opens only on the first packet after login.
+local function open_file()
+    S.owner = Entity.me() or S.owner
+    if not S.owner or not Emit.open(S.owner) then return end
+    if not S.meta_written then
+        S.meta_written = Emit.write_meta({ t = S.loaded_at, version = addon.version })
+    end
+end
+
 ashita.events.register('load', 'vibexi_load', function()
+    S.loaded_at = os.time()
     -- Only once the character is known: the file is named for them, and named
     -- once per load. Loaded from the character select screen, the first packet
     -- after login opens it instead (see packet_in).
-    S.owner = Entity.me()
-    if S.owner then Emit.open(S.owner) end
+    open_file()
+    -- No packet has run yet to flush, and the meta line should be readable as
+    -- soon as the file exists.
+    Emit.flush()
 end)
 
 ashita.events.register('unload', 'vibexi_unload', function()
@@ -810,8 +833,7 @@ local function on_packet_in(p)
     -- addon is loaded from the character select screen, and a failed write
     -- drops the handle. Either way it is this load's one file.
     if not Emit.is_open() then
-        S.owner = Entity.me() or S.owner
-        if S.owner then Emit.open(S.owner) end
+        open_file()
         if not Emit.is_open() then return end
     end
 
