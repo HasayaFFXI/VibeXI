@@ -66,6 +66,7 @@ Every kind in the first four rows of the table above uses these fields:
 | `actionId` | integer | The game's id for the action. For `skillchain`, `addl` and `reaction`, the result message id instead. |
 | `target` | string | Who it hit. `Unknown` if the target couldn't be identified. |
 | `targetKind` | string | Same values as `actorKind`. |
+| `targetId` | integer | Optional. Present when `targetKind` is `mob`: the monster's id, the same one death lines carry. |
 | `dmg` | integer | Damage dealt. `0` on a miss. |
 | `hit` | boolean | `true` if it landed, `false` for a miss, dodge, parry, shadow, resist and so on. |
 | `crit` | boolean | `true` for a critical hit. |
@@ -82,6 +83,11 @@ Things worth knowing:
   Count distinct `use` values to count attempts; add up `dmg` for damage.
 - A skillchain or additional effect gets its own `use`, apart from the swing
   that caused it, and its damage is separate from that swing's `dmg`.
+- **Telling monsters apart.** Two monsters with the same name have different
+  `targetId` values, so group by `targetId` to total damage per monster. It
+  names a spawn point, not a single life: see `targetId` under
+  [Death lines](#death-lines). On a `reaction` line the target is the monster
+  that swung, so `targetId` is that monster's.
 - Melee names are `Attack`, `Offhand Attack`, `Kick Attack` and `Throwing`.
   Ranged is `Ranged Attack`. Skillchains are named `Skillchain: <name>`, and
   additional effects `Additional Effect`. Reactions are `Counter`,
@@ -130,8 +136,8 @@ are action lines. An enfeeble is never written as an action line, whether it
 landed or not.
 
 They have the same `t`, `seq`, `use`, `actor`, `actorKind`, `action`,
-`actionId`, `target`, `targetKind`, `msg`, `owner` and `pet` fields as action
-lines, plus:
+`actionId`, `target`, `targetKind`, `targetId`, `msg`, `owner` and `pet` fields
+as action lines, plus:
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -199,10 +205,10 @@ an attempt. To count kills of a monster, count its death lines.
 
 ```jsonl
 {"kind":"job","t":1760571002,"actor":"Hasaya","main":"SAM","mainId":12,"mainLvl":75,"sub":"WAR","subId":1,"subLvl":37}
-{"t":1760571004,"seq":1,"use":1,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","dmg":112,"hit":true,"crit":false,"burst":false,"msg":1}
-{"t":1760571004,"seq":2,"use":2,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","dmg":0,"hit":false,"crit":false,"burst":false,"msg":15}
-{"t":1760571009,"seq":1,"use":3,"kind":"ws","actor":"Hasaya","actorKind":"player","action":"Tachi: Gekko","actionId":151,"target":"Tiger","targetKind":"mob","dmg":1480,"hit":true,"crit":false,"burst":false,"msg":185}
-{"t":1760571009,"seq":2,"use":4,"kind":"skillchain","actor":"Hasaya","actorKind":"player","action":"Skillchain: Fragmentation","actionId":291,"target":"Tiger","targetKind":"mob","dmg":620,"hit":true,"crit":false,"burst":false,"msg":291}
-{"kind":"enfeeble","t":1760571011,"seq":1,"use":5,"via":"magic","actor":"Olivia","actorKind":"player","action":"Sleepga","actionId":273,"target":"Tiger","targetKind":"mob","hit":true,"msg":236}
+{"t":1760571004,"seq":1,"use":1,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":112,"hit":true,"crit":false,"burst":false,"msg":1}
+{"t":1760571004,"seq":2,"use":2,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":0,"hit":false,"crit":false,"burst":false,"msg":15}
+{"t":1760571009,"seq":1,"use":3,"kind":"ws","actor":"Hasaya","actorKind":"player","action":"Tachi: Gekko","actionId":151,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":1480,"hit":true,"crit":false,"burst":false,"msg":185}
+{"t":1760571009,"seq":2,"use":4,"kind":"skillchain","actor":"Hasaya","actorKind":"player","action":"Skillchain: Fragmentation","actionId":291,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":620,"hit":true,"crit":false,"burst":false,"msg":291}
+{"kind":"enfeeble","t":1760571011,"seq":1,"use":5,"via":"magic","actor":"Olivia","actorKind":"player","action":"Sleepga","actionId":273,"target":"Tiger","targetKind":"mob","targetId":17195010,"hit":true,"msg":236}
 {"kind":"death","t":1760571015,"seq":1,"actor":"Hasaya","actorKind":"player","target":"Tiger","targetKind":"mob","targetId":17195010,"msg":6}
 ```

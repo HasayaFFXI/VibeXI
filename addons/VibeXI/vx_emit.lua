@@ -120,6 +120,14 @@ local function optional_tail(e)
     return tail
 end
 
+--- The target's server id, written right after targetKind. Set by the writers
+--- for a monster only, as on a death line: a player's is their character id,
+--- which the name already stands in for.
+local function target_id(e)
+    if e.targetId then return ',"targetId":' .. num(e.targetId) end
+    return ''
+end
+
 function M.encode(e)
     return '{"t":'           .. num(e.t)
         .. ',"seq":'         .. num(e.seq)
@@ -131,6 +139,7 @@ function M.encode(e)
         .. ',"actionId":'    .. num(e.actionId)
         .. ',"target":"'     .. esc(e.target) .. '"'
         .. ',"targetKind":"' .. word(e.targetKind) .. '"'
+        .. target_id(e)
         .. ',"dmg":'         .. num(e.dmg)
         .. ',"hit":'         .. boolean(e.hit)
         .. ',"crit":'        .. boolean(e.crit)
@@ -224,6 +233,7 @@ function M.encode_enfeeble(e)
         .. ',"actionId":'    .. num(e.actionId)
         .. ',"target":"'     .. esc(e.target) .. '"'
         .. ',"targetKind":"' .. word(e.targetKind) .. '"'
+        .. target_id(e)
         .. ',"hit":'         .. boolean(e.hit)
         .. ',"msg":'         .. num(e.msg)
         .. optional_tail(e)
@@ -248,15 +258,13 @@ function M.encode_death(e)
         killer = ',"actor":"' .. esc(e.actor) .. '"'
               .. ',"actorKind":"' .. word(e.actorKind) .. '"'
     end
-    local id = ''
-    if e.targetId then id = ',"targetId":' .. num(e.targetId) end
 
     return '{"kind":"death","t":' .. num(e.t)
         .. ',"seq":'         .. num(e.seq)
         .. killer
         .. ',"target":"'     .. esc(e.target) .. '"'
         .. ',"targetKind":"' .. word(e.targetKind) .. '"'
-        .. id
+        .. target_id(e)
         .. ',"msg":'         .. num(e.msg)
         .. optional_tail(e)
 end

@@ -151,7 +151,11 @@ end
 function M.by_id(id)
     local em = entity_manager()
     if not em then return nil end
-    return record_of(em, index_of(em, id))
+    local rec = record_of(em, index_of(em, id))
+    -- Kept on the record so a reaction row can name its attacker's id
+    -- without a second lookup.
+    if rec then rec.id = id end
+    return rec
 end
 
 --- Is a single spawn-flag bit set?

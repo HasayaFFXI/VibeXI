@@ -44,7 +44,7 @@ local HORIZON = Config.horizon
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '1.2.0'
+addon.version = '1.3.0'
 
 
 -- ---------------------------------------------------------------- state
@@ -309,6 +309,8 @@ local function record_enfeeble(act, category, actor, actor_kind, owner, pet_name
             tgt_name = tgt.name
             tgt_kind = Entity.kind(tgt)
         end
+        f.targetId = nil
+        if tgt_kind == 'mob' then f.targetId = target.id end
         if tgt_kind ~= 'player' and tgt_kind ~= 'pet' then
             for _, res in ipairs(target.results) do
                 local took = E.enfeebled(res.message)
@@ -359,8 +361,8 @@ end
 -- Every writer assigns every field, nil included -- that is how owner and pet
 -- are cleared -- so nothing carries over from one line to the next. record()
 -- sets the action's five (t, actor, actorKind, owner, pet) once, each target's
--- two (target, targetKind) at the top of its loop, and the other ten per line;
--- emit_reaction sets all seventeen itself.
+-- three (target, targetKind, targetId) at the top of its loop, and the other
+-- ten per line; emit_reaction sets all eighteen itself.
 local row = {}
 
 --- Turn one decoded action packet into rows and write them. `actor_kind` and
@@ -447,9 +449,11 @@ local function record(act, actor, actor_kind, pet_owner, now)
         local tgt = Entity.by_id(target.id)
         row.target     = 'Unknown'
         row.targetKind = 'other'
+        row.targetId   = nil
         if tgt then
             row.target     = tgt.name
             row.targetKind = Entity.kind(tgt)
+            if row.targetKind == 'mob' then row.targetId = target.id end
         end
 
         for slot, res in ipairs(target.results) do
@@ -619,6 +623,8 @@ local function emit_reaction(now, defender, d_kind, attacker, atk_kind,
     row.actionId   = message
     row.target     = attacker.name
     row.targetKind = atk_kind
+    row.targetId   = nil
+    if atk_kind == 'mob' then row.targetId = attacker.id end
     row.dmg        = dmg
     row.hit        = true
     row.crit       = false
