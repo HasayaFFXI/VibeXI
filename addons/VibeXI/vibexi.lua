@@ -44,21 +44,78 @@ local HORIZON = Config.horizon
 
 addon.name    = 'VibeXI'
 addon.author  = 'HasayaFFXI'
-addon.version = '1.3.0'
+addon.version = '2.0.0'
 
 
 -- ---------------------------------------------------------------- state
 
 local S = {
     use          = 0,       -- monotonic id shared by every row of one action
-    seq          = 0,       -- ordering within a single wall-clock second
+    seq          = 0,       -- ordering among lines that share one millisecond
     seq_at       = 0,
     owner        = nil,     -- our character name, for the filename
-    loaded_at    = 0,       -- os.time() when the addon loaded, for the meta line
+    loaded_at    = 0,       -- now_ms() when the addon loaded, for the meta line
     meta_written = false,   -- this load's file has its meta line
     dropped      = 0,       -- packets that failed to decode
     dupes        = 0,
 }
+
+-- ---------------------------------------------------------------- clock
+
+--- Whole-number division, for the non-negative numbers below.
+local function idiv(a, b)
+    return (a - a % b) / b
+end
+
+--- Read the PC clock as Unix time in whole MILLISECONDS, UTC. May throw;
+--- now_ms below is the only caller and checks it once before trusting it.
+---
+--- No packet carries a timestamp of its own -- a sub-packet header is an id, a
+--- size and a sync counter -- so when the packet reached us is the only time
+--- there is, and this is the clock that says so.
+---
+--- GetSystemTime, through Ashita, rather than os.time: the same wall clock
+--- with the millisecond added. ONE call gives the second and the millisecond
+--- together; os.time plus a separate millisecond read could pair a second
+--- with the millisecond of the next one. Its fields are UTC, so they are
+--- turned into a day count by hand (Howard Hinnant's days_from_civil, with
+--- March as month one so the leap day falls last) rather than by
+--- os.time{...}, which would read them as local time.
+local function systemtime_ms()
+    local st = ashita.time.get_systemtime()
+    local y, m = st.year, st.month
+    if m <= 2 then y = y - 1 end
+    local era  = idiv(y, 400)
+    local yoe  = y - era * 400
+    local doy  = idiv(153 * ((m + 9) % 12) + 2, 5) + st.day - 1
+    local doe  = yoe * 365 + idiv(yoe, 4) - idiv(yoe, 100) + doy
+    local days = era * 146097 + doe - 719468
+    return ((days * 24 + st.hour) * 60 + st.minute) * 60000
+         + st.second * 1000 + st.ms
+end
+
+local clock_ok = nil    -- nil until the first read; then whether systemtime_ms works
+
+--- Unix time in whole milliseconds: the `t` of every line.
+---
+--- The first call tries systemtime_ms once and keeps it only if it ran and
+--- agrees with os.time to within two seconds. Anything else -- the call
+--- missing in some Ashita build, a field named differently -- would otherwise
+--- throw inside every packet and drop every line, so it falls back to
+--- os.time's whole second, in milliseconds, for the rest of the load.
+---
+--- The millisecond is only as fine as the Windows timer tick: 1 ms when the
+--- game has raised the timer resolution, up to 15.6 ms when it has not. Every
+--- line of one packet shares one reading.
+local function now_ms()
+    if clock_ok == nil then
+        local ok, v = pcall(systemtime_ms)
+        clock_ok = ok and type(v) == 'number'
+                   and math.abs(v - os.time() * 1000) < 2000
+    end
+    if clock_ok then return systemtime_ms() end
+    return os.time() * 1000
+end
 
 -- Duplicate suppression. Ashita can hand the same packet to an addon twice
 -- across chunk boundaries, which would double every number. The comparison is
@@ -762,7 +819,7 @@ local function open_file()
 end
 
 ashita.events.register('load', 'vibexi_load', function()
-    S.loaded_at = os.time()
+    S.loaded_at = now_ms()
     -- Only once the character is known: the file is named for them, and named
     -- once per load. Loaded from the character select screen, the first packet
     -- after login opens it instead (see packet_in).
@@ -824,7 +881,9 @@ local function on_packet_in(p)
         return
     end
 
-    local now = os.time()
+    -- Milliseconds, for every line this packet writes. The party roster's TTL
+    -- is counted in seconds, so it is handed the second this falls in.
+    local now = now_ms()
 
     -- Lazily (re)open: the character is not known at load time when the
     -- addon is loaded from the character select screen, and a failed write
@@ -836,7 +895,7 @@ local function on_packet_in(p)
 
     if Entity.is_zoning() then return end
 
-    local job_changes = Entity.refresh_party(now)
+    local job_changes = Entity.refresh_party(idiv(now, 1000))
     if job_changes then record_jobs(job_changes, now) end
 
     if death_msg then

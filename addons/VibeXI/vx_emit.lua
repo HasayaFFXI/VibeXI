@@ -88,10 +88,12 @@ local function esc(s)
     return table.concat(out)
 end
 
---- Integers only; the game deals in whole damage and whole seconds, and every
---- number written here already is one -- bit-reader fields, counters, os.time.
+--- Integers only; the game deals in whole damage, and every number written
+--- here already is one -- bit-reader fields, counters, Unix milliseconds.
 --- So no conversion is done: `..` writes an integer-valued number exactly as
---- %d would (up to 1e14, far past any of them), without a format call.
+--- %d would up to 1e14, without a format call. Unix milliseconds are about
+--- 1.8e12, well inside that; microseconds (1.8e15) would NOT be, and would
+--- come out rounded in exponent form.
 local function num(n)
     return n or 0
 end

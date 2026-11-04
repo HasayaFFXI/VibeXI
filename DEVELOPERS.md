@@ -57,8 +57,8 @@ The first line of every file, written once when the addon loads:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `t` | integer | When the addon loaded, in Unix time. If it was loaded at character select, this is earlier than the first event. |
-| `version` | string | The version of VibeXI that wrote the file, `major.minor.patch`, for example `1.3.0`. |
+| `t` | integer | When the addon loaded, in Unix time (milliseconds, UTC). If it was loaded at character select, this is earlier than the first event. |
+| `version` | string | The version of VibeXI that wrote the file, `major.minor.patch`, for example `2.0.0`. |
 
 Use it to check the file before you read it: stop, or warn, when `version` is
 older than the version your tool was built for. Compare the three numbers one
@@ -70,14 +70,31 @@ If the addon is unloaded and loaded again within the same second, the second
 load writes to the same file, so a second `meta` line can turn up partway
 through. Everything after it comes from that second load.
 
+## Timestamps
+
+Every `t` is Unix time in **milliseconds**, UTC: divide by 1000 for seconds.
+Files written before version `2.0.0` have `t` in whole seconds, so check
+`version` on the meta line before reading `t`.
+
+- `t` is when the packet reached your PC, read from the PC's clock. The game's
+  packets carry no time of their own, so it includes network delay, and it is
+  only as right as the PC's clock.
+- Every line from one packet has the same `t`; `seq` puts them in order. The
+  server sends packets in batches, so lines from one batch have the same or
+  nearly the same `t`.
+- The milliseconds are only as fine as the Windows timer: 1 ms, or about 16 ms
+  on a PC where nothing has raised the timer's resolution.
+- If the addon can't read the millisecond clock, it falls back to whole
+  seconds: `t` still counts milliseconds but always ends in `000`.
+
 ## Action lines
 
 Every kind in the first four rows of the table above uses these fields:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `t` | integer | When it happened, in Unix time (seconds, UTC). |
-| `seq` | integer | Order within the same second. File order is also event order. |
+| `t` | integer | When it happened, in Unix time (milliseconds, UTC). See [Timestamps](#timestamps). |
+| `seq` | integer | Order among lines with the same `t`. File order is also event order. |
 | `use` | integer | Groups the rows of one swing or one use. See below. |
 | `kind` | string | See the table above. |
 | `actor` | string | Who did it. |
@@ -175,8 +192,8 @@ player's.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `t` | integer | When it happened, in Unix time. |
-| `seq` | integer | Order within the same second. |
+| `t` | integer | When it happened, in Unix time (milliseconds). |
+| `seq` | integer | Order among lines with the same `t`. |
 | `actor` | string | Optional. Who killed the monster, always one of your side. Left out when nothing landed the killing blow (`msg` 20), and always left out on a player's death. |
 | `actorKind` | string | Optional, present with `actor`. Same values as on action lines. |
 | `target` | string | Who died. |
@@ -215,7 +232,7 @@ an attempt. To count kills of a monster, count its death lines.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `t` | integer | When it was seen, in Unix time. |
+| `t` | integer | When it was seen, in Unix time (milliseconds). |
 | `actor` | string | The party member. |
 | `main` | string | Main job abbreviation, for example `WAR`. `NON` if unknown. |
 | `mainId` | integer | Main job id, matching `main` (`1` is WAR). |
@@ -225,12 +242,12 @@ an attempt. To count kills of a monster, count its death lines.
 ## Example
 
 ```jsonl
-{"kind":"meta","t":1760570990,"version":"1.3.0"}
-{"kind":"job","t":1760571002,"actor":"Hasaya","main":"SAM","mainId":12,"mainLvl":75,"sub":"WAR","subId":1,"subLvl":37}
-{"t":1760571004,"seq":1,"use":1,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":112,"hit":true,"crit":false,"burst":false,"msg":1}
-{"t":1760571004,"seq":2,"use":2,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":0,"hit":false,"crit":false,"burst":false,"msg":15}
-{"t":1760571009,"seq":1,"use":3,"kind":"ws","actor":"Hasaya","actorKind":"player","action":"Tachi: Gekko","actionId":151,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":1480,"hit":true,"crit":false,"burst":false,"msg":185}
-{"t":1760571009,"seq":2,"use":4,"kind":"skillchain","actor":"Hasaya","actorKind":"player","action":"Skillchain: Fragmentation","actionId":291,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":620,"hit":true,"crit":false,"burst":false,"msg":291}
-{"kind":"enfeeble","t":1760571011,"seq":1,"use":5,"via":"magic","actor":"Olivia","actorKind":"player","action":"Sleepga","actionId":273,"target":"Tiger","targetKind":"mob","targetId":17195010,"hit":true,"msg":236}
-{"kind":"death","t":1760571015,"seq":1,"actor":"Hasaya","actorKind":"player","target":"Tiger","targetKind":"mob","targetId":17195010,"msg":6}
+{"kind":"meta","t":1760570990482,"version":"2.0.0"}
+{"kind":"job","t":1760571002107,"actor":"Hasaya","main":"SAM","mainId":12,"mainLvl":75,"sub":"WAR","subId":1,"subLvl":37}
+{"t":1760571004316,"seq":1,"use":1,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":112,"hit":true,"crit":false,"burst":false,"msg":1}
+{"t":1760571004316,"seq":2,"use":2,"kind":"melee","actor":"Hasaya","actorKind":"player","action":"Attack","actionId":0,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":0,"hit":false,"crit":false,"burst":false,"msg":15}
+{"t":1760571009740,"seq":1,"use":3,"kind":"ws","actor":"Hasaya","actorKind":"player","action":"Tachi: Gekko","actionId":151,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":1480,"hit":true,"crit":false,"burst":false,"msg":185}
+{"t":1760571009740,"seq":2,"use":4,"kind":"skillchain","actor":"Hasaya","actorKind":"player","action":"Skillchain: Fragmentation","actionId":291,"target":"Tiger","targetKind":"mob","targetId":17195010,"dmg":620,"hit":true,"crit":false,"burst":false,"msg":291}
+{"kind":"enfeeble","t":1760571011529,"seq":1,"use":5,"via":"magic","actor":"Olivia","actorKind":"player","action":"Sleepga","actionId":273,"target":"Tiger","targetKind":"mob","targetId":17195010,"hit":true,"msg":236}
+{"kind":"death","t":1760571015063,"seq":1,"actor":"Hasaya","actorKind":"player","target":"Tiger","targetKind":"mob","targetId":17195010,"msg":6}
 ```

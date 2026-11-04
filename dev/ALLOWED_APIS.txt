@@ -137,10 +137,15 @@ GetPlayerEntity()
 
 
 # --- Lua stdlib --------------------------------------------------------------
-# Timestamps. os.time is 1-second resolution and that is deliberate: it lets
-# us skip LuaSocket entirely.
+# Timestamps. os.time is whole seconds: the fallback clock, and the second
+# vx_entity's miss cache is keyed on. os.date names the output file.
 os.time
 os.date
+
+# The millisecond `t` on every line. Ashita's binding of Win32 GetSystemTime:
+# it returns the current UTC date and time as a table and does nothing else,
+# so it gives the millisecond without LuaSocket.
+ashita.time.get_systemtime
 
 # Reads %LOCALAPPDATA% to locate the output directory, and whichever %NAME% the
 # EventDir line of vibexi.ini is written with. Reads an environment variable
