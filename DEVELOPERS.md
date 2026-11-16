@@ -129,8 +129,12 @@ Things worth knowing:
   Ranged is `Ranged Attack`. Skillchains are named `Skillchain: <name>`, and
   additional effects `Additional Effect`. Reactions are `Counter`,
   `Retaliation` or `Spikes`.
-- When the addon has no name for an action, `action` is `#` and the id, for
-  example `#1234`. This happens mostly with monster TP moves.
+- Names come from the game client's own data, so they're the names the game
+  shows: a pet's blood pact (`Predator Claws`), a jug pet's Ready move
+  (`Lamb Chop`) or an automaton's weaponskill (`Slapstick`). Only when the
+  client has no name for an action is `action` `#` and the id, for example
+  `#1234`. Files written before version `2.0.0` have `#` names for most `pet`
+  and `mobtp` lines.
 - On HorizonXI with `Horizon=1`, abilities such as the Jumps arrive as
   `ability`, not `ws`.
 - **Support is not damage.** A line whose `actorKind` and `targetKind` are both

@@ -36,7 +36,6 @@ local E        = require('vx_enums')
 local Action   = require('vx_action')
 local Entity   = require('vx_entity')
 local Emit     = require('vx_emit')
-local WS_NAMES = require('vx_ws_names')
 local Config   = require('vx_config')
 
 -- Horizon=1 in vibexi.ini, which is also what a missing file or line means.
@@ -180,13 +179,16 @@ end
 local ability_names = {}
 local spell_names   = {}
 
+--- The client's ability table: weaponskills from 0 (1 is Combo), job and pet
+--- abilities from E.ABILITY_ID_OFFSET. Its unused slots are named '.' (63,
+--- 205, ...), which is no name, so they miss.
 local function ability_name(id)
     local n = ability_names[id]
     if n then return n end
     local rm = AshitaCore:GetResourceManager()
     if not rm then return nil end
     local a = rm:GetAbilityById(id)
-    if a and a.Name and a.Name[1] and a.Name[1] ~= '' then
+    if a and a.Name and a.Name[1] and a.Name[1] ~= '' and a.Name[1] ~= '.' then
         n = a.Name[1]
         ability_names[id] = n
         return n
@@ -208,6 +210,31 @@ local function spell_name(id)
     return nil
 end
 
+local mob_skill_names = {}
+
+--- A monster TP move's name, from the client's own table of them, which
+--- Ashita loads as the 'monsters.abilities' strings. That table starts at
+--- move 256, so it is indexed by the id less E.MOB_SKILL_ID_OFFSET. Covers
+--- every move a pet can use on category 11: a jug pet's Ready move, a charmed
+--- monster's TP move, an automaton's weaponskill.
+---
+--- The string may carry the dialog file's trailing NULs, which are cut off.
+--- Ashita loads this table on a thread after the addon may already be
+--- running, so a miss is not kept and is asked again next time.
+local function mob_skill_name(id)
+    local n = mob_skill_names[id]
+    if n then return n end
+    if id < E.MOB_SKILL_ID_OFFSET then return nil end
+    local rm = AshitaCore:GetResourceManager()
+    if not rm then return nil end
+    local s = rm:GetString('monsters.abilities', id - E.MOB_SKILL_ID_OFFSET)
+    if type(s) ~= 'string' then return nil end
+    s = (string.gsub(s, '%z+$', ''))
+    if s == '' then return nil end
+    mob_skill_names[id] = s
+    return s
+end
+
 local function melee_name(animation)
     if animation == E.Animation.MELEE_OFFHAND then return 'Offhand Attack' end
     if animation == E.Animation.MELEE_KICK
@@ -225,11 +252,12 @@ local function action_name(category, param, first_result)
         return 'Ranged Attack'
     elseif category == E.Category.WEAPONSKILL then
         -- Category 3 also carries a handful of job abilities (Mug, Steal,
-        -- Shield Bash, the Jumps...). Weaponskill table first, then abilities --
+        -- Shield Bash, the Jumps...). Weaponskills first, then abilities --
         -- which only reaches an ability whose id no weaponskill has. The ones
         -- that share an id never get here as category 3 with Horizon on:
         -- record() has already turned them into abilities.
-        local n = WS_NAMES[param]
+        local n = nil
+        if param < E.ABILITY_ID_OFFSET then n = ability_name(param) end
         if n then return n end
         n = ability_name(param + E.ABILITY_ID_OFFSET)
         if n then return n end
@@ -239,10 +267,19 @@ local function action_name(category, param, first_result)
     elseif category == E.Category.ABILITY then
         local n = ability_name(param + E.ABILITY_ID_OFFSET)
         if n then return n end
+    elseif category == E.Category.PET_ABILITY then
+        -- A blood pact, a ward, a wyvern's breath, a pet command: its id is
+        -- the server's ability id, as a job ability's is on category 6 (598
+        -- is Predator Claws), so it takes the same offset into the client's
+        -- table (1110).
+        local n = ability_name(param + E.ABILITY_ID_OFFSET)
+        if n then return n end
+    elseif category == E.Category.MOB_TP then
+        local n = mob_skill_name(param)
+        if n then return n end
     end
-    -- Monster TP moves and pet abilities land here. Ashita's resource manager
-    -- has no lookup for them and the name tables are ~300KB, so the event
-    -- carries the id and leaves naming to whatever reads it.
+    -- Only an id the client has no name for lands here: the event still
+    -- carries the id, so nothing is lost but the name.
     return '#' .. tostring(param)
 end
 
@@ -297,11 +334,8 @@ end
 --- fields that are the action's are set once, and each line sets the rest.
 local heal_row = {}
 
-local function record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
+local function record_heal(act, actor, actor_kind, owner, pet_name, via, now)
     local name = action_name(act.category, act.param, nil)
-    -- Pet abilities have no resource lookup and come back as '#id'; name
-    -- those from the same table that identified them.
-    if string.sub(name, 1, 1) == '#' then name = heal_name end
 
     S.use = S.use + 1
 
@@ -346,9 +380,8 @@ end
 --- is one cast.
 local enfeeble_row = {}
 
-local function record_enfeeble(act, category, actor, actor_kind, owner, pet_name, list_name, via, now)
+local function record_enfeeble(act, category, actor, actor_kind, owner, pet_name, via, now)
     local name = action_name(category, act.param, nil)
-    if string.sub(name, 1, 1) == '#' then name = list_name end
 
     local f = enfeeble_row
     f.t         = now
@@ -456,7 +489,7 @@ local function record(act, actor, actor_kind, pet_owner, now)
     -- says, and healing never counts as damage.
     local heal_name, via = E.healing(act.category, act.param)
     if heal_name then
-        record_heal(act, actor, actor_kind, owner, pet_name, heal_name, via, now)
+        record_heal(act, actor, actor_kind, owner, pet_name, via, now)
         return
     end
 
@@ -464,9 +497,8 @@ local function record(act, actor, actor_kind, pet_owner, now)
     -- either (see the ENFEEBLES block in vx_enums.lua): a Sleep is an enfeeble
     -- whether it landed or was resisted. Asked of `category`, so a job ability
     -- sent as a weaponskill (Tomahawk, Angon, Shadowbind) is asked as one.
-    local enfeeble_name = E.enfeeble(category, act.param)
-    if enfeeble_name then
-        record_enfeeble(act, category, actor, actor_kind, owner, pet_name, enfeeble_name, kind, now)
+    if E.enfeeble(category, act.param) then
+        record_enfeeble(act, category, actor, actor_kind, owner, pet_name, kind, now)
         return
     end
 
@@ -542,12 +574,9 @@ local function record(act, actor, actor_kind, pet_owner, now)
             if is_damage or is_attempt or is_support then
                 -- Resolved on the first row we actually emit, not the first row
                 -- we see, so an action whose every result was dropped costs no
-                -- resource lookup. A pet's support is named from the list.
+                -- resource lookup.
                 if not name_resolved then
                     name_resolved = action_name(category, act.param, res)
-                    if is_support and string.sub(name_resolved, 1, 1) == '#' then
-                        name_resolved = E.support_name(category, act.param) or name_resolved
-                    end
                 end
 
                 local dmg = 0

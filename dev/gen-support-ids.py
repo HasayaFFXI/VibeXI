@@ -27,9 +27,8 @@ and never reach this list), read from vx_enums.lua so the two cannot drift.
 
 Ids are the server's, which are the action packet's param: a spell's on
 category 4, a job ability's on 6 (the client's resource id is that plus 512),
-a pet's on 13. Category 14 (dances) is not written at all, so is not asked. Names are made from the server's names and are what a pet's
-row is called (pets have no resource lookup); a spell's or ability's row is
-named by the resource manager, and its name here is only for reading.
+a pet's on 13. Category 14 (dances) is not written at all, so is not asked. Names are made from the server's names and are only for
+reading: every row, a pet's included, is named by the client's own resources.
 
     python dev/gen-support-ids.py --server path/to/server
 

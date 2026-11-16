@@ -36,8 +36,8 @@ A spell or pact with no script at all is not listed: the server cannot use it.
 
 Ids are the server's, which are the action packet's param: a spell's on
 category 4, a job ability's on 6 (or 3, for the ones in E.WsAbilities), a
-pet's on 13. Names are made from the server's names and are what a pet's row
-is called (pets have no resource lookup).
+pet's on 13. Names are made from the server's names and are only for reading:
+every row, a pet's included, is named by the client's own resources.
 
     python dev/gen-enfeeble-ids.py --server path/to/server [--report]
 

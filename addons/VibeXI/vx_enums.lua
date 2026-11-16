@@ -271,13 +271,6 @@ function E.support(category, param, message)
     return nil
 end
 
---- The list's name for a support action: what a pet's is called, since pets'
---- abilities have no resource lookup.
-function E.support_name(category, param)
-    local list = support_list(category)
-    return list and param and list[param] or nil
-end
-
 -- ENFEEBLES -- a status, a dispel or a drain one of ours puts on a monster:
 -- Sleep, Slow, Stun, Dispel, a Lullaby, Light Shot, Nightmare, Sheep Song.
 -- Written as its own kind:"enfeeble" line, NEVER as a damage row: before this
@@ -354,8 +347,7 @@ local function enfeeble_list(category)
     return nil
 end
 
---- Is this action an enfeeble? Its list's name for it (what a pet's is
---- called, since pets' abilities have no resource lookup), or nil. A job
+--- Is this action an enfeeble? Its list's name for it, or nil. A job
 --- ability sent as a weaponskill is asked as the ability it is.
 function E.enfeeble(category, param)
     local list = enfeeble_list(category)
@@ -636,7 +628,19 @@ end
 -- Ashita's recast addon scans GetAbilityById(0..2048), i.e. the table is far
 -- larger than the ~300 job abilities and therefore segmented; and blusets does
 -- the exact analogous `GetSpellById(id + 512)` for the BLU spell list.
+--
+-- A pet's ability on category 13 takes the same offset: its param is the
+-- server's ability id too. Checked against the client's own ability names
+-- (the abilities.names DAT Ashita reads): 38 + 512 is Chakra, 598 + 512 is
+-- Predator Claws, 512 + 512 is Healing Ruby.
 E.ABILITY_ID_OFFSET = 512
+
+-- A monster TP move's id (category 11, the server's mob skill id) less this is
+-- its index in the client's table of their names, which Ashita loads as the
+-- 'monsters.abilities' strings: that table's first entry is move 256. Checked
+-- against the client's DAT: 3857 - 256 is Lamb Chop, 1943 - 256 Slapstick,
+-- 257 - 256 Foot Kick.
+E.MOB_SKILL_ID_OFFSET = 256
 
 -- Job id -> the three-letter abbreviation the game itself uses.
 --
